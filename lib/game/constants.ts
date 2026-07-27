@@ -1,0 +1,9 @@
+export const PALETTE = { ink: "#171a2b", cream: "#fff8e8", skyTop: "#79d5ff", skyBottom: "#d8f5ff", yellow: "#ffd84d", red: "#ff5c65", green: "#57dfa1", purple: "#8b72ff", blue: "#4b8dff", orange: "#ff9b4a", muted: "#6e7487" } as const;
+export const PLAYER_SPAWN = [0, 1.25, 1.2] as const;
+export const EXIT_POSITION = [0, 1.5, 40.25] as const;
+export const EXIT_SENSOR_SIZE = [2.2, 3, 0.7] as const;
+export const KILL_PLANE_Y = -10;
+export const ATTEMPT_LIMIT_MS = 60_000;
+export const MAX_TRAPS = 20;
+export const GRID_SIZE = 0.25;
+export const PLAYER = { capsuleRadius: 0.38, capsuleHalfHeight: 0.55, mass: 1, gravityScale: 2.2, linearDamping: 0.45, angularDamping: 2.5, moveSpeed: 7.2, acceleration: 30, airControl: 0.35, jumpVelocity: 7.4, coyoteTimeMs: 180, jumpBufferMs: 400, maxFallSpeed: 18, strongImpactThreshold: 9, stunImpactThreshold: 14 } as const;

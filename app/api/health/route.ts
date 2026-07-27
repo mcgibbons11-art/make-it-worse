@@ -1,0 +1,1 @@
+import { NextResponse } from "next/server";export function GET(){return NextResponse.json({ok:true,mode:process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?"supabase":"demo",build:process.env.NEXT_PUBLIC_BUILD_VERSION??"dev"},{headers:{"Cache-Control":"no-store"}})}

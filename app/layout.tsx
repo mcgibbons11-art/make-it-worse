@@ -1,0 +1,4 @@
+import type { Metadata,Viewport } from "next";import "./globals.css";
+export const metadata:Metadata={metadataBase:new URL(process.env.NEXT_PUBLIC_SITE_URL??"http://localhost:3000"),title:{default:"MAKE IT WORSE",template:"%s | MAKE IT WORSE"},description:"Beat the level. Add one awful thing. Send it to a friend.",applicationName:"MAKE IT WORSE",manifest:"/manifest.webmanifest",icons:{icon:"/icon.svg",apple:"/apple-icon.svg"},openGraph:{title:"MAKE IT WORSE",description:"Beat it. Ruin it. Send it.",type:"website"},twitter:{card:"summary_large_image",title:"MAKE IT WORSE",description:"Beat it. Ruin it. Send it."}};
+export const viewport:Viewport={width:"device-width",initialScale:1,maximumScale:1,viewportFit:"cover",themeColor:"#79d5ff"};
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}

@@ -1,0 +1,3 @@
+import type { Metadata } from "next";import GameClient from "@/components/game/GameClient";
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const{slug}=await params;return{title:"Can you survive this disaster?",description:"Beat this version, add one awful trap, and pass the consequences on.",alternates:{canonical:`/c/${slug}`},openGraph:{title:"Someone made this level worse",description:"Beat it. Ruin it. Send it.",images:[`/c/${slug}/opengraph-image`]},twitter:{card:"summary_large_image"}};}
+export default async function ChallengePage({params}:{params:Promise<{slug:string}>}){const{slug}=await params;return <GameClient key={slug} slug={slug}/>;}

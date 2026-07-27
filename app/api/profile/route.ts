@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";import { apiErrorResponse,parseJsonBody } from "@/lib/api/errors";import { rpc,userScopedSupabase } from "@/lib/api/auth";import { profileRequestSchema } from "@/lib/api/schemas";
+export async function GET(request:Request){try{return NextResponse.json(await rpc(userScopedSupabase(request),"ensure_profile",{p_display_name:null}),{headers:{"Cache-Control":"no-store"}});}catch(error){return apiErrorResponse(error);}}
+export async function POST(request:Request){try{const body=profileRequestSchema.parse(await parseJsonBody(request));return NextResponse.json(await rpc(userScopedSupabase(request),"update_profile",{p_display_name:body.displayName}),{headers:{"Cache-Control":"no-store"}});}catch(error){return apiErrorResponse(error);}}

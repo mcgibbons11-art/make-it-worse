@@ -1,0 +1,5 @@
+import type { GamePhase } from "./types";
+const transitions:Record<GamePhase,readonly GamePhase[]>={booting:["intro","fatal_error"],intro:["ready","fatal_error"],ready:["playing","fatal_error"],playing:["failed","finished","paused","fatal_error"],failed:["playing","fatal_error"],finished:["choosing_trap","sharing","fatal_error"],choosing_trap:["placing_trap","fatal_error"],placing_trap:["choosing_trap","publishing","fatal_error"],publishing:["sharing","placing_trap","fatal_error"],sharing:["fatal_error"],paused:["playing","fatal_error"],fatal_error:[]};
+export function canTransition(from:GamePhase,to:GamePhase):boolean{return transitions[from].includes(to);}
+export function transitionPhase(from:GamePhase,to:GamePhase):GamePhase{if(!canTransition(from,to))throw new Error(`Invalid game transition: ${from} -> ${to}`);return to;}
+export function arbitrateOutcome(input:{exitEntered:boolean;fell:boolean;timedOut:boolean;manualReset:boolean}):"completed"|"fell"|"timeout"|"reset"|null{if(input.exitEntered)return"completed";if(input.fell)return"fell";if(input.timedOut)return"timeout";if(input.manualReset)return"reset";return null;}

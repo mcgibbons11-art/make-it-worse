@@ -1,0 +1,2 @@
+import { z } from "zod";
+export async function fetchJson<T>(url:string,init:RequestInit,schema:z.ZodType<T>):Promise<T>{const response=await fetch(url,{...init,headers:{"Content-Type":"application/json",...init.headers}});const body:unknown=await response.json();if(!response.ok){const message=typeof body==="object"&&body!==null&&"error" in body?JSON.stringify((body as {error:unknown}).error):`Request failed (${response.status})`;throw new Error(message);}return schema.parse(body);}

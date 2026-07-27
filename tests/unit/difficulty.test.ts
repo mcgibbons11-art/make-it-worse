@@ -1,0 +1,3 @@
+import { describe,expect,it } from "vitest";import { estimatedSurvival,estimatedWorsePercent } from "@/lib/game/difficulty";import type { TrapInstance } from "@/lib/game/types";
+const trap:TrapInstance={id:"t",type:"angry_vacuum",ownerUserId:null,ownerName:"Safe Otter",ownerAvatarSeed:1,depthAdded:1,zoneId:"bridge_front",position:[0,.05,18],rotationY:0,seed:1,params:{}};
+describe("difficulty",()=>{it("is bounded and positive risk never improves survival",()=>{expect(estimatedSurvival([])).toBeGreaterThanOrEqual(.01);expect(estimatedSurvival([])).toBeLessThanOrEqual(.99);expect(estimatedSurvival([trap])).toBeLessThan(estimatedSurvival([]));expect(estimatedWorsePercent([],[trap])).toBeGreaterThanOrEqual(1);});});

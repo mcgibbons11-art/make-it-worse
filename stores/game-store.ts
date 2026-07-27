@@ -1,0 +1,5 @@
+"use client";
+import { create } from "zustand";import type { ChallengeDTO, GamePhase, GuestProfile, PublishChildResult, TrapPlacementInput, TrapType } from "@/lib/game/types";
+interface GameState{phase:GamePhase;challenge:ChallengeDTO|null;profile:GuestProfile|null;attemptId:string|null;attemptSerial:number;startedAt:number|null;elapsedMs:number;offeredTraps:readonly [TrapType,TrapType,TrapType]|null;selectedTrap:TrapType|null;placement:TrapPlacementInput|null;failureMessage:string;publishResult:PublishChildResult|null;error:string|null;set(values:Partial<GameState>):void;resetRun():void;}
+const initial={phase:"booting" as GamePhase,challenge:null,profile:null,attemptId:null,attemptSerial:0,startedAt:null,elapsedMs:0,offeredTraps:null,selectedTrap:null,placement:null,failureMessage:"",publishResult:null,error:null};
+export const useGameStore=create<GameState>((set)=>({...initial,set:(values)=>set(values),resetRun:()=>set((state)=>({phase:"playing",attemptSerial:state.attemptSerial+1,startedAt:performance.now(),elapsedMs:0,failureMessage:"",error:null}))}));

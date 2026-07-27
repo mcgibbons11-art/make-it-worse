@@ -1,0 +1,2 @@
+import { describe,expect,it } from "vitest";import { createSeededRandom } from "@/lib/game/seed";
+describe("seeded random",()=>{it("repeats the same sequence",()=>{const a=createSeededRandom(17);const b=createSeededRandom(17);expect([a(),a(),a()]).toEqual([b(),b(),b()]);});it("differs across seeds and remains bounded",()=>{const a=createSeededRandom(1);const b=createSeededRandom(2);const values=Array.from({length:50},()=>a());expect(values.every((value)=>value>=0&&value<1)).toBe(true);expect(values[0]).not.toBe(b());});});

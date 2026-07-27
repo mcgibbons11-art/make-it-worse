@@ -1,0 +1,20 @@
+create index challenges_last_played_idx on public.challenges(last_played_at desc nulls last);
+create index challenges_chain_depth_idx on public.challenges(chain_id,depth);
+create index attempts_challenge_started_idx on public.attempts(challenge_id,started_at desc);
+create index attempts_user_started_idx on public.attempts(user_id,started_at desc);
+create index attempts_share_token_idx on public.attempts(share_token) where share_token is not null;
+create index shares_token_idx on public.shares(share_token);
+create index share_visits_viewer_idx on public.share_visits(viewer_id);
+create index challenges_active_public_idx on public.challenges(last_played_at desc) where is_published and status='active';
+
+alter table public.profiles enable row level security;alter table public.placement_zones enable row level security;alter table public.trap_catalog enable row level security;alter table public.chains enable row level security;alter table public.challenges enable row level security;alter table public.attempts enable row level security;alter table public.shares enable row level security;alter table public.share_visits enable row level security;alter table public.mutation_idempotency enable row level security;
+create policy profiles_select_own on public.profiles for select to authenticated using(user_id=auth.uid());
+create policy profiles_update_own on public.profiles for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+create policy zones_public_read on public.placement_zones for select to anon,authenticated using(true);
+create policy catalog_public_read on public.trap_catalog for select to anon,authenticated using(enabled);
+create policy chains_public_read on public.chains for select to anon,authenticated using(status='active');
+create policy challenges_public_read on public.challenges for select to anon,authenticated using(is_published and status='active');
+create policy attempts_select_own on public.attempts for select to authenticated using(user_id=auth.uid());
+create policy shares_select_own on public.shares for select to authenticated using(user_id=auth.uid());
+create policy share_visits_select_own on public.share_visits for select to authenticated using(viewer_id=auth.uid());
+revoke insert,update,delete on public.chains,public.challenges,public.attempts,public.shares,public.share_visits,public.placement_zones,public.trap_catalog,public.mutation_idempotency from anon,authenticated;

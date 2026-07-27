@@ -1,0 +1,2 @@
+-- Canonical catalog and placement zones are installed by migration 0005.
+-- No fake public statistics or user-owned challenges are seeded in production.

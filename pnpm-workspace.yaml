@@ -1,0 +1,6 @@
+packages:
+  - portals
+
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver

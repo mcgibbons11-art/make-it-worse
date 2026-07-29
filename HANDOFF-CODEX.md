@@ -315,5 +315,108 @@ rules in §5 apply. This is polish; everything above outranks it.
 4. Then task A (sounds — biggest user-visible gap, pure grind), then C (vacuum),
    then D/E diagnostics, then F/G.
 
+---
+
+## 7. More pickup items (second pass, same evening)
+
+Added after the vacuum closed. These are real, scoped, and unclaimed.
+
+### 7.1 Touch controls — the game is unplayable on phones  *(biggest untapped audience)*
+
+The Portals editor previews desktop AND mobile, and Portals games get mobile
+players — but this game is keyboard-only (WASD/Space, pointer-drag camera). A
+mobile player gets a renderer and no way to move. Scope: an on-screen thumbstick
+(left half of `.game-canvas`'s wrapper) driving the same `lib/game/input.ts`
+state the keyboard writes, a jump button, and drag-anywhere-else for camera yaw
+(the yaw plumbing already exists — `setCameraYaw`). Trap placement already works
+by pointer. Gate on `('ontouchstart' in window)`, keep the HUD keycaps hidden on
+touch. Test on the Portals mobile preview tab. No physics or movement-math
+changes — the thumbstick writes the same input vector the keys do (do not touch
+PLAYER constants).
+
+### 7.2 Portals SDK leaderboard — wired but NEVER verified on the real host
+
+`portals/src/leaderboard.ts` adapts the Portals SDK
+(portals.to/documentation/advanced-tooling/portals-sdk) for the global
+leaderboard the static edition can't otherwise have. It has never run against
+the real host — the game has never successfully loaded inside Portals until the
+game-folder switch lands. First session after the game boots there: exercise a
+full run → score submit → leaderboard read, and check the browser console for
+SDK errors. Expect the SDK to only exist inside the Portals iframe; the adapter
+is supposed to no-op gracefully outside it — verify that too (the game must not
+crash when played from a plain URL).
+
+### 7.3 Frame-time sampler (task D) — paste-ready
+
+Run in the browser console on a FOCUSED game tab, after gameplay starts:
+
+```js
+(() => new Promise(res => {
+  const t = []; let last = performance.now(); let n = 0;
+  const step = now => { t.push(now - last); last = now;
+    (++n < 300) ? requestAnimationFrame(step) : res(report()); };
+  const report = () => { const s = t.slice(60).sort((a,b)=>a-b);
+    const mean = s.reduce((a,b)=>a+b,0)/s.length;
+    const c = document.querySelector('.game-canvas canvas');
+    return { meanMs:+mean.toFixed(2), p95Ms:+s[Math.floor(s.length*0.95)].toFixed(2),
+      fps:+(1000/mean).toFixed(1), dpr:devicePixelRatio, w:c?.width, h:c?.height }; };
+  requestAnimationFrame(step);
+}))().then(console.log)
+```
+
+Warmup-trimmed (drops first 60 frames). Hidden tabs suspend rAF — the tab must
+be foregrounded or every number is fiction. If p95 > 16.7ms at 1080p, suspects
+in order: fill-bound environment (shrink canvas to test), shadow pass (halve
+renderer.info draw calls before comparing), the 3.2MB GameCanvas chunk's parse
+cost (one-time, not per-frame — don't confuse startup jank with steady-state).
+
+### 7.4 Audio finishing details (extends task A)
+
+- AudioManager normalizes per-file to SAMPLE_PEAK (−1.5 dBFS) at decode time, so
+  don't loudness-match files by hand — just avoid clipped sources.
+- Trimming long files: `ffmpeg -i in.mp3 -ss <start> -t <dur> -c:a libmp3lame -q:a 4 out.mp3`.
+  For the loopable entries (`sticky_gum`, `conveyor_strip`, kettle's bed), cut at
+  zero crossings and verify the seam by playing the file on repeat before filing.
+- `spin_cycle`'s verified source is 1:01 long; the brief wants 1.2–1.8s of rising
+  whine INTO a thump — cut the segment where the drum peaks, don't fade.
+- After all 38 land: run the audio unit tests, rebuild the Portals bundle
+  (README flow) so `portals/dist/audio/` picks them up, and spot-check three
+  traps in-game for level sanity against the 17 originals.
+
+### 7.5 Code-splitting the Portals bundle (backlog G, concrete recipe)
+
+Vite warns: index 1.6MB + GameCanvas 3.2MB. Cheapest wins in order:
+`React.lazy` the GameCanvas import in `portals/src/PortalsApp.tsx` (menu paints
+while the game loads); `manualChunks` splitting `three`, `@react-three/*`, and
+`@dimforge/rapier3d-compat` into their own chunks (rapier's WASM-adjacent JS is
+the single biggest module); then re-measure. Keep `portals/dist` committed —
+the chunk names change every build, which is normal; commit the whole folder.
+
+### 7.6 Supabase edition parity (only if touching the Next.js shell)
+
+Migrations are auto-discovered by the sql-parity test — numbered files in
+`supabase/migrations/` are picked up without registration. `challenges.track`
+is optional-absent-means-classic (never null); descendants inherit the parent's
+track via trigger AND publishChild's spread — if you add fields to the
+challenge payload, bump the codec version and extend `challengeSchema` in
+`lib/game/schemas.ts` (trackSchema shows the pattern).
+
+### 7.7 Small polish items, verified real
+
+- Featured thumbnail: Portals settings has "Add featured image" (empty today).
+  A cover render of the apartment with traps would do; `assets/reference` has
+  candidates but they are export-ignored — copy the chosen one into the
+  settings upload by hand, don't move it into the runtime tree.
+- The Portals editor has a "2p" preview tab — the game is single-player. A
+  second-runner ghost (replay of the chain's best attempt) would be the cheap
+  first multiplayer-ish feature and needs no netcode, just recording the
+  attempt's position stream (the attempt lifecycle in the store already has
+  clean start/finish hooks).
+- `git status` should stay clean after every work session — this tree is in
+  Dropbox, and uncommitted work is exposed to sync conflicts. Commit early.
+
+---
+
 Good luck. The test suite is the contract — trust it over any prose here if the two
-ever disagree, and update whichever one is wrong.
+ever disagree, and update whichever one is wrong. A project CLAUDE.md now exists at
+the repo root with the durable rules; read it first, it is shorter than this file.

@@ -653,6 +653,111 @@ def clearance_report() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# THE HOSE'S SELF-INTERSECTION, MEASURED ON THE CURVE THAT ACTUALLY SHIPS
+#
+# A swept tube passes through itself wherever its centreline's radius of curvature falls
+# below its tube radius. Nothing else here can see that: the bounding boxes are unchanged,
+# clearance_report only asks whether the centreline stays outside other parts, and the bow
+# contract measures how far the tube departs from its chord, which a fold does not reduce.
+#
+# THE CURVE MUST BE THE SHIPPED ONE, NOT THIS SCRIPT'S. buildTubeGeometry hands the sample
+# list to THREE.CatmullRomCurve3, which is CENTRIPETAL by default, while catmull_rom above is
+# uniform. Measuring curvature on the uniform polyline reported 0.65 of the tube radius at
+# the collar where the shipped centripetal curve is at 0.33 - the uniform estimate was
+# wrong by a factor of two and in the reassuring direction. The reimplementation below is
+# three.js's own algorithm, and it was verified against three.js rather than assumed: both
+# return min radius 0.01882 at t 0.083 and the same three folding stretches to five decimals.
+# ---------------------------------------------------------------------------
+def _centripetal_point(points: list, t: float) -> list[float]:
+    """THREE.CatmullRomCurve3.getPoint for the default centripetal type, tension 0.5."""
+    count = len(points)
+    span = (count - 1) * t
+    index = min(int(math.floor(span)), count - 2)
+    weight = span - index
+    p1, p2 = points[index], points[index + 1]
+    p0 = points[index - 1] if index > 0 else [2 * p1[k] - p2[k] for k in range(3)]
+    p3 = (points[index + 2] if index + 2 < count
+          else [2 * p2[k] - p1[k] for k in range(3)])
+
+    def squared(a, b):
+        return sum((a[k] - b[k]) ** 2 for k in range(3))
+
+    dt1 = squared(p1, p2) ** 0.25 or 1.0
+    dt0 = squared(p0, p1) ** 0.25 or dt1
+    dt2 = squared(p2, p3) ** 0.25 or dt1
+    out = []
+    for k in range(3):
+        # Nonuniform Catmull-Rom tangents, then the cubic three.js evaluates.
+        m1 = ((p1[k] - p0[k]) / dt0 - (p2[k] - p0[k]) / (dt0 + dt1)
+              + (p2[k] - p1[k]) / dt1) * dt1
+        m2 = ((p2[k] - p1[k]) / dt1 - (p3[k] - p1[k]) / (dt1 + dt2)
+              + (p3[k] - p2[k]) / dt2) * dt1
+        c0, c1 = p1[k], m1
+        c2 = -3 * p1[k] + 3 * p2[k] - 2 * m1 - m2
+        c3 = 2 * p1[k] - 2 * p2[k] + m1 + m2
+        out.append(c0 + c1 * weight + c2 * weight ** 2 + c3 * weight ** 3)
+    return out
+
+
+def _inside_collar(point: list[float]) -> bool:
+    """Whether a fold at this point is hidden inside the collar's solid revolve.
+
+    The collar is a closed lathe, so a self-intersection buried in it cannot be seen. This is
+    the arithmetic half of the concealment argument the fan's blade web also rests on: the
+    physics says the hose must enter the socket, and this says the entry is covered.
+    """
+    delta = [point[0] - COLLAR_POS[0], point[1] - COLLAR_POS[1], point[2] - COLLAR_POS[2]]
+    along = delta[0] * math.cos(COLLAR_ANGLE) + delta[2] * math.sin(COLLAR_ANGLE)
+    perpendicular = math.sqrt(max(sum(q * q for q in delta) - along * along, 0.0))
+    return (-0.02 <= along <= COLLAR_LENGTH
+            and perpendicular + HOSE_TUBE_R <= COLLAR_DIAMETER / 2)
+
+
+# The curvature is a three-point circumradius, so it is a DISCRETE estimate and it converges
+# downward as the sampling tightens: the exposed stretch reads 0.45 of the tube radius at 300
+# samples, 0.43 at 500, 0.42 here and 0.40 at 2400. The verdict never changes - every one of
+# those is a fold - but the ratio is not a number to quote to three decimals.
+FOLD_SAMPLES = 900
+
+
+def fold_report() -> list[tuple[float, float, float, list[float]]]:
+    """Every stretch of the shipped hose that passes through itself and is not concealed.
+
+    Returns (t_start, t_end, min_radius, midpoint) per stretch. Reported rather than
+    asserted: the one stretch this currently finds needs a route change to remove, which is
+    a design decision, so failing the build here would only stop the pipeline.
+    """
+    dense = [_centripetal_point(HOSE_PATH, i / (FOLD_SAMPLES - 1))
+             for i in range(FOLD_SAMPLES)]
+    runs: list[list] = []
+    open_run = False
+    for i in range(1, len(dense) - 1):
+        a, b, c = dense[i - 1], dense[i], dense[i + 1]
+        side_a = math.dist(b, c)
+        side_b = math.dist(a, c)
+        side_c = math.dist(a, b)
+        half = (side_a + side_b + side_c) / 2
+        area = math.sqrt(max(half * (half - side_a) * (half - side_b) * (half - side_c), 0.0))
+        if area < 1e-15:
+            open_run = False
+            continue
+        radius = side_a * side_b * side_c / (4 * area)
+        if radius >= HOSE_TUBE_R or _inside_collar(b):
+            open_run = False
+            continue
+        t = i / (FOLD_SAMPLES - 1)
+        if not open_run:
+            runs.append([t, t, radius, b])
+            open_run = True
+        else:
+            runs[-1][1] = t
+            if radius < runs[-1][2]:
+                runs[-1][2], runs[-1][3] = radius, b
+    return [(round(r[0], 4), round(r[1], 4), round(r[2], 5),
+             [round(q, 4) for q in r[3]]) for r in runs]
+
+
+# ---------------------------------------------------------------------------
 # the handle
 #
 # A round bar arching over the top face. Its feet are buried below the face so the joint is a
@@ -2211,6 +2316,39 @@ SPEC = assemble(
         "which is why the belt's arc could not be fitted and why its height carries +/- 0.04. "
         "Horizontal extents are unaffected, and this spec's ratios are horizontal wherever it "
         "had the choice.",
+        "THE HOSE PASSES THROUGH ITSELF ONCE, ON THE DESCENT TO THE CUFF, AND A SMALL FIX "
+        "DOES NOT REMOVE IT. A swept tube self-intersects wherever its centreline's radius of "
+        "curvature drops below its tube radius, and the shipped centripetal curve does that in "
+        f"three places: {' and '.join(f'{s}-{e} at {round(r / HOSE_TUBE_R, 2)}x' for s, e, r, _ in fold_report())} "
+        "exposed, plus two more at 0.85x and 0.33x that sit inside the collar's solid revolve "
+        "and are concealed by construction, on the same footing as the fan's blade web - "
+        "physics says the hose must enter the socket and the arithmetic says the entry is "
+        "covered. The exposed one is a real defect. It is NOT hidden by the cuff: the cuff's "
+        f"radius is {round(CUFF_DIAMETER / 2, 4)} against the tube's {HOSE_TUBE_R}, too little "
+        "to cover a bulge, and the fold ends before the cuff begins. NO GATE HERE SAW IT - the "
+        "bounding boxes are identical, clearance_report only asks whether the centreline stays "
+        "outside other parts, and bow does not fall when a tube crumples. The cause is the "
+        f"cage's corner at the second-to-last control point, an 89 degree turn: the route "
+        "sweeps out to bearing 75 degrees and then doubles back to the cuff, which sits at "
+        "101.3 degrees. Small changes do not fix it - grids over the descent bearings, over "
+        "approach directions, and over the crown all cap at 0.44x, and the only fold-free "
+        "route a search found runs 1.40 of centreline against the authored 0.89, which is a "
+        "different hose rather than a corrected one. Removing it means re-routing the tail so "
+        "the approach stops overshooting the cuff's own bearing, and that is a design decision "
+        "against the recorded 'sweeps the front' ruling rather than a tweak, so it is recorded "
+        "here and left for a ruling. fold_report() measures it on every author run.",
+        "THE HOSE IS INTERPOLATED TWICE AND ONCE WOULD BE BETTER, MEASURED. catmull_rom "
+        f"samples the {len(HOSE_CONTROL)}-point cage into {len(HOSE_PATH)} points and "
+        "buildTubeGeometry then builds a second CatmullRomCurve3 through those, so the shipped "
+        "shape is an interpolation of an interpolation - and the two use different "
+        "parameterisations, uniform here and centripetal there. Feeding the authored cage "
+        "straight to the tube measures better on every axis that matters: bow 0.1841 against "
+        "0.1826, centreline 0.8930 against 0.8955, and 864 triangles against 2400, because "
+        "tubularSegments is points*6 and the cage has a third as many points. It also removes "
+        "the collar-end fold entirely and makes this script's checker exactly the shipped "
+        "curve. It is NOT applied here: it changes the hose's shipped shape slightly, the "
+        "route decision above is still open, and doing both at once would leave neither "
+        "measurable. No test blocks it - the hose is pinned by bow, not by sample count.",
         "THE CORRUGATION IS DECLARED AND NOT BUILT. generate_threejs_factory's repetition "
         "emitter places instances radially about an axis at radius * 0.5 and has no along-path "
         "mode, so it cannot lay ribs along a curve at any level. The pitch is measured and the "
@@ -2280,6 +2418,13 @@ if __name__ == "__main__":
     print(f"seams: {len(COMPONENTS)} components, all contacts >= {SEAM_FLOOR}")
     print(f"hose: {len(HOSE_PATH)} samples, centreline {HOSE_LENGTH}, "
           f"{HOSE_RIB_COUNT} ribs at pitch {HOSE_PITCH}")
+    folds = fold_report()
+    if folds:
+        for start, end, radius, midpoint in folds:
+            print(f"hose FOLD: t {start}-{end} min radius {radius} "
+                  f"({round(radius / HOSE_TUBE_R, 2)} x the {HOSE_TUBE_R} tube) at {midpoint}")
+    else:
+        print(f"hose: no exposed self-intersection at {FOLD_SAMPLES} samples")
     print(f"envelope: X {round(WHEEL_OUTER_X * 2, 4)}/{BOX_WIDTH}  "
           f"Y {PROP_HEIGHT}/{BOX_HEIGHT}  "
           f"Z {round(NOZZLE_FRONT_Z + BOX_DEPTH / 2, 4)}/{BOX_DEPTH}")

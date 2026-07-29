@@ -5986,6 +5986,64 @@
       "renderHash": "700a31a7d3f71d9d",
       "passId": "blockout",
       "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\toilet\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.7175,
+        "aspectRatioDelta": 0.0931,
+        "scaleDelta": 0.0017,
+        "bilateralSymmetryError": 0.2201,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 66.69,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 9.47
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.47
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.47
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.47
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.66
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.66
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.66
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.66
+            },
+            {
+              "componentId": null,
+              "deltaE": 66.69
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.717 is below threshold 0.85",
+        "aspect-ratio delta 0.093 exceeds threshold 0.05"
+      ],
+      "renderHash": "eb09715cc880307d",
+      "passId": "structural-pass"
     }
   ]
 }

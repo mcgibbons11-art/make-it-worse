@@ -52,13 +52,17 @@ vi.mock("@react-three/fiber", () => ({ useFrame: () => undefined, useThree: () =
 vi.mock("@react-three/drei", () => ({
   Html: (props: { children?: unknown }) => createElement("x-html", null, props.children as never),
 }));
-// The six model-backed traps draw an AssetModel whose extent lives in the
+// The model-backed traps draw an AssetModel whose extent lives in the
 // sculpt factories; those factories are measured directly by
 // sculpted-props.test.ts, so here the model becomes a marker and the trap is
 // judged on everything else it draws. A trap whose ONLY visual is the model is
-// reported as unresolved rather than passed.
+// reported as unresolved rather than passed. SculptedFloorFan is the one prop
+// TrapRenderer imports by name rather than through AssetModel (its blade
+// rosette takes a ref), so it gets the same marker treatment under the same
+// model id.
 vi.mock("@/components/game/AssetModel", () => ({
   AssetModel: (props: { model: string }) => createElement("x-assetmodel", { model: props.model }),
+  SculptedFloorFan: () => createElement("x-assetmodel", { model: "fan" }),
 }));
 vi.mock("@/lib/audio/AudioManager", () => ({
   AudioManager: new Proxy({}, { get: () => () => undefined }),

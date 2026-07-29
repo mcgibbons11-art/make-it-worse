@@ -6,7 +6,8 @@
 //    indexes arrays, both for the project's strict tsconfig and eslint settings.
 // 4. attachment.geometryFromSpec keeps the authored primitive instead of the
 //    generator's cylinder-between-endpoints (applied).
-// 5. primitive tessellation reduced for a prop that is instanced across a level.
+// 5. primitive tessellation reduced for a prop that is instanced across a level,
+//    including the torus, whose 24x96 was the most expensive primitive emitted.
 // 6. duplicated userData payloads become references (same API, smaller file).
 // 7. repetition-system InstancedMeshes registered into `meshes` so the harness's
 //    per-part world Box3 dump can see them (0 registered).
@@ -733,7 +734,7 @@ function makeAttachmentEndpoint(attachment: unknown): AttachmentEndpoint | null 
 }
 
 // Generated from ObjectSculptSpec target: Apartment Toilet
-// Sculpt build pass: blockout
+// Sculpt build pass: structural-pass
 // This factory is intentionally pass-gated. Finish browser screenshot review before unlocking deeper passes.
 export function createApartmentToiletModel(options: ProceduralModelOptions = {}): THREE.Group {
   const root = new THREE.Group();
@@ -1025,6 +1026,120 @@ export function createApartmentToiletModel(options: ProceduralModelOptions = {})
   socket_toilet_lid_lid_tip_0.userData.socket = {"id": "lid-tip", "localPosition": [0.0, 0.0, 0.3106], "localRotation": [0.0, 0.0, 0.0], "notes": "The free end of the lid; rests against the cistern lid's front face."};
   node_toilet_lid_5.add(socket_toilet_lid_lid_tip_0);
   sockets["toilet-lid:lid-tip"] = socket_toilet_lid_lid_tip_0;
+
+  const attachment_toilet_hinge_left_6 = {"parentId": "toilet-seat", "parentSocket": "hinge-line", "contactType": "embedded", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.0, 0.05, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.02, "endRadius": 0.02, "geometryFromSpec": true};
+  const endpoint_toilet_hinge_left_6 = makeAttachmentEndpoint(attachment_toilet_hinge_left_6);
+  const node_toilet_hinge_left_6 = new THREE.Group();
+  node_toilet_hinge_left_6.name = "Lid hinge block, left__pivot";
+  if (endpoint_toilet_hinge_left_6) {
+    node_toilet_hinge_left_6.position.copy(endpoint_toilet_hinge_left_6.start);
+    node_toilet_hinge_left_6.rotation.set(0, 0, 0);
+    node_toilet_hinge_left_6.scale.set(1, 1, 1);
+  } else {
+    node_toilet_hinge_left_6.position.set(-0.1479, 0.408, -0.2679);
+    node_toilet_hinge_left_6.rotation.set(0.0, 0.0, 0.0);
+    node_toilet_hinge_left_6.scale.set(0.0616, 0.05, 0.05);
+  }
+  node_toilet_hinge_left_6.userData.sculptComponent = {"id": "toilet-hinge-left", "name": "Lid hinge block, left", "level": "meso", "role": "hinge", "importance": 0.5, "confidence": 0.7, "primitive": "box", "topologyClass": "assembled-solid", "topologyRationale": "A small squared block, deliberately unlike the rolled seat and lid: the reference shows two of them with visible flat faces bridging the seat to the raised lid.", "colorMaterialRecipe": {"dominantAlbedo": "rgba(87, 223, 161, 1.0)", "secondaryAlbedo": "rgba(81, 209, 151, 1.0)", "materialClass": "plastic", "materialClassConfidence": 0.9}, "geometryDescriptor": {"topologyIntent": "small filleted block bridging seat to lid", "edgeTreatment": {"type": "fillet", "bevelRadius": 0.012, "segments": 2}, "deformationStack": [], "uvStrategy": "box UVs", "normalStrategy": "smooth normals over the fillets"}, "parent": "toilet-seat", "attachment": {"parentId": "toilet-seat", "parentSocket": "hinge-line", "contactType": "embedded", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.0, 0.05, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.02, "endRadius": 0.02, "geometryFromSpec": true}, "dimensions": {"width": 0.0616, "height": 0.05, "depth": 0.05, "units": "world", "confidence": 0.6}, "transform": {"position": [-0.1479, 0.408, -0.2679], "rotation": [0.0, 0.0, 0.0]}, "actionProfile": {"animationRole": "static", "pivot": {"mode": "center", "localPosition": [0.0, 0.0, 0.0], "axis": [1.0, 0.0, 0.0], "confidence": 0.6}, "transformChannels": {"translate": false, "rotate": false, "scale": false, "bend": false, "twist": false, "detach": false, "visibility": true, "materialState": true}, "sockets": [], "collider": {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."}, "constraints": [], "destruction": {"breakable": false, "fractureGroup": "seat", "seamRefs": [], "detachableFragments": [], "breakImpulse": 0.0, "debrisMaterial": "body"}}, "material": "seat-mint", "materialLayers": ["seat-mint"], "deformations": [], "joints": [], "seams": [{"id": "hinge-left-seat-seam", "with": "toilet-seat", "overlap": 0.02, "notes": "The block is buried in the seat's rear edge."}], "localFeatures": [{"id": "hinge-block", "description": "One of the two blocks the reference shows at the seat's rear edge, which is what makes the raised lid read as hinged rather than as propped.", "geometry": "filleted block straddling the hinge line", "evidenceRefs": ["full-object", "lid-zone"], "confidence": 0.7}], "surfaceDetail": {"macroRoughness": 0.55, "microRoughness": 0.08, "bumpAmplitude": 0.0, "normalPattern": "matte moulded plastic", "displacementPattern": "none", "occlusionPattern": "occlusion in the gap between seat and lid", "edgeWearPattern": "none", "notes": "Same plastic as the seat and lid."}, "evidenceRefs": ["full-object", "lid-zone"], "details": [], "fidelityTier": "form-refinement"};
+  node_toilet_hinge_left_6.userData.actionProfile = node_toilet_hinge_left_6.userData.sculptComponent.actionProfile;
+  (nodes["toilet-seat"] ?? root).add(node_toilet_hinge_left_6);
+  nodes["toilet-hinge-left"] = node_toilet_hinge_left_6;
+  const mesh_toilet_hinge_left_6Geometry = endpoint_toilet_hinge_left_6
+    ? new THREE.CylinderGeometry(endpoint_toilet_hinge_left_6.endRadius, endpoint_toilet_hinge_left_6.baseRadius, endpoint_toilet_hinge_left_6.length, 32, 12)
+    : new THREE.BoxGeometry(1, 1, 1);
+  const mesh_toilet_hinge_left_6 = new THREE.Mesh(
+    mesh_toilet_hinge_left_6Geometry,
+    materialMap["seat-mint"] ?? new THREE.MeshStandardMaterial({ color: 0x888888 })
+  );
+  mesh_toilet_hinge_left_6.name = "Lid hinge block, left";
+  if (endpoint_toilet_hinge_left_6) {
+    mesh_toilet_hinge_left_6.position.copy(endpoint_toilet_hinge_left_6.midpoint);
+    mesh_toilet_hinge_left_6.quaternion.copy(endpoint_toilet_hinge_left_6.quaternion);
+  }
+  mesh_toilet_hinge_left_6.castShadow = options.castShadow ?? true;
+  mesh_toilet_hinge_left_6.receiveShadow = options.receiveShadow ?? true;
+  mesh_toilet_hinge_left_6.userData.sculptComponent = node_toilet_hinge_left_6.userData.sculptComponent;
+  node_toilet_hinge_left_6.add(mesh_toilet_hinge_left_6);
+  meshes["toilet-hinge-left"] = mesh_toilet_hinge_left_6;
+  colliders["toilet-hinge-left"] = {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."};
+  destructionGroups["seat"] ??= [];
+  destructionGroups["seat"].push(node_toilet_hinge_left_6);
+
+  const attachment_toilet_hinge_right_7 = {"parentId": "toilet-seat", "parentSocket": "hinge-line", "contactType": "embedded", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.0, 0.05, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.02, "endRadius": 0.02, "geometryFromSpec": true};
+  const endpoint_toilet_hinge_right_7 = makeAttachmentEndpoint(attachment_toilet_hinge_right_7);
+  const node_toilet_hinge_right_7 = new THREE.Group();
+  node_toilet_hinge_right_7.name = "Lid hinge block, right__pivot";
+  if (endpoint_toilet_hinge_right_7) {
+    node_toilet_hinge_right_7.position.copy(endpoint_toilet_hinge_right_7.start);
+    node_toilet_hinge_right_7.rotation.set(0, 0, 0);
+    node_toilet_hinge_right_7.scale.set(1, 1, 1);
+  } else {
+    node_toilet_hinge_right_7.position.set(0.1479, 0.408, -0.2679);
+    node_toilet_hinge_right_7.rotation.set(0.0, 0.0, 0.0);
+    node_toilet_hinge_right_7.scale.set(0.0616, 0.05, 0.05);
+  }
+  node_toilet_hinge_right_7.userData.sculptComponent = {"id": "toilet-hinge-right", "name": "Lid hinge block, right", "level": "meso", "role": "hinge", "importance": 0.5, "confidence": 0.7, "primitive": "box", "topologyClass": "assembled-solid", "topologyRationale": "A small squared block, deliberately unlike the rolled seat and lid: the reference shows two of them with visible flat faces bridging the seat to the raised lid.", "colorMaterialRecipe": {"dominantAlbedo": "rgba(87, 223, 161, 1.0)", "secondaryAlbedo": "rgba(81, 209, 151, 1.0)", "materialClass": "plastic", "materialClassConfidence": 0.9}, "geometryDescriptor": {"topologyIntent": "small filleted block bridging seat to lid", "edgeTreatment": {"type": "fillet", "bevelRadius": 0.012, "segments": 2}, "deformationStack": [], "uvStrategy": "box UVs", "normalStrategy": "smooth normals over the fillets"}, "parent": "toilet-seat", "attachment": {"parentId": "toilet-seat", "parentSocket": "hinge-line", "contactType": "embedded", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.0, 0.05, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.02, "endRadius": 0.02, "geometryFromSpec": true}, "dimensions": {"width": 0.0616, "height": 0.05, "depth": 0.05, "units": "world", "confidence": 0.6}, "transform": {"position": [0.1479, 0.408, -0.2679], "rotation": [0.0, 0.0, 0.0]}, "actionProfile": {"animationRole": "static", "pivot": {"mode": "center", "localPosition": [0.0, 0.0, 0.0], "axis": [1.0, 0.0, 0.0], "confidence": 0.6}, "transformChannels": {"translate": false, "rotate": false, "scale": false, "bend": false, "twist": false, "detach": false, "visibility": true, "materialState": true}, "sockets": [], "collider": {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."}, "constraints": [], "destruction": {"breakable": false, "fractureGroup": "seat", "seamRefs": [], "detachableFragments": [], "breakImpulse": 0.0, "debrisMaterial": "body"}}, "material": "seat-mint", "materialLayers": ["seat-mint"], "deformations": [], "joints": [], "seams": [{"id": "hinge-right-seat-seam", "with": "toilet-seat", "overlap": 0.02, "notes": "The block is buried in the seat's rear edge."}], "localFeatures": [{"id": "hinge-block", "description": "One of the two blocks the reference shows at the seat's rear edge, which is what makes the raised lid read as hinged rather than as propped.", "geometry": "filleted block straddling the hinge line", "evidenceRefs": ["full-object", "lid-zone"], "confidence": 0.7}], "surfaceDetail": {"macroRoughness": 0.55, "microRoughness": 0.08, "bumpAmplitude": 0.0, "normalPattern": "matte moulded plastic", "displacementPattern": "none", "occlusionPattern": "occlusion in the gap between seat and lid", "edgeWearPattern": "none", "notes": "Same plastic as the seat and lid."}, "evidenceRefs": ["full-object", "lid-zone"], "details": [], "fidelityTier": "form-refinement"};
+  node_toilet_hinge_right_7.userData.actionProfile = node_toilet_hinge_right_7.userData.sculptComponent.actionProfile;
+  (nodes["toilet-seat"] ?? root).add(node_toilet_hinge_right_7);
+  nodes["toilet-hinge-right"] = node_toilet_hinge_right_7;
+  const mesh_toilet_hinge_right_7Geometry = endpoint_toilet_hinge_right_7
+    ? new THREE.CylinderGeometry(endpoint_toilet_hinge_right_7.endRadius, endpoint_toilet_hinge_right_7.baseRadius, endpoint_toilet_hinge_right_7.length, 32, 12)
+    : new THREE.BoxGeometry(1, 1, 1);
+  const mesh_toilet_hinge_right_7 = new THREE.Mesh(
+    mesh_toilet_hinge_right_7Geometry,
+    materialMap["seat-mint"] ?? new THREE.MeshStandardMaterial({ color: 0x888888 })
+  );
+  mesh_toilet_hinge_right_7.name = "Lid hinge block, right";
+  if (endpoint_toilet_hinge_right_7) {
+    mesh_toilet_hinge_right_7.position.copy(endpoint_toilet_hinge_right_7.midpoint);
+    mesh_toilet_hinge_right_7.quaternion.copy(endpoint_toilet_hinge_right_7.quaternion);
+  }
+  mesh_toilet_hinge_right_7.castShadow = options.castShadow ?? true;
+  mesh_toilet_hinge_right_7.receiveShadow = options.receiveShadow ?? true;
+  mesh_toilet_hinge_right_7.userData.sculptComponent = node_toilet_hinge_right_7.userData.sculptComponent;
+  node_toilet_hinge_right_7.add(mesh_toilet_hinge_right_7);
+  meshes["toilet-hinge-right"] = mesh_toilet_hinge_right_7;
+  colliders["toilet-hinge-right"] = {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."};
+  destructionGroups["seat"] ??= [];
+  destructionGroups["seat"].push(node_toilet_hinge_right_7);
+
+  const attachment_toilet_lever_8 = {"parentId": "toilet-bowl", "parentSocket": "lever-mount", "contactType": "socketed", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.08, 0.0, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.0168, "endRadius": 0.0168, "geometryFromSpec": true};
+  const endpoint_toilet_lever_8 = makeAttachmentEndpoint(attachment_toilet_lever_8);
+  const node_toilet_lever_8 = new THREE.Group();
+  node_toilet_lever_8.name = "Flush lever__pivot";
+  if (endpoint_toilet_lever_8) {
+    node_toilet_lever_8.position.copy(endpoint_toilet_lever_8.start);
+    node_toilet_lever_8.rotation.set(0, 0, 0);
+    node_toilet_lever_8.scale.set(1, 1, 1);
+  } else {
+    node_toilet_lever_8.position.set(0.4622, 0.6903, -0.54);
+    node_toilet_lever_8.rotation.set(0.0, 0.0, -0.35);
+    node_toilet_lever_8.scale.set(0.08, 0.0336, 0.0336);
+  }
+  node_toilet_lever_8.userData.sculptComponent = {"id": "toilet-lever", "name": "Flush lever", "level": "meso", "role": "handle", "importance": 0.45, "confidence": 0.6, "primitive": "capsule", "topologyClass": "assembled-solid", "topologyRationale": "A short turned handle standing off the cistern's side, the only dark value on the prop.", "colorMaterialRecipe": {"dominantAlbedo": "rgba(36, 50, 74, 1.0)", "secondaryAlbedo": "rgba(32, 45, 66, 1.0)", "materialClass": "plastic", "materialClassConfidence": 0.9}, "geometryDescriptor": {"topologyIntent": "capsule arm standing off the cistern's right face", "edgeTreatment": {"type": "rolled", "bevelRadius": 0.01, "segments": 2}, "deformationStack": [], "uvStrategy": "capsule UVs", "normalStrategy": "smooth vertex normals"}, "parent": "toilet-bowl", "attachment": {"parentId": "toilet-bowl", "parentSocket": "lever-mount", "contactType": "socketed", "localStart": [0.0, 0.0, 0.0], "localEnd": [0.08, 0.0, 0.0], "contactNormal": [0.0, 1.0, 0.0], "embedDepth": 0.02, "overlap": 0.02, "gapTolerance": 0.0, "baseRadius": 0.0168, "endRadius": 0.0168, "geometryFromSpec": true}, "dimensions": {"width": 0.08, "height": 0.0336, "depth": 0.0336, "units": "world", "confidence": 0.6}, "transform": {"position": [0.4622, 0.6903, -0.54], "rotation": [0.0, 0.0, -0.35]}, "actionProfile": {"animationRole": "lever", "pivot": {"mode": "socket", "localPosition": [0.0, 0.0, 0.0], "axis": [0.0, 0.0, 1.0], "confidence": 0.6}, "transformChannels": {"translate": false, "rotate": true, "scale": false, "bend": false, "twist": false, "detach": false, "visibility": true, "materialState": true}, "sockets": [], "collider": {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."}, "constraints": [], "destruction": {"breakable": false, "fractureGroup": "body", "seamRefs": [], "detachableFragments": [], "breakImpulse": 0.0, "debrisMaterial": "body"}}, "material": "lever-navy", "materialLayers": ["lever-navy"], "deformations": [], "joints": [], "seams": [{"id": "lever-cistern-seam", "with": "toilet-cistern", "overlap": 0.02, "notes": "The lever's root is buried in the tank wall."}], "localFeatures": [{"id": "lever-knob", "description": "Measured 0.08 long off the reference's navy row at 0.233, standing clear of the cistern's face rather than painted on it.", "geometry": "capsule offset past the tank wall", "evidenceRefs": ["full-object", "cistern-zone"], "confidence": 0.65}], "surfaceDetail": {"macroRoughness": 0.48, "microRoughness": 0.06, "bumpAmplitude": 0.0, "normalPattern": "matte moulded plastic", "displacementPattern": "none", "occlusionPattern": "contact shadow at the tank wall", "edgeWearPattern": "none", "notes": "The prop's only dark value and its strongest local contrast."}, "evidenceRefs": ["full-object", "cistern-zone"], "details": [], "fidelityTier": "form-refinement"};
+  node_toilet_lever_8.userData.actionProfile = node_toilet_lever_8.userData.sculptComponent.actionProfile;
+  (nodes["toilet-bowl"] ?? root).add(node_toilet_lever_8);
+  nodes["toilet-lever"] = node_toilet_lever_8;
+  const mesh_toilet_lever_8Geometry = endpoint_toilet_lever_8
+    ? new THREE.CylinderGeometry(endpoint_toilet_lever_8.endRadius, endpoint_toilet_lever_8.baseRadius, endpoint_toilet_lever_8.length, 32, 12)
+    : new THREE.CapsuleGeometry(0.35, 0.7, 16, 32);
+  const mesh_toilet_lever_8 = new THREE.Mesh(
+    mesh_toilet_lever_8Geometry,
+    materialMap["lever-navy"] ?? new THREE.MeshStandardMaterial({ color: 0x888888 })
+  );
+  mesh_toilet_lever_8.name = "Flush lever";
+  if (endpoint_toilet_lever_8) {
+    mesh_toilet_lever_8.position.copy(endpoint_toilet_lever_8.midpoint);
+    mesh_toilet_lever_8.quaternion.copy(endpoint_toilet_lever_8.quaternion);
+  }
+  mesh_toilet_lever_8.castShadow = options.castShadow ?? true;
+  mesh_toilet_lever_8.receiveShadow = options.receiveShadow ?? true;
+  mesh_toilet_lever_8.userData.sculptComponent = node_toilet_lever_8.userData.sculptComponent;
+  node_toilet_lever_8.add(mesh_toilet_lever_8);
+  meshes["toilet-lever"] = mesh_toilet_lever_8;
+  colliders["toilet-lever"] = {"type": "box", "offset": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "isTrigger": false, "notes": "Box proxy sized to the part bounds."};
+  destructionGroups["body"] ??= [];
+  destructionGroups["body"].push(node_toilet_lever_8);
 
   root.userData.sculptRuntime = { nodes, meshes, sockets, colliders, destructionGroups } satisfies ProceduralModelRuntime;
   root.userData.lookDevTargets = {"qualityPriority": "reference-fidelity", "materialPass": {"albedoPaletteRequired": true, "roughnessVariationRequired": true, "normalOrBumpRequired": true, "localOverridesRequired": true, "minimumTextureResolution": 256, "preferredTextureResolution": 1024, "independentMapChannels": ["albedo", "roughness", "height", "normal", "ambient-occlusion"], "requiredSurfaceFrequencyBands": ["macro", "meso", "micro"], "geometryReliefRequiredWhenSilhouetteAffected": true, "referencePbrExtraction": {"requiredWhenSourceImagePresent": false, "ranAnyway": true, "targetThreshold": 0.7, "stopOnLowConfidence": true, "script": "forge/stage1_intake/extract_pbr_evidence.py", "acceptedLimitation": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars."}, "mustAvoid": ["single flat albedo per material", "uniform roughness", "albedo texture reused as roughness, height, normal or AO", "single-frequency random noise", "glossy toy-plastic highlights on a matte moulded surface", "local colour described only in prose without material masks", "claiming exact PBR recovery from one image"]}, "lightingPass": {"requiredTerms": ["key light", "fill light", "rim or environment light", "exposure", "tone mapping", "background", "contact shadow"], "mustAvoid": ["ambient-only lighting", "flat value range", "missing contact shadow", "reference lighting copied without separating material readability"]}, "screenshotReview": ["Compare the albedo palette and the local colour zones.", "Compare roughness and normal response under the key light.", "Compare contact darkening, seam occlusion and crown polish.", "Compare key, fill and rim structure, exposure, tone mapping and background.", "Capture a neutral-light render to verify material readability without reference lighting.", "Capture a grazing-light close-up to expose flat normals and uniform roughness.", "Capture a reference-matched render from the solved camera."]};

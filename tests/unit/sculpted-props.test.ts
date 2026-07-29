@@ -1,4 +1,20 @@
 // @vitest-environment jsdom
+//
+// THESE TESTS EXERCISE THE OPPOSITE MATERIAL PATH FROM THE BROWSER, so their authority is
+// GEOMETRY and no assertion about shipped appearance belongs in this file.
+//
+// generate_threejs_factory emits `color: textures ? 0xffffff : new THREE.Color(spec.baseColor)`
+// and `roughness: textures ? 1 : spec.roughness.base`, where `textures` comes from
+// makeProceduralTextureSet. That returns null when no 2D canvas context is available - and
+// under jsdom without the `canvas` package, which is NOT a dependency here, vitest prints
+// "Not implemented: HTMLCanvasElement's getContext() method" and the context IS null.
+//
+// So a sculpted prop gets baseColor and roughness.base HERE, and white-plus-procedural-maps
+// in Chromium. Those are different materials. A colour assertion that passes in this file
+// says nothing about what a player sees, and one that fails here might be describing a prop
+// that renders correctly. Verify appearance through the preview harness in a real browser
+// instead (assets/reference/props/preview).
+//
 // A sculpt is authored to look right on its own. Nothing in the img2threejs
 // pipeline knows how big the prop it replaces was, so a factory can pass every
 // fidelity gate it has and still arrive at twice the size of the thing it
@@ -774,18 +790,23 @@ describe("sculpted props fit the call sites that mount them", () => {
   });
 
   it("fits the fan inside TrapRenderer's hazard box", () => {
-    // CuboidCollider args={[0.6, 0.65, 0.35]} at a [0, -0.65, 0] mount, so 1.20 x 1.30 x
-    // 0.70 with the base on the deck. The width is the one axis this prop cannot fill: the
-    // guard is a circle, so its width is its height, and its height is what the box has
-    // left above the base. 0.85 of the collider is the ceiling on that, not a shortfall to
-    // be tuned away.
+    // CuboidCollider args={[0.47, 0.65, 0.34]} at a [0, -0.65, 0] mount, so 0.94 x 1.30 x
+    // 0.68 with the base on the deck. The box was trimmed to the sculpt when it was wired
+    // (from the hand-authored fan's [0.6, 0.65, 0.35]), so unlike the old box every axis
+    // is now nearly filled and the width bound below is tight: growing the guard by a
+    // centimetre means the visible fan pokes out of the hitbox players learn to dodge.
     const { size, min } = measure(createApartmentFloorFanModel({ textureSize: TEXTURE_SIZE }));
-    expect(size.x).toBeLessThanOrEqual(1.2);
+    expect(size.x).toBeLessThanOrEqual(0.9401);
     expect(size.y).toBeLessThanOrEqual(1.3001);
-    expect(size.z).toBeLessThanOrEqual(0.7);
+    expect(size.z).toBeLessThanOrEqual(0.6801);
     expect(size.y).toBeCloseTo(1.3, 2);
     expect(size.z).toBeGreaterThan(0.65);
     expect(min.y).toBeCloseTo(0, 3);
+    // The collider is CENTRED on the body origin, so size alone cannot prove
+    // containment: a fan of the right depth shifted forward still pokes out.
+    // Both z extremes must sit inside the 0.34 half-extent.
+    expect(min.z).toBeGreaterThanOrEqual(-0.3401);
+    expect(min.z + size.z).toBeLessThanOrEqual(0.3401);
   });
 
   it("builds the fan's guard as a circle, not as the reference's projected ellipse", () => {

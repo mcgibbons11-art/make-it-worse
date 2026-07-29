@@ -14,8 +14,7 @@ import { PALETTE, PLAYER } from "@/lib/game/constants";
 import { createSeededRandom, lerp } from "@/lib/game/seed";
 import type { HazardContact, TrapInstance } from "@/lib/game/types";
 import { AudioManager } from "@/lib/audio/AudioManager";
-import { AssetModel } from "./AssetModel";
-import { ProceduralFloorFan } from "./models/MechProps";
+import { AssetModel, SculptedFloorFan } from "./AssetModel";
 import {
   BananaPeelTrap,
   CeilingFanTrap,
@@ -389,13 +388,17 @@ function Fan({ trap, player, grabbables, trapBodies, onHazard, onMechanic }: Tra
       position={[trap.position[0], trap.position[1] + 0.65, trap.position[2]]}
       rotation={[0, trap.rotationY, 0]}
     >
-      <CuboidCollider args={[0.6, 0.65, 0.35]} />
+      {/* Trimmed to the sculpt it holds: 0.9393 x 1.3001 x 0.679 on the deck,
+          so [0.47, 0.65, 0.34] against the old hand-authored fan's
+          [0.6, 0.65, 0.35]. tests/unit/trap-collider-fit.test.ts measures the
+          visible geometry against this box. */}
+      <CuboidCollider args={[0.47, 0.65, 0.34]} />
       {/* The base disc and blade group that used to sit here duplicated parts
-          the procedural fan already carries. Its own blade group is driven
+          the sculpted fan already carries. Its own blade rosette is driven
           through bladesRef instead. The wind rings below stay: they telegraph
           the cone's reach and are not part of the appliance. */}
       <group position={[0, -0.65, 0]}>
-        <ProceduralFloorFan bladesRef={blades} />
+        <SculptedFloorFan bladesRef={blades} />
       </group>
       {[0.95, 1.75, 2.55, 3.35].map((distance, index) => (
         <mesh key={distance} position={[0, 0.15 + index * 0.08, distance]} rotation={[Math.PI / 2, 0, 0]}>

@@ -1,11 +1,11 @@
 "use client";
 
 import type { ThreeElements } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type RefObject } from "react";
 import * as THREE from "three";
 import { CatmullRomCurve3, Vector3 } from "three";
-import { ProceduralToilet } from "./models/LargeProps";
-import { ProceduralFloorFan } from "./models/MechProps";
+import { createApartmentFloorFanModel } from "./models/createFloorFanModel";
+import { createApartmentToiletModel } from "./models/createToiletModel";
 import { createApartmentSpringJumpPadModel } from "./models/createSpringModel";
 import { createRobotMopModel } from "./models/createMopModel";
 import { createApartmentToasterModel } from "./models/createToasterModel";
@@ -126,6 +126,14 @@ const SculptedSoapDish = () => (
 const SculptedBeachBall = () => (
   <Sculpted id="ball" build={() => createApartmentBeachBallModel(SCULPT_OPTIONS)} />
 );
+// No fitHeight, for the refrigerator's reason: the toilet sculpt was authored into the
+// envelope its trap collider fixes, not at the reference's own proportions. HEIGHT is 0.90,
+// exactly the collider's 0.45 half-extent doubled, and the prop measures
+// 0.976 x 0.9000 x 0.98 seated on y = 0 inside CuboidCollider args={[0.52, 0.45, 0.5]} at
+// the [0, -0.45, 0] mount. tests/unit/sculpted-props.test.ts pins that.
+const SculptedToilet = () => (
+  <Sculpted id="toilet" build={() => createApartmentToiletModel(SCULPT_OPTIONS)} />
+);
 // No fitHeight. The refrigerator sculpt was authored straight into the envelope its
 // trap collider fixes rather than at the reference's own proportions, because the two
 // disagree: the reference cabinet's front face is 1.79 times its width and the collider
@@ -161,6 +169,34 @@ const SculptedJumpPad = () => (
 const SculptedRobotMop = () => (
   <Sculpted id="mop" build={() => createRobotMopModel(SCULPT_OPTIONS)} />
 );
+// No fitHeight. Measured 0.9393 x 1.3001 x 0.679 sitting on y = 0, which is what the
+// [0, -0.65, 0] mount under TrapRenderer's CuboidCollider expects.
+//
+// The fan is the one sculpt with a moving part: TrapRenderer spins its blade rosette
+// every frame through bladesRef. `Sculpted` cannot carry that, so this clones the
+// template itself and recovers the pivot BY NAME - prototypeOf strips userData, so the
+// factory's sculptRuntime node map does not survive into the template, but node names
+// do. tests/unit/sculpted-props.test.ts pins that "blades__pivot" exists, spins free of
+// the cage, and carries the "blades" mesh.
+export function SculptedFloorFan({
+  bladesRef,
+}: {
+  bladesRef?: RefObject<THREE.Group | null>;
+}) {
+  const model = useMemo(
+    () => prototypeOf("fan", () => createApartmentFloorFanModel(SCULPT_OPTIONS)).clone(true),
+    [],
+  );
+  useEffect(() => {
+    if (!bladesRef) return;
+    bladesRef.current =
+      (model.getObjectByName("blades__pivot") as THREE.Group | undefined) ?? null;
+    return () => {
+      bladesRef.current = null;
+    };
+  }, [bladesRef, model]);
+  return <primitive object={model} />;
+}
 
 function OriginalAngryVacuum() {
   const hose = useMemo(
@@ -235,10 +271,10 @@ export function AssetReadinessGate({ onReady }: { onReady(): void }) {
 const PROCEDURAL: Record<ModelName, React.ComponentType> = {
   hammer: SculptedHammer,
   refrigerator: SculptedRefrigerator,
-  fan: ProceduralFloorFan,
+  fan: SculptedFloorFan,
   soap: SculptedSoapDish,
   spring: SculptedJumpPad,
-  toilet: ProceduralToilet,
+  toilet: SculptedToilet,
   ball: SculptedBeachBall,
   vacuum: OriginalAngryVacuum,
   toaster: ProceduralToaster,

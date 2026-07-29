@@ -99,19 +99,20 @@ pnpm --filter @make-it-worse/portals build
 The output is `portals/dist/`. Its `index.html` and asset URLs are relative so
 the game can run under Portals' versioned path.
 
-For a GitHub import at `https://portals.to/my-games`, select the repository and
-use these advanced settings:
+The GitHub import at `https://portals.to/my-games` serves the game folder as
+static files without running a build (verified 2026-07-29: pointing it at
+`portals` deployed the raw Vite source `index.html`, whose `/src/main.tsx`
+module script no browser executes, so the preview rendered blank). The built
+`portals/dist/` is therefore committed to Git, and the import settings are:
 
-- build mode: Vite
-- project directory: `portals`
-- install command: `pnpm install --frozen-lockfile`
-- build command: `pnpm build`
-- output directory: `dist`
+- game folder: `portals/dist`
+- entry file: `index.html`
 
-If the importer cannot resolve the workspace lockfile, build locally and upload
-the generated `portals/dist` directory through Portals' static/ZIP workflow;
-the generated directory is intentionally not committed to Git. Portals sync is
-manual, so re-sync the game after future GitHub updates.
+Portals sync is manual. After changing game code: rebuild
+(`pnpm --filter @make-it-worse/portals build`), commit `portals/dist`, push,
+then re-sync from the Portals editor. The repository's `.gitattributes` marks
+`assets/` export-ignore to keep the snapshot Portals downloads under its
+archive size limit (147 MB failed with SOURCE_ARCHIVE_FAILED; ~7 MB works).
 
 The Portals edition must remain self-contained: no external `fetch`, Supabase,
 font, analytics, or CDN dependency can be required at runtime. Clipboard access

@@ -3,7 +3,6 @@
 import type { ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo, type RefObject } from "react";
 import * as THREE from "three";
-import { CatmullRomCurve3, Vector3 } from "three";
 import { createApartmentFloorFanModel } from "./models/createFloorFanModel";
 import { createApartmentToiletModel } from "./models/createToiletModel";
 import { createApartmentSpringJumpPadModel } from "./models/createSpringModel";
@@ -13,6 +12,7 @@ import { createApartmentSoapDishModel } from "./models/createSoapDishModel";
 import { createApartmentBeachBallModel } from "./models/createBeachBallModel";
 import { createApartmentRefrigeratorModel } from "./models/createRefrigeratorModel";
 import { createApartmentClawHammerOnWallBracketModel } from "./models/createHammerModel";
+import { createApartmentCanisterVacuumModel } from "./models/createVacuumModel";
 
 export type ModelName =
   | "hammer"
@@ -143,6 +143,27 @@ const SculptedToilet = () => (
 const SculptedRefrigerator = () => (
   <Sculpted id="refrigerator" build={() => createApartmentRefrigeratorModel(SCULPT_OPTIONS)} />
 );
+// No fitHeight, for the toilet's and refrigerator's reason: the sculpt is authored into the
+// envelope its trap collider fixes. Measured, it is 0.8486 x 0.6225 x 0.8742 seated on y = 0
+// inside CuboidCollider args={[0.5, 0.55, 0.45]} at the [0, -0.55, 0] mount, hose and wheels
+// included. Replacing the hand-authored vacuum FIXES a containment breach rather than risking
+// one: that prop's hose ran out to x -1.42 and z 0.70, far outside the box that kills the
+// player.
+//
+// The box is about 43 percent empty in height, because a canister vacuum measures 0.63 as
+// tall as it is wide and stretching it would destroy the measured proportion that is its
+// identity. That gap is recorded in the spec's fairness note and feeds a queued collider-trim
+// decision; it is not a number to tune here.
+//
+// TWO THINGS ARE HONESTLY OUTSTANDING and neither is hidden by shipping this. The hose passes
+// through itself once on its descent to the cuff - measured at 0.42 of the tube radius,
+// visible in the render as a crease - and removing it needs a route change that is a design
+// decision, so it is recorded in the spec's risks. And the structural pass was NOT reviewed:
+// it has renders but no comparison sheet, feature or layer scores, and no reviewHistory entry
+// was written for a review that did not happen.
+const SculptedVacuum = () => (
+  <Sculpted id="vacuum" build={() => createApartmentCanisterVacuumModel(SCULPT_OPTIONS)} />
+);
 // No fitHeight. The jump pad is the one prop whose envelope comes from a trigger rather than
 // a collider: TrapRenderer's Spring launches on |dx| < 0.7 and |dz| < 0.7 with no collider at
 // all, and PLAYER.stepAssistHeight is 0.45, the tallest riser the controller lifts the runner
@@ -198,59 +219,6 @@ export function SculptedFloorFan({
   return <primitive object={model} />;
 }
 
-function OriginalAngryVacuum() {
-  const hose = useMemo(
-    () =>
-      new CatmullRomCurve3([
-        new Vector3(-0.5, 0.42, 0),
-        new Vector3(-0.9, 0.75, 0.1),
-        new Vector3(-1.1, 0.32, 0.45),
-        new Vector3(-1.38, 0.16, 0.62),
-      ]),
-    [],
-  );
-  return (
-    <group position={[0, 0.02, 0]}>
-      <mesh castShadow position={[0, 0.42, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <capsuleGeometry args={[0.48, 0.72, 8, 16]} />
-        <meshStandardMaterial color="#b9a7ff" roughness={0.76} />
-      </mesh>
-      <mesh castShadow position={[0.55, 0.46, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.35, 0.43, 0.24, 20]} />
-        <meshStandardMaterial color="#24324a" roughness={0.84} />
-      </mesh>
-      <mesh castShadow position={[0.69, 0.55, -0.15]} rotation={[0, 0.2, -0.35]}>
-        <boxGeometry args={[0.08, 0.17, 0.08]} />
-        <meshStandardMaterial color="#ffd84d" />
-      </mesh>
-      <mesh castShadow position={[0.69, 0.55, 0.15]} rotation={[0, -0.2, -0.35]}>
-        <boxGeometry args={[0.08, 0.17, 0.08]} />
-        <meshStandardMaterial color="#ffd84d" />
-      </mesh>
-      <mesh castShadow position={[-0.08, 0.92, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.3, 0.07, 10, 20, Math.PI]} />
-        <meshStandardMaterial color="#24324a" roughness={0.8} />
-      </mesh>
-      <mesh castShadow position={[-0.32, 0.15, -0.35]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.16, 0.16, 0.12, 14]} />
-        <meshStandardMaterial color="#ff5964" roughness={0.8} />
-      </mesh>
-      <mesh castShadow position={[-0.32, 0.15, 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.16, 0.16, 0.12, 14]} />
-        <meshStandardMaterial color="#ff5964" roughness={0.8} />
-      </mesh>
-      <mesh castShadow>
-        <tubeGeometry args={[hose, 18, 0.075, 8, false]} />
-        <meshStandardMaterial color="#24324a" roughness={0.88} />
-      </mesh>
-      <mesh castShadow position={[-1.42, 0.14, 0.7]} rotation={[0, -0.35, 0]}>
-        <boxGeometry args={[0.52, 0.13, 0.34]} />
-        <meshStandardMaterial color="#ff5964" roughness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
 export function AssetReadinessGate({ onReady }: { onReady(): void }) {
   // Props are authored in code now, so nothing has to decode before play. The
   // gate is kept because callers depend on it and a future streamed asset
@@ -276,7 +244,7 @@ const PROCEDURAL: Record<ModelName, React.ComponentType> = {
   spring: SculptedJumpPad,
   toilet: SculptedToilet,
   ball: SculptedBeachBall,
-  vacuum: OriginalAngryVacuum,
+  vacuum: SculptedVacuum,
   toaster: ProceduralToaster,
   mop: SculptedRobotMop,
 };

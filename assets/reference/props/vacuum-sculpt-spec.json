@@ -267,7 +267,7 @@
           "id": "hose-slack",
           "zone": "hose",
           "kind": "contour",
-          "description": "The hose runs 0.8928 of centreline between endpoints 0.2669 apart, arcing up and forward clear of the shell.",
+          "description": "The hose runs 0.893 of centreline between endpoints 0.2669 apart, arcing up and forward clear of the shell.",
           "mapsTo": {
             "ref": "hose-curve",
             "owner": "vacuum-hose",
@@ -2425,7 +2425,7 @@
         "materialClassConfidence": 0.9
       },
       "geometryDescriptor": {
-        "topologyIntent": "round section of radius 0.0577 swept along a 0.8928 centreline from the collar, over the body's forward shoulder, down onto the head",
+        "topologyIntent": "round section of radius 0.0577 swept along a 0.893 centreline from the collar, over the body's forward shoulder, down onto the head",
         "edgeTreatment": {
           "type": "none",
           "bevelRadius": 0.0,
@@ -2442,29 +2442,9 @@
               0.2208
             ],
             [
-              -0.27351,
-              0.19831,
-              0.22659
-            ],
-            [
-              -0.28776,
-              0.19869,
-              0.23558
-            ],
-            [
               -0.2976,
               0.2035,
               0.2497
-            ],
-            [
-              -0.30141,
-              0.21572,
-              0.27099
-            ],
-            [
-              -0.30082,
-              0.23239,
-              0.29739
             ],
             [
               -0.2924,
@@ -2472,29 +2452,9 @@
               0.3247
             ],
             [
-              -0.27403,
-              0.26331,
-              0.35297
-            ],
-            [
-              -0.24784,
-              0.27757,
-              0.38214
-            ],
-            [
               -0.2168,
               0.2885,
               0.4078
-            ],
-            [
-              -0.1801,
-              0.29517,
-              0.42905
-            ],
-            [
-              -0.13855,
-              0.2985,
-              0.44679
             ],
             [
               -0.0976,
@@ -2502,29 +2462,9 @@
               0.4593
             ],
             [
-              -0.05758,
-              0.29591,
-              0.46549
-            ],
-            [
-              -0.01816,
-              0.28998,
-              0.46644
-            ],
-            [
               0.0162,
               0.2785,
               0.4637
-            ],
-            [
-              0.04415,
-              0.25924,
-              0.45721
-            ],
-            [
-              0.06705,
-              0.23443,
-              0.44703
             ],
             [
               0.0845,
@@ -2532,29 +2472,9 @@
               0.4348
             ],
             [
-              0.1019,
-              0.18112,
-              0.41913
-            ],
-            [
-              0.11386,
-              0.15263,
-              0.40141
-            ],
-            [
               0.1038,
               0.1285,
               0.3875
-            ],
-            [
-              0.05225,
-              0.11049,
-              0.38011
-            ],
-            [
-              -0.02131,
-              0.09683,
-              0.37653
             ],
             [
               -0.075,
@@ -2596,9 +2516,9 @@
         "notes": "Collar mouth to cuff. THIS IS THE HIGHEST-RISK LINE IN THE SPEC. Without geometryFromSpec the generator replaces the swept curve with a CylinderGeometry between exactly these two points and discards the component's transform, so the hose ships as a straight navy rod - and every pixel gate still passes, because a rod between the same endpoints fills a similar silhouette. refine_props.py installs the guard and fails the build loudly if it cannot; tests/unit/sculpted-props.test.ts pins the sample count so a regenerated factory that drops the guard fails rather than shipping the rod."
       },
       "dimensions": {
-        "width": 0.5307,
-        "height": 0.3262,
-        "depth": 0.361,
+        "width": 0.5268,
+        "height": 0.3268,
+        "depth": 0.3612,
         "units": "world",
         "confidence": 0.6
       },
@@ -2723,7 +2643,7 @@
       "localFeatures": [
         {
           "id": "hose-curve",
-          "description": "The hose runs 0.8928 of centreline between two points only 0.2669 apart, so most of its length is slack. That slack is what makes it read as a hose; a taut run between the same two points reads as a strut.",
+          "description": "The hose runs 0.893 of centreline between two points only 0.2669 apart, so most of its length is slack. That slack is what makes it read as a hose; a taut run between the same two points reads as a strut.",
           "geometry": "Catmull-Rom through 8 control points, sampled at 14 per segment",
           "evidenceRefs": [
             "full-object",
@@ -2832,7 +2752,27 @@
           ],
           "depth": 0.0615,
           "axis": "y",
-          "axisOffset": 0.0
+          "axisOffset": 0.0,
+          "holes": [
+            [
+              [
+                0.14205,
+                -0.07685
+              ],
+              [
+                0.14205,
+                -0.05415
+              ],
+              [
+                -0.14205,
+                -0.05415
+              ],
+              [
+                -0.14205,
+                -0.07685
+              ]
+            ]
+          ]
         }
       },
       "parent": "vacuum-body",
@@ -2955,8 +2895,8 @@
         },
         {
           "id": "nozzle-slot",
-          "description": "A long recessed slot runs the front face, the only hard dark line on the cream.",
-          "geometry": "recessed channel in the front wall, delivered at form-refinement",
+          "description": "The suction slot runs 0.2841 along the head and is 0.0227 across, which is 0.4059 and 0.0325 of the canister's diameter. Both come from the one dark band enclosed by the head's cream mask, un-squashed into plan by 1/sin(pitch) the same way the head's own outline was. Its 0.025 setback from the front lip is ASSUMED, because recovering it would need the head's image plan frame and that frame is this spec's weakest measurement.",
+          "geometry": "a hole cut through the head's own extrusion profile, so it costs no draw call",
           "evidenceRefs": [
             "full-object",
             "nozzle-zone"
@@ -3234,13 +3174,13 @@
       },
       "transform": {
         "position": [
-          0.05225,
-          0.11049,
-          0.05051
+          0.00837,
+          0.10013,
+          0.0471
         ],
         "rotation": [
-          -1.237346,
-          2.879846,
+          -1.452433,
+          3.013982,
           -1.570796
         ]
       },
@@ -6117,7 +6057,7 @@
   ],
   "proceduralStrategy": [
     "Block out the shell, hose, head, both wheels and the collar, then read the per-part world Box3 dump BEFORE looking at a render. A hose limb buried in the shell and a wheel floating off its flank are both invisible from the reference angle and obvious in the bounds.",
-    "Confirm the hose survived generation as a swept curve: its bounds should span about 0.415 in X, and a cylinder between its endpoints would span far less.",
+    "Confirm the hose survived generation as a swept curve: its bounds should span about 0.411 in X, and a cylinder between its endpoints would span far less.",
     "Check the shell's widest band lands at 0.559 of its height rather than at its rim, which is what the corrected profile is for.",
     "Confirm nothing breaks the collider in plan; the clearance check in the author script already fails the build if the hose does.",
     "Deliver the shell's roll-under and domed top as profile curvature, not as a normal map: both change the silhouette.",
@@ -6138,8 +6078,8 @@
     "FAIRNESS NOTE, AND IT IS ONE QUESTION RATHER THAN TWO. The prop stands 0.6244 inside a 1.1 collider and 0.839 across a 1.0 one, so the box that kills the player is about 43 percent empty in height and 16 percent thinner than its plan. The height gap is structural - a canister vacuum is a squat object and stretching it to 1.10 would destroy the measured H/D that is its identity - and the plan gap is the price of the ruling above, taken deliberately so the hose can clear the shell and read as a hose. Both are the toilet's named hazard: a hitbox larger than its prop kills a player who was never touched, and here a player judging clearance off the visible vacuum can clip a box that is not there. TOGETHER THEY STRENGTHEN THE CASE FOR A COLLIDER TRIM, which is queued as a user decision. The collider is tuned gameplay and is deliberately left untouched until that decision lands.",
     "THE CANISTER'S HEIGHT WAS CORRECTED, from a recorded H/D of 0.459 to 0.63, and the correction is load-bearing for every vertical number here. The recorded value read the silhouette's image height as one canister height plus one full-diameter cap ellipse, which holds only for a cylinder. Confidence 0.7, with a 0.617 to 0.664 bracket recorded rather than collapsed. THAT BRACKET IS NARROWER THAN THE TRUTH, because it holds the pitch fixed at a value that is single-sourced and unconfirmed: running the same silhouette equation across the pitch's own +/- 3 degrees moves H/D from 0.599 at 31 degrees to 0.638 at 25. The adopted 0.63 sits inside both bands, which is why it survives the camera's doubt - but a spec that needed this number to three decimals would have to solve the pitch again first, by the conic fit named in referenceCamera.",
     "EVERY HEIGHT DERIVATION ASSUMES AN ORTHOGRAPHIC CAMERA AND THE REFERENCE IS A PERSPECTIVE RENDER. The evidence for this is direct: the belt's left and right extreme meridians, which orthography puts on the same image row, sit 77 px apart, which is why the belt's arc could not be fitted and why its height carries +/- 0.04. Horizontal extents are unaffected, and this spec's ratios are horizontal wherever it had the choice.",
-    "THE HOSE PASSES THROUGH ITSELF ONCE, ON THE DESCENT TO THE CUFF, AND A SMALL FIX DOES NOT REMOVE IT. A swept tube self-intersects wherever its centreline's radius of curvature drops below its tube radius, and the shipped centripetal curve does that in three places: 0.8198-0.8854 at 0.42x exposed, plus two more at 0.85x and 0.33x that sit inside the collar's solid revolve and are concealed by construction, on the same footing as the fan's blade web - physics says the hose must enter the socket and the arithmetic says the entry is covered. The exposed one is a real defect. It is NOT hidden by the cuff: the cuff's radius is 0.0595 against the tube's 0.0577, too little to cover a bulge, and the fold ends before the cuff begins. NO GATE HERE SAW IT - the bounding boxes are identical, clearance_report only asks whether the centreline stays outside other parts, and bow does not fall when a tube crumples. The cause is the cage's corner at the second-to-last control point, an 89 degree turn: the route sweeps out to bearing 75 degrees and then doubles back to the cuff, which sits at 101.3 degrees. Small changes do not fix it - grids over the descent bearings, over approach directions, and over the crown all cap at 0.44x, and the only fold-free route a search found runs 1.40 of centreline against the authored 0.89, which is a different hose rather than a corrected one. Removing it means re-routing the tail so the approach stops overshooting the cuff's own bearing, and that is a design decision against the recorded 'sweeps the front' ruling rather than a tweak, so it is recorded here and left for a ruling. fold_report() measures it on every author run.",
-    "THE HOSE IS INTERPOLATED TWICE AND ONCE WOULD BE BETTER, MEASURED. catmull_rom samples the 9-point cage into 25 points and buildTubeGeometry then builds a second CatmullRomCurve3 through those, so the shipped shape is an interpolation of an interpolation - and the two use different parameterisations, uniform here and centripetal there. Feeding the authored cage straight to the tube measures better on every axis that matters: bow 0.1841 against 0.1826, centreline 0.8930 against 0.8955, and 864 triangles against 2400, because tubularSegments is points*6 and the cage has a third as many points. It also removes the collar-end fold entirely and makes this script's checker exactly the shipped curve. It is NOT applied here: it changes the hose's shipped shape slightly, the route decision above is still open, and doing both at once would leave neither measurable. No test blocks it - the hose is pinned by bow, not by sample count.",
+    "THE HOSE PASSES THROUGH ITSELF ONCE ON ITS DESCENT TO THE CUFF, AND IT SHIPS THAT WAY BY RULING. A swept tube self-intersects wherever its centreline's radius of curvature drops below its tube radius, and the shipped curve does that at 0.8443-0.8921 at 0.42x the tube radius. It is NOT hidden by the cuff: the cuff's radius is 0.0595 against the tube's 0.0577, too little to cover a bulge, and the fold ends before the cuff begins. The cause is the cage's 89 degree corner at the second-to-last control point - the route sweeps out to bearing 75 and doubles back to the cuff at 101.3.\nWHAT WAS TRIED AND REFUSED. Grids over the descent bearings, over arrival directions and over the crown all cap at 0.44x, so no small change removes it; the only fold-free route a search found runs 1.40 of centreline against the authored 0.89, which is a different hose rather than a corrected one. Re-routing the tail would also break the recorded decision that the hose sweeps the front. Ruled by team-lead: SHIP IT. The defect is a pinch a few centimetres across on a prop the chase camera sees from metres away in motion, and neither alternative is worth its price. This is a known, measured, accepted deviation rather than an unnoticed one, and fold_report() re-measures it on every author run so it cannot drift unseen.\nWHY NO GATE FOUND IT. The bounding boxes are identical with and without the fold, clearance_report only asks whether the centreline stays outside other parts, and bow does not fall when a tube crumples - the very contract meant to discriminate a real hose from a substituted rod is blind to this. It took reimplementing three.js's centripetal parameterisation to see it at all, because this script's own uniform sampler put the worst stretch at 0.65x when the truth was 0.33x: wrong by a factor of two, in the reassuring direction. Any future tube in this pipeline needs the same check, on the curve that ships rather than on the cage that feeds it.",
+    "THE HOSE IS NOW INTERPOLATED ONCE, AND THE SECOND PASS WAS COSTING REAL GEOMETRY. This script used to sample the 9-point cage into 25 points with a UNIFORM Catmull-Rom, and buildTubeGeometry then built its own CENTRIPETAL curve through those - an interpolation of an interpolation under two different parameterisations, with every check running on the inner one instead of on the object. The cage now goes straight to the tube. Measured both ways: bow 0.1841 against 0.1826, centreline 0.8930 against 0.8955, and 864 triangles against 2400, because tubularSegments is max(8, points * 6) and 25 samples bought 150 rings where the cage needs 54. It also removed the two collar-end self-intersections outright, leaving only the accepted one above. HOSE_PATH is still built here, densely, but purely as the measuring polyline - it is not shipped, so its density is free.\nA CORRECTION TO THIS SPEC'S OWN CLAIM: an earlier version of this risk list said a unit test pinned the hose's sample count. No such test exists. The vacuum hose is pinned by BOW - the maximum distance from any vertex to the chord joining the mesh's two most distant vertices, which a straight rod cannot fake - in tests/unit/sculpted-props.test.ts. The sample-count pin is the SPRING's coil. Nothing blocked this change, and the spec should not have implied otherwise.",
     "THE CORRUGATION IS DECLARED AND NOT BUILT. generate_threejs_factory's repetition emitter places instances radially about an axis at radius * 0.5 and has no along-path mode, so it cannot lay ribs along a curve at any level. The pitch is measured and the count derived; delivering it needs a refine_props.py edit that walks the tube path. Until then the hose is a smooth tube, which is correct for a blockout and wrong for a finished prop.",
     "THE ASPECT DELTA IS THE RULING'S RECEIPT, NOT A DEFECT TO FIX. The reference's tall silhouette IS the forward-and-down sprawl the pose ruling removed, so a render that matched it would mean the ruling had been reverted. It is recorded as expected and accepted, and NO reviewYScale is applied: a review scale corrects an aspect the COLLIDER forced, never one a design ruling chose. The gates that stay comparable are the per-part reads, the proportions re-anchored to the canister's true diameter, and the silhouette regions the pose did not move.",
     "THE HEAD'S PLAN IS THE WEAKEST MEASUREMENT KEPT. Its length and width come from the floor-contact contour un-squashed by 1/sin(pitch), and the two edges it recovers meet at 75 degrees rather than 90, which is the rounded corners and the perspective error together. The ratio of 2.23 : 1 is what is authored and it is stated as approximate.",
@@ -7341,6 +7281,84 @@
       "renderHash": "a00c231bb34e8395",
       "passId": "blockout",
       "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\vacuum\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.761,
+        "aspectRatioDelta": 0.2333,
+        "scaleDelta": 0.042,
+        "bilateralSymmetryError": 0.0979,
+        "colorDelta": {
+          "checked": 14,
+          "maxDeltaE": 39.43,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 8.76
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.29
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.29
+            },
+            {
+              "componentId": null,
+              "deltaE": 23.09
+            },
+            {
+              "componentId": null,
+              "deltaE": 25.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.29
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 25.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 39.43
+            },
+            {
+              "componentId": null,
+              "deltaE": 39.43
+            },
+            {
+              "componentId": null,
+              "deltaE": 23.09
+            },
+            {
+              "componentId": null,
+              "deltaE": 23.09
+            },
+            {
+              "componentId": null,
+              "deltaE": 39.43
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.761 is below threshold 0.85",
+        "aspect-ratio delta 0.233 exceeds threshold 0.05"
+      ],
+      "renderHash": "f6f3504877dc71c4",
+      "passId": "structural-pass"
     }
   ]
 }

@@ -86,16 +86,18 @@ in-flight vacuum files uncommitted (see §3).
 
 ## 3. In-flight RIGHT NOW (check before you start)
 
-A teammate agent ("props8") was mid-task on the **vacuum** when this handoff was
-written. Its uncommitted working set: `assets/reference/props/author_vacuum_spec.py`,
-`assets/reference/props/vacuum-sculpt-spec.json`,
-`components/game/models/createVacuumModel.ts`. Check `git status`:
-
-- If those files are committed with a message about the vacuum being wired — task C
-  below is partly or fully done; verify against its acceptance criteria instead of redoing.
-- If they are uncommitted and stale (no process writing them), the agent died mid-unit;
-  finish task C yourself from wherever the spec's pass ledger honestly says it stopped.
-  The spec format tracks its own pass status — trust the ledger, not the filenames.
+UPDATE (later the same evening): the vacuum LANDED. SculptedVacuum is wired in
+`AssetModel.tsx` (all TEN props are now sculpted), the suction slot is built as a
+measured hole in the head's extrude profile, and the full suite ran green after
+(53 files / 701 passed). Task C below is REDUCED to its cage-direct step: a ruled
+refactor feeding the 9-point hose cage directly to `buildTubeGeometry` (fixes a
+244-triangle budget breach — 6244 real vs 6000 target — and removes two concealed
+collar folds; re-derive the spec's checks and cuff placement from the shipped curve,
+then run `fold_report()` before/after). An agent may have finished it — check
+`git log` for a cage-direct commit before starting. Two recorded, ACCEPTED
+deviations you should not "fix": the exposed hose fold at t 0.82–0.885 (ruled to
+ship; re-route rejected), and the structural pass having renders but no formal
+review (the component comment and pass header say so honestly — leave them).
 
 ---
 

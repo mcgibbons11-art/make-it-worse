@@ -1,369 +1,669 @@
 {
-  "_readme": [
-    "Provenance for every recorded sound in this folder.",
-    "",
-    "There was no manifest before this file. The twenty-nine mp3s already here",
-    "arrived with no recorded source at all: a whole-tree ripgrep for 'pixabay'",
-    "returned zero hits in any .ts/.tsx/.md/.json/.mjs/.py. Their `source` is",
-    "therefore null rather than guessed, and anyone who knows where they came",
-    "from should fill it in rather than leaving it to be re-derived.",
-    "",
-    "`planned` below is the sourcing brief for the thirty-eight trap types that",
-    "have no recording and fall back to synthesis. Nothing in it has been",
-    "downloaded. Each row names the file to write, the mechanic the sound has to",
-    "match, and a Pixabay page to pick from. Move a row into `files` when its",
-    "mp3 lands, with the exact sound page URL and its author."
-  ],
-
-  "loudnessTarget": {
-    "peakDbfs": -1.5,
-    "howMeasured": "ffmpeg -i FILE -af volumedetect -f null -",
-    "matchedTo": {
-      "note": "Measured across all 16 existing trap mp3s. 13 of 16 sit in this band.",
-      "band": "-0.6 to -2.2 dBFS peak",
-      "samples": {
-        "angry_vacuum": -0.6,
-        "rolling_fridge": -0.8,
-        "sprinkler": -1.0,
-        "fridge_magnet": -1.0,
-        "spring_pad": -1.4,
-        "mousetrap": -1.6,
-        "banana_peel": -1.8,
-        "rotating_toilet": -1.8,
-        "toaster_launcher": -1.8,
-        "soap_slick": -1.9,
-        "swinging_hammer": -2.0,
-        "robot_mop": -2.1,
-        "laundry_basket": -2.2,
-        "floor_fan": -4.3,
-        "giant_beach_ball": -4.7,
-        "ceiling_fan": -11.4
-      }
-    },
-    "correctionToPriorReport": [
-      "A previous session reported that SAMPLE_PEAK's docstring claimed -1.5 dBFS",
-      "while ffmpeg measured -11.7, and that finding was passed on as a reason to",
-      "distrust the docstring. It is inverted, and following it would have shipped",
-      "every new trap sound about ten decibels under the existing set.",
-      "",
-      "Measured: SAMPLE_PEAK = 0.8414 is exactly -1.500 dBFS. footstep.mp3 is",
-      "exactly -11.7 dBFS. The docstring ITSELF names both of its outliers by file",
-      "and by number - footstep at -11.7 and ceiling_fan at -11.4 - and says the",
-      "rest are within a decibel of -1.5, which the table above bears out.",
-      "The -11.7 figure came from the docstring, not from a contradiction of it.",
-      "",
-      "Level is also partly self-correcting at runtime: peakOf() measures each",
-      "decoded file and startSustain divides by it, so a gain argument means the",
-      "same output peak whatever the file's own level. Matching -1.5 still matters",
-      "for headroom and for the one-shot path."
-    ]
+ "_readme": [
+  "Provenance for every recorded sound in this folder.",
+  "",
+  "There was no manifest before this file. The twenty-nine mp3s already here",
+  "arrived with no recorded source at all: a whole-tree ripgrep for 'pixabay'",
+  "returned zero hits in any .ts/.tsx/.md/.json/.mjs/.py. Their `source` is",
+  "therefore null rather than guessed, and anyone who knows where they came",
+  "from should fill it in rather than leaving it to be re-derived.",
+  "",
+  "`planned` below is the sourcing brief for the thirty-eight trap types that",
+  "have no recording and fall back to synthesis. Nothing in it has been",
+  "downloaded. Each row names the file to write, the mechanic the sound has to",
+  "match, and a Pixabay page to pick from. Move a row into `files` when its",
+  "mp3 lands, with the exact sound page URL and its author."
+ ],
+ "loudnessTarget": {
+  "peakDbfs": -1.5,
+  "howMeasured": "ffmpeg -i FILE -af volumedetect -f null -",
+  "matchedTo": {
+   "note": "Measured across all 16 existing trap mp3s. 13 of 16 sit in this band.",
+   "band": "-0.6 to -2.2 dBFS peak",
+   "samples": {
+    "angry_vacuum": -0.6,
+    "rolling_fridge": -0.8,
+    "sprinkler": -1.0,
+    "fridge_magnet": -1.0,
+    "spring_pad": -1.4,
+    "mousetrap": -1.6,
+    "banana_peel": -1.8,
+    "rotating_toilet": -1.8,
+    "toaster_launcher": -1.8,
+    "soap_slick": -1.9,
+    "swinging_hammer": -2.0,
+    "robot_mop": -2.1,
+    "laundry_basket": -2.2,
+    "floor_fan": -4.3,
+    "giant_beach_ball": -4.7,
+    "ceiling_fan": -11.4
+   }
   },
-
-  "blockerBeforeAnyOfThisPlays": [
-    "Dropping a correctly-named mp3 into this folder does NOT upgrade its trap.",
-    "AudioManager.sample() opens with `if (!RECORDED.has(key)) return \"missing\"`,",
-    "and RECORDED is CUE_KEYS + RECORDED_TRAPS + 'ambient', where RECORDED_TRAPS",
-    "is a hardcoded list of 15 trap ids. The URL is built after that gate, so for",
-    "any of the 38 below the file is never fetched, never decoded and never",
-    "played - the trap synthesises forever and the file is dead weight.",
-    "",
-    "Each id below has to be added to RECORDED_TRAPS in lib/audio/AudioManager.ts.",
-    "Rows marked \"bed\": true additionally need a SUSTAINED_TRAPS entry, or they go",
-    "down the one-shot path which reserves a voice for the buffer's whole length.",
-    "The comment above SUSTAINED_TRAPS records what that already cost once: the",
-    "floor fan re-fires every 450 ms, so a 6-second buffer stacked 13 copies,",
-    "spent all 16 voices, and silenced the player's own jumps and landings."
-  ],
-
-  "downloadAttempt": {
-    "date": "2026-07-29",
-    "result": "BLOCKED - the free Download button delivered no file on any of four sounds",
-    "probes": [
-      "https://pixabay.com/sound-effects/film-special-effects-cartoon-splat-310479/ (paint_bucket)",
-      "https://pixabay.com/sound-effects/nature-splat-6831/ (paint_bucket alternate)",
-      "https://pixabay.com/sound-effects/dominos-falling-47488/ (domino_line)",
-      "https://pixabay.com/sound-effects/cuckoo-clock-76410/ (cuckoo_clock)"
-    ],
-    "spread": [
-      "Chosen to vary the two things that could have made one sound atypical: upload",
-      "age and uploader. Ids run 6831 to 310479, so from among the oldest audio on the",
-      "site to a recent upload, across four different contributors. All four behaved",
-      "identically, so this is not one bad sound."
-    ],
-    "whyThatSound": "Cartoon Splat by Universfield, 0:01 - the intended paint_bucket match.",
-    "howItWasTried": [
-      "Isolated Chromium, clean profile, no stored session. Driving the user's own",
-      "browser was avoided on purpose: it could have ridden a Pixabay account they",
-      "are already signed into, which is logging in by proxy.",
-      "Page loaded anonymously, HTTP 200, no bot challenge, header showed Log in / Join.",
-      "Cookie consent dismissed with Reject All, the conservative choice, needing no account.",
-      "The site's own 'Free download' button was clicked. Nothing else was touched:",
-      "no credential typed, no share or social control, no attempt to get around a gate."
-    ],
-    "whatHappened": [
-      "The button changes to 'Downloading...' with a spinner and stays there (three of",
-      "four; the cuckoo clock fell back to 'Free download').",
-      "After ~55s each: no download event on the page, no popup carrying one, and - the",
-      "decisive measurement - NO .mp3 request was issued at all. A request listener on",
-      "the whole browser context caught zero across all four. The only media fetched",
-      "were 200x200 thumbnails. The client-side flow starts and never asks the server",
-      "for a file, so there is not even a status code to report."
-    ],
-    "twoExplanationsThatFitEqually": [
-      "An ACCOUNT GATE: anonymous visitors get the button but not the file.",
-      "AUTOMATION DETECTION: a Playwright-driven Chromium is detectable, and the site",
-      "may simply no-op the download for one rather than show an error.",
-      "",
-      "Nothing measured here separates the two, and saying which it is would be a guess",
-      "dressed as a finding. They point at the same next step either way, so it was not",
-      "worth more of the site's patience to find out: a person in an ordinary browser",
-      "fetches these. If it is automation detection - and the silent no-op rather than",
-      "an error message mildly favours that - then a human will succeed immediately."
-    ],
-    "conclusion": [
-      "Not investigated further, and it MUST NOT be worked around: reconstructing a",
-      "cdn.pixabay.com URL to skip the button would circumvent whatever gate is there,",
-      "and logging in is forbidden.",
-      "",
-      "What is NOT claimed: that Pixabay requires an account for audio. Four sounds in",
-      "one automated environment is what was tested and all it supports.",
-      "",
-      "The `planned` rows below stand unchanged and are ready for whoever can fetch:",
-      "filename, mechanic, brief, URL, bed-or-one-shot and target seconds for all 38."
-    ]
-  },
-
-  "sourcingRules": {
-    "site": "pixabay.com",
-    "download": "Free Download button only. Never log in, never enter credentials, never use share or social buttons.",
-    "ifLoginDemanded": "Skip that sound, leave the row in `planned`, and set skipped:'requires account'.",
-    "urlVerification": {
-      "verified": "URL returned by a web search of pixabay.com, so the page is known to exist and to have results.",
-      "unverified-query": "URL built from Pixabay's confirmed /sound-effects/search/<terms>/ pattern. The page will resolve; whether it has good hits for this brief is unchecked. Pixabay returns HTTP 403 to non-browser fetches, so these could not be confirmed without opening a browser."
-    }
-  },
-
-  "files": [
-    { "file": "ambient.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "angry_vacuum.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "banana_peel.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "ceiling_fan.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "click.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "countdown.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "fail.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "finish.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "floor_fan.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "footstep.mp3", "source": null, "note": "predates this manifest; peaks -11.7 dBFS, 10 dB under the set" },
-    { "file": "fridge_magnet.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "giant_beach_ball.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "grab.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "jump.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "land.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "laundry_basket.mp3", "source": null, "note": "on disk but deliberately NOT in RECORDED_TRAPS: the trap never calls contact()" },
-    { "file": "mousetrap.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "placement_bad.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "placement_ok.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "publish.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "release.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "robot_mop.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "rolling_fridge.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "rotating_toilet.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "soap_slick.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "spring_pad.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "sprinkler.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "swinging_hammer.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" },
-    { "file": "toaster_launcher.mp3", "source": null, "note": "predates this manifest, provenance unrecorded" }
-  ],
-
-  "planned": [
-    { "trap": "paint_bucket", "file": "paint_bucket.mp3", "bed": false, "seconds": "0.6-1.0",
-      "mechanic": "Picks a spot, then commits to it. splash 1.15 over a 3u track.",
-      "brief": "Wet paint hitting floor, not a metal bucket. The commit is the whole joke, so one fat splat with no ring-out.",
-      "url": "https://pixabay.com/sound-effects/search/splat/", "urlStatus": "verified" },
-
-    { "trap": "spin_cycle", "file": "spin_cycle.mp3", "bed": false, "seconds": "1.2-1.8",
-      "mechanic": "Winds up loudly, then throws the room. burst 2.2.",
-      "brief": "Rising drum whine into a thump. The wind-up IS the warning, so the pitch rise must be audible before the hit.",
-      "url": "https://pixabay.com/sound-effects/household-waching-machine-spin-cycle-66595/", "urlStatus": "verified" },
-
-    { "trap": "sticky_gum", "file": "sticky_gum.mp3", "bed": true, "seconds": "1.0-2.0 loopable",
-      "mechanic": "Takes your momentum and keeps it. grip 9 over a 0.72u radius, braking every frame you stand in it.",
-      "brief": "Continuous peeling squelch, not a single splat. Its cost is dwell, so the sound has to last as long as the runner is stuck.",
-      "url": "https://pixabay.com/sound-effects/search/squelch/", "urlStatus": "verified" },
-
-    { "trap": "cord_trip", "file": "cord_trip.mp3", "bed": false, "seconds": "0.4-0.7",
-      "mechanic": "Only catches runners in a hurry. Fires above tripSpeed 4.2 across a 1.7u span.",
-      "brief": "Taut cable snap and whip. Nothing before the trip: silence is what makes it only catch the hasty.",
-      "url": "https://pixabay.com/sound-effects/search/whip/", "urlStatus": "unverified-query" },
-
-    { "trap": "drawer_slam", "file": "drawer_slam.mp3", "bed": false, "seconds": "0.5-0.8",
-      "mechanic": "Shuts the lane on a schedule. travel 1.35.",
-      "brief": "Wooden drawer running out then banging home. Two-part - the slide is the tell, the bang is the hit.",
-      "url": "https://pixabay.com/sound-effects/search/wooden-drawer/", "urlStatus": "verified" },
-
-    { "trap": "rug_pull", "file": "rug_pull.mp3", "bed": false, "seconds": "0.5-0.9",
-      "mechanic": "Waits until both feet are on it, then yanks 1.6.",
-      "brief": "Heavy fabric ripped sideways across floor. Fast attack, no impact - the runner supplies the landing.",
-      "url": "https://pixabay.com/sound-effects/search/fabric/", "urlStatus": "unverified-query" },
-
-    { "trap": "conveyor_strip", "file": "conveyor_strip.mp3", "bed": true, "seconds": "2.0-4.0 loopable",
-      "mechanic": "Takes you somewhere. carry 3.4 for as long as you stand on 2.4x1.5u of belt.",
-      "brief": "Rubber belt over rollers, steady, no melody. Runs while the runner is carried, so it must loop seamlessly.",
-      "url": "https://pixabay.com/sound-effects/search/conveyor/", "urlStatus": "unverified-query" },
-
-    { "trap": "tilt_plate", "file": "tilt_plate.mp3", "bed": false, "seconds": "0.6-1.0",
-      "mechanic": "Dumps you off whichever side you loaded. tip 4.2 on a 0.9u plate.",
-      "brief": "Wooden board pivoting and knocking down on its stop. A see-saw clunk, weighted, not a snap.",
-      "url": "https://pixabay.com/sound-effects/search/wood/", "urlStatus": "verified" },
-
-    { "trap": "motion_sensor", "file": "motion_sensor.mp3", "bed": false, "seconds": "0.2-0.4",
-      "mechanic": "Only sees you if you are moving. reach 3.2, arc 0.55, ignores below stillSpeed 1.4.",
-      "brief": "Single electronic detection chirp. Short and dry - the information is 'you were seen', and it must cut through a busy mix.",
-      "url": "https://pixabay.com/sound-effects/search/beep/", "urlStatus": "unverified-query" },
-
-    { "trap": "domino_line", "file": "domino_line.mp3", "bed": false, "seconds": "1.0-1.6",
-      "mechanic": "Harmless until something else shoves it. 1.8u span, then cascades.",
-      "brief": "Accelerating clatter of tiles going over. The cascade is the mechanic, so it needs the run, not one tick.",
-      "url": "https://pixabay.com/sound-effects/dominos-falling-47488/", "urlStatus": "verified" },
-
-    { "trap": "bunting_line", "file": "bunting_line.mp3", "bed": false, "seconds": "0.5-0.9",
-      "mechanic": "Strung at exactly jump height. 2u span, 0.75 clearance.",
-      "brief": "Cloth flags snagging and string twanging. Light and papery - it catches you, it does not hit you.",
-      "url": "https://pixabay.com/sound-effects/search/flag/", "urlStatus": "unverified-query" },
-
-    { "trap": "steam_vents", "file": "steam_vents.mp3", "bed": false, "seconds": "0.7-1.2",
-      "mechanic": "Three lanes. One of them is lying. blast 0.7, spread 0.95.",
-      "brief": "Sharp pressurised burst with a hard start. Must be identical every time or the bluff lane becomes readable by ear.",
-      "url": "https://pixabay.com/sound-effects/search/steam-release/", "urlStatus": "verified" },
-
-    { "trap": "pipe_burst", "file": "pipe_burst.mp3", "bed": false, "seconds": "0.8-1.4",
-      "mechanic": "MAKES ITS NOISE AT THE SAFE END. 2.6u run, blast 0.9.",
-      "brief": "Knocking pipe then water letting go. Deliberate misdirection - check with the trap's author that the emitter sits at the safe end, because a sound at the hazard end inverts the trap.",
-      "url": "https://pixabay.com/sound-effects/search/water%20splash/", "urlStatus": "verified" },
-
-    { "trap": "ankle_weight", "file": "ankle_weight.mp3", "bed": false, "seconds": "0.5-0.9",
-      "mechanic": "You keep these for the rest of the run. reach 0.55, drag 1.6, taxes every step afterwards.",
-      "brief": "Metal cuff clamping shut with a chain settle. Must sound permanent - a latch, not a bump - because the cost outlives the window.",
-      "url": "https://pixabay.com/sound-effects/search/chain/", "urlStatus": "unverified-query" },
-
-    { "trap": "chute_drop", "file": "chute_drop.mp3", "bed": false, "seconds": "0.9-1.5",
-      "mechanic": "Puts you back where it thinks you belong. 0.8u mouth, setback 2.6.",
-      "brief": "Body sliding down sheet metal into a drop. Descending, with travel - the runner is being moved, not struck.",
-      "url": "https://pixabay.com/sound-effects/search/whoosh/", "urlStatus": "unverified-query" },
-
-    { "trap": "cart_blocker", "file": "cart_blocker.mp3", "bed": false, "seconds": "0.6-1.0",
-      "mechanic": "Copies your sidestep. Every time. travel 1.4 on a 2.2u track.",
-      "brief": "Trolley castors juddering sideways then hitting the stop. The mirrored move wants a squeak of tracking under the impact.",
-      "url": "https://pixabay.com/sound-effects/search/shopping%20cart/", "urlStatus": "unverified-query" },
-
-    { "trap": "dust_bunny", "file": "dust_bunny.mp3", "bed": true, "seconds": "1.5-3.0 loopable",
-      "mechanic": "Walks where you walked, a moment late. lag 1600 ms, chase 3.6.",
-      "brief": "Dry soft rolling scuff. A chaser is present for as long as it chases, so this loops rather than firing per contact.",
-      "url": "https://pixabay.com/sound-effects/search/poof/", "urlStatus": "unverified-query" },
-
-    { "trap": "flood_puddle", "file": "flood_puddle.mp3", "bed": true, "seconds": "1.5-3.0 loopable",
-      "mechanic": "Bigger the longer you dither. Grows 0.055/s from 0.7u to 2u.",
-      "brief": "Water spreading over a hard floor. Growth is the mechanic, so it wants a loop that reads as ongoing rather than a single splash.",
-      "url": "https://pixabay.com/sound-effects/search/puddle/", "urlStatus": "verified" },
-
-    { "trap": "updraft_vent", "file": "updraft_vent.mp3", "bed": true, "seconds": "1.5-3.0 loopable",
-      "mechanic": "Only lifts you once you have left the ground. reach 0.9, lift 4.2, ceiling 2.6.",
-      "brief": "Column of rushing air, no impact. Airy and continuous - the vent runs whether or not it has caught anyone.",
-      "url": "https://pixabay.com/sound-effects/search/whoosh/", "urlStatus": "unverified-query" },
-
-    { "trap": "mattress_rebound", "file": "mattress_rebound.mp3", "bed": false, "seconds": "0.5-0.9",
-      "mechanic": "Gives your speed back, pointing the other way. bounce 1.15 over 1.8u.",
-      "brief": "Sprung mattress boing with a fabric thud under it. Comic, pitched, and it must read as a return rather than a stop.",
-      "url": "https://pixabay.com/sound-effects/search/boing/", "urlStatus": "verified" },
-
-    { "trap": "plate_shards", "file": "plate_shards.mp3", "bed": false, "seconds": "0.8-1.3",
-      "mechanic": "One nudge, and the floor is ruined for good. spread 2.4, permanent.",
-      "brief": "Ceramic smashing and scattering wide. The long scatter tail is the point - it says the floor stays ruined.",
-      "url": "https://pixabay.com/sound-effects/search/broken%20glass/", "urlStatus": "verified" },
-
-    { "trap": "cat_flap", "file": "cat_flap.mp3", "bed": false, "seconds": "0.3-0.6",
-      "mechanic": "Crawl or sprint. Anything between hurts. Safe below 2.2 or above 6.",
-      "brief": "Light plastic flap swinging on its hinge. Cheap and rattly, so the punishment reads as absurd rather than heavy.",
-      "url": "https://pixabay.com/sound-effects/search/flap/", "urlStatus": "unverified-query" },
-
-    { "trap": "paparazzi", "file": "paparazzi.mp3", "bed": false, "seconds": "0.8-1.2",
-      "mechanic": "Takes your picture. Takes your view. reach 3.2, blind 6.",
-      "brief": "Capacitor whine rising into a shutter and flash pop. The whine is the tell and must precede the blind, so do not trim the head.",
-      "url": "https://pixabay.com/sound-effects/search/camera-flash/", "urlStatus": "verified" },
-
-    { "trap": "bathroom_scales", "file": "bathroom_scales.mp3", "bed": false, "seconds": "0.4-0.7",
-      "mechanic": "Ignores your walk. Reads your landing. impact 5 on a 0.95u pad.",
-      "brief": "Spring platform bottoming out with a dial click. Only fires on a landing, so it wants weight on the front of the sound.",
-      "url": "https://pixabay.com/sound-effects/search/click/", "urlStatus": "unverified-query" },
-
-    { "trap": "slow_fuse", "file": "slow_fuse.mp3", "bed": true, "seconds": "1.5-3.0 loopable",
-      "mechanic": "Charges you here, collects somewhere else. radius 0.9, blast 1.2, delayed.",
-      "brief": "Burning fuse hiss and sputter, ENDING IN NOTHING. The bang belongs to the hazard event elsewhere; a bang in this file gives the delay away.",
-      "url": "https://pixabay.com/sound-effects/search/hiss/", "urlStatus": "verified" },
-
-    { "trap": "pile_on", "file": "pile_on.mp3", "bed": false, "seconds": "1.0-1.6",
-      "mechanic": "Only falls on someone already falling. radius 1.5.",
-      "brief": "Cascade of junk landing in a heap. Layered and uneven - it is a pile arriving, not one object.",
-      "url": "https://pixabay.com/sound-effects/search/clatter/", "urlStatus": "verified" },
-
-    { "trap": "bin_pedal", "file": "bin_pedal.mp3", "bed": false, "seconds": "0.4-0.8",
-      "mechanic": "Perfectly safe until you step off it. pedal 0.8, swipe 1.4 on release.",
-      "brief": "Pedal bin lid flying up and clanging back. The trigger is the STEP OFF, so the sound starts at the release.",
-      "url": "https://pixabay.com/sound-effects/search/trash%20can/", "urlStatus": "unverified-query" },
-
-    { "trap": "swing_door", "file": "swing_door.mp3", "bed": false, "seconds": "0.7-1.1",
-      "mechanic": "Lets you through, then changes its mind. 1.9u span.",
-      "brief": "Sprung door swinging past and slamming back. The return is the hit, so the slam sits at the end, not the start.",
-      "url": "https://pixabay.com/sound-effects/search/slam/", "urlStatus": "verified" },
-
-    { "trap": "ball_machine", "file": "ball_machine.mp3", "bed": false, "seconds": "0.4-0.7",
-      "mechanic": "Fires at where you are going to be. range 3.6, spread 0.85.",
-      "brief": "Pneumatic thunk and ball leaving the barrel. Dry and repeatable - it fires often, so no long tail.",
-      "url": "https://pixabay.com/sound-effects/search/air%20cannon/", "urlStatus": "unverified-query" },
-
-    { "trap": "cuckoo_clock", "file": "cuckoo_clock.mp3", "bed": false, "seconds": "1.5-2.5",
-      "mechanic": "Chimes twice. BITES ON THE THIRD. reach 1.5.",
-      "brief": "Two cuckoo calls then the mechanism. The count is the whole tell, so the file must carry all three beats and stay identical every cycle.",
-      "url": "https://pixabay.com/sound-effects/cuckoo-clock-76410/", "urlStatus": "verified" },
-
-    { "trap": "fish_bowl", "file": "fish_bowl.mp3", "bed": false, "seconds": "0.7-1.2",
-      "mechanic": "Hates a runner who keeps changing pace. jolt 18 within 1.5u.",
-      "brief": "Water sloshing hard inside glass then the bowl going over. jolt 18 is the heaviest impulse of the 38, so this is the loudest of the set.",
-      "url": "https://pixabay.com/sound-effects/search/water%20splash/", "urlStatus": "verified" },
-
-    { "trap": "shoe_rack", "file": "shoe_rack.mp3", "bed": false, "seconds": "0.8-1.3",
-      "mechanic": "Kicks you into the spot it lands on. reach 2.2, crush 1.3, offset 1.5.",
-      "brief": "Rack tipping and shoes tumbling out. Soft leather clatter, not crockery - it displaces you rather than shattering.",
-      "url": "https://pixabay.com/sound-effects/search/clatter/", "urlStatus": "verified" },
-
-    { "trap": "hot_potato", "file": "hot_potato.mp3", "bed": false, "seconds": "0.5-0.9",
-      "mechanic": "Harmless until something moves it. blast 1.1 once disturbed.",
-      "brief": "Sudden sizzle flaring up. Dormant then hot, so the attack has to be instant with no ramp.",
-      "url": "https://pixabay.com/sound-effects/search/burner/", "urlStatus": "verified" },
-
-    { "trap": "stove_ring", "file": "stove_ring.mp3", "bed": true, "seconds": "2.0-4.0 loopable",
-      "mechanic": "The only safe spot is the middle. eye 0.55 safe, flare 1.7 around it.",
-      "brief": "Gas ring lit and burning steadily. Continuous - the ring is always on, and the safe eye is spatial not temporal.",
-      "url": "https://pixabay.com/sound-effects/search/gas-stove-lighting/", "urlStatus": "verified" },
-
-    { "trap": "clothes_airer", "file": "clothes_airer.mp3", "bed": false, "seconds": "0.8-1.3",
-      "mechanic": "Ignores runners. CATCHES DODGERS. length 2.1, sidestep 2.6.",
-      "brief": "Thin metal frame collapsing with laundry. Rattly and light - it only ever catches someone already moving sideways.",
-      "url": "https://pixabay.com/sound-effects/search/clatter/", "urlStatus": "verified" },
-
-    { "trap": "ice_dispenser", "file": "ice_dispenser.mp3", "bed": false, "seconds": "0.8-1.4",
-      "mechanic": "One magazine, then it is furniture. range 4.5, spread 1.3, finite.",
-      "brief": "Ice cubes clattering out of a chute and stopping. Running dry must be audible - the tail is how a player learns it is spent.",
-      "url": "https://pixabay.com/sound-effects/search/ice-machine/", "urlStatus": "verified" },
-
-    { "trap": "kettle_boil", "file": "kettle_boil.mp3", "bed": true, "seconds": "3.0-5.0 loopable",
-      "mechanic": "Comes to the boil on its own schedule. scald 1.9.",
-      "brief": "Water building to a rolling boil and a whistle. A LONG BUILD, which is why it must be a bed - as a one-shot it holds a voice for its whole length and starves the mix.",
-      "url": "https://pixabay.com/sound-effects/search/kettle-boiling/", "urlStatus": "verified" },
-
-    { "trap": "junk_drift", "file": "junk_drift.mp3", "bed": true, "seconds": "2.0-4.0 loopable",
-      "mechanic": "Grows on whatever is standing near it. base 0.75, feed 4.5.",
-      "brief": "Loose debris shifting and accumulating. Ongoing accretion, so it loops for as long as the drift is being fed.",
-      "url": "https://pixabay.com/sound-effects/search/debris/", "urlStatus": "unverified-query" }
+  "correctionToPriorReport": [
+   "A previous session reported that SAMPLE_PEAK's docstring claimed -1.5 dBFS",
+   "while ffmpeg measured -11.7, and that finding was passed on as a reason to",
+   "distrust the docstring. It is inverted, and following it would have shipped",
+   "every new trap sound about ten decibels under the existing set.",
+   "",
+   "Measured: SAMPLE_PEAK = 0.8414 is exactly -1.500 dBFS. footstep.mp3 is",
+   "exactly -11.7 dBFS. The docstring ITSELF names both of its outliers by file",
+   "and by number - footstep at -11.7 and ceiling_fan at -11.4 - and says the",
+   "rest are within a decibel of -1.5, which the table above bears out.",
+   "The -11.7 figure came from the docstring, not from a contradiction of it.",
+   "",
+   "Level is also partly self-correcting at runtime: peakOf() measures each",
+   "decoded file and startSustain divides by it, so a gain argument means the",
+   "same output peak whatever the file's own level. Matching -1.5 still matters",
+   "for headroom and for the one-shot path."
   ]
+ },
+ "blockerBeforeAnyOfThisPlays": [
+  "Dropping a correctly-named mp3 into this folder does NOT upgrade its trap.",
+  "AudioManager.sample() opens with `if (!RECORDED.has(key)) return \"missing\"`,",
+  "and RECORDED is CUE_KEYS + RECORDED_TRAPS + 'ambient', where RECORDED_TRAPS",
+  "is a hardcoded list of 15 trap ids. The URL is built after that gate, so for",
+  "any of the 38 below the file is never fetched, never decoded and never",
+  "played - the trap synthesises forever and the file is dead weight.",
+  "",
+  "Each id below has to be added to RECORDED_TRAPS in lib/audio/AudioManager.ts.",
+  "Rows marked \"bed\": true additionally need a SUSTAINED_TRAPS entry, or they go",
+  "down the one-shot path which reserves a voice for the buffer's whole length.",
+  "The comment above SUSTAINED_TRAPS records what that already cost once: the",
+  "floor fan re-fires every 450 ms, so a 6-second buffer stacked 13 copies,",
+  "spent all 16 voices, and silenced the player's own jumps and landings."
+ ],
+ "downloadAttempt": {
+  "date": "2026-07-29",
+  "result": "BLOCKED - the free Download button delivered no file on any of four sounds",
+  "probes": [
+   "https://pixabay.com/sound-effects/film-special-effects-cartoon-splat-310479/ (paint_bucket)",
+   "https://pixabay.com/sound-effects/nature-splat-6831/ (paint_bucket alternate)",
+   "https://pixabay.com/sound-effects/dominos-falling-47488/ (domino_line)",
+   "https://pixabay.com/sound-effects/cuckoo-clock-76410/ (cuckoo_clock)"
+  ],
+  "spread": [
+   "Chosen to vary the two things that could have made one sound atypical: upload",
+   "age and uploader. Ids run 6831 to 310479, so from among the oldest audio on the",
+   "site to a recent upload, across four different contributors. All four behaved",
+   "identically, so this is not one bad sound."
+  ],
+  "whyThatSound": "Cartoon Splat by Universfield, 0:01 - the intended paint_bucket match.",
+  "howItWasTried": [
+   "Isolated Chromium, clean profile, no stored session. Driving the user's own",
+   "browser was avoided on purpose: it could have ridden a Pixabay account they",
+   "are already signed into, which is logging in by proxy.",
+   "Page loaded anonymously, HTTP 200, no bot challenge, header showed Log in / Join.",
+   "Cookie consent dismissed with Reject All, the conservative choice, needing no account.",
+   "The site's own 'Free download' button was clicked. Nothing else was touched:",
+   "no credential typed, no share or social control, no attempt to get around a gate."
+  ],
+  "whatHappened": [
+   "The button changes to 'Downloading...' with a spinner and stays there (three of",
+   "four; the cuckoo clock fell back to 'Free download').",
+   "After ~55s each: no download event on the page, no popup carrying one, and - the",
+   "decisive measurement - NO .mp3 request was issued at all. A request listener on",
+   "the whole browser context caught zero across all four. The only media fetched",
+   "were 200x200 thumbnails. The client-side flow starts and never asks the server",
+   "for a file, so there is not even a status code to report."
+  ],
+  "twoExplanationsThatFitEqually": [
+   "An ACCOUNT GATE: anonymous visitors get the button but not the file.",
+   "AUTOMATION DETECTION: a Playwright-driven Chromium is detectable, and the site",
+   "may simply no-op the download for one rather than show an error.",
+   "",
+   "Nothing measured here separates the two, and saying which it is would be a guess",
+   "dressed as a finding. They point at the same next step either way, so it was not",
+   "worth more of the site's patience to find out: a person in an ordinary browser",
+   "fetches these. If it is automation detection - and the silent no-op rather than",
+   "an error message mildly favours that - then a human will succeed immediately."
+  ],
+  "conclusion": [
+   "Not investigated further, and it MUST NOT be worked around: reconstructing a",
+   "cdn.pixabay.com URL to skip the button would circumvent whatever gate is there,",
+   "and logging in is forbidden.",
+   "",
+   "What is NOT claimed: that Pixabay requires an account for audio. Four sounds in",
+   "one automated environment is what was tested and all it supports.",
+   "",
+   "The `planned` rows below stand unchanged and are ready for whoever can fetch:",
+   "filename, mechanic, brief, URL, bed-or-one-shot and target seconds for all 38."
+  ]
+ },
+ "sourcingRules": {
+  "site": "pixabay.com",
+  "download": "Free Download button only. Never log in, never enter credentials, never use share or social buttons.",
+  "ifLoginDemanded": "Skip that sound, leave the row in `planned`, and set skipped:'requires account'.",
+  "urlVerification": {
+   "verified": "URL returned by a web search of pixabay.com, so the page is known to exist and to have results.",
+   "unverified-query": "URL built from Pixabay's confirmed /sound-effects/search/<terms>/ pattern. The page will resolve; whether it has good hits for this brief is unchecked. Pixabay returns HTTP 403 to non-browser fetches, so these could not be confirmed without opening a browser."
+  }
+ },
+ "files": [
+  {
+   "file": "ambient.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "angry_vacuum.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "banana_peel.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "ceiling_fan.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "click.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "countdown.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "fail.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "finish.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "floor_fan.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "footstep.mp3",
+   "source": null,
+   "note": "predates this manifest; peaks -11.7 dBFS, 10 dB under the set"
+  },
+  {
+   "file": "fridge_magnet.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "giant_beach_ball.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "grab.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "jump.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "land.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "laundry_basket.mp3",
+   "source": null,
+   "note": "on disk but deliberately NOT in RECORDED_TRAPS: the trap never calls contact()"
+  },
+  {
+   "file": "mousetrap.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "placement_bad.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "placement_ok.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "publish.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "release.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "robot_mop.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "rolling_fridge.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "rotating_toilet.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "soap_slick.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "spring_pad.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "sprinkler.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "swinging_hammer.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "toaster_launcher.mp3",
+   "source": null,
+   "note": "predates this manifest, provenance unrecorded"
+  },
+  {
+   "file": "paint_bucket.mp3",
+   "source": "https://pixabay.com/sound-effects/search/splat/",
+   "title": "Wet Splat Impact",
+   "author": "Universfield",
+   "originalFilename": "universfield-wet-splat-impact-567197.mp3",
+   "license": "Pixabay Content License",
+   "note": "downloaded 2026-07-29 via the user's browser; picked for the one-fat-splat brief"
+  }
+ ],
+ "planned": [
+  {
+   "trap": "spin_cycle",
+   "file": "spin_cycle.mp3",
+   "bed": false,
+   "seconds": "1.2-1.8",
+   "mechanic": "Winds up loudly, then throws the room. burst 2.2.",
+   "brief": "Rising drum whine into a thump. The wind-up IS the warning, so the pitch rise must be audible before the hit.",
+   "url": "https://pixabay.com/sound-effects/household-waching-machine-spin-cycle-66595/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "sticky_gum",
+   "file": "sticky_gum.mp3",
+   "bed": true,
+   "seconds": "1.0-2.0 loopable",
+   "mechanic": "Takes your momentum and keeps it. grip 9 over a 0.72u radius, braking every frame you stand in it.",
+   "brief": "Continuous peeling squelch, not a single splat. Its cost is dwell, so the sound has to last as long as the runner is stuck.",
+   "url": "https://pixabay.com/sound-effects/search/squelch/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "cord_trip",
+   "file": "cord_trip.mp3",
+   "bed": false,
+   "seconds": "0.4-0.7",
+   "mechanic": "Only catches runners in a hurry. Fires above tripSpeed 4.2 across a 1.7u span.",
+   "brief": "Taut cable snap and whip. Nothing before the trip: silence is what makes it only catch the hasty.",
+   "url": "https://pixabay.com/sound-effects/search/whip/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "drawer_slam",
+   "file": "drawer_slam.mp3",
+   "bed": false,
+   "seconds": "0.5-0.8",
+   "mechanic": "Shuts the lane on a schedule. travel 1.35.",
+   "brief": "Wooden drawer running out then banging home. Two-part - the slide is the tell, the bang is the hit.",
+   "url": "https://pixabay.com/sound-effects/search/wooden-drawer/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "rug_pull",
+   "file": "rug_pull.mp3",
+   "bed": false,
+   "seconds": "0.5-0.9",
+   "mechanic": "Waits until both feet are on it, then yanks 1.6.",
+   "brief": "Heavy fabric ripped sideways across floor. Fast attack, no impact - the runner supplies the landing.",
+   "url": "https://pixabay.com/sound-effects/search/fabric/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "conveyor_strip",
+   "file": "conveyor_strip.mp3",
+   "bed": true,
+   "seconds": "2.0-4.0 loopable",
+   "mechanic": "Takes you somewhere. carry 3.4 for as long as you stand on 2.4x1.5u of belt.",
+   "brief": "Rubber belt over rollers, steady, no melody. Runs while the runner is carried, so it must loop seamlessly.",
+   "url": "https://pixabay.com/sound-effects/search/conveyor/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "tilt_plate",
+   "file": "tilt_plate.mp3",
+   "bed": false,
+   "seconds": "0.6-1.0",
+   "mechanic": "Dumps you off whichever side you loaded. tip 4.2 on a 0.9u plate.",
+   "brief": "Wooden board pivoting and knocking down on its stop. A see-saw clunk, weighted, not a snap.",
+   "url": "https://pixabay.com/sound-effects/search/wood/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "motion_sensor",
+   "file": "motion_sensor.mp3",
+   "bed": false,
+   "seconds": "0.2-0.4",
+   "mechanic": "Only sees you if you are moving. reach 3.2, arc 0.55, ignores below stillSpeed 1.4.",
+   "brief": "Single electronic detection chirp. Short and dry - the information is 'you were seen', and it must cut through a busy mix.",
+   "url": "https://pixabay.com/sound-effects/search/beep/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "domino_line",
+   "file": "domino_line.mp3",
+   "bed": false,
+   "seconds": "1.0-1.6",
+   "mechanic": "Harmless until something else shoves it. 1.8u span, then cascades.",
+   "brief": "Accelerating clatter of tiles going over. The cascade is the mechanic, so it needs the run, not one tick.",
+   "url": "https://pixabay.com/sound-effects/dominos-falling-47488/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "bunting_line",
+   "file": "bunting_line.mp3",
+   "bed": false,
+   "seconds": "0.5-0.9",
+   "mechanic": "Strung at exactly jump height. 2u span, 0.75 clearance.",
+   "brief": "Cloth flags snagging and string twanging. Light and papery - it catches you, it does not hit you.",
+   "url": "https://pixabay.com/sound-effects/search/flag/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "steam_vents",
+   "file": "steam_vents.mp3",
+   "bed": false,
+   "seconds": "0.7-1.2",
+   "mechanic": "Three lanes. One of them is lying. blast 0.7, spread 0.95.",
+   "brief": "Sharp pressurised burst with a hard start. Must be identical every time or the bluff lane becomes readable by ear.",
+   "url": "https://pixabay.com/sound-effects/search/steam-release/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "pipe_burst",
+   "file": "pipe_burst.mp3",
+   "bed": false,
+   "seconds": "0.8-1.4",
+   "mechanic": "MAKES ITS NOISE AT THE SAFE END. 2.6u run, blast 0.9.",
+   "brief": "Knocking pipe then water letting go. Deliberate misdirection - check with the trap's author that the emitter sits at the safe end, because a sound at the hazard end inverts the trap.",
+   "url": "https://pixabay.com/sound-effects/search/water%20splash/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "ankle_weight",
+   "file": "ankle_weight.mp3",
+   "bed": false,
+   "seconds": "0.5-0.9",
+   "mechanic": "You keep these for the rest of the run. reach 0.55, drag 1.6, taxes every step afterwards.",
+   "brief": "Metal cuff clamping shut with a chain settle. Must sound permanent - a latch, not a bump - because the cost outlives the window.",
+   "url": "https://pixabay.com/sound-effects/search/chain/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "chute_drop",
+   "file": "chute_drop.mp3",
+   "bed": false,
+   "seconds": "0.9-1.5",
+   "mechanic": "Puts you back where it thinks you belong. 0.8u mouth, setback 2.6.",
+   "brief": "Body sliding down sheet metal into a drop. Descending, with travel - the runner is being moved, not struck.",
+   "url": "https://pixabay.com/sound-effects/search/whoosh/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "cart_blocker",
+   "file": "cart_blocker.mp3",
+   "bed": false,
+   "seconds": "0.6-1.0",
+   "mechanic": "Copies your sidestep. Every time. travel 1.4 on a 2.2u track.",
+   "brief": "Trolley castors juddering sideways then hitting the stop. The mirrored move wants a squeak of tracking under the impact.",
+   "url": "https://pixabay.com/sound-effects/search/shopping%20cart/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "dust_bunny",
+   "file": "dust_bunny.mp3",
+   "bed": true,
+   "seconds": "1.5-3.0 loopable",
+   "mechanic": "Walks where you walked, a moment late. lag 1600 ms, chase 3.6.",
+   "brief": "Dry soft rolling scuff. A chaser is present for as long as it chases, so this loops rather than firing per contact.",
+   "url": "https://pixabay.com/sound-effects/search/poof/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "flood_puddle",
+   "file": "flood_puddle.mp3",
+   "bed": true,
+   "seconds": "1.5-3.0 loopable",
+   "mechanic": "Bigger the longer you dither. Grows 0.055/s from 0.7u to 2u.",
+   "brief": "Water spreading over a hard floor. Growth is the mechanic, so it wants a loop that reads as ongoing rather than a single splash.",
+   "url": "https://pixabay.com/sound-effects/search/puddle/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "updraft_vent",
+   "file": "updraft_vent.mp3",
+   "bed": true,
+   "seconds": "1.5-3.0 loopable",
+   "mechanic": "Only lifts you once you have left the ground. reach 0.9, lift 4.2, ceiling 2.6.",
+   "brief": "Column of rushing air, no impact. Airy and continuous - the vent runs whether or not it has caught anyone.",
+   "url": "https://pixabay.com/sound-effects/search/whoosh/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "mattress_rebound",
+   "file": "mattress_rebound.mp3",
+   "bed": false,
+   "seconds": "0.5-0.9",
+   "mechanic": "Gives your speed back, pointing the other way. bounce 1.15 over 1.8u.",
+   "brief": "Sprung mattress boing with a fabric thud under it. Comic, pitched, and it must read as a return rather than a stop.",
+   "url": "https://pixabay.com/sound-effects/search/boing/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "plate_shards",
+   "file": "plate_shards.mp3",
+   "bed": false,
+   "seconds": "0.8-1.3",
+   "mechanic": "One nudge, and the floor is ruined for good. spread 2.4, permanent.",
+   "brief": "Ceramic smashing and scattering wide. The long scatter tail is the point - it says the floor stays ruined.",
+   "url": "https://pixabay.com/sound-effects/search/broken%20glass/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "cat_flap",
+   "file": "cat_flap.mp3",
+   "bed": false,
+   "seconds": "0.3-0.6",
+   "mechanic": "Crawl or sprint. Anything between hurts. Safe below 2.2 or above 6.",
+   "brief": "Light plastic flap swinging on its hinge. Cheap and rattly, so the punishment reads as absurd rather than heavy.",
+   "url": "https://pixabay.com/sound-effects/search/flap/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "paparazzi",
+   "file": "paparazzi.mp3",
+   "bed": false,
+   "seconds": "0.8-1.2",
+   "mechanic": "Takes your picture. Takes your view. reach 3.2, blind 6.",
+   "brief": "Capacitor whine rising into a shutter and flash pop. The whine is the tell and must precede the blind, so do not trim the head.",
+   "url": "https://pixabay.com/sound-effects/search/camera-flash/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "bathroom_scales",
+   "file": "bathroom_scales.mp3",
+   "bed": false,
+   "seconds": "0.4-0.7",
+   "mechanic": "Ignores your walk. Reads your landing. impact 5 on a 0.95u pad.",
+   "brief": "Spring platform bottoming out with a dial click. Only fires on a landing, so it wants weight on the front of the sound.",
+   "url": "https://pixabay.com/sound-effects/search/click/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "slow_fuse",
+   "file": "slow_fuse.mp3",
+   "bed": true,
+   "seconds": "1.5-3.0 loopable",
+   "mechanic": "Charges you here, collects somewhere else. radius 0.9, blast 1.2, delayed.",
+   "brief": "Burning fuse hiss and sputter, ENDING IN NOTHING. The bang belongs to the hazard event elsewhere; a bang in this file gives the delay away.",
+   "url": "https://pixabay.com/sound-effects/search/hiss/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "pile_on",
+   "file": "pile_on.mp3",
+   "bed": false,
+   "seconds": "1.0-1.6",
+   "mechanic": "Only falls on someone already falling. radius 1.5.",
+   "brief": "Cascade of junk landing in a heap. Layered and uneven - it is a pile arriving, not one object.",
+   "url": "https://pixabay.com/sound-effects/search/clatter/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "bin_pedal",
+   "file": "bin_pedal.mp3",
+   "bed": false,
+   "seconds": "0.4-0.8",
+   "mechanic": "Perfectly safe until you step off it. pedal 0.8, swipe 1.4 on release.",
+   "brief": "Pedal bin lid flying up and clanging back. The trigger is the STEP OFF, so the sound starts at the release.",
+   "url": "https://pixabay.com/sound-effects/search/trash%20can/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "swing_door",
+   "file": "swing_door.mp3",
+   "bed": false,
+   "seconds": "0.7-1.1",
+   "mechanic": "Lets you through, then changes its mind. 1.9u span.",
+   "brief": "Sprung door swinging past and slamming back. The return is the hit, so the slam sits at the end, not the start.",
+   "url": "https://pixabay.com/sound-effects/search/slam/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "ball_machine",
+   "file": "ball_machine.mp3",
+   "bed": false,
+   "seconds": "0.4-0.7",
+   "mechanic": "Fires at where you are going to be. range 3.6, spread 0.85.",
+   "brief": "Pneumatic thunk and ball leaving the barrel. Dry and repeatable - it fires often, so no long tail.",
+   "url": "https://pixabay.com/sound-effects/search/air%20cannon/",
+   "urlStatus": "unverified-query"
+  },
+  {
+   "trap": "cuckoo_clock",
+   "file": "cuckoo_clock.mp3",
+   "bed": false,
+   "seconds": "1.5-2.5",
+   "mechanic": "Chimes twice. BITES ON THE THIRD. reach 1.5.",
+   "brief": "Two cuckoo calls then the mechanism. The count is the whole tell, so the file must carry all three beats and stay identical every cycle.",
+   "url": "https://pixabay.com/sound-effects/cuckoo-clock-76410/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "fish_bowl",
+   "file": "fish_bowl.mp3",
+   "bed": false,
+   "seconds": "0.7-1.2",
+   "mechanic": "Hates a runner who keeps changing pace. jolt 18 within 1.5u.",
+   "brief": "Water sloshing hard inside glass then the bowl going over. jolt 18 is the heaviest impulse of the 38, so this is the loudest of the set.",
+   "url": "https://pixabay.com/sound-effects/search/water%20splash/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "shoe_rack",
+   "file": "shoe_rack.mp3",
+   "bed": false,
+   "seconds": "0.8-1.3",
+   "mechanic": "Kicks you into the spot it lands on. reach 2.2, crush 1.3, offset 1.5.",
+   "brief": "Rack tipping and shoes tumbling out. Soft leather clatter, not crockery - it displaces you rather than shattering.",
+   "url": "https://pixabay.com/sound-effects/search/clatter/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "hot_potato",
+   "file": "hot_potato.mp3",
+   "bed": false,
+   "seconds": "0.5-0.9",
+   "mechanic": "Harmless until something moves it. blast 1.1 once disturbed.",
+   "brief": "Sudden sizzle flaring up. Dormant then hot, so the attack has to be instant with no ramp.",
+   "url": "https://pixabay.com/sound-effects/search/burner/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "stove_ring",
+   "file": "stove_ring.mp3",
+   "bed": true,
+   "seconds": "2.0-4.0 loopable",
+   "mechanic": "The only safe spot is the middle. eye 0.55 safe, flare 1.7 around it.",
+   "brief": "Gas ring lit and burning steadily. Continuous - the ring is always on, and the safe eye is spatial not temporal.",
+   "url": "https://pixabay.com/sound-effects/search/gas-stove-lighting/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "clothes_airer",
+   "file": "clothes_airer.mp3",
+   "bed": false,
+   "seconds": "0.8-1.3",
+   "mechanic": "Ignores runners. CATCHES DODGERS. length 2.1, sidestep 2.6.",
+   "brief": "Thin metal frame collapsing with laundry. Rattly and light - it only ever catches someone already moving sideways.",
+   "url": "https://pixabay.com/sound-effects/search/clatter/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "ice_dispenser",
+   "file": "ice_dispenser.mp3",
+   "bed": false,
+   "seconds": "0.8-1.4",
+   "mechanic": "One magazine, then it is furniture. range 4.5, spread 1.3, finite.",
+   "brief": "Ice cubes clattering out of a chute and stopping. Running dry must be audible - the tail is how a player learns it is spent.",
+   "url": "https://pixabay.com/sound-effects/search/ice-machine/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "kettle_boil",
+   "file": "kettle_boil.mp3",
+   "bed": true,
+   "seconds": "3.0-5.0 loopable",
+   "mechanic": "Comes to the boil on its own schedule. scald 1.9.",
+   "brief": "Water building to a rolling boil and a whistle. A LONG BUILD, which is why it must be a bed - as a one-shot it holds a voice for its whole length and starves the mix.",
+   "url": "https://pixabay.com/sound-effects/search/kettle-boiling/",
+   "urlStatus": "verified"
+  },
+  {
+   "trap": "junk_drift",
+   "file": "junk_drift.mp3",
+   "bed": true,
+   "seconds": "2.0-4.0 loopable",
+   "mechanic": "Grows on whatever is standing near it. base 0.75, feed 4.5.",
+   "brief": "Loose debris shifting and accumulating. Ongoing accretion, so it loops for as long as the drift is being fed.",
+   "url": "https://pixabay.com/sound-effects/search/debris/",
+   "urlStatus": "unverified-query"
+  }
+ ]
 }

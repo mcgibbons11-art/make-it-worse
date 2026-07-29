@@ -163,6 +163,58 @@ NOZZLE_THICK = round(R_NOZZLE_THICK * DIAMETER, 4)
 NOZZLE_Z = round(CANISTER_Z + BOTTOM_R + NOZZLE_WIDTH / 2, 4)
 NOZZLE_FRONT_Z = round(NOZZLE_Z + NOZZLE_WIDTH / 2, 4)
 
+# ---------------------------------------------------------------------------
+# The suction slot, MEASURED off the reference rather than styled.
+#
+# Masking the head by colour distance to the cream and then looking for a dark run ENCLOSED
+# by that mask finds one linear feature and only one: a band of constant thickness running
+# from image (819, 992) to (635, 1080), which is 88 rows of steady 29.5 px horizontal chords
+# marching left at 2.17 px per row. A constant-thickness straight band is a slot; the row
+# scan that found it is in this file's history rather than a separate script because it is
+# nine lines of numpy.
+#
+# Un-squashing it is the same step the head's own plan needed. Horizontal image extents are
+# true, vertical ones are compressed by sin(pitch), so the band's plan run is
+# (-184, 186.8) px for a true length of 262.2, and its perpendicular thickness is the
+# horizontal chord times the sine of its plan bearing, 29.5 x 0.7124 = 21.0 px. Against the
+# canister's 646 px that is 0.4059 and 0.0325 of the diameter.
+#
+# THE SIZE IS MEASURED AND THE POSITION IS NOT, and the two must not be quoted alike. The
+# slot's setback from the front edge cannot be recovered from this view: it would need the
+# head's own plan frame in the image, and that frame is this spec's weakest measurement -
+# its two recovered edges meet at 75 degrees rather than 90. So the setback below is authored
+# to put the slot where the reference shows it, near the front lip, and is an assumption.
+#
+# IT IS BUILT AS A HOLE IN THE HEAD'S OWN PROFILE, NOT AS A PART. buildExtrudeGeometry takes
+# profile2D.holes and cuts them through the tessellator, the same route the soap dish's
+# cutter hole uses, so the slot costs NO draw call. That is what makes it affordable: the
+# prop already spends all 14 of its 14, so a fifteenth part would break the budget outright.
+# A through-slot is also the truer object - a floor head's suction opening really is a hole,
+# and the hose boss really does sit over it as the plenum that draws through it.
+R_NOZZLE_SLOT_LENGTH = 0.4059   # 262.2 px of un-squashed plan run against the canister's 646
+R_NOZZLE_SLOT_WIDTH = 0.0325    # 21.0 px perpendicular, from the 29.5 px horizontal chord
+SLOT_LENGTH = round(R_NOZZLE_SLOT_LENGTH * DIAMETER, 4)
+SLOT_WIDTH = round(R_NOZZLE_SLOT_WIDTH * DIAMETER, 4)
+SLOT_FRONT_WALL = 0.025         # ASSUMED, see above: the lip left ahead of the slot
+# profile2D with axis "y" maps the profile's +y to world -z, so the head's FRONT edge - the
+# one with the larger world z - is at NEGATIVE profile y. Getting this backwards would put
+# the slot along the head's hidden rear edge and no gate here would have said so.
+SLOT_CENTRE_Y2D = round(-(NOZZLE_WIDTH / 2 - SLOT_FRONT_WALL - SLOT_WIDTH / 2), 4)
+# The chamfer eats the corners, so the front edge's straight run is shorter than the head.
+# The slot has to fit inside that run or it would open through a chamfered corner.
+assert SLOT_LENGTH / 2 <= NOZZLE_LENGTH / 2 - 0.05, (
+    f"the {SLOT_LENGTH} slot runs into the head's chamfered corners")
+assert SLOT_WIDTH + SLOT_FRONT_WALL < NOZZLE_WIDTH / 2, (
+    f"the slot and its {SLOT_FRONT_WALL} lip do not fit in the head's front half")
+# Counter-clockwise, matching chamfered_rect's own winding. buildExtrudeShape pushes each
+# loop onto shape.holes and lets three.js's tessellator subtract it.
+SLOT_LOOP = [
+    [round(SLOT_LENGTH / 2, 5), round(SLOT_CENTRE_Y2D - SLOT_WIDTH / 2, 5)],
+    [round(SLOT_LENGTH / 2, 5), round(SLOT_CENTRE_Y2D + SLOT_WIDTH / 2, 5)],
+    [round(-SLOT_LENGTH / 2, 5), round(SLOT_CENTRE_Y2D + SLOT_WIDTH / 2, 5)],
+    [round(-SLOT_LENGTH / 2, 5), round(SLOT_CENTRE_Y2D - SLOT_WIDTH / 2, 5)],
+]
+
 WHEEL_DIAMETER = round(R_WHEEL * DIAMETER, 4)
 WHEEL_RADIUS = WHEEL_DIAMETER / 2.0
 WHEEL_HALF_THICK = round(R_WHEEL_THICK * DIAMETER / 2, 4)
@@ -550,44 +602,65 @@ HOSE_CONTROL = [
 ]
 
 
-def catmull_rom(points: list[tuple[float, float, float]], per_segment: int
-                ) -> list[list[float]]:
-    """Uniform Catmull-Rom through the control points, with the ends duplicated.
+# ---------------------------------------------------------------------------
+# THE CAGE GOES STRAIGHT TO THE TUBE, AND THIS SCRIPT MEASURES THE CURVE THAT SHIPS.
+#
+# It used to sample the cage into 25 points with a UNIFORM Catmull-Rom and hand those to
+# buildTubeGeometry, which builds its OWN CatmullRomCurve3 through them - a CENTRIPETAL one,
+# because that is three.js's default. So the shipped shape was an interpolation of an
+# interpolation under two different parameterisations, and every check here ran on the inner
+# one rather than on the object.
+#
+# That cost more than tidiness. Measured both ways: feeding the 9-point cage direct gives bow
+# 0.1841 against 0.1826, centreline 0.8930 against 0.8955, and 864 triangles against 2400 -
+# because tubularSegments is max(8, points * 6), so 25 samples bought 150 rings where the cage
+# needs 54. It also removes the collar-end self-intersections outright. Ruling by team-lead:
+# take it, and land it alone so its effect is measurable.
+#
+# The sampler below is three.js's own algorithm, VERIFIED against three.js rather than assumed:
+# both return min radius 0.01882 at t 0.083 on the old path and the same folding stretches to
+# five decimals. It is what HOSE_PATH is now built with, so clearance, curvature, the cuff's
+# seat and the rib count all read the shipped curve. The uniform sampler it replaces reported
+# 0.65 of the tube radius at the collar where the truth was 0.33 - wrong by a factor of two,
+# in the reassuring direction, which is why the instrument had to become the object.
+# ---------------------------------------------------------------------------
+def _centripetal_point(points: list, t: float) -> list[float]:
+    """THREE.CatmullRomCurve3.getPoint for the default centripetal type, tension 0.5."""
+    count = len(points)
+    span = (count - 1) * t
+    index = min(int(math.floor(span)), count - 2)
+    weight = span - index
+    p1, p2 = points[index], points[index + 1]
+    p0 = points[index - 1] if index > 0 else [2 * p1[k] - p2[k] for k in range(3)]
+    p3 = (points[index + 2] if index + 2 < count
+          else [2 * p2[k] - p1[k] for k in range(3)])
 
-    A tube needs a dense centreline, not the control cage: TubeGeometry samples the curve it
-    is handed, so feeding it eight points gives eight straight facets and a hose that reads
-    as folded sheet metal.
-    """
-    padded = [points[0]] + list(points) + [points[-1]]
-    out: list[list[float]] = []
-    for i in range(len(padded) - 3):
-        p0, p1, p2, p3 = padded[i], padded[i + 1], padded[i + 2], padded[i + 3]
-        for step in range(per_segment):
-            t = step / per_segment
-            t2, t3 = t * t, t * t * t
-            point = []
-            for axis in range(3):
-                point.append(0.5 * (
-                    2 * p1[axis]
-                    + (-p0[axis] + p2[axis]) * t
-                    + (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2
-                    + (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3))
-            out.append([round(v, 5) for v in point])
-    out.append([round(v, 5) for v in points[-1]])
+    def squared(a, b):
+        return sum((a[k] - b[k]) ** 2 for k in range(3))
+
+    dt1 = squared(p1, p2) ** 0.25 or 1.0
+    dt0 = squared(p0, p1) ** 0.25 or dt1
+    dt2 = squared(p2, p3) ** 0.25 or dt1
+    out = []
+    for k in range(3):
+        # Nonuniform Catmull-Rom tangents, then the cubic three.js evaluates.
+        m1 = ((p1[k] - p0[k]) / dt0 - (p2[k] - p0[k]) / (dt0 + dt1)
+              + (p2[k] - p1[k]) / dt1) * dt1
+        m2 = ((p2[k] - p1[k]) / dt1 - (p3[k] - p1[k]) / (dt1 + dt2)
+              + (p3[k] - p2[k]) / dt2) * dt1
+        c0, c1 = p1[k], m1
+        c2 = -3 * p1[k] + 3 * p2[k] - 2 * m1 - m2
+        c3 = 2 * p1[k] - 2 * p2[k] + m1 + m2
+        out.append(c0 + c1 * weight + c2 * weight ** 2 + c3 * weight ** 3)
     return out
 
 
-# THREE SAMPLES PER SEGMENT, NOT FOURTEEN. buildTubeGeometry builds its own
-# CatmullRomCurve3 through whatever points it is handed and then tessellates at
-# max(8, points.length * 6) tubular segments, so a dense path is paid for twice: the
-# curve is already smooth from the control cage, and every extra sample multiplies into
-# six more rings of geometry. At fourteen the hose alone was 9504 triangles, 64 percent
-# of the whole prop; at three it is a fifth of that and the silhouette is identical.
-# Twenty-two samples is also dense enough that the polyline the clearance check walks
-# sits well inside the tube's own radius of the curve that gets built, which matters
-# because three.js parameterises CatmullRomCurve3 centripetally and this script
-# uniformly - the two agree closely on a dense cage and would not on a sparse one.
-HOSE_PATH = catmull_rom(HOSE_CONTROL, 3)
+# Dense enough that a walk along it is a fair stand-in for arc length and that the cuff lands
+# where it should. This polyline is NOT shipped - HOSE_CAGE_LOCAL is - so its density costs
+# geometry nothing and only sharpens the measurements.
+HOSE_PATH_SAMPLES = 240
+HOSE_PATH = [[round(v, 5) for v in _centripetal_point(HOSE_CONTROL, i / (HOSE_PATH_SAMPLES - 1))]
+             for i in range(HOSE_PATH_SAMPLES)]
 HOSE_LENGTH = round(sum(
     math.dist(a, b) for a, b in zip(HOSE_PATH, HOSE_PATH[1:])), 4)
 # Not counted off the projection: the reference foreshortens the far limb of the loop, so a
@@ -595,7 +668,9 @@ HOSE_LENGTH = round(sum(
 # and the count is what the pitch and the authored centreline together imply.
 HOSE_RIB_COUNT = int(round(HOSE_LENGTH / HOSE_PITCH))
 
-HOSE_PATH_LOCAL = [list(to_body(*p)) for p in HOSE_PATH]
+# What actually ships: the authored cage, in the body's frame. buildTubeGeometry interpolates
+# it once, centripetally, which is exactly the curve HOSE_PATH samples above.
+HOSE_CAGE_LOCAL = [list(to_body(*p)) for p in HOSE_CONTROL]
 
 def _walk_back(distance: float) -> int:
     """Index of the sample roughly `distance` of arc back from the hose's end."""
@@ -652,53 +727,6 @@ def clearance_report() -> list[str]:
     return problems
 
 
-# ---------------------------------------------------------------------------
-# THE HOSE'S SELF-INTERSECTION, MEASURED ON THE CURVE THAT ACTUALLY SHIPS
-#
-# A swept tube passes through itself wherever its centreline's radius of curvature falls
-# below its tube radius. Nothing else here can see that: the bounding boxes are unchanged,
-# clearance_report only asks whether the centreline stays outside other parts, and the bow
-# contract measures how far the tube departs from its chord, which a fold does not reduce.
-#
-# THE CURVE MUST BE THE SHIPPED ONE, NOT THIS SCRIPT'S. buildTubeGeometry hands the sample
-# list to THREE.CatmullRomCurve3, which is CENTRIPETAL by default, while catmull_rom above is
-# uniform. Measuring curvature on the uniform polyline reported 0.65 of the tube radius at
-# the collar where the shipped centripetal curve is at 0.33 - the uniform estimate was
-# wrong by a factor of two and in the reassuring direction. The reimplementation below is
-# three.js's own algorithm, and it was verified against three.js rather than assumed: both
-# return min radius 0.01882 at t 0.083 and the same three folding stretches to five decimals.
-# ---------------------------------------------------------------------------
-def _centripetal_point(points: list, t: float) -> list[float]:
-    """THREE.CatmullRomCurve3.getPoint for the default centripetal type, tension 0.5."""
-    count = len(points)
-    span = (count - 1) * t
-    index = min(int(math.floor(span)), count - 2)
-    weight = span - index
-    p1, p2 = points[index], points[index + 1]
-    p0 = points[index - 1] if index > 0 else [2 * p1[k] - p2[k] for k in range(3)]
-    p3 = (points[index + 2] if index + 2 < count
-          else [2 * p2[k] - p1[k] for k in range(3)])
-
-    def squared(a, b):
-        return sum((a[k] - b[k]) ** 2 for k in range(3))
-
-    dt1 = squared(p1, p2) ** 0.25 or 1.0
-    dt0 = squared(p0, p1) ** 0.25 or dt1
-    dt2 = squared(p2, p3) ** 0.25 or dt1
-    out = []
-    for k in range(3):
-        # Nonuniform Catmull-Rom tangents, then the cubic three.js evaluates.
-        m1 = ((p1[k] - p0[k]) / dt0 - (p2[k] - p0[k]) / (dt0 + dt1)
-              + (p2[k] - p1[k]) / dt1) * dt1
-        m2 = ((p2[k] - p1[k]) / dt1 - (p3[k] - p1[k]) / (dt1 + dt2)
-              + (p3[k] - p2[k]) / dt2) * dt1
-        c0, c1 = p1[k], m1
-        c2 = -3 * p1[k] + 3 * p2[k] - 2 * m1 - m2
-        c3 = 2 * p1[k] - 2 * p2[k] + m1 + m2
-        out.append(c0 + c1 * weight + c2 * weight ** 2 + c3 * weight ** 3)
-    return out
-
-
 def _inside_collar(point: list[float]) -> bool:
     """Whether a fold at this point is hidden inside the collar's solid revolve.
 
@@ -714,8 +742,8 @@ def _inside_collar(point: list[float]) -> bool:
 
 
 # The curvature is a three-point circumradius, so it is a DISCRETE estimate and it converges
-# downward as the sampling tightens: the exposed stretch reads 0.45 of the tube radius at 300
-# samples, 0.43 at 500, 0.42 here and 0.40 at 2400. The verdict never changes - every one of
+# downward as the sampling tightens: the exposed stretch reads 0.438 of the tube radius at 300
+# samples, 0.428 at 500, 0.421 here and 0.414 at 2400. The verdict never changes - every one of
 # those is a fold - but the ratio is not a number to quote to three decimals.
 FOLD_SAMPLES = 900
 
@@ -727,7 +755,9 @@ def fold_report() -> list[tuple[float, float, float, list[float]]]:
     asserted: the one stretch this currently finds needs a route change to remove, which is
     a design decision, so failing the build here would only stop the pipeline.
     """
-    dense = [_centripetal_point(HOSE_PATH, i / (FOLD_SAMPLES - 1))
+    # Sampled from the CAGE, not from HOSE_PATH: interpolating an already-interpolated
+    # polyline is the very double pass this prop just stopped shipping.
+    dense = [_centripetal_point(HOSE_CONTROL, i / (FOLD_SAMPLES - 1))
              for i in range(FOLD_SAMPLES)]
     runs: list[list] = []
     open_run = False
@@ -1239,7 +1269,7 @@ HOSE = component(
             "notes": "The last sample sits inside the cuff."}],
 )
 HOSE["geometryDescriptor"]["tubePath"] = {
-    "points": HOSE_PATH_LOCAL, "radius": HOSE_TUBE_R, "radialSegments": TUBE_RADIAL, "closed": False,
+    "points": HOSE_CAGE_LOCAL, "radius": HOSE_TUBE_R, "radialSegments": TUBE_RADIAL, "closed": False,
 }
 HOSE["attachment"] = joint(
     "vacuum-body", "hose-port", "seated-in-socket",
@@ -1266,7 +1296,8 @@ NOZZLE = component(
                uv="planar UVs from the extrusion",
                normals="hard normals on the walls, flat on the top face",
                profile2d=profile(chamfered_rect(NOZZLE_LENGTH, NOZZLE_WIDTH, 0.05),
-                                 NOZZLE_THICK, axis="y")),
+                                 NOZZLE_THICK, axis="y",
+                                 holes=[SLOT_LOOP])),
     xform(position=to_body(0.0, 0.0, NOZZLE_Z), scale=(1.0, 1.0, 1.0)),
     dims(NOZZLE_LENGTH, NOZZLE_THICK, NOZZLE_WIDTH, 0.7),
     action("shell", "center", (0.0, round(NOZZLE_THICK / 2, 4), 0.0), (0, 1, 0), 0.75,
@@ -1287,8 +1318,14 @@ NOZZLE = component(
              "chamfered rectangle in the extrusion profile",
              [EVIDENCE, "nozzle-zone"], 0.65),
      feature("nozzle-slot",
-             "A long recessed slot runs the front face, the only hard dark line on the cream.",
-             "recessed channel in the front wall, delivered at form-refinement",
+             f"The suction slot runs {SLOT_LENGTH} along the head and is {SLOT_WIDTH} across, "
+             f"which is {R_NOZZLE_SLOT_LENGTH} and {R_NOZZLE_SLOT_WIDTH} of the canister's "
+             "diameter. Both come from the one dark band enclosed by the head's cream mask, "
+             "un-squashed into plan by 1/sin(pitch) the same way the head's own outline was. "
+             f"Its {SLOT_FRONT_WALL} setback from the front lip is ASSUMED, because recovering "
+             "it would need the head's image plan frame and that frame is this spec's weakest "
+             "measurement.",
+             "a hole cut through the head's own extrusion profile, so it costs no draw call",
              [EVIDENCE, "nozzle-zone"], 0.7),
      feature("nozzle-parks-under-body",
              f"The head's rear edge sits at z {round(NOZZLE_Z - NOZZLE_WIDTH / 2, 4)}, which is "
@@ -2316,39 +2353,49 @@ SPEC = assemble(
         "which is why the belt's arc could not be fitted and why its height carries +/- 0.04. "
         "Horizontal extents are unaffected, and this spec's ratios are horizontal wherever it "
         "had the choice.",
-        "THE HOSE PASSES THROUGH ITSELF ONCE, ON THE DESCENT TO THE CUFF, AND A SMALL FIX "
-        "DOES NOT REMOVE IT. A swept tube self-intersects wherever its centreline's radius of "
-        "curvature drops below its tube radius, and the shipped centripetal curve does that in "
-        f"three places: {' and '.join(f'{s}-{e} at {round(r / HOSE_TUBE_R, 2)}x' for s, e, r, _ in fold_report())} "
-        "exposed, plus two more at 0.85x and 0.33x that sit inside the collar's solid revolve "
-        "and are concealed by construction, on the same footing as the fan's blade web - "
-        "physics says the hose must enter the socket and the arithmetic says the entry is "
-        "covered. The exposed one is a real defect. It is NOT hidden by the cuff: the cuff's "
-        f"radius is {round(CUFF_DIAMETER / 2, 4)} against the tube's {HOSE_TUBE_R}, too little "
-        "to cover a bulge, and the fold ends before the cuff begins. NO GATE HERE SAW IT - the "
-        "bounding boxes are identical, clearance_report only asks whether the centreline stays "
-        "outside other parts, and bow does not fall when a tube crumples. The cause is the "
-        f"cage's corner at the second-to-last control point, an 89 degree turn: the route "
-        "sweeps out to bearing 75 degrees and then doubles back to the cuff, which sits at "
-        "101.3 degrees. Small changes do not fix it - grids over the descent bearings, over "
-        "approach directions, and over the crown all cap at 0.44x, and the only fold-free "
+        "THE HOSE PASSES THROUGH ITSELF ONCE ON ITS DESCENT TO THE CUFF, AND IT SHIPS THAT "
+        "WAY BY RULING. A swept tube self-intersects wherever its centreline's radius of "
+        "curvature drops below its tube radius, and the shipped curve does that at "
+        f"{' '.join(f'{s}-{e} at {round(r / HOSE_TUBE_R, 2)}x the tube radius' for s, e, r, _ in fold_report())}"
+        ". It is NOT hidden by the cuff: the cuff's radius is "
+        f"{round(CUFF_DIAMETER / 2, 4)} against the tube's {HOSE_TUBE_R}, too little to cover a "
+        "bulge, and the fold ends before the cuff begins. The cause is the cage's 89 degree "
+        "corner at the second-to-last control point - the route sweeps out to bearing 75 and "
+        "doubles back to the cuff at 101.3.\n"
+        "WHAT WAS TRIED AND REFUSED. Grids over the descent bearings, over arrival directions "
+        "and over the crown all cap at 0.44x, so no small change removes it; the only fold-free "
         "route a search found runs 1.40 of centreline against the authored 0.89, which is a "
-        "different hose rather than a corrected one. Removing it means re-routing the tail so "
-        "the approach stops overshooting the cuff's own bearing, and that is a design decision "
-        "against the recorded 'sweeps the front' ruling rather than a tweak, so it is recorded "
-        "here and left for a ruling. fold_report() measures it on every author run.",
-        "THE HOSE IS INTERPOLATED TWICE AND ONCE WOULD BE BETTER, MEASURED. catmull_rom "
-        f"samples the {len(HOSE_CONTROL)}-point cage into {len(HOSE_PATH)} points and "
-        "buildTubeGeometry then builds a second CatmullRomCurve3 through those, so the shipped "
-        "shape is an interpolation of an interpolation - and the two use different "
-        "parameterisations, uniform here and centripetal there. Feeding the authored cage "
-        "straight to the tube measures better on every axis that matters: bow 0.1841 against "
-        "0.1826, centreline 0.8930 against 0.8955, and 864 triangles against 2400, because "
-        "tubularSegments is points*6 and the cage has a third as many points. It also removes "
-        "the collar-end fold entirely and makes this script's checker exactly the shipped "
-        "curve. It is NOT applied here: it changes the hose's shipped shape slightly, the "
-        "route decision above is still open, and doing both at once would leave neither "
-        "measurable. No test blocks it - the hose is pinned by bow, not by sample count.",
+        "different hose rather than a corrected one. Re-routing the tail would also break the "
+        "recorded decision that the hose sweeps the front. Ruled by team-lead: SHIP IT. The "
+        "defect is a pinch a few centimetres across on a prop the chase camera sees from metres "
+        "away in motion, and neither alternative is worth its price. This is a known, measured, "
+        "accepted deviation rather than an unnoticed one, and fold_report() re-measures it on "
+        "every author run so it cannot drift unseen.\n"
+        "WHY NO GATE FOUND IT. The bounding boxes are identical with and without the fold, "
+        "clearance_report only asks whether the centreline stays outside other parts, and bow "
+        "does not fall when a tube crumples - the very contract meant to discriminate a real "
+        "hose from a substituted rod is blind to this. It took reimplementing three.js's "
+        "centripetal parameterisation to see it at all, because this script's own uniform "
+        "sampler put the worst stretch at 0.65x when the truth was 0.33x: wrong by a factor of "
+        "two, in the reassuring direction. Any future tube in this pipeline needs the same "
+        "check, on the curve that ships rather than on the cage that feeds it.",
+        "THE HOSE IS NOW INTERPOLATED ONCE, AND THE SECOND PASS WAS COSTING REAL GEOMETRY. "
+        f"This script used to sample the {len(HOSE_CONTROL)}-point cage into 25 points with a "
+        "UNIFORM Catmull-Rom, and buildTubeGeometry then built its own CENTRIPETAL curve "
+        "through those - an interpolation of an interpolation under two different "
+        "parameterisations, with every check running on the inner one instead of on the object. "
+        "The cage now goes straight to the tube. Measured both ways: bow 0.1841 against 0.1826, "
+        "centreline 0.8930 against 0.8955, and 864 triangles against 2400, because "
+        "tubularSegments is max(8, points * 6) and 25 samples bought 150 rings where the cage "
+        "needs 54. It also removed the two collar-end self-intersections outright, leaving only "
+        "the accepted one above. HOSE_PATH is still built here, densely, but purely as the "
+        "measuring polyline - it is not shipped, so its density is free.\n"
+        "A CORRECTION TO THIS SPEC'S OWN CLAIM: an earlier version of this risk list said a "
+        "unit test pinned the hose's sample count. No such test exists. The vacuum hose is "
+        "pinned by BOW - the maximum distance from any vertex to the chord joining the mesh's "
+        "two most distant vertices, which a straight rod cannot fake - in "
+        "tests/unit/sculpted-props.test.ts. The sample-count pin is the SPRING's coil. Nothing "
+        "blocked this change, and the spec should not have implied otherwise.",
         "THE CORRUGATION IS DECLARED AND NOT BUILT. generate_threejs_factory's repetition "
         "emitter places instances radially about an axis at radius * 0.5 and has no along-path "
         "mode, so it cannot lay ribs along a curve at any level. The pitch is measured and the "

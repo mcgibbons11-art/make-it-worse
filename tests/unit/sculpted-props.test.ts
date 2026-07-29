@@ -894,22 +894,27 @@ describe("sculpted props fit the call sites that mount them", () => {
   });
 
   it("fits the vacuum inside TrapRenderer's hazard box and fills its plan", () => {
-    // CuboidCollider args={[0.5, 0.55, 0.45]} at a [0, -0.55, 0] mount, so 1.00 x 1.10 x
-    // 0.90 with the shell on the deck. This prop does NOT fill that box, and the lower
-    // bounds below are deliberately loose because of a ruling rather than slack authoring.
-    // The canister was sized DOWN from 0.80 to 0.70 so the hose could clear the shell and
-    // read as a hose: at 0.80 the clearance in front of the widest band was zero to three
-    // decimals. That costs about twelve points of plan width. The height was never
-    // reachable - a canister vacuum measures 0.63 as tall as it is wide. Both gaps are
-    // recorded in the spec's fairness note and feed a queued collider-trim decision; they
-    // are not numbers to tune away here. Depth IS still filled, by the hose's own sweep.
+    // CuboidCollider args={[0.43, 0.32, 0.45]} at a [0, -0.32, 0] mount, so 0.86 x 0.64 x
+    // 0.90 with the shell on the deck - the trim that closed the "queued collider-trim
+    // decision" this comment used to reference. Z's half-extent is 0.45 and NOT 0.44
+    // because vacuum-body reaches z -0.446; 0.44 would have left real geometry outside
+    // the hitbox. The canister stays sized DOWN from 0.80 to 0.70 so the hose can clear
+    // the shell and read as a hose; that ruling is why the width lower bound is loose.
+    // Depth is filled by the hose's own sweep.
     const { size, min } = measure(createApartmentCanisterVacuumModel({ textureSize: TEXTURE_SIZE }));
-    expect(size.x).toBeLessThanOrEqual(1.0);
-    expect(size.y).toBeLessThanOrEqual(1.1001);
+    expect(size.x).toBeLessThanOrEqual(0.8601);
+    expect(size.y).toBeLessThanOrEqual(0.6401);
     expect(size.z).toBeLessThanOrEqual(0.9001);
     expect(size.x).toBeGreaterThan(0.80);
     expect(size.z).toBeGreaterThan(0.85);
     expect(min.y).toBeCloseTo(0, 3);
+    // The collider is CENTRED on the body origin; size alone cannot prove containment.
+    // Both z extremes must sit inside the 0.45 half-extent (the -z extreme is the one
+    // that forced 0.45 over 0.44), and both x extremes inside 0.43.
+    expect(min.z).toBeGreaterThanOrEqual(-0.4501);
+    expect(min.z + size.z).toBeLessThanOrEqual(0.4501);
+    expect(min.x).toBeGreaterThanOrEqual(-0.4301);
+    expect(min.x + size.x).toBeLessThanOrEqual(0.4301);
   });
 
   it("builds the vacuum's hose as a swept curve rather than the generator's cylinder", () => {

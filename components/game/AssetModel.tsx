@@ -234,8 +234,9 @@ export function AssetReadinessGate({ onReady }: { onReady(): void }) {
 // leaves the build with no third-party art to attribute.
 // The fan accepts an optional ref so a caller can spin its blade group; every
 // other prop takes no props, hence the loose component signature here.
-// Sculpted entries come from the img2threejs pipeline; the rest are still the
-// hand-authored components and are the remaining work on this map.
+// Every entry is now a sculpt from the img2threejs pipeline - the vacuum was the
+// last hand-authored one. ProceduralToaster keeps its older name but wraps
+// Sculpted like the others.
 const PROCEDURAL: Record<ModelName, React.ComponentType> = {
   hammer: SculptedHammer,
   refrigerator: SculptedRefrigerator,

@@ -554,7 +554,13 @@ function Spring({ trap, player, onHazard, onMechanic }: TrapProps) {
 }
 // How high the body hovers above the ground; also the collider half-height,
 // so the box still sits flush with the floor.
-const VACUUM_HOVER_HEIGHT = 0.55;
+//
+// 0.32, down from the hand-authored prop's 0.55: the sculpt measures
+// 0.8486 x 0.6225 x 0.8742 on the deck (a canister vacuum is 0.63 as tall as it
+// is wide - the old 1.10 of box height was never reachable), so the box is now
+// 0.64 tall and the body's centre rides at 0.32. The chase, suction and ring
+// math is horizontal-only, so nothing but the hitbox moves with this.
+const VACUUM_HOVER_HEIGHT = 0.32;
 // Omnidirectional pull radius: the body chases from any side, not just ahead.
 const VACUUM_SUCTION_RADIUS = 2.5;
 const VACUUM_CHASE_RADIUS = 4.5;
@@ -638,7 +644,10 @@ function Vacuum({ trap, player, trapBodies, onHazard, onMechanic }: TrapProps) {
       position={[origin.x, origin.y, origin.z]}
       rotation={[0, trap.rotationY, 0]}
     >
-      <CuboidCollider args={[0.5, VACUUM_HOVER_HEIGHT, 0.45]} />
+      {/* Trimmed to the sculpt: X needs 0.4243 (0.43 with 0.0057 spare) and Z
+          needs 0.4460 - vacuum-body reaches z -0.446, so 0.44 would leave real
+          geometry OUTSIDE the hitbox. 0.45 is the honest half-extent. */}
+      <CuboidCollider args={[0.43, VACUUM_HOVER_HEIGHT, 0.45]} />
       <AssetModel model="vacuum" position={[0, -VACUUM_HOVER_HEIGHT, 0]} />
       {/* Rings are children of the body, not trap.position, so they recentre
           on every chase/return step instead of only telegraphing the spawn. */}

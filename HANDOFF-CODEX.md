@@ -86,18 +86,18 @@ in-flight vacuum files uncommitted (see §3).
 
 ## 3. In-flight RIGHT NOW (check before you start)
 
-UPDATE (later the same evening): the vacuum LANDED. SculptedVacuum is wired in
-`AssetModel.tsx` (all TEN props are now sculpted), the suction slot is built as a
-measured hole in the head's extrude profile, and the full suite ran green after
-(53 files / 701 passed). Task C below is REDUCED to its cage-direct step: a ruled
-refactor feeding the 9-point hose cage directly to `buildTubeGeometry` (fixes a
-244-triangle budget breach — 6244 real vs 6000 target — and removes two concealed
-collar folds; re-derive the spec's checks and cuff placement from the shipped curve,
-then run `fold_report()` before/after). An agent may have finished it — check
-`git log` for a cage-direct commit before starting. Two recorded, ACCEPTED
-deviations you should not "fix": the exposed hose fold at t 0.82–0.885 (ruled to
-ship; re-route rejected), and the structural pass having renders but no formal
-review (the component comment and pass header say so honestly — leave them).
+FINAL UPDATE (end of evening): **task C is COMPLETE — skip it.** The vacuum is
+wired (all TEN props sculpted), the cage-direct refactor landed (4708 real
+triangles vs the 6000 budget, collar folds gone, exposed fold re-measured at
+0.42× — marginally gentler), and the collider trim landed as
+`[0.43, 0.32, 0.45]` via `VACUUM_HOVER_HEIGHT = 0.32` in TrapRenderer (Z is 0.45,
+NOT the once-proposed 0.44 — vacuum-body reaches z −0.446). Full suite green
+after everything (53 files / 701 passed), Portals dist rebuilt. Two recorded,
+ACCEPTED deviations you should not "fix": the exposed hose fold at t ~0.84–0.89
+(ruled to ship; re-route rejected), and the structural pass having a real Tier-1
+entry + comparison sheet but NO reviewHistory entry (fast-mode eyeball is recorded
+in the component comment instead; the ledger only advances on a real review —
+leave it). Remaining work is §4 A (sounds), B (Portals folder switch), D, E, F, G.
 
 ---
 

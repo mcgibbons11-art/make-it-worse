@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.796,
+  "estimatedFidelity": 0.796,
+  "targetThreshold": 0.7,
+  "materialId": "furniture-cream",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\crops\\furniture-cream-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr",
+  "palette": [
+    "#D1BFA7",
+    "#EFDDC7",
+    "#E2D2BC",
+    "#D8C8B1",
+    "#957F62"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\furniture-cream_albedo.png",
+      "url": "furniture-cream_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\furniture-cream_roughness.png",
+      "url": "furniture-cream_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\furniture-cream_height.png",
+      "url": "furniture-cream_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\furniture-cream_normal.png",
+      "url": "furniture-cream_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\furniture-cream_ao.png",
+      "url": "furniture-cream_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 120,
+    "sourceHeight": 85,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 120,
+      "height": 85
+    },
+    "mask": {
+      "backgroundColor": "#F3E5CF",
+      "backgroundNoise": 79.875,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.3547
+    },
+    "mapStats": {
+      "valueRange": 0.3443,
+      "heightP90Gradient": 0.00969,
+      "roughnessBase": 0.68,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.168,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#D1BFA7",
+      "#EFDDC7",
+      "#E2D2BC",
+      "#D8C8B1",
+      "#957F62"
+    ]
+  },
+  "warnings": [
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

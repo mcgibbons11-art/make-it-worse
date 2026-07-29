@@ -6,14 +6,21 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type { MeshStandardMaterial } from "three";
 import { EXIT_POSITION, EXIT_SENSOR_SIZE, PALETTE } from "@/lib/game/constants";
+import type { Vec3Tuple } from "@/lib/game/types";
 
-export function ExitDoor({ showLabel }: { showLabel: boolean }) {
+export function ExitDoor({
+  showLabel,
+  position = EXIT_POSITION,
+}: {
+  showLabel: boolean;
+  position?: Vec3Tuple;
+}) {
   const glow = useRef<MeshStandardMaterial>(null);
   useFrame(({ clock }) => {
     if (glow.current) glow.current.emissiveIntensity = 1.6 + Math.sin(clock.elapsedTime * 4) * 0.35;
   });
   return (
-    <group position={EXIT_POSITION}>
+    <group position={[position[0], position[1], position[2]]}>
       {[-1.35, 1.35].map((x) => (
         <mesh key={x} position={[x, 0, 0]} castShadow>
           <boxGeometry args={[0.35, 3.4, 0.65]} />

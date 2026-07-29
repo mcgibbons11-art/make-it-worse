@@ -1,0 +1,191 @@
+{
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment-reference.png",
+  "zonesDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones",
+  "detailInventory": {
+    "scanMethod": "component-zones",
+    "targetMinDetails": 10,
+    "details": [
+      {
+        "id": "wall-left",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.121,
+          "y": 0.055,
+          "width": 0.383,
+          "height": 0.645,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\wall-left.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "wall-back",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.494,
+          "y": 0.055,
+          "width": 0.393,
+          "height": 0.645,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\wall-back.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "window",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.195,
+          "y": 0.17,
+          "width": 0.19,
+          "height": 0.29,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\window.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "skirting",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.121,
+          "y": 0.5,
+          "width": 0.766,
+          "height": 0.21,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\skirting.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "side-table",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.195,
+          "y": 0.495,
+          "width": 0.19,
+          "height": 0.2,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\side-table.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "sofa",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.435,
+          "y": 0.34,
+          "width": 0.39,
+          "height": 0.4,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\sofa.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "floor-planks",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.2,
+          "y": 0.56,
+          "width": 0.67,
+          "height": 0.4,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\floor-planks.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "rug",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.3,
+          "y": 0.59,
+          "width": 0.41,
+          "height": 0.28,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\rug.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "base-trim",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.115,
+          "y": 0.63,
+          "width": 0.78,
+          "height": 0.345,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\base-trim.png",
+        "confidence": 0.0
+      }
+    ]
+  },
+  "authoringInstruction": "Open each zone crop under zonesDir and replace every detail stub's kind, description, scale, affects, mapsTo, and confidence with what is actually observed. Add more detail entries per zone if a single zone contains multiple distinct marks; do not leave stubs unfilled or unlinked (mapsTo must reference a real component.localFeatures or material.localOverrides entry)."
+}

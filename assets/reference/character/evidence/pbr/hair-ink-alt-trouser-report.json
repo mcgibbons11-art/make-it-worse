@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.717,
+  "estimatedFidelity": 0.717,
+  "targetThreshold": 0.7,
+  "materialId": "hair-ink-alt-trouser",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\crops\\hair-ink-alt-trouser-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr",
+  "palette": [
+    "#232B3F",
+    "#252D41",
+    "#262E43",
+    "#1F273A",
+    "#1A2030"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr\\hair-ink-alt-trouser_albedo.png",
+      "url": "hair-ink-alt-trouser_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr\\hair-ink-alt-trouser_roughness.png",
+      "url": "hair-ink-alt-trouser_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr\\hair-ink-alt-trouser_height.png",
+      "url": "hair-ink-alt-trouser_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr\\hair-ink-alt-trouser_normal.png",
+      "url": "hair-ink-alt-trouser_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\evidence\\pbr\\hair-ink-alt-trouser_ao.png",
+      "url": "hair-ink-alt-trouser_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 72,
+    "sourceHeight": 254,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 72,
+      "height": 254
+    },
+    "mask": {
+      "backgroundColor": "#252C3D",
+      "backgroundNoise": 6.708,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 1.0
+    },
+    "mapStats": {
+      "valueRange": 0.08,
+      "heightP90Gradient": 0.01508,
+      "roughnessBase": 0.7,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.174,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#232B3F",
+      "#252D41",
+      "#262E43",
+      "#1F273A",
+      "#1A2030"
+    ]
+  },
+  "warnings": [
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak",
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped",
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.71,
+  "estimatedFidelity": 0.71,
+  "targetThreshold": 0.7,
+  "materialId": "base-navy",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\crops\\base-navy-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr",
+  "palette": [
+    "#39475E",
+    "#3F4D66",
+    "#344159",
+    "#4E5B74",
+    "#D4D4D3"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\base-navy_albedo.png",
+      "url": "base-navy_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\base-navy_roughness.png",
+      "url": "base-navy_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\base-navy_height.png",
+      "url": "base-navy_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\base-navy_normal.png",
+      "url": "base-navy_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\base-navy_ao.png",
+      "url": "base-navy_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 370,
+    "sourceHeight": 165,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 370,
+      "height": 165
+    },
+    "mask": {
+      "backgroundColor": "#3C4A63",
+      "backgroundNoise": 18.547,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 1.0
+    },
+    "mapStats": {
+      "valueRange": 0.1028,
+      "heightP90Gradient": 0.01427,
+      "roughnessBase": 0.698,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.173,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#39475E",
+      "#3F4D66",
+      "#344159",
+      "#4E5B74",
+      "#D4D4D3"
+    ]
+  },
+  "warnings": [
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak",
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped",
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

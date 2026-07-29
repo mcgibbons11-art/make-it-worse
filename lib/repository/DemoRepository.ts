@@ -2,9 +2,10 @@ import { generatedName } from "@/lib/auth/names";
 import { sanitizeDisplayName } from "@/lib/auth/profanity";
 import { estimatedWorsePercent, smoothedSurvival } from "@/lib/game/difficulty";
 import { validatePlacement } from "@/lib/game/placement";
+import { CLASSIC_TRACK, buildTrack, composeFreshTrack } from "@/lib/game/track";
 import { challengeSchema, ghostTraceSchema } from "@/lib/game/schemas";
 import { hashString, seededId } from "@/lib/game/seed";
-import { chooseTraps } from "@/lib/game/trap-choice";
+import { challengeTrack, chooseTraps, firstLegalPlacement } from "@/lib/game/trap-choice";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type {
   ChallengeDTO,
@@ -80,6 +81,14 @@ function uuid(): string {
 function slug(prefix: string, seed: number): string {
   return `${prefix}-${Math.abs(seed).toString(36).padStart(8, "0").slice(0, 10)}`;
 }
+/**
+ * The seed the demo challenge composes its course from. Fixed, because the demo
+ * is a shared reference point - its 184 attempts and 12% survival rate describe
+ * one particular course, and a demo that rebuilt itself per browser would be
+ * quoting somebody else's statistics.
+ */
+const DEMO_TRACK_SEED = 424242;
+
 const baseStats = () => ({
   attempts: 0,
   completions: 0,
@@ -138,27 +147,36 @@ export class DemoRepository implements GameRepository {
   }
   private seededTrending(state: DemoState): void {
     if (state.challenges["demo-disaster"]) return;
+    // The demo is the level the front door offers a curious player second, and
+    // it opened on CLASSIC_TRACK - one legacy segment, the flattest course in
+    // the game - while every fresh chain has composed its course from the
+    // catalogue since. So the button that promised the interesting level handed
+    // over the boring one, and the interesting one was behind the button that
+    // sounded like a reset. Composition is seeded off a constant, so the demo
+    // is the same course for everybody who is sent it.
+    const track = composeFreshTrack(DEMO_TRACK_SEED);
+    const built = buildTrack(track);
     const traps: ChallengeDTO["traps"] = [];
     const types: readonly TrapType[] = [
       "floor_fan",
       "giant_beach_ball",
       "rotating_toilet",
     ];
-    const zones = ["runway_mid", "bridge_front", "finish_front"] as const;
-    for (let index = 0; index < 3; index += 1) {
-      const type = types[index]!;
-      const zoneId = zones[index]!;
-      const valid = validatePlacement(
-        {
-          type,
-          zoneId,
-          offsetX: 0,
-          offsetZ: 0,
-          rotationQuarterTurns: (index === 0 ? 2 : index % 4) as 0 | 1 | 2 | 3,
-        },
+    types.forEach((type, index) => {
+      // firstLegalPlacement takes the first zone that fits, so three traps in a
+      // row would all land at the top of the course. Rotating the zone list
+      // starts each search a quarter, half and three-quarters of the way along,
+      // which spreads them without duplicating the search itself. The zones are
+      // the real track's, so the validation below agrees with it.
+      const from = Math.floor((built.zones.length * (index + 1)) / 4);
+      const placement = firstLegalPlacement(
+        { ...built, zones: [...built.zones.slice(from), ...built.zones.slice(0, from)] },
+        type,
         traps,
       );
-      if (!valid.valid) continue;
+      if (!placement) return;
+      const valid = validatePlacement(placement, traps, built);
+      if (!valid.valid) return;
       traps.push({
         id: `demo-trap-${index}`,
         type,
@@ -166,21 +184,22 @@ export class DemoRepository implements GameRepository {
         ownerName: ["Wobbly Badger", "Turbo Otter", "Cheeky Kettle"][index]!,
         ownerAvatarSeed: 100 + index,
         depthAdded: index + 1,
-        zoneId,
+        zoneId: placement.zoneId,
         position: valid.canonicalPosition,
         rotationY: valid.rotationY,
         seed: 1000 + index,
         params: TRAP_CATALOG[type].defaultParams,
       });
-    }
+    });
     const challenge: ChallengeDTO = {
+      track,
       id: "demo-trending",
       slug: "demo-disaster",
       chainId: "demo-chain",
       chainSlug: "demo-chain",
       parentSlug: null,
       depth: traps.length,
-      baseSeed: 424242,
+      baseSeed: DEMO_TRACK_SEED,
       levelVersion: 1,
       createdByName: "Cheeky Kettle",
       createdByAvatarSeed: 102,
@@ -223,7 +242,7 @@ export class DemoRepository implements GameRepository {
       return challengeSchema.parse(challenge);
     });
   }
-  async createRootChain(): Promise<ChallengeDTO> {
+  async createRootChain(track?: readonly string[]): Promise<ChallengeDTO> {
     const guest = await this.ensureGuest();
     return this.transact((state) => {
       const key = uuid();
@@ -246,6 +265,14 @@ export class DemoRepository implements GameRepository {
         stats: baseStats(),
         createdAt: new Date().toISOString(),
         isDemo: true,
+        // Only carried when the player composed a course; publishChild spreads
+        // the parent, so every descendant inherits the same track.
+        // Omitting this used to fall through to CLASSIC_TRACK, so every new
+        // chain in the game opened on the same single legacy segment and the
+        // other twenty-eight were reachable only through the editor. A fresh
+        // course is now composed from the catalogue, seeded off this challenge
+        // so it rebuilds identically for everyone who opens the link.
+        ...(track && track.length > 0 ? { track } : { track: composeFreshTrack(seed) }),
       };
       state.challenges[challengeSlug] = challenge;
       state.rootKeys[key] = challengeSlug;
@@ -311,6 +338,7 @@ export class DemoRepository implements GameRepository {
           challenge.id,
           challenge.baseSeed,
           challenge.traps,
+          challengeTrack(challenge),
         );
         const completions = challenge.stats.completions + 1;
         challenge.stats = {
@@ -359,7 +387,13 @@ export class DemoRepository implements GameRepository {
           ),
         };
       }
-      const valid = validatePlacement(input.placement, parent.traps);
+      // Validate against the parent's own course, not the fixed classic one, or
+      // a custom-track child stores coordinates from a level it is not on.
+      const valid = validatePlacement(
+        input.placement,
+        parent.traps,
+        buildTrack(parent.track ?? CLASSIC_TRACK),
+      );
       if (!valid.valid) throw new Error(`INVALID_PLACEMENT:${valid.reason}`);
       const seed = hashString(
         `${attempt.id}:${input.placement.type}:${input.placement.zoneId}`,
@@ -444,6 +478,24 @@ export class DemoRepository implements GameRepository {
       if (!share.openedBy.includes(guest.id)) share.openedBy.push(guest.id);
     });
   }
+  async importChallenge(challenge: ChallengeDTO): Promise<ChallengeDTO> {
+    return this.transact((state) => {
+      // Seed first. The Portals edition imports a link without ever reading a
+      // challenge, so on a first visit the store is empty and a payload whose
+      // slug is "demo-disaster" would claim that key before the real demo is
+      // written. seededTrending then returns early forever and the trending
+      // button serves the attacker's level permanently.
+      this.seededTrending(state);
+      // The creator opening their own link already has the real record, with
+      // its accumulated stats. Adopting the link's empty stats would erase them.
+      const existing = state.challenges[challenge.slug];
+      if (existing) return existing;
+      const adopted = challengeSchema.parse(challenge);
+      state.challenges[adopted.slug] = adopted;
+      return adopted;
+    });
+  }
+
   async resetDemoData(): Promise<void> {
     await this.db.clear();
   }

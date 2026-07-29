@@ -2,6 +2,9 @@
   min-height: 100svh;
 }
 .portals-home {
+  /* The settings and confirm dialogs open over the title screen too, and
+     .portals-overlay is absolutely positioned. */
+  position: relative;
   min-height: 100svh;
   display: grid;
   place-items: center;
@@ -27,16 +30,39 @@
   color: #ff5c65;
   text-shadow: 4px 4px 0 #171a2b;
 }
+/* One way in, then everything else.
+   Four buttons at near-equal weight - a red mega, a yellow primary and two
+   creams - gave a first-time player no start here, and three of the four named
+   a concept the screen had not defined. The clean level is now the only
+   full-width control on the panel; the rest sit under it in a quieter grid, in
+   the order a new player needs them. */
 .portals-actions {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 12px;
+  justify-items: stretch;
+}
+.portals-actions .button {
+  width: 100%;
+}
+/* --muted measures 5.60:1 at the darkest end of the sky gradient behind this
+   card and 5.73:1 at the lightest, taking the panel's cream at 95% over each. */
+.portals-actions-note {
+  margin: -4px 0 2px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+.portals-actions-more {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
 }
 .portals-note {
   display: block;
   margin-top: 22px;
-  color: #6e7487;
+  /* Was #6e7487, which measured 4.34:1 on this card - under the 4.5:1 that
+     WCAG 1.4.3 asks of body text. --muted is 5.67:1 on the same surface. */
+  color: var(--muted);
   font-weight: 750;
 }
 .portals-overlay {
@@ -46,7 +72,12 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(23, 26, 43, 0.3);
+  /* The old .3 scrim left the 3D scene legible straight through the dialog's
+     surroundings, which is where every unread eyebrow and lede on these panels
+     was competing for attention. Matching the Next edition, a heavier scrim
+     plus a blur separates the modal from the world behind it. */
+  background: rgba(23, 26, 43, 0.5);
+  backdrop-filter: blur(6px);
 }
 .portals-overlay .panel {
   width: min(720px, 100%);
@@ -60,9 +91,16 @@
   line-height: 0.93;
   margin: 0.25em 0;
 }
+/* The failure card landed on .portals-overlay's 6px blur under a scrim that
+   reached 0.74 at the edges, so the one frame that shows the ledge you missed
+   was the one frame nobody could read. The scrim thins to a vignette and the
+   blur goes: the card still separates, because it is cream at 95% behind a 4px
+   ink border, and over the darkest frame the renderer can produce that surface
+   still carries ink at 14.61:1 and --muted at 5.16:1. */
 .failure-backdrop {
   overflow: hidden;
-  background: radial-gradient(circle at 50% 45%, rgba(255, 92, 101, 0.18), rgba(23, 26, 43, 0.74));
+  backdrop-filter: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 92, 101, 0.1) 0 30%, rgba(23, 26, 43, 0.62) 100%);
   animation: portals-failure-flash 0.42s ease-out both;
 }
 .failure-backdrop::before {
@@ -74,7 +112,8 @@
   border-radius: 50%;
   background: repeating-conic-gradient(from -5deg, rgba(255, 92, 101, 0.76) 0 2deg, transparent 2deg 11deg);
   mask: radial-gradient(circle, transparent 0 21%, #000 22% 46%, transparent 47%);
-  opacity: 0.52;
+  /* Was 0.52, which is most of what the un-blurred frame behind it is for. */
+  opacity: 0.3;
   animation: portals-failure-rays 8s linear infinite;
 }
 .portals-overlay .portals-failure {
@@ -125,6 +164,65 @@
   display: grid;
   gap: 12px;
 }
+.leaderboard {
+  margin: 18px 0;
+  padding: 16px;
+  border: 3px solid #171a2b;
+  border-radius: 18px;
+  background: rgba(255, 248, 232, 0.85);
+  text-align: left;
+}
+.leaderboard .button {
+  width: 100%;
+  margin: 6px 0;
+}
+.leaderboard-rows {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.leaderboard-rows li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 11px;
+  background: white;
+  font-weight: 800;
+}
+.leaderboard-rows li.is-you {
+  background: #ffd84d;
+  box-shadow: inset 0 0 0 3px #171a2b;
+}
+.leaderboard-rank {
+  color: var(--muted);
+  text-align: right;
+}
+/* --muted reads 4.39:1 on the yellow "you" row, just under the bar, so the
+   rank on that one row takes the ink the rest of the row already uses. */
+.leaderboard-rows li.is-you .leaderboard-rank {
+  color: var(--ink);
+}
+.leaderboard-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leaderboard-time {
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard-note {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+.leaderboard-note.quiet {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
 .portals-panel-bottom {
   position: absolute;
   z-index: 23;
@@ -137,7 +235,253 @@
   width: 100%;
   margin-top: 10px;
 }
+/* ==================================================================
+   The shell: the main menu, the pause menu, settings, the controls
+   reference and the confirmation in front of anything that discards a
+   run. Every colour pairing below was measured rather than judged;
+   the ratio is recorded next to the rule that sets it.
+   ================================================================== */
+
+/* Focus indicator. The global ring is 4px of --blue, which measures 2.74:1 on
+   the cream panel, 2.32:1 on a yellow button and 1.49:1 on the red one - all
+   under the 3:1 WCAG 1.4.11 asks of a focus indicator. Ink reads 14.76:1 on
+   the panel, 12.45:1 on yellow, 16.28:1 on cream and 3.60:1 on red. */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+/* These two sit over the 3D scene, where the gap around an ink ring can land
+   on ink. The cream inner ring is 16.28:1 against the outer ring itself and
+   19.84:1 against black, so one of the two always reads. */
+.hud-actions button:focus-visible,
+.portals-credits.in-game:focus-visible {
+  box-shadow: 0 0 0 3px var(--cream);
+}
+
+/* Secondary copy. --muted is 5.21:1 on the overlay panel and 5.67:1 on the
+   title card. */
+.portals-lede {
+  margin: 0.4em 0 1em;
+  color: var(--muted);
+  font-weight: 750;
+}
+.portals-notice {
+  margin: 14px 0 0;
+  color: var(--ink);
+  font-weight: 800;
+}
+/* Who the game has decided you are. The name goes out on every trap and into
+   every message, and a reviewer met theirs for the first time inside a message
+   they were about to send. --muted is 5.60:1 at worst on this card; the name
+   itself is ink at 15.87:1. */
+.portals-identity {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+.portals-identity strong {
+  color: var(--ink);
+}
+.portals-notice:empty {
+  display: none;
+}
+
+/* The menu, rendered twice: as the title screen when there is no run, and as
+   an overlay over a suspended one. The panel is narrower and the wordmark
+   smaller in the overlay, where it has a live game to sit on top of. */
+.portals-menu {
+  text-align: center;
+}
+.portals-menu .portals-title {
+  font-size: clamp(2.6rem, 9vw, 4.6rem);
+  margin: 0.1em 0 0.2em;
+}
+.portals-menu .portals-actions,
+.portals-card .portals-actions {
+  margin-top: 4px;
+}
+
+/* The run the menu is covering. Ink on this tint is 13.81:1 on the overlay
+   panel and 14.61:1 on the title card; the dot is 3.83:1 and 4.06:1, which
+   clears the 3:1 for a meaningful graphic. The button inside is delineated by
+   its own 3px ink border, not by its fill. */
+.portals-resume {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 16px 18px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: rgba(255, 216, 77, 0.35);
+  text-align: left;
+}
+.portals-resume-state {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+.portals-resume-state b {
+  font-variant-numeric: tabular-nums;
+}
+.portals-resume-dot {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 11px;
+  border-radius: 50%;
+  background: var(--red-text);
+}
+.portals-resume .button {
+  width: 100%;
+}
+
+/* Stacked button lists. .portals-buttons already exists for the share panel;
+   this widens it to every panel that now offers more than one way out. */
+.portals-overlay .portals-buttons {
+  margin-top: 14px;
+}
+.portals-overlay .portals-buttons .button {
+  width: 100%;
+}
+/* The panel's own primary, which is every one of these panels' loudest button
+   and was the only one on them not stretched. globals.css does this per panel
+   in the Next edition (.intro-panel>.button, .result-panel>.button) and this
+   edition never got the rule, so "Beat their version" and "Try again" sat as
+   narrow pills above two full-width secondaries: on the two screens that decide
+   whether anyone plays a second time, the way out was the bigger target. */
+.portals-overlay .panel > .button {
+  width: 100%;
+}
+
+/* Settings, controls and the confirmation share one narrow panel. */
+.portals-overlay .portals-settings,
+.portals-overlay .portals-confirm {
+  width: min(520px, 100%);
+  text-align: left;
+}
+.portals-overlay .portals-settings h2,
+.portals-overlay .portals-confirm h2 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+}
+.portals-settings > .button {
+  width: 100%;
+  margin-top: 22px;
+}
+.portals-setting-hint {
+  display: block;
+  margin-top: 2px;
+  max-width: 30ch;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+/* On is yellow, off is white, and both carry the ink label: 12.45:1 pressed
+   and 17.23:1 unpressed. The state is not left to the word alone. */
+/* The pill shape, border and white ground come from .setting-row button in
+   globals.css, which these rows already use. Only the state is new. */
+.portals-toggle {
+  color: var(--ink);
+  cursor: pointer;
+}
+.portals-toggle[aria-pressed="true"] {
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.portals-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* .setting-row input in globals.css dresses text fields as pills, which a
+   range control does not want. */
+.portals-volume input[type="range"] {
+  width: 140px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  /* Ink thumb and filled track: 17.23:1 on the white groove. */
+  accent-color: var(--ink);
+}
+.portals-volume b {
+  min-width: 46px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The controls reference, which this edition previously compressed into the
+   single line "WASD / arrows · Space · E · R". */
+.portals-controls {
+  display: grid;
+  gap: 2px;
+  margin: 6px 0 0;
+}
+.portals-control {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 14px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(23, 26, 43, 0.13);
+}
+.portals-control dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.portals-control dd {
+  margin: 0;
+  font-weight: 750;
+}
+.portals-control kbd {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 0 var(--ink);
+  padding: 3px 8px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+/* Dialog entrance. Resolves to the panel's resting state and animates only
+   transform and opacity, so both the OS media query in globals.css (which
+   collapses the duration) and the in-app gate below land on the same frame. */
+.portals-overlay .panel:not(.portals-failure) {
+  animation: portals-dialog-in 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+@keyframes portals-dialog-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+:root[data-reduced-motion="true"] .portals-overlay .panel:not(.portals-failure) {
+  animation: none !important;
+}
+
 @media (max-width: 650px) {
+  .portals-control {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .portals-volume input {
+    width: 96px;
+  }
   .portals-choice {
     grid-template-columns: 1fr;
   }
@@ -149,4 +493,41 @@
   .portals-panel-bottom {
     bottom: 180px;
   }
+}
+.zone-label.is-refused{background:#ffd9db;border-color:#b3123c}
+
+/* The curated map list, opened from "Pick a map" on the menu. Each row is one
+   named course: bold name, muted tagline, the same ink-on-cream language every
+   other panel speaks. */
+.portals-maps {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  text-align: left;
+}
+.portals-map {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.portals-map:hover,
+.portals-map:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+.portals-map strong {
+  font-size: 1rem;
+  font-weight: 900;
+}
+.portals-map span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
 }

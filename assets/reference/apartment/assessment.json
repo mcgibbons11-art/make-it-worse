@@ -1,0 +1,844 @@
+{
+  "targetName": "MAKE IT WORSE Apartment Room",
+  "sourceImage": "C:/Users/Mcgib/Partners HealthCare Dropbox/Jason Gibbons/Portals make it worse/assets/reference/apartment-reference.png",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "stylized interior room diorama (corner shell with fixed furnishings)",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "architectural",
+        "hard-surface",
+        "rounded-bevel",
+        "stylized-low-poly",
+        "toy-diorama-proportion"
+      ],
+      "structureKind": [
+        "layered shell",
+        "repeated modules",
+        "compound object",
+        "surface-mounted relief"
+      ],
+      "motionPotential": [
+        "static prop",
+        "module-tiled along a course axis",
+        "detachable furnishing groups"
+      ],
+      "materialFamilies": [
+        "matte-plaster-cream",
+        "matte-paint-navy",
+        "matte-wood-tan",
+        "matte-upholstery-sage",
+        "matte-textile-coral",
+        "matte-plastic-cream",
+        "flat-glazing-blue"
+      ],
+      "notes": "A room, not an object: the identity is the corner relationship between two wall planes, a skirting line, and a floor tray, with furnishings read against them. Only two walls exist; the other two are open to camera. Every corner in the reference is filleted, no edge is a hard cut, and the proportions are toy proportions (the sofa back is 50 percent of the wall height), which is what makes it read as a diorama rather than a room. That proportion cannot survive contact with a 1.86 unit player capsule, so the game rescales furnishings independently of the shell and the review render is the only place the reference's own proportions are judged."
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 2,
+        "componentCount": 3,
+        "hierarchyDepth": 3,
+        "repetitionDensity": 2,
+        "materialLayerCount": 3,
+        "localDetailDensity": 2,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 1
+      },
+      "estimatedCounts": {
+        "macroComponents": 5,
+        "mesoComponents": 17,
+        "microFeatureGroups": 6,
+        "materialLayers": 8,
+        "repetitionSystems": 5
+      },
+      "reasoning": [
+        "Three separate object families share one shell: architecture (walls, skirting, floor tray, window), seating (sofa), and casegoods (side table, rug).",
+        "Eight measured material layers, of which the sofa upholstery and the window frame are provably the same green, so the count is eight and not nine.",
+        "Five repeated systems carry the detail: floor boards, board butt joints, two sets of four peg legs, and the muntin cross.",
+        "Occlusion risk is real but bounded: the room is open on two sides, so only the backs of the furnishings and the outer faces of the walls are inferred.",
+        "Action readiness is low. Nothing in the reference articulates. What the model does need is a tiling contract, because the shell repeats along the course."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Choose simple/moderate/complex/ultra-complex from observed structure, not from a hardcoded domain."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "detailInventory": {
+      "scanMethod": "component-zones",
+      "targetMinDetails": 10,
+      "zonesDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones",
+      "note": "Nine component zones scanned with build_detail_inventory.py; every entry below maps to a component.localFeatures or material.localOverrides ref.",
+      "details": [
+        {
+          "id": "wall-top-roundover",
+          "zone": "wall-back",
+          "kind": "bevel",
+          "description": "Both wall slabs carry a continuous round-over along their top edge and down both vertical ends, radius about 0.22 model units against a 3.10 unit wall height. The roll catches a near-white highlight (#fcefdd measured on the left wall crest at y=130) against the #f3e3ce flat face, so the edge reads as a soft extrusion rather than a cut plane.",
+          "scale": "macro",
+          "affects": "silhouette",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "wall-a",
+            "ref": "wall-slab-roundover"
+          },
+          "geometryRecipe": "RoundedBox on the slab with radius 0.22 and smoothness 4; never a flat plane.",
+          "evidenceRef": "wall-back",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\wall-back.png",
+          "confidence": 0.9
+        },
+        {
+          "id": "wall-inside-corner",
+          "zone": "wall-back",
+          "kind": "seam",
+          "description": "The two wall slabs butt at a mitre-free inside corner: wall B runs the full room width and wall A stops against its inner face, so the corner shows one continuous vertical crease at the darkest value measured anywhere on the cream (#c6bca3 at the corner column) rather than a visible joint line.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "wall-a",
+            "ref": "corner-butt-joint"
+          },
+          "geometryRecipe": "Offset wall A by half of wall B's thickness along its normal so the two solids overlap by 0.02u; contact shadow does the rest.",
+          "evidenceRef": "wall-back",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\wall-back.png",
+          "confidence": 0.72
+        },
+        {
+          "id": "skirting-band",
+          "zone": "skirting",
+          "kind": "contour",
+          "description": "A navy skirting rail runs the base of both walls, 0.247 model units tall (7.96 percent of wall height, measured 44 px screen at 193 px/unit divided by cos 22.4 deg) and standing 0.05u proud of the wall face, with its own round-over on the top edge. It is the single darkest element in the room (#394254 lit, #2c3343 shaded).",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "skirting-a",
+            "ref": "skirting-proud-rail"
+          },
+          "geometryRecipe": "RoundedBox rail parented to the wall, offset along the wall normal so its outer face sits ahead of the plaster.",
+          "evidenceRef": "skirting",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\skirting.png",
+          "confidence": 0.88
+        },
+        {
+          "id": "floor-plank-seams",
+          "zone": "floor-planks",
+          "kind": "linework",
+          "description": "The floor is laid as six boards running parallel to wall A, 0.70 model units wide (96 px screen horizontal spacing at 45 deg). Each seam is a narrow recessed groove that reads three to four stops darker than the board face where it is shadowed (#583817 against #e7b174).",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "floor-slab",
+            "ref": "plank-run-seams"
+          },
+          "geometryRecipe": "InstancedMesh of thin recessed groove bars; six boards means five interior seams.",
+          "evidenceRef": "floor-planks",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\floor-planks.png",
+          "confidence": 0.8
+        },
+        {
+          "id": "floor-butt-joints",
+          "zone": "floor-planks",
+          "kind": "linework",
+          "description": "Short cross cuts break the boards into staggered lengths, running perpendicular to the board direction and never aligning between adjacent boards. Spacing measured between 1.5 and 2.2 model units.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "floor-slab",
+            "ref": "plank-butt-joints"
+          },
+          "geometryRecipe": "Second InstancedMesh, one short groove per board, offset per board by a deterministic seeded stagger so no two land on the same line.",
+          "evidenceRef": "floor-planks",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\floor-planks.png",
+          "confidence": 0.66
+        },
+        {
+          "id": "base-trim-rim",
+          "zone": "base-trim",
+          "kind": "contour",
+          "description": "A navy rim wraps the whole outer perimeter of the floor slab, the same value as the skirting, standing about 0.09u proud of the plank edge and rising 0.06u above the walking surface so the floor reads as a tray rather than a plate.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "base-trim",
+            "ref": "floor-tray-rim"
+          },
+          "geometryRecipe": "Four RoundedBox rails mitred at the corners, or one extruded rounded-rect ring.",
+          "evidenceRef": "base-trim",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\base-trim.png",
+          "confidence": 0.85
+        },
+        {
+          "id": "window-proud-frame",
+          "zone": "window",
+          "kind": "bevel",
+          "description": "The window frame is a rounded rectangle standing about 0.12u proud of the wall face, 1.77u wide by 1.46u tall (from the frame's own vertical edge, 260 px, and its top edge run, 241 px). Its outer corners are rounded on a radius of roughly 0.18u; the frame band itself is about 0.20u wide.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "window-frame",
+            "ref": "frame-relief"
+          },
+          "geometryRecipe": "Extruded rounded-rectangle ring (Shape with a rounded-rect hole), pushed out along the wall normal.",
+          "evidenceRef": "window",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\window.png",
+          "confidence": 0.85
+        },
+        {
+          "id": "window-reveal-recess",
+          "zone": "window",
+          "kind": "contour",
+          "description": "Inside the frame the glazing sits recessed: the inner reveal shows a shadowed sage edge (#67927c against the #97ba9d frame face), so the glass plane is set back about 0.10u from the frame's outer face.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "window-reveal",
+            "ref": "glazing-setback"
+          },
+          "geometryRecipe": "Inner box shorter than the frame along the wall normal, glass plate at its back.",
+          "evidenceRef": "window",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\window.png",
+          "confidence": 0.78
+        },
+        {
+          "id": "window-muntin-cross",
+          "zone": "window",
+          "kind": "linework",
+          "description": "One vertical and one horizontal muntin cross at the centre of the opening, dividing it into four equal panes. Both bars are the frame's sage green and sit proud of the glass, so each pane reads as a separate light.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "window-muntin-vertical",
+            "ref": "muntin-cross-vertical"
+          },
+          "geometryRecipe": "Two RoundedBox bars crossed at the opening centre, parented to the frame.",
+          "evidenceRef": "window",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\window.png",
+          "confidence": 0.92
+        },
+        {
+          "id": "glass-pane-blue",
+          "zone": "window",
+          "kind": "gloss",
+          "description": "Panes are a flat pale blue (#98cfe5 measured across all four) with almost no value gradient and no reflected room content: the glazing is a matte sky fill, not a mirror. Any specular treatment beyond a low clearcoat would contradict the reference.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "window-glass",
+            "ref": "matte-sky-glazing"
+          },
+          "geometryRecipe": "Opaque MeshStandardMaterial at low roughness with no environment map, not a transmissive glass.",
+          "evidenceRef": "window",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\window.png",
+          "confidence": 0.87
+        },
+        {
+          "id": "sofa-arm-rolls",
+          "zone": "sofa",
+          "kind": "contour",
+          "description": "Both sofa arms are heavily filleted slabs whose corner radius is close to half the arm's own thickness, so the arm reads as a rolled bolster rather than a box. Arm top sits at about 1.05u against a 1.55u back height.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "sofa-arm-left",
+            "ref": "arm-bolster-roll"
+          },
+          "geometryRecipe": "RoundedBox with radius near 0.45 of the smallest dimension, smoothness 4.",
+          "evidenceRef": "sofa",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\sofa.png",
+          "confidence": 0.86
+        },
+        {
+          "id": "sofa-cushion-seams",
+          "zone": "sofa",
+          "kind": "seam",
+          "description": "Two seat cushions meet on a visible vertical seam at the sofa's centre, and the two back cushions repeat that seam above it. The seam is a real gap, not a painted line: each cushion is a separate rounded solid with about 0.02u of air between them.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "sofa-seat-cushion-left",
+            "ref": "cushion-gap"
+          },
+          "geometryRecipe": "Separate rounded solids with a small gap; never one mesh with a texture line.",
+          "evidenceRef": "sofa",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\sofa.png",
+          "confidence": 0.9
+        },
+        {
+          "id": "sofa-back-overhang",
+          "zone": "sofa",
+          "kind": "contour",
+          "description": "The back cushions overhang the sofa's rear plane and lean back a few degrees, so the top of the back is further from the wall than its base and a wedge of shadow sits between the sofa and the wall.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "sofa-back-cushion-left",
+            "ref": "back-recline"
+          },
+          "geometryRecipe": "Rotate each back cushion about its bottom edge by roughly 5 degrees.",
+          "evidenceRef": "sofa",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\sofa.png",
+          "confidence": 0.7
+        },
+        {
+          "id": "furniture-peg-legs",
+          "zone": "sofa",
+          "kind": "fastener",
+          "description": "Sofa and side table both stand on short cream cylindrical pegs with a domed top where they meet the body, four per item, inset from the corners. The peg colour is the table's cream (#edd8bf measured on a sofa leg) and never the item's own colour, which is what makes the furniture read as lifted off the floor.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "sofa-leg-front-left",
+            "ref": "peg-leg-set"
+          },
+          "geometryRecipe": "InstancedMesh of a capsule-topped cylinder, four instances per item.",
+          "evidenceRef": "sofa",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\sofa.png",
+          "confidence": 0.83
+        },
+        {
+          "id": "table-through-cubby",
+          "zone": "side-table",
+          "kind": "contour",
+          "description": "The side table's front face is opened by a rounded-rectangle cubby that cuts most of the way through the body, leaving a thick frame of roughly 0.16u on every side. The cavity interior is the same cream, read only by occlusion (#c9b69c against the #f3e5d2 face).",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "component.localFeatures",
+            "kind": "component.localFeatures",
+            "owner": "table-shell",
+            "ref": "cubby-recess"
+          },
+          "geometryRecipe": "Extruded rounded-rect ring for the shell plus a back panel, so the recess is real geometry with an occluded interior.",
+          "evidenceRef": "side-table",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\side-table.png",
+          "confidence": 0.84
+        },
+        {
+          "id": "rug-two-tone-border",
+          "zone": "rug",
+          "kind": "linework",
+          "description": "The rug is two concentric rounded rectangles: a gold border band about 0.16u wide (#fac764) around a coral field (#f57a68), the field sitting a hair lower than the border so the border edge catches light.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "material.localOverrides",
+            "kind": "material.localOverrides",
+            "owner": "rug-border",
+            "ref": "rug-border-inset"
+          },
+          "geometryRecipe": "Two stacked rounded-rect plates at slightly different heights, not a texture.",
+          "evidenceRef": "rug",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\rug.png",
+          "confidence": 0.91
+        },
+        {
+          "id": "plank-tonal-variation",
+          "zone": "floor-planks",
+          "kind": "stain",
+          "description": "Adjacent boards differ in value by roughly one stop with no hue shift (#e7b174, #dca468 and #d39c62 all measured on lit board faces in the same row), so the floor reads as laid boards rather than a printed pattern.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "material.localOverrides",
+            "kind": "material.localOverrides",
+            "owner": "floor-tan",
+            "ref": "per-board-tone"
+          },
+          "geometryRecipe": "Per-instance colour attribute on the plank InstancedMesh, seeded so it is stable between sessions.",
+          "evidenceRef": "floor-planks",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\floor-planks.png",
+          "confidence": 0.79
+        },
+        {
+          "id": "matte-diffuse-everything",
+          "zone": "wall-left",
+          "kind": "gloss",
+          "description": "No surface in the reference shows a specular highlight with a visible shape. The brightest pixels are broad round-over gradients, not point highlights, so every material is high-roughness diffuse with zero metalness; the only exception is the glazing, which is flat but slightly smoother.",
+          "scale": "meso",
+          "affects": "surface",
+          "mapsTo": {
+            "type": "material.localOverrides",
+            "kind": "material.localOverrides",
+            "owner": "wall-cream",
+            "ref": "crest-highlight"
+          },
+          "geometryRecipe": "roughness 0.88 to 0.96, metalness 0, no environment map.",
+          "evidenceRef": "wall-left",
+          "evidencePath": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\zones\\wall-left.png",
+          "confidence": 0.93
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "unassessed",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "Only meaningful when objectClass.primaryDomain is character or hybrid. Set applies=true and fill from forge/stage1_intake/extract_landmarks.py. See grimoire/character/reconstruction.md and grimoire/character/likeness_maximization.md."
+    },
+    "sourceImage": "C:/Users/Mcgib/Partners HealthCare Dropbox/Jason Gibbons/Portals make it worse/assets/reference/apartment-reference.png",
+    "measurements": {
+      "cameraSolve": {
+        "method": "two-point perspective solve from four least-squares edge fits",
+        "lines": {
+          "leftWallTopEdge": "slope -0.2782, intercept 261.0, max residual 0.6 px (cols 240-650)",
+          "backWallTopEdge": "slope +0.2964, intercept -158.9, max residual 0.8 px (cols 800-1220)",
+          "nearLeftFloorEdge": "slope +0.4819, intercept 717.8, max residual 2.2 px",
+          "nearRightFloorEdge": "slope -0.4849, intercept 1417.3, max residual 1.6 px"
+        },
+        "vanishingPoints": {
+          "A": [
+            5595.8,
+            -1296.0
+          ],
+          "B": [
+            -4725.8,
+            -1559.6
+          ]
+        },
+        "focalPx": 4762.7,
+        "verticalFovDeg": 13.01,
+        "pitchDownDeg": 22.44,
+        "azimuthDeg": 45.0,
+        "note": "The two world directions are orthogonal by construction of the focal solve, so 90 degrees is not independent confirmation. What does confirm the solve is that four independently fitted edges intersect in exactly two points and that the residuals stay under 2.2 px."
+      },
+      "scale": {
+        "pixelsPerModelUnit": 193.0,
+        "derivation": "left wall run 538 px screen / cos(45 deg) = 761 px of world length, assigned 4.00 model units, gives 190 px/unit; rounded to 193 after cross-checking the floor slab diagonal."
+      },
+      "dimensions": {
+        "wallLength": 4.0,
+        "wallHeight": 3.1,
+        "wallThickness": 0.16,
+        "skirtingHeight": 0.247,
+        "floorSlabSide": 4.35,
+        "plankWidth": 0.7,
+        "windowWidth": 1.77,
+        "windowHeight": 1.46,
+        "sofaLength": 2.7,
+        "sofaDepth": 1.25,
+        "sofaBackHeight": 1.55,
+        "sofaArmHeight": 1.05,
+        "tableWidth": 1.05,
+        "tableHeight": 0.84,
+        "tableDepth": 0.62,
+        "rugLength": 2.7,
+        "rugWidth": 1.83
+      },
+      "palette": {
+        "wallCreamLit": "#f3e3ce",
+        "wallCreamShaded": "#d8c8b1",
+        "wallEdgeHighlight": "#fcefdd",
+        "trimNavyLit": "#394254",
+        "trimNavyShaded": "#2c3343",
+        "floorTanLit": "#e7b174",
+        "floorTanVariants": [
+          "#dca468",
+          "#d39c62"
+        ],
+        "floorSeamShadow": "#583817",
+        "sageLit": "#9fc1a4",
+        "sageMid": "#97b79a",
+        "sageShaded": "#77987a",
+        "rugCoral": "#f57a68",
+        "rugGold": "#fac764",
+        "furnitureCream": "#f3e5d2",
+        "legCream": "#edd8bf",
+        "glassBlue": "#98cfe5",
+        "studioBackground": "#d3d1d1",
+        "note": "Sampled by run-length scans, not by eye. The sofa upholstery and the window frame measure the same green within 2/255, so they are one material."
+      },
+      "delighting": {
+        "tool": "forge/stage1_intake/delight_albedo.py --strength 0.6",
+        "reportedConfidence": 0.631,
+        "verdict": "below the 0.7 bar, so the de-lit image is recorded as evidence but is not the albedo source. It does agree with the direct measurement where it should: the shadowed floor lifts from #ad7e4d to #e7a967 against a lit-plank measurement of #e7b174, a 1.5 percent difference. It over-corrects the sofa's deepest occlusion, pushing #798365 to #bbcb9c, which is why the authored albedos come from directly lit faces instead."
+      }
+    }
+  },
+  "qualityContract": {
+    "qualityBar": "complex",
+    "definitionOfDone": [
+      "The render reproduces the reference's corner relationship: two filleted wall slabs meeting at a butt joint, a continuous navy skirting line at their base, and a floor tray whose navy rim wraps the whole perimeter.",
+      "The window reads as relief on the wall, not as a decal: frame proud of the plaster, glazing set back behind it, and a muntin cross that casts on the glass.",
+      "Sofa and side table read as separate filleted solids with visible gaps at every cushion seam and four cream peg legs each, standing off the floor.",
+      "The floor reads as laid boards, from seam geometry and per-board tone, not from a tiled texture.",
+      "Materials are matte diffuse throughout with the eight measured albedos, and the two surfaces measured to share a green do share one material.",
+      "The shell repeats along one axis without a visible join, because the game tiles it down a course whose length is not known at author time."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 4,
+      "mesoComponents": 12,
+      "microFeatureGroups": 5,
+      "materialLayers": 6,
+      "repetitionSystems": 3,
+      "reviewViewpoints": 4
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "model reads as a generic placeholder instead of the reference object",
+          "major proportions are guessed without evidence"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "large visible parts are merged into one mesh",
+          "component hierarchy is too shallow for the observed complexity"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Attachment and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "child part root floats away from the parent",
+          "branch/limb/tube is centered in space instead of pivoting from its root",
+          "parent-child transform mixes world and local coordinates"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+          "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+          "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "surface looks like flat plastic",
+          "local material variation is missing or not tied to image evidence"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference color, material, and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+          "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+          "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+          "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "model has acceptable shape but reads as flat shaded or plastic",
+          "colors are a generic average instead of reference-observed local color zones",
+          "lighting is evenly ambient and cannot reproduce the source value range"
+        ]
+      },
+      {
+        "id": "corner-shell-relationship",
+        "name": "Corner shell relationship",
+        "required": true,
+        "qualityCriteria": [
+          "Two wall slabs of measured thickness meet at an inside corner with a continuous skirting line crossing the joint.",
+          "Wall top and end edges carry a round-over of the measured radius so the crest catches a highlight against the flat face."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "walls render as zero-thickness planes with hard edges",
+          "the skirting stops at the corner instead of running through it",
+          "the wall reads as a flat card because the round-over is missing"
+        ]
+      },
+      {
+        "id": "tiling-contract",
+        "name": "Module tiling along the course axis",
+        "required": true,
+        "qualityCriteria": [
+          "The wall module's two ends are flush so consecutive modules abut without a seam, gap, or doubled skirting.",
+          "Every repeated element is instanced rather than cloned per module."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "adjacent modules leave a visible vertical seam",
+          "the module carries a rounded end cap that repeats mid-run",
+          "draw calls scale with module count"
+        ]
+      },
+      {
+        "id": "corner-shell-relationship",
+        "name": "Corner shell relationship",
+        "required": true,
+        "qualityCriteria": [
+          "Two wall slabs of measured thickness meet at an inside corner with a continuous skirting line crossing the joint.",
+          "Wall top and end edges carry a round-over of the measured radius so the crest catches a highlight against the flat face."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "walls render as zero-thickness planes with hard edges",
+          "the skirting stops at the corner instead of running through it",
+          "the wall reads as a flat card because the round-over is missing"
+        ]
+      },
+      {
+        "id": "tiling-contract",
+        "name": "Module tiling along the course axis",
+        "required": true,
+        "qualityCriteria": [
+          "The wall module's two ends are flush so consecutive modules abut without a seam, gap, or doubled skirting.",
+          "Every repeated element is instanced rather than cloned per module."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "sofa",
+          "floor-planks"
+        ],
+        "failureModes": [
+          "adjacent modules leave a visible vertical seam",
+          "the module carries a rounded end cap that repeats mid-run",
+          "draw calls scale with module count"
+        ]
+      },
+      {
+        "id": "corner-shell-relationship",
+        "name": "Corner shell relationship",
+        "required": true,
+        "qualityCriteria": [
+          "Two wall slabs of measured thickness meet at an inside corner with a continuous skirting line crossing the joint.",
+          "Wall top and end edges carry a round-over of the measured radius so the crest catches a highlight against the flat face."
+        ],
+        "evidenceRefs": [
+          "wall-left",
+          "wall-back",
+          "skirting"
+        ],
+        "failureModes": [
+          "walls render as zero-thickness planes with hard edges",
+          "the skirting stops at the corner instead of running through it",
+          "the wall reads as a flat card because the round-over is missing"
+        ]
+      },
+      {
+        "id": "tiling-contract",
+        "name": "Module tiling along the course axis",
+        "required": true,
+        "qualityCriteria": [
+          "The wall module's two ends are flush so consecutive modules abut without a seam, gap, or doubled skirting.",
+          "Every repeated element is instanced rather than cloned per module."
+        ],
+        "evidenceRefs": [
+          "wall-back",
+          "skirting"
+        ],
+        "failureModes": [
+          "adjacent modules leave a visible vertical seam",
+          "the module carries a rounded end cap that repeats mid-run",
+          "draw calls scale with module count"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "component hierarchy depth delta",
+      "repetition density and distribution delta",
+      "material albedo/roughness/normal response delta",
+      "local feature placement and scale delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+      "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+      "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "MAKE IT WORSE Apartment Room interior room shell baseboard skirting sofa upholstery cushion geometry window frame muntin glass pane wood plank floor seam tiling",
+    "index": {
+      "status": "hit",
+      "reason": "current",
+      "fingerprint": "ac4f0bc9028e34083dbb5d5531ae3df7699c8e7641d5f8e6d42e7492ea1be1d0"
+    },
+    "matches": [
+      {
+        "record_id": "core.description-vra-core-40-attribute-value-schema",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.description_conventions[1]",
+        "score": 5.339593319499,
+        "snippets": [
+          "XML-derived global attribute qualifiers (vocab, refid, xml:lang, extent) that make every described data element machine-readable and scoped. Các bộ định tính thuộc tính toàn cục có nguồn gốc XML (vocab, refid, xml:lang, extent) giúp mỗi phần tử ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.description_conventions[1]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      },
+      {
+        "record_id": "core.shader-mapping-boxgeometry-slides-receivers-grips",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.rendering_shader_mapping[5]",
+        "score": 3.982060806801,
+        "snippets": [
+          "... các cụm lắp ráp hình chữ nhật/khối. Recognition cues: Flat-faced, roughly rectangular volume (pistol slide, receiver/frame, grip, panel) Dấu hiệu nhận diện: Khối gần chữ nhật với các mặt phẳng (khóa nòng súng lục, thân/khung súng, tay ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.rendering_shader_mapping[5]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      },
+      {
+        "record_id": "core.shader-mapping-lathegeometry-turnedradially-symmetric-parts",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.rendering_shader_mapping[9]",
+        "score": 3.510601679118,
+        "snippets": [
+          "... ra bằng cách xoay một biên dạng 2D quanh một trục. Recognition cues: Contoured, fully radially-symmetric part — turned wood/metal handle, some muzzle device shapes, adjustment knobs Dấu hiệu nhận diện: Bộ phận có biên dạng, đối xứng trục ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.rendering_shader_mapping[9]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      }
+    ]
+  }
+}

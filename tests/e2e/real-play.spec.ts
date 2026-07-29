@@ -30,18 +30,21 @@ test("real keyboard movement advances without physics errors", async ({ page }) 
   expect(runtimeErrors).toEqual([]);
 });
 
-test("licensed trap models load and the demo gauntlet runs without physics errors", async ({
+test("the demo gauntlet runs on code-drawn props without physics errors", async ({
   page,
 }) => {
   const runtimeErrors: string[] = [];
-  const failedModels: string[] = [];
+  // Every prop is built in code, so any mesh file on the wire is a regression
+  // rather than a load to wait for. The old guard only recorded .glb responses
+  // of 400 and up, which cannot happen once nothing requests a .glb at all.
+  const modelRequests: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") runtimeErrors.push(message.text());
   });
-  page.on("response", (response) => {
-    if (response.url().endsWith(".glb") && response.status() >= 400)
-      failedModels.push(`${response.status()} ${response.url()}`);
+  page.on("request", (request) => {
+    if (/\.(glb|gltf|fbx|obj|bin)$/i.test(new URL(request.url()).pathname))
+      modelRequests.push(request.url());
   });
 
   await page.goto("/c/demo-disaster");
@@ -64,7 +67,7 @@ test("licensed trap models load and the demo gauntlet runs without physics error
     .poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().lastHazardType))
     .toBe("floor_fan");
   await expect(page.getByText(/floor fan got you/i)).toBeVisible();
-  expect(failedModels).toEqual([]);
+  expect(modelRequests).toEqual([]);
   expect(runtimeErrors).toEqual([]);
   await page.screenshot({ path: "artifacts/review/demo-gauntlet-assets.png" });
 });

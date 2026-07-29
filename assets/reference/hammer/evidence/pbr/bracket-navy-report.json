@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.754,
+  "estimatedFidelity": 0.754,
+  "targetThreshold": 0.7,
+  "materialId": "bracket-navy",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\crops\\bracket-navy-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr",
+  "palette": [
+    "#202B3B",
+    "#2A3547",
+    "#151E2B",
+    "#080D14",
+    "#3C4759"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr\\bracket-navy_albedo.png",
+      "url": "bracket-navy_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr\\bracket-navy_roughness.png",
+      "url": "bracket-navy_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr\\bracket-navy_height.png",
+      "url": "bracket-navy_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr\\bracket-navy_normal.png",
+      "url": "bracket-navy_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\hammer\\evidence\\pbr\\bracket-navy_ao.png",
+      "url": "bracket-navy_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 125,
+    "sourceHeight": 365,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 125,
+      "height": 365
+    },
+    "mask": {
+      "backgroundColor": "#313B4B",
+      "backgroundNoise": 41.097,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9999
+    },
+    "mapStats": {
+      "valueRange": 0.1782,
+      "heightP90Gradient": 0.01936,
+      "roughnessBase": 0.693,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.179,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#202B3B",
+      "#2A3547",
+      "#151E2B",
+      "#080D14",
+      "#3C4759"
+    ]
+  },
+  "warnings": [
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak",
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped",
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

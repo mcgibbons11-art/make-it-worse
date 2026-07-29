@@ -1,0 +1,4998 @@
+{
+  "targetName": "Apartment Beach Ball",
+  "targetId": "apartment-beach-ball",
+  "schemaVersion": "2.1",
+  "terminologyProfile": {
+    "domain": "real-time procedural Three.js game prop",
+    "geometryTerms": [
+      "silhouette",
+      "topology",
+      "primitive",
+      "chamfer",
+      "facet",
+      "taper",
+      "extrude profile",
+      "profile stop",
+      "edge crease",
+      "surface normal",
+      "lathe profile",
+      "instanced cluster"
+    ],
+    "materialTerms": [
+      "albedo",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "normal map",
+      "ambient occlusion",
+      "cavity darkening",
+      "edge wear",
+      "clearcoat"
+    ],
+    "lightingTerms": [
+      "key light",
+      "fill light",
+      "rim light",
+      "environment reflection",
+      "contact shadow",
+      "tone mapping",
+      "exposure"
+    ],
+    "descriptionRule": "Use measurable 3D graphics terms. Every shape claim carries a number or a named geometry operation."
+  },
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+  "referenceCamera": {
+    "solved": true,
+    "solveMethod": "elevation from the valve cap's screen offset from the sphere centre (327 px of a 431.5 px radius gives 49.4 degrees from the view axis, so 40.6 degrees of camera elevation); azimuth from the measured panel boundary longitudes",
+    "fovDegrees": 26.0,
+    "aspect": 0.75,
+    "orientation": {
+      "yaw": 0.0,
+      "pitch": -40.6,
+      "roll": 0.0
+    },
+    "targetHint": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "note": "A sphere's silhouette carries no camera information, so elevation had to come from the valve cap and the panel boundaries instead. Distance is not fixed here: the preview harness solves it by fitting the render's projected bounding box to the reference bounding box (x 109-971, y 266-1147 of 1086x1448)."
+  },
+  "measurementBasis": {
+    "pixelsPerWorldUnit": 575.3,
+    "referenceBBox": {
+      "x0": 109,
+      "y0": 266,
+      "x1": 971,
+      "y1": 1147,
+      "imageSize": [
+        1086,
+        1448
+      ]
+    },
+    "derivations": [
+      "Silhouette 863 px wide gives a sphere radius of 431.5 px, set to 0.75 world units to match the trap's BallCollider radius, hence 575.3 px per world unit.",
+      "Valve cap 190 px across gives a cap radius of 95 px = 0.165 world units.",
+      "Cap ellipse 124/190 = 0.653 = cos(40.6 deg), which is the camera elevation.",
+      "Panel boundaries at row 707 (x 117, 355, 703, 961) and row 500 (x 219, 442, 627, 859) both solve to a 57-60 degree panel width once the 40.6 degree pole tilt is removed."
+    ]
+  },
+  "suitability": "pass",
+  "scores": {
+    "object_isolation": 3,
+    "silhouette_readability": 3,
+    "depth_inference": 3,
+    "primitive_decomposition": 3,
+    "material_procedurality": 3,
+    "occlusion_risk": 2,
+    "interaction_fit": 3
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "inflatable beach ball (six-panel gore construction)",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "panelled-sphere"
+      ],
+      "structureKind": [
+        "closed-inflated-shell",
+        "meridian-panel-ring",
+        "polar-fitting"
+      ],
+      "motionPotential": [
+        "free-roll",
+        "bounce",
+        "spin-about-any-axis"
+      ],
+      "materialFamilies": [
+        "matte-vinyl-coral",
+        "matte-vinyl-yellow",
+        "matte-vinyl-mint",
+        "matte-vinyl-cream"
+      ],
+      "notes": "Smooth organic object. The identity is the panel ring and its grooved seams, not the sphere, which any primitive would give. One view: the rear panel and the south pole are inferred."
+    },
+    "complexity": {
+      "tier": "moderate",
+      "scores": {
+        "silhouetteComplexity": 1,
+        "componentCount": 2,
+        "hierarchyDepth": 2,
+        "repetitionDensity": 2,
+        "materialLayerCount": 3,
+        "localDetailDensity": 2,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 1
+      },
+      "estimatedCounts": {
+        "macroComponents": 1,
+        "mesoComponents": 7,
+        "microFeatureGroups": 1,
+        "materialLayers": 6,
+        "repetitionSystems": 1
+      },
+      "reasoning": [
+        "The silhouette is trivial but the panel ring is the whole identity, so the spec needs one component per panel rather than a textured sphere.",
+        "Four albedos over six panels means six material layers including the seam core and the valve.",
+        "Action readiness is low: the ball is a dynamic rigid body with no articulation.",
+        "Occlusion risk is moderate: the rear panel and the south pole are never seen."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "moderate",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": false,
+      "rationale": "One repeated system and six material zones are visible, so the spec needs meso components and material local overrides rather than a macro-only tree, even though the silhouette is a single sphere."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "resolvedUnknowns": [
+      {
+        "unknown": "The rear panel's colour is not visible.",
+        "resolution": "Set to coral, giving two coral, two cream, one yellow and one mint. Recorded as an inference at confidence 0.3 on gore-coral-back.",
+        "confidence": 0.3
+      },
+      {
+        "unknown": "The south pole is not visible.",
+        "resolution": "Closed by the core shell with no second valve. Beach balls carry one valve; a second would have shown as a silhouette bump.",
+        "confidence": 0.6
+      },
+      {
+        "unknown": "Seam groove depth cannot be measured from one view.",
+        "resolution": "Set to 0.009 world units, about 1.2 percent of the radius, which is the smallest depth that still reads as a groove at play distance.",
+        "confidence": 0.5
+      }
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zone scan of the reference at 3x, with colour-run scans along rows 380, 420, 500, 707, 900 and 1050 and column 540 to place every panel boundary in pixels before converting to longitude.",
+      "targetMinDetails": 6,
+      "note": "Every detail below resolves to a component.localFeatures id or a material.localOverrides id; none is prose only.",
+      "details": [
+        {
+          "id": "panel-seam-grooves",
+          "zone": "equator",
+          "kind": "groove",
+          "description": "Six meridian seams run pole to pole as recessed grooves, not painted lines; each is 0.6 degrees of longitude and 0.009 units deep.",
+          "mapsTo": {
+            "ref": "seam-groove-floor",
+            "owner": "ball-core",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Panels stop short of each other over a darker core sphere; geometry, never a map.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "gore-longitude-span",
+          "zone": "equator",
+          "kind": "contour",
+          "description": "Each panel spans 60 degrees of longitude; boundaries were solved at -87, -34, +31 and +86 degrees from the row-500 and row-707 colour scans.",
+          "mapsTo": {
+            "ref": "gore-seam-edge",
+            "owner": "gore-yellow",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "LatheGeometry phiStart/phiLength per panel.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "panel-crown-gradient",
+          "zone": "equator",
+          "kind": "contour",
+          "description": "Value falls about 14 percent from each panel's crown to its seam edge, which is the sphere's own curvature under a single key rather than a painted gradient.",
+          "mapsTo": {
+            "ref": "panel-crown",
+            "owner": "gore-coral-front",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Spherical curvature plus a low-roughness crown override.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        },
+        {
+          "id": "valve-collar-step",
+          "zone": "pole",
+          "kind": "ridge",
+          "description": "A coral disc 0.33 units across stands 0.012 units proud at the north pole with a hard shadow ring where it meets the panels.",
+          "mapsTo": {
+            "ref": "collar-step",
+            "owner": "valve-collar",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe disc with a vertical outer wall seated 0.02 units into the panel radius.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "valve-plug-step",
+          "zone": "pole",
+          "kind": "ridge",
+          "description": "A second smaller disc stands a further 0.007 units above the collar crown, giving the cap two concentric steps.",
+          "mapsTo": {
+            "ref": "plug-step",
+            "owner": "valve-plug",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Second lathe disc on the collar crown.",
+          "evidenceRef": "full-object",
+          "confidence": 0.7
+        },
+        {
+          "id": "polar-panel-convergence",
+          "zone": "pole",
+          "kind": "seam",
+          "description": "The panels stop 7 degrees short of the pole and the core closes the gap, which is what the valve then covers.",
+          "mapsTo": {
+            "ref": "polar-closure",
+            "owner": "ball-core",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe profiles inset from both poles behind a full core sphere.",
+          "evidenceRef": "full-object",
+          "confidence": 0.6
+        },
+        {
+          "id": "seam-groove-darkening",
+          "zone": "equator",
+          "kind": "stain",
+          "description": "The groove floors are the darkest values on the ball, roughly 30 percent below the adjacent panel.",
+          "mapsTo": {
+            "ref": "groove-depth-shade",
+            "owner": "seam-core",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override raising roughness and AO across the whole core shell.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        },
+        {
+          "id": "cream-limb-slivers",
+          "zone": "limb",
+          "kind": "contour",
+          "description": "Cream panels appear at both limbs as 57 and 58 pixel slivers, which is what fixes the panel phase against the camera.",
+          "mapsTo": {
+            "ref": "gore-seam-edge",
+            "owner": "gore-cream-left",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Panel phase offset chosen so the cream panels straddle plus and minus 90 degrees.",
+          "evidenceRef": "full-object",
+          "confidence": 0.7
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "not-applicable",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "primaryDomain is object, so the character track does not apply."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png"
+  },
+  "qualityContract": {
+    "qualityBar": "moderate",
+    "definitionOfDone": [
+      "The rendered ball matches the reference silhouette, the six-panel ring and its phase, the four-albedo palette, the grooved seams and the polar valve at the moderate fidelity tier.",
+      "The seams read as recessed geometry from at least two camera angles.",
+      "The panel radius equals the trap's BallCollider radius so the visual and the hitbox cannot disagree."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 1,
+      "mesoComponents": 3,
+      "microFeatureGroups": 1,
+      "materialLayers": 4,
+      "repetitionSystems": 1,
+      "reviewViewpoints": 3
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Radius, panel span and valve size are stated as measured numbers.",
+          "The sphere radius traces to the reference silhouette width."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic sphere with a texture",
+          "radius guessed rather than measured"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Each panel, the seam core and the valve are separate named parts.",
+          "Every contact records a seam overlap of at least 0.02 world units, or states the panel-to-core offset that replaces it."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "equator-zone"
+        ],
+        "failureModes": [
+          "panels merged into one mesh",
+          "component hierarchy too shallow for the observed panel ring"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Contact and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "The ball has no cantilevered appendage, so contact correctness is carried by the panel-to-core radial offset and the valve's seam overlap.",
+          "The valve plug rides the collar so both detach as one group."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "pole-zone"
+        ],
+        "failureModes": [
+          "valve floats off the surface",
+          "panel gap shows through to the inside"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal intent and local overrides are specified per material and tied to evidenceRefs.",
+          "Albedo, roughness, height, normal and AO are independent fields.",
+          "Surface response is decomposed into macro, meso and micro bands."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "equator-zone"
+        ],
+        "failureModes": [
+          "surface looks like glossy toy plastic",
+          "local material variation missing or untraceable to the image"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference colour, material and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "The four-panel palette traces to median-sampled reference pixels.",
+          "Reference PBR extraction ran on every material crop and its confidence and binding decision are both recorded.",
+          "Lighting names key, fill, rim or environment, exposure, tone mapping, background and contact shadow behaviour.",
+          "Neutral, grazing and reference-matched renders prove the seam relief survives relighting."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "acceptable shape but flat-shaded read",
+          "colours are a generic average instead of the measured four",
+          "lighting is evenly ambient"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "panel boundary longitude delta",
+      "component hierarchy depth delta",
+      "seam groove depth and darkness delta",
+      "material albedo, roughness and normal response delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ],
+    "mustNotDo": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "qualityTargets": {
+    "targetFidelity": 0.8,
+    "mustMatch": [
+      "circular silhouette at the collider radius",
+      "six-panel gore ring with the measured phase",
+      "four-albedo palette with no blue",
+      "recessed seam grooves",
+      "two-step coral valve cap at the pole"
+    ],
+    "niceToHave": [
+      "the 2.2 percent vertical elongation of the reference silhouette",
+      "panel-to-panel inflation bulge between seams"
+    ],
+    "fpsTarget": 60,
+    "reviewViewpoints": [
+      "reference-elevated",
+      "front",
+      "right",
+      "top-down",
+      "rear-orbit"
+    ]
+  },
+  "selfCorrectLoop": {
+    "enabled": true,
+    "visualAcceptance": {
+      "reviewer": "ai-vision",
+      "threshold": 0.7,
+      "comparisonArtifactRequired": true,
+      "layerScoresRequired": true,
+      "codePixelDiffIsAcceptanceAuthority": false,
+      "scoringRule": "AI vision must inspect a side-by-side reference/render sheet and score the current pass from 0 to 1. Pixel-diff code may assist diagnostics but cannot approve a pass.",
+      "requiredLayerScores": [
+        "silhouetteProportion",
+        "componentStructure",
+        "formDetail",
+        "materialSurface",
+        "lightingCamera"
+      ],
+      "featureReviewPolicy": {
+        "enabled": true,
+        "reviewUnit": "semantic-subsystem",
+        "maxCriticalFeaturesPerPass": 5,
+        "maxImportantFeaturesPerPass": 3,
+        "criticalDefaultThreshold": 0.8,
+        "importantAverageThreshold": 0.65,
+        "adaptiveEscalation": true,
+        "singleImagePairOnly": true,
+        "selectionRule": "Score only identity-defining semantic systems, never generic quality adjectives."
+      }
+    },
+    "reviewAfterPasses": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "allowedActions": [
+      "continue",
+      "refine-spec",
+      "refine-code",
+      "request-input",
+      "stop"
+    ],
+    "specRefineTriggers": [
+      "missing component",
+      "wrong primitive family",
+      "wrong proportions",
+      "material layer under-specified",
+      "local feature not traceable to viewEvidence",
+      "reference ambiguity discovered during implementation"
+    ],
+    "codeRefineTriggers": [
+      "spec is adequate but generated geometry or material does not match",
+      "browser render differs from reference",
+      "performance budget exceeded",
+      "lighting hides geometry or material response"
+    ],
+    "stopCriteria": [
+      "target fidelity reached or the user accepts the current approximation",
+      "remaining gaps require reference views the single image does not cover"
+    ],
+    "screenshotPolicy": {
+      "requiredForPasses": [
+        "blockout",
+        "structural-pass",
+        "form-refinement",
+        "material-pass",
+        "surface-pass",
+        "lighting-pass",
+        "interaction-pass"
+      ],
+      "preferredCapture": "playwright screenshot of the shared props preview harness",
+      "fallbackCapture": "user-supplied-screenshot-path",
+      "minimumEvidence": "Each visual pass needs a reference image, a rendered screenshot framed to the reference bounding box, a side-by-side comparison sheet, an AI vision score, layer scores and a critique before choosing continue.",
+      "reviewPairRule": "The review render always uses the solved reference camera; orbit views are judged for self-consistency only, never against the reference angle.",
+      "acceptanceAuthority": "AI vision review of the comparison sheet. Code-generated pixel similarity is not sufficient evidence."
+    }
+  },
+  "featureReviewTargets": [
+    {
+      "id": "panel-ring-phase",
+      "name": "Six-panel ring and its phase against the camera",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "form-refinement"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-left",
+        "gore-cream-right"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "failureModes": [
+        "wrong panel count",
+        "panels evenly coloured so the ring reads as stripes",
+        "cream panels not at the limbs"
+      ]
+    },
+    {
+      "id": "sphere-proportion",
+      "name": "Spherical massing and scale",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "optimization-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "ball-core"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "silhouette not circular",
+        "ball radius drifts from the collider radius"
+      ]
+    },
+    {
+      "id": "seam-groove-read",
+      "name": "Seams as recessed grooves",
+      "tier": "critical",
+      "passIds": [
+        "form-refinement",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "ball-core",
+        "gore-yellow"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "failureModes": [
+        "seams read as painted lines",
+        "panels fused into one sphere",
+        "gaps show through to the inside"
+      ]
+    },
+    {
+      "id": "matte-vinyl-response",
+      "name": "Matte inflated-vinyl response",
+      "tier": "critical",
+      "passIds": [
+        "material-pass",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.75,
+      "mustPass": true,
+      "componentRefs": [
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "specular hotspot on a matte ball",
+        "flat unshaded panels",
+        "palette drifts from the measured four"
+      ]
+    },
+    {
+      "id": "valve-cap-read",
+      "name": "Valve cap at the pole",
+      "tier": "important",
+      "passIds": [
+        "structural-pass",
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.65,
+      "mustPass": false,
+      "componentRefs": [
+        "valve-collar",
+        "valve-plug"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "pole-zone"
+      ],
+      "failureModes": [
+        "cap missing",
+        "cap centred off the pole",
+        "cap flush with the panels"
+      ]
+    }
+  ],
+  "sculptPipeline": {
+    "passGateMode": "locked-sequential",
+    "passOrder": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "currentPass": "material-pass",
+    "completedPasses": [
+      "blockout",
+      "structural-pass",
+      "form-refinement"
+    ],
+    "lastCompletedPass": "form-refinement",
+    "blockedReason": "",
+    "nextRequiredEvidence": [
+      "Reference-derived albedo palette records dominant, secondary and accent colours per material.",
+      "Each material defines roughness variation and an independent normal response.",
+      "Local material overrides are tied to evidenceRefs.",
+      "Albedo, roughness, height, normal and AO are generated independently.",
+      "Macro, meso and micro surface frequency bands are present without visible tiling.",
+      "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold.",
+      "reference-derived albedo palette with dominant, secondary, and accent colors",
+      "independent albedo, roughness, height/normal, and AO maps",
+      "macro, meso, and micro surface-frequency response at 1024px or higher",
+      "local material masks: AO, dirt, wear, stains, moss, chips, scratches, wetness, or equivalent",
+      "neutral, grazing-light close-up, and reference-matched browser screenshots",
+      "AI vision comparison sheet score meeting the visual acceptance threshold",
+      "browser render screenshot from your agent's browser/screenshot tool",
+      "side-by-side reference/render comparison sheet for AI vision review",
+      "AI vision score at or above the visual acceptance threshold",
+      "all critical semantic feature scores from the shared image pair at or above their thresholds",
+      "self-correction review appended with action=continue before the next pass"
+    ]
+  },
+  "lookDevTargets": {
+    "qualityPriority": "reference-fidelity",
+    "materialPass": {
+      "albedoPaletteRequired": true,
+      "roughnessVariationRequired": true,
+      "normalOrBumpRequired": true,
+      "localOverridesRequired": true,
+      "minimumTextureResolution": 256,
+      "preferredTextureResolution": 1024,
+      "independentMapChannels": [
+        "albedo",
+        "roughness",
+        "height",
+        "normal",
+        "ambient-occlusion"
+      ],
+      "requiredSurfaceFrequencyBands": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "geometryReliefRequiredWhenSilhouetteAffected": true,
+      "referencePbrExtraction": {
+        "requiredWhenSourceImagePresent": false,
+        "ranAnyway": true,
+        "targetThreshold": 0.7,
+        "stopOnLowConfidence": true,
+        "script": "forge/stage1_intake/extract_pbr_evidence.py",
+        "acceptedLimitation": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars."
+      },
+      "mustAvoid": [
+        "single flat albedo per material",
+        "uniform roughness",
+        "albedo texture reused as roughness, height, normal or AO",
+        "single-frequency random noise",
+        "glossy toy-plastic highlights on a matte moulded surface",
+        "local colour described only in prose without material masks",
+        "claiming exact PBR recovery from one image"
+      ]
+    },
+    "lightingPass": {
+      "requiredTerms": [
+        "key light",
+        "fill light",
+        "rim or environment light",
+        "exposure",
+        "tone mapping",
+        "background",
+        "contact shadow"
+      ],
+      "mustAvoid": [
+        "ambient-only lighting",
+        "flat value range",
+        "missing contact shadow",
+        "reference lighting copied without separating material readability"
+      ]
+    },
+    "screenshotReview": [
+      "Compare the albedo palette and the local colour zones.",
+      "Compare roughness and normal response under the key light.",
+      "Compare contact darkening, seam occlusion and crown polish.",
+      "Compare key, fill and rim structure, exposure, tone mapping and background.",
+      "Capture a neutral-light render to verify material readability without reference lighting.",
+      "Capture a grazing-light close-up to expose flat normals and uniform roughness.",
+      "Capture a reference-matched render from the solved camera."
+    ]
+  },
+  "actionReadiness": {
+    "contract": "Every macro and meso component is a named Object3D pivot node with a mesh child, action metadata, sockets where relevant, a collider proxy and destruction metadata. The runtime reads root.userData.sculptRuntime.",
+    "defaultRigType": "action-ready-prop-rig",
+    "rootMotionNode": "ball-core",
+    "requiredComponentFields": [
+      "id",
+      "parent",
+      "transform",
+      "seams for every contacting part",
+      "actionProfile.animationRole",
+      "actionProfile.pivot",
+      "actionProfile.collider",
+      "actionProfile.destruction"
+    ],
+    "transformChannels": [
+      "translate",
+      "rotate",
+      "scale",
+      "detach",
+      "visibility",
+      "material-state"
+    ],
+    "authoringRules": [
+      "Do not collapse independently movable parts into one mesh.",
+      "Put transforms on component pivot groups, not on raw meshes.",
+      "Animated parts keep their pivot node at the axis of motion so children ride along.",
+      "Represent hinge, socket, detachable and breakable intent even when no animation is implemented yet.",
+      "Use simplified collider proxies for runtime physics instead of visual mesh colliders."
+    ],
+    "runtimeContract": {
+      "rootMotion": "sculptRuntime.nodes['ball-core'] carries translation, rotation and scale; the panels and the valve are its children so the ball spins as one body.",
+      "valvePole": "sculptRuntime.sockets['ball-core:valve-pole'] marks the outer face of the valve for an inflate or deflate effect.",
+      "collider": "colliders['ball-core'] is a sphere proxy at radius 0.75, the same radius the trap's BallCollider uses."
+    },
+    "destructionPolicy": {
+      "defaultBreakable": false,
+      "fractureGroupNaming": "ball-shell, valve-assembly",
+      "debrisStrategy": "Detach the valve assembly as a group; the panel ring is not fractured."
+    }
+  },
+  "assumptions": [
+    "The rear panel is coral. It is never visible in the reference.",
+    "The south pole carries no second valve.",
+    "One world unit is about 20 cm, making the modelled ball about 30 cm across.",
+    "The 2.2 percent vertical excess in the reference silhouette is treated as reference geometry that is deliberately not reproduced, because a prolate visual would poke through the trap's spherical collider."
+  ],
+  "coordinateFrame": {
+    "front": "+Z, the hemisphere facing the reference camera",
+    "up": "+Y, the polar axis, with the valve at +Y",
+    "right": "+X",
+    "scaleReference": "panel radius = 0.75 world units; 575.3 reference pixels per world unit"
+  },
+  "silhouette": {
+    "boundingShape": "sphere of radius 0.75, plus a 0.019 unit valve bump at +Y",
+    "aspectRatios": [
+      {
+        "id": "width-to-height",
+        "value": 0.978,
+        "notes": "reference silhouette 863 px over 882 px; a sphere would be 1.000"
+      },
+      {
+        "id": "valve-to-ball-radius",
+        "value": 0.22,
+        "notes": "valve collar radius over panel radius"
+      },
+      {
+        "id": "seam-depth-to-radius",
+        "value": 0.012,
+        "notes": "groove depth over panel radius"
+      }
+    ],
+    "symmetry": "rotationally symmetric about the polar axis in form; six-fold in albedo",
+    "dominantCurves": [
+      "one constant-curvature spherical surface broken only by six meridian grooves"
+    ],
+    "negativeSpaces": [
+      "the six seam grooves",
+      "the step ring around the valve collar"
+    ],
+    "landmarks": [
+      "panel radius 0.75",
+      "core radius 0.741",
+      "valve crown at y = 0.769",
+      "panel boundaries at longitudes -90, -30, 30, 90, 150 and 210 degrees"
+    ]
+  },
+  "viewEvidence": [
+    {
+      "id": "full-object",
+      "view": "primary elevated view (pole tilted 40.6 degrees toward the camera)",
+      "imageRegion": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1.0,
+        "height": 1.0,
+        "units": "normalized"
+      },
+      "observations": [
+        "Silhouette box spans x 109-971 and y 266-1147 of a 1086x1448 image: 863 by 882 pixels.",
+        "The silhouette is circular to within 2.2 percent, so the form is a sphere.",
+        "Four albedos appear: coral, yellow, mint and cream. No blue anywhere.",
+        "The rear panel is not visible and its colour is inferred."
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "equator-zone",
+      "view": "panel boundaries at the screen equator",
+      "imageRegion": {
+        "x": 0.1,
+        "y": 0.32,
+        "width": 0.8,
+        "height": 0.3,
+        "units": "normalized"
+      },
+      "observations": [
+        "Row 707 gives boundaries at x 117, 355, 703 and 961, which solve to longitudes -87, -34, +31 and +86 degrees.",
+        "Row 500 independently gives -87, -34.5, +31.1 and -34 within 3 degrees of the same set.",
+        "Each boundary reads as a darkened groove, not a hard colour step."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "pole-zone",
+      "view": "valve cap",
+      "imageRegion": {
+        "x": 0.38,
+        "y": 0.2,
+        "width": 0.24,
+        "height": 0.12,
+        "units": "normalized"
+      },
+      "observations": [
+        "The cap's projected ellipse is about 190 by 124 pixels; 124/190 matches cos(40.6 deg), so it is a flat disc on the surface at the pole.",
+        "Two concentric steps are visible: an outer collar and an inner plug.",
+        "The panel seams converge on the cap centre, which fixes it at the pole."
+      ],
+      "confidence": 0.8
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "ball-core",
+      "name": "Seam core shell",
+      "level": "macro",
+      "role": "shell",
+      "importance": 0.8,
+      "confidence": 0.8,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "One smoothly varying closed volume with no internal seam and no flat face: the reference silhouette is circular to within 2.2 percent, so this is a single continuous mass rather than an assembly.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(148, 137, 122, 1.0)",
+        "secondaryAlbedo": "rgba(133, 123, 109, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "full revolution of the panel meridian at 0.009 units under the panel radius, so every seam gap shows a recessed groove floor instead of a hole",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "smooth vertex normals; the core has no creases",
+        "latheProfile": {
+          "points": [
+            [
+              0.0,
+              -0.741
+            ],
+            [
+              0.12867,
+              -0.72974
+            ],
+            [
+              0.25344,
+              -0.69631
+            ],
+            [
+              0.3705,
+              -0.64172
+            ],
+            [
+              0.47631,
+              -0.56764
+            ],
+            [
+              0.56764,
+              -0.47631
+            ],
+            [
+              0.64172,
+              -0.3705
+            ],
+            [
+              0.69631,
+              -0.25344
+            ],
+            [
+              0.72974,
+              -0.12867
+            ],
+            [
+              0.741,
+              -0.0
+            ],
+            [
+              0.72974,
+              0.12867
+            ],
+            [
+              0.69631,
+              0.25344
+            ],
+            [
+              0.64172,
+              0.3705
+            ],
+            [
+              0.56764,
+              0.47631
+            ],
+            [
+              0.47631,
+              0.56764
+            ],
+            [
+              0.3705,
+              0.64172
+            ],
+            [
+              0.25344,
+              0.69631
+            ],
+            [
+              0.12867,
+              0.72974
+            ],
+            [
+              0.0,
+              0.741
+            ]
+          ],
+          "segments": 24,
+          "phiStart": 0.0,
+          "phiLength": 6.283185
+        }
+      },
+      "parent": null,
+      "attachment": null,
+      "dimensions": {
+        "width": 1.482,
+        "height": 1.482,
+        "depth": 1.482,
+        "units": "world",
+        "confidence": 0.85
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "root",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.9
+        },
+        "transformChannels": {
+          "translate": true,
+          "rotate": true,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "ball-center",
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Centre of mass; the trap's BallCollider is concentric with this."
+          },
+          {
+            "id": "valve-pole",
+            "localPosition": [
+              0.0,
+              0.762,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Outer face of the valve; an inflate or deflate effect anchors here."
+          }
+        ],
+        "collider": {
+          "type": "sphere",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.5,
+            1.5,
+            1.5
+          ],
+          "isTrigger": false,
+          "notes": "Sphere proxy at the panel radius, matching the trap's BallCollider."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "seam-core",
+      "materialLayers": [
+        "seam-core"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        {
+          "id": "seam-groove-floor",
+          "description": "The 0.6 degree strip between each pair of panels exposes this shell 0.009 units below them, which is what makes the six seams read as grooves rather than lines.",
+          "geometry": "sphere radius set 0.014 under the panel radius; no map involved",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "polar-closure",
+          "description": "Panels stop 7 degrees short of each pole, so this shell closes the ball at the top under the valve and at the bottom where the reference cannot see.",
+          "geometry": "full sphere behind the six partial lathes",
+          "evidenceRefs": [
+            "full-object",
+            "pole-zone"
+          ],
+          "confidence": 0.6
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.8,
+        "microRoughness": 0.06,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth vinyl with no relief",
+        "displacementPattern": "none",
+        "occlusionPattern": "deep occlusion in every seam groove",
+        "edgeWearPattern": "none",
+        "notes": "Only 6.6 degrees of this shell's circumference is ever visible."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone",
+        "pole-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "gore-coral-front",
+      "name": "Coral gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.9,
+      "confidence": 0.9,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(242, 104, 92, 1.0)",
+        "secondaryAlbedo": "rgba(217, 93, 82, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": -1.56556,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-coral",
+      "materialLayers": [
+        "gore-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-coral-front-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from -89.7 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "gore-yellow",
+      "name": "Yellow gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.9,
+      "confidence": 0.92,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(252, 195, 72, 1.0)",
+        "secondaryAlbedo": "rgba(226, 175, 64, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": -0.518363,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-yellow",
+      "materialLayers": [
+        "gore-yellow"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-yellow-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from -29.7 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.92
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "gore-mint",
+      "name": "Mint gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.9,
+      "confidence": 0.9,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(134, 192, 160, 1.0)",
+        "secondaryAlbedo": "rgba(120, 172, 144, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": 0.528835,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-mint",
+      "materialLayers": [
+        "gore-mint"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-mint-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from 30.3 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "gore-cream-right",
+      "name": "Right cream gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.9,
+      "confidence": 0.7,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(239, 230, 214, 1.0)",
+        "secondaryAlbedo": "rgba(215, 207, 192, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": 1.576032,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-cream",
+      "materialLayers": [
+        "gore-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-cream-right-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from 90.3 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "structural-pass"
+    },
+    {
+      "id": "gore-coral-back",
+      "name": "Rear coral gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.4,
+      "confidence": 0.3,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(242, 104, 92, 1.0)",
+        "secondaryAlbedo": "rgba(217, 93, 82, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": 2.62323,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-coral",
+      "materialLayers": [
+        "gore-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-coral-back-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from 150.3 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.3
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "structural-pass"
+    },
+    {
+      "id": "gore-cream-left",
+      "name": "Left cream gore",
+      "level": "meso",
+      "role": "panel",
+      "importance": 0.9,
+      "confidence": 0.7,
+      "primitive": "lathe",
+      "topologyClass": "conforming-shell",
+      "topologyRationale": "A thin doubly curved panel that follows the core sphere beneath it rather than enclosing a volume of its own; it has no flat face and no crease except at its two meridian edges.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(239, 230, 214, 1.0)",
+        "secondaryAlbedo": "rgba(215, 207, 192, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "60 degree spherical gore from pole to pole, inset 0.3 degrees at each meridian edge so the seam groove opens",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs; one tile per panel",
+        "normalStrategy": "smooth vertex normals across the panel, hard at its meridian edges",
+        "latheProfile": {
+          "points": [
+            [
+              0.0914,
+              -0.74441
+            ],
+            [
+              0.20952,
+              -0.72014
+            ],
+            [
+              0.32223,
+              -0.67725
+            ],
+            [
+              0.4266,
+              -0.61686
+            ],
+            [
+              0.51995,
+              -0.54051
+            ],
+            [
+              0.59985,
+              -0.4502
+            ],
+            [
+              0.66425,
+              -0.34825
+            ],
+            [
+              0.71147,
+              -0.23729
+            ],
+            [
+              0.74031,
+              -0.1202
+            ],
+            [
+              0.75,
+              -0.0
+            ],
+            [
+              0.74031,
+              0.1202
+            ],
+            [
+              0.71147,
+              0.23729
+            ],
+            [
+              0.66425,
+              0.34825
+            ],
+            [
+              0.59985,
+              0.4502
+            ],
+            [
+              0.51995,
+              0.54051
+            ],
+            [
+              0.4266,
+              0.61686
+            ],
+            [
+              0.32223,
+              0.67725
+            ],
+            [
+              0.20952,
+              0.72014
+            ],
+            [
+              0.0914,
+              0.74441
+            ]
+          ],
+          "segments": 18,
+          "phiStart": 3.670427,
+          "phiLength": 1.036726
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.5,
+        "height": 1.5,
+        "depth": 1.5,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "ball-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "gore-cream",
+      "materialLayers": [
+        "gore-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "gore-cream-left-core-seam",
+          "with": "ball-core",
+          "overlap": 0.009,
+          "notes": "Panel floats 0.009 units proud of the core; the gap between panels is the groove."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "gore-seam-edge",
+          "description": "The panel spans 59.4 degrees of longitude from 210.3 degrees, leaving a 0.6 degree groove against each neighbour.",
+          "geometry": "LatheGeometry phiStart/phiLength, which the generated buildLatheGeometry is extended to honour",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "panel-crown",
+          "description": "The panel's own curvature carries the value gradient across it; the reference shows about 14 percent falloff from crown to seam on the coral panel.",
+          "geometry": "spherical curvature, shaded rather than painted",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth inflated vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "groove occlusion at both meridian edges",
+        "edgeWearPattern": "none",
+        "notes": "Matte vinyl. No gloss anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "details": [],
+      "fidelityTier": "structural-pass"
+    },
+    {
+      "id": "valve-collar",
+      "name": "Valve collar",
+      "level": "meso",
+      "role": "fitting",
+      "importance": 0.6,
+      "confidence": 0.75,
+      "primitive": "lathe",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A separate moulded disc welded onto the panels: the reference shows a hard step where it meets them and a flat crown, which no continuous inflation of the ball surface would give.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(242, 104, 92, 1.0)",
+        "secondaryAlbedo": "rgba(217, 93, 82, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "flat-crowned disc lying on the sphere at the north pole",
+        "edgeTreatment": {
+          "type": "flat-chamfer",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "crown flattened to the tangent plane at the pole"
+        ],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "flat crown normals, smooth outer wall",
+        "latheProfile": {
+          "points": [
+            [
+              0.0001,
+              0.73
+            ],
+            [
+              0.16512166859791425,
+              0.742
+            ],
+            [
+              0.16512166859791425,
+              0.762
+            ],
+            [
+              0.14530706836616453,
+              0.762
+            ],
+            [
+              0.0001,
+              0.762
+            ]
+          ],
+          "segments": 24,
+          "phiStart": 0.0,
+          "phiLength": 6.283185
+        }
+      },
+      "parent": "ball-core",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.3302,
+        "height": 0.012,
+        "depth": 0.3302,
+        "units": "world",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "socket",
+          "localPosition": [
+            0.0,
+            0.75,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.75
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "valve-assembly",
+          "seamRefs": [],
+          "detachableFragments": [
+            "valve-collar",
+            "valve-plug"
+          ],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "valve-coral",
+      "materialLayers": [
+        "valve-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "collar-panel-seam",
+          "with": "gore-yellow",
+          "overlap": 0.02,
+          "notes": "Collar base is buried 0.02 units inside the panel radius."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "collar-step",
+          "description": "The collar stands 0.012 units proud of the panels, so a hard shadow ring runs all the way round it.",
+          "geometry": "lathe profile whose outer wall is vertical, seated 0.02 units into the panels",
+          "evidenceRefs": [
+            "full-object",
+            "pole-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "collar-crown-flat",
+          "description": "The crown is flat, not domed: its projected ellipse has straight-sided shading with no terminator across it.",
+          "geometry": "profile ends with a horizontal run to the axis",
+          "evidenceRefs": [
+            "full-object",
+            "pole-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.07,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "shadow ring at the panel step",
+        "edgeWearPattern": "none",
+        "notes": "Same coral pigment as the coral gores; measured within 3 of 255 on each channel."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "pole-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "valve-plug",
+      "name": "Valve plug",
+      "level": "micro",
+      "role": "fitting",
+      "importance": 0.35,
+      "confidence": 0.65,
+      "primitive": "lathe",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A second smaller disc standing on the collar crown, visible in the reference as a concentric step with its own shadow ring.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(242, 104, 92, 1.0)",
+        "secondaryAlbedo": "rgba(227, 97, 86, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "inner plug disc on the collar crown",
+        "edgeTreatment": {
+          "type": "flat-chamfer",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "flat crown normals",
+        "latheProfile": {
+          "points": [
+            [
+              0.0001,
+              0.754
+            ],
+            [
+              0.10237543453070683,
+              0.758
+            ],
+            [
+              0.10237543453070683,
+              0.769
+            ],
+            [
+              0.08190034762456547,
+              0.769
+            ],
+            [
+              0.0001,
+              0.769
+            ]
+          ],
+          "segments": 24,
+          "phiStart": 0.0,
+          "phiLength": 6.283185
+        }
+      },
+      "parent": "valve-collar",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.2048,
+        "height": 0.007,
+        "depth": 0.2048,
+        "units": "world",
+        "confidence": 0.6
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.6
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "valve-assembly",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "valve-coral",
+      "materialLayers": [
+        "valve-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "plug-collar-seam",
+          "with": "valve-collar",
+          "overlap": 0.02,
+          "notes": "Plug base is buried in the collar crown."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "plug-step",
+          "description": "The plug stands a further 0.007 units above the collar crown, giving the cap the two-step read the reference shows.",
+          "geometry": "second lathe disc seated 0.004 units into the collar",
+          "evidenceRefs": [
+            "full-object",
+            "pole-zone"
+          ],
+          "confidence": 0.7
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.07,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded vinyl",
+        "displacementPattern": "none",
+        "occlusionPattern": "shadow ring at the collar step",
+        "edgeWearPattern": "none",
+        "notes": "Slightly darker than the collar in the reference, which is shading rather than a second pigment; modelled as a 6 percent albedo step."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "pole-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    }
+  ],
+  "materials": [
+    {
+      "id": "gore-coral",
+      "name": "Coral panel vinyl",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte inflated PVC)",
+      "baseColor": "#F2685C",
+      "color": "#F2685C",
+      "albedo": {
+        "dominant": "#F2685C",
+        "secondary": [
+          "#E45B50",
+          "#F8776B"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#F2685C",
+          "#E45B50",
+          "#F8776B"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.62,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.2,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "coral-seam-shade",
+          "target": "gore-coral-front/gore-seam-edge",
+          "notes": "The panel darkens into its seam groove; the groove is the darkest coral value in the frame.",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "roughness": 0.7,
+          "aoBoost": 0.45,
+          "mask": "outer 4 percent of the gore width"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\gore-coral-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.831,
+        "estimatedFidelity": 0.831,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-coral_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-coral_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-coral_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-coral_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-coral_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Two coral gores. Matte inflated vinyl, no specular coat."
+    },
+    {
+      "id": "gore-yellow",
+      "name": "Yellow panel vinyl",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#FCC348",
+      "color": "#FCC348",
+      "albedo": {
+        "dominant": "#FCC348",
+        "secondary": [
+          "#EDB63C",
+          "#FFD25C"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#FCC348",
+          "#EDB63C",
+          "#FFD25C"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.62,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.2,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "yellow-crown-sheen",
+          "target": "gore-yellow/panel-crown",
+          "notes": "The panel crown facing the key light is the brightest value in the frame and reads slightly smoother than the panel flanks.",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "roughness": 0.55,
+          "mask": "central 30 percent of the gore width"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\gore-yellow-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.804,
+        "estimatedFidelity": 0.804,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-yellow_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-yellow_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-yellow_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-yellow_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-yellow_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "One yellow gore, centred on the reference view."
+    },
+    {
+      "id": "gore-mint",
+      "name": "Mint panel vinyl",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#86C0A0",
+      "color": "#86C0A0",
+      "albedo": {
+        "dominant": "#86C0A0",
+        "secondary": [
+          "#78B392",
+          "#93CCAC"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#86C0A0",
+          "#78B392",
+          "#93CCAC"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.62,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.2,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "mint-limb-falloff",
+          "target": "gore-mint/gore-seam-edge",
+          "notes": "The mint panel turns away from the key toward the right limb and loses about 12 percent of its value.",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "roughness": 0.68,
+          "aoBoost": 0.3,
+          "mask": "outer 20 percent toward the limb"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\gore-mint-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.812,
+        "estimatedFidelity": 0.812,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-mint_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-mint_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-mint_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-mint_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-mint_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "One mint gore."
+    },
+    {
+      "id": "gore-cream",
+      "name": "Cream panel vinyl",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#EFE6D6",
+      "color": "#EFE6D6",
+      "albedo": {
+        "dominant": "#EFE6D6",
+        "secondary": [
+          "#E4D9C6",
+          "#F7EFE2"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#EFE6D6",
+          "#E4D9C6",
+          "#F7EFE2"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.6,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.2,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "cream-seam-shade",
+          "target": "gore-cream-right/gore-seam-edge",
+          "notes": "Cream shows the seam groove more strongly than any other panel because it carries the widest value range.",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "roughness": 0.7,
+          "aoBoost": 0.5,
+          "mask": "outer 4 percent of the gore width"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\gore-cream-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.786,
+        "estimatedFidelity": 0.786,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-cream_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-cream_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-cream_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-cream_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\gore-cream_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Two cream gores, both seen edge-on at the limbs in the reference."
+    },
+    {
+      "id": "seam-core",
+      "name": "Seam core shell",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#94897A",
+      "color": "#94897A",
+      "albedo": {
+        "dominant": "#94897A",
+        "secondary": [
+          "#847A6C",
+          "#A79B8B"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#94897A",
+          "#847A6C",
+          "#A79B8B"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.8,
+        "variation": 0.06,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.55,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "groove-depth-shade",
+          "target": "ball-core/seam-groove-floor",
+          "notes": "Only the 0.6 degree strips between panels are ever visible, and they read as the darkest lines on the ball.",
+          "evidenceRefs": [
+            "full-object",
+            "equator-zone"
+          ],
+          "roughness": 0.88,
+          "aoBoost": 0.7,
+          "mask": "entire visible surface"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\seam-core-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.702,
+        "estimatedFidelity": 0.702,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\seam-core_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\seam-core_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\seam-core_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\seam-core_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\seam-core_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Inner shell 0.014 units under the panels. It is what a seam groove shows, and it stops the panel gaps reading through to the inside of the ball."
+    },
+    {
+      "id": "valve-coral",
+      "name": "Valve cap vinyl",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#F2685C",
+      "color": "#F2685C",
+      "albedo": {
+        "dominant": "#F2685C",
+        "secondary": [
+          "#DE564B",
+          "#F8776B"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#F2685C",
+          "#DE564B",
+          "#F8776B"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.55,
+        "variation": 0.07,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.28,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "valve-rim-step",
+          "target": "valve-collar/collar-step",
+          "notes": "A hard shadow ring runs where the collar meets the panels.",
+          "evidenceRefs": [
+            "full-object",
+            "pole-zone"
+          ],
+          "roughness": 0.66,
+          "aoBoost": 0.55,
+          "mask": "collar outer wall"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\crops\\valve-coral-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.744,
+        "estimatedFidelity": 0.744,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\valve-coral_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\valve-coral_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\valve-coral_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\valve-coral_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\ball\\pbr\\valve-coral_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Valve collar and plug. Slightly smoother than the panels; it is moulded, not welded."
+    }
+  ],
+  "repetitionSystems": [
+    {
+      "id": "gore-panel-ring",
+      "name": "Six-panel gore ring",
+      "level": "meso",
+      "parent": "ball-core",
+      "count": 6,
+      "primitive": "lathe",
+      "material": "gore-cream",
+      "instanceScale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "buildsGeometry": false,
+      "realization": "authored-components",
+      "placement": {
+        "mode": "radial",
+        "axis": [
+          0,
+          1,
+          0
+        ],
+        "radius": 0.0,
+        "startAngleDeg": -90.0,
+        "stepAngleDeg": 60.0,
+        "notes": "Six 60 degree steps about the polar axis. Declared as a repetition system because the placement rule is what makes the pattern read, but realised as six authored components rather than one InstancedMesh: the panels carry four different albedos, and an InstancedMesh shares one material."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "equator-zone"
+      ],
+      "notes": "Boundary longitudes measured at -87, -34, +31 and +86 degrees; the regular 60 degree ring fits those to within 4 degrees."
+    }
+  ],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Match the macro silhouette: a sphere of radius 0.75 with the three front panels in place.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint"
+      ],
+      "acceptance": [
+        "Silhouette reads correctly without materials.",
+        "Quality contract has named all required macro feature groups before code generation.",
+        "Macro proportions match the measured reference bounding box.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Build the full panel ring, the seam core and the valve assembly under one root.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "Macro, meso and repeated structures meet qualityContract.minimumSpecDepth.",
+        "Parent-child relations, seams and contact points are explicit.",
+        "Every part that touches another overlaps it by at least 0.02 world units.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "form-refinement",
+      "goal": "Deliver the seam grooves, the polar insets and the valve's two-step crown.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "Seam grooves are visible as recessed geometry from at least two camera angles.",
+        "Panel boundaries land within 5 degrees of the measured longitudes.",
+        "The valve cap reads as two concentric steps, not one flat disc.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Match the four-panel palette and the matte inflated-vinyl response.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "Reference-derived albedo palette records dominant, secondary and accent colours per material.",
+        "Each material defines roughness variation and an independent normal response.",
+        "Local material overrides are tied to evidenceRefs.",
+        "Albedo, roughness, height, normal and AO are generated independently.",
+        "Macro, meso and micro surface frequency bands are present without visible tiling.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "surface-pass",
+      "goal": "Add seam occlusion, contact darkening and crown polish.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "Every material feature group has local overrides or surfaceDetail tied to evidenceRefs.",
+        "A grazing-angle render shows form breaks without plastic-looking uniform highlights.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "lighting-pass",
+      "goal": "Reproduce the reference key/fill/rim structure and prove the form survives relighting.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "lightingFromPhoto names key direction, fill, rim or environment, exposure, tone mapping and contact shadow behaviour.",
+        "Neutral, grazing and reference-matched renders distinguish material errors from lighting errors.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Expose the runtime rig: named pivots, sockets and collider proxies.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "root.userData.sculptRuntime exposes nodes, meshes, sockets, colliders and destruction groups.",
+        "Every moving node carries its children instead of detaching them.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "optimization-pass",
+      "goal": "Protect real-time budget after fidelity is accepted.",
+      "componentRefs": [
+        "ball-core",
+        "gore-coral-front",
+        "gore-yellow",
+        "gore-mint",
+        "gore-cream-right",
+        "gore-coral-back",
+        "gore-cream-left",
+        "valve-collar",
+        "valve-plug"
+      ],
+      "acceptance": [
+        "Triangle count, draw calls and instancing are measured against performanceBudget.",
+        "Repeated detail stays instanced."
+      ]
+    }
+  ],
+  "visualEvidence": [
+    {
+      "timestamp": "2026-07-29T02:53:31.391456+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.82,
+      "aiVisionScore": 0.82,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.93,
+        "componentStructure": 0.8,
+        "formDetail": 0.6,
+        "materialSurface": 0.75,
+        "lightingCamera": 0.85
+      },
+      "featureReviews": [
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.85,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Coral, yellow and mint land in the same screen order and at close to the same widths as the reference. The yellow panel reads about 6 percent wider than the reference at the equator, which is inside the 5 degree boundary uncertainty."
+        },
+        {
+          "id": "sphere-proportion",
+          "tier": "critical",
+          "score": 0.93,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Silhouette IoU 0.9745, scale delta 0.0036. Aspect delta 0.0263 is the reference's own 2.2 percent vertical elongation, which is deliberately not reproduced."
+        }
+      ],
+      "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+      "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-reference.png",
+      "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-cmp.png",
+      "cameraView": "reference-elevated (azimuth 0, elevation 40.6)",
+      "notes": "",
+      "aiVisionNotes": "Blockout acceptance is silhouette and macro proportion; both pass. The seam read is a form-refinement concern and is carried forward as a spec fix rather than blocking this pass."
+    },
+    {
+      "timestamp": "2026-07-29T03:09:50.301520+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.84,
+      "aiVisionScore": 0.84,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.9,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.8,
+        "lightingCamera": 0.8
+      },
+      "featureReviews": [
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.82,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Six panels in the measured order with cream at both limbs. Near the pole the coral panel reaches the cap on the left where the reference shows cream, a residual of roughly 15 degrees in phase or elevation."
+        },
+        {
+          "id": "sphere-proportion",
+          "tier": "critical",
+          "score": 0.9,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Bounding box 1.5000 by 1.5134 by 1.5000. Silhouette IoU 0.9175, down from 0.9745 at blockout because the valve now extends the projected bounds; scale delta 0.0038."
+        },
+        {
+          "id": "seam-groove-read",
+          "tier": "critical",
+          "score": 0.8,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "The grooves are real recessed geometry and survive the clay render, so they are not painted. They read harder and darker than the reference's creases."
+        },
+        {
+          "id": "valve-cap-read",
+          "tier": "important",
+          "score": 0.7,
+          "threshold": 0.65,
+          "passed": true,
+          "notes": "Two concentric steps present and centred on the pole. Reads about 5 percent larger and 5 percent higher up the silhouette than the reference's."
+        }
+      ],
+      "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+      "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\structural-pass-reference.png",
+      "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\structural-pass-cmp.png",
+      "cameraView": "reference-elevated (azimuth 0, elevation 40.6, 10 degree lens)",
+      "notes": "",
+      "aiVisionNotes": "Field of view was solved this pass: at 26 degrees the fitted camera sat 4.3 radii out and projected the pole at 0.87 of the silhouette radius against the reference's 0.759. A 10 degree lens lands at 0.79 and moved the cream crescents down to the reference's height."
+    },
+    {
+      "timestamp": "2026-07-29T03:14:17.507939+00:00",
+      "passId": "form-refinement",
+      "estimatedFidelity": 0.86,
+      "aiVisionScore": 0.86,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.9,
+        "componentStructure": 0.9,
+        "formDetail": 0.85,
+        "materialSurface": 0.82,
+        "lightingCamera": 0.78
+      },
+      "featureReviews": [
+        {
+          "id": "seam-groove-read",
+          "tier": "critical",
+          "score": 0.86,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Grooves are recessed geometry, visible in the clay render, and now read at roughly the reference's contrast rather than as black outlines."
+        },
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.83,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Unchanged from structural-pass. The residual is the coral panel reaching the cap on the left where the reference shows cream."
+        },
+        {
+          "id": "valve-cap-read",
+          "tier": "important",
+          "score": 0.72,
+          "threshold": 0.65,
+          "passed": true,
+          "notes": "Two steps read clearly at the grazing view as well as at the reference view."
+        }
+      ],
+      "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+      "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\form-refinement-reference.png",
+      "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\form-refinement-cmp.png",
+      "cameraView": "reference-elevated (azimuth 0, elevation 40.6, 10 degree lens)",
+      "notes": "",
+      "aiVisionNotes": "The flat shading is a lighting problem, not a form problem: the clay render shows the same falloff, and clay has no albedo variation at all."
+    }
+  ],
+  "reviewHistory": [
+    {
+      "timestamp": "2026-07-29T02:53:31.391456+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.82,
+      "aiVisionScore": 0.82,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.93,
+        "componentStructure": 0.8,
+        "formDetail": 0.6,
+        "materialSurface": 0.75,
+        "lightingCamera": 0.85
+      },
+      "featureReviews": [
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.85,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Coral, yellow and mint land in the same screen order and at close to the same widths as the reference. The yellow panel reads about 6 percent wider than the reference at the equator, which is inside the 5 degree boundary uncertainty."
+        },
+        {
+          "id": "sphere-proportion",
+          "tier": "critical",
+          "score": 0.93,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Silhouette IoU 0.9745, scale delta 0.0036. Aspect delta 0.0263 is the reference's own 2.2 percent vertical elongation, which is deliberately not reproduced."
+        }
+      ],
+      "action": "continue",
+      "summary": "Blockout matches the reference silhouette and the three front panel widths. The core shows through where the two cream panels are not built yet, which is this pass's scope, and the seam grooves read as pale gaps rather than dark creases.",
+      "matched": [
+        "Circular silhouette at the collider radius: measured bounding box 1.4999 by 1.4888 by 1.4860 against a target sphere of diameter 1.5",
+        "Panel order and approximate widths of the three front gores",
+        "Camera elevation: the panel convergence point sits inside the silhouette at the same height as the reference cap"
+      ],
+      "mismatches": [
+        "Seam grooves read as pale bands about 8 px wide, not the reference's thin dark creases: the core albedo #B9AE9C is lighter than the coral and mint panels it separates, and 1.1 degrees of gap is too wide",
+        "Two cream panels and the valve cap are absent by design in this pass, so the core is visible across the upper third",
+        "Render contrast across each panel is lower than the reference: the reference falls about 23 percent from crown to seam, the render about 14 percent"
+      ],
+      "specFixes": [
+        "Narrow SEAM_GAP_DEG from 1.1 to 0.6 degrees and darken the seam-core albedo so the groove floor reads darker than every panel"
+      ],
+      "codeFixes": [],
+      "evidence": [
+        "Tier-1: silhouetteIoU 0.9745, aspectRatioDelta 0.0263, scaleDelta 0.0036, bilateralSymmetryError 0.0004, maxDeltaE 17.17"
+      ],
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+        "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-reference.png",
+        "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-cmp.png",
+        "cameraView": "reference-elevated (azimuth 0, elevation 40.6)",
+        "notes": "",
+        "aiVisionNotes": "Blockout acceptance is silhouette and macro proportion; both pass. The seam read is a form-refinement concern and is carried forward as a spec fix rather than blocking this pass."
+      }
+    },
+    {
+      "timestamp": "2026-07-29T03:09:50.301520+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.84,
+      "aiVisionScore": 0.84,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.9,
+        "componentStructure": 0.9,
+        "formDetail": 0.72,
+        "materialSurface": 0.8,
+        "lightingCamera": 0.8
+      },
+      "featureReviews": [
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.82,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Six panels in the measured order with cream at both limbs. Near the pole the coral panel reaches the cap on the left where the reference shows cream, a residual of roughly 15 degrees in phase or elevation."
+        },
+        {
+          "id": "sphere-proportion",
+          "tier": "critical",
+          "score": 0.9,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Bounding box 1.5000 by 1.5134 by 1.5000. Silhouette IoU 0.9175, down from 0.9745 at blockout because the valve now extends the projected bounds; scale delta 0.0038."
+        },
+        {
+          "id": "seam-groove-read",
+          "tier": "critical",
+          "score": 0.8,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "The grooves are real recessed geometry and survive the clay render, so they are not painted. They read harder and darker than the reference's creases."
+        },
+        {
+          "id": "valve-cap-read",
+          "tier": "important",
+          "score": 0.7,
+          "threshold": 0.65,
+          "passed": true,
+          "notes": "Two concentric steps present and centred on the pole. Reads about 5 percent larger and 5 percent higher up the silhouette than the reference's."
+        }
+      ],
+      "action": "continue",
+      "summary": "All six panels, the seam core and the two-piece valve are built as separate named parts. The panel ring, its phase and the four-albedo palette match. Two residuals: the valve sits about 5 percent higher than the reference and the seam grooves read as hard black lines rather than the reference's soft creases.",
+      "matched": [
+        "Six named panel parts plus core, collar and plug: nine components, 20 draw calls, 11424 triangles",
+        "Panel phase: cream at both limbs, coral left, yellow centre, mint right",
+        "Long-lens projection now puts the cream crescents at the same height as the reference's"
+      ],
+      "mismatches": [
+        "Seam grooves render as near-black hairlines",
+        "the reference's seams are soft creases about 20 percent below the adjacent panel, not 70 percent",
+        "The reference's panels bulge between seams so the seams pinch inward",
+        "a constant-radius lathe gore cannot reproduce that and it is not modelled",
+        "Valve cap centre sits at about 0.83 of the silhouette radius above centre against the reference's measured 0.759",
+        "Coral panel reads more orange and less pink than the reference"
+      ],
+      "specFixes": [
+        "Lift the seam-core albedo from #6B6157 and cut the groove depth from 0.014 so the crease reads soft rather than as a black outline"
+      ],
+      "codeFixes": [],
+      "evidence": [
+        "Tier-1: silhouetteIoU 0.9175, aspectRatioDelta 0.0187, scaleDelta 0.0038, maxDeltaE 38.06 (colour is not gated before material-pass)",
+        "Orbit views rear and right captured",
+        "the silhouette holds and does not collapse"
+      ],
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\structural-pass-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+        "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\structural-pass-reference.png",
+        "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\structural-pass-cmp.png",
+        "cameraView": "reference-elevated (azimuth 0, elevation 40.6, 10 degree lens)",
+        "notes": "",
+        "aiVisionNotes": "Field of view was solved this pass: at 26 degrees the fitted camera sat 4.3 radii out and projected the pole at 0.87 of the silhouette radius against the reference's 0.759. A 10 degree lens lands at 0.79 and moved the cream crescents down to the reference's height."
+      }
+    },
+    {
+      "timestamp": "2026-07-29T03:14:17.507939+00:00",
+      "passId": "form-refinement",
+      "estimatedFidelity": 0.86,
+      "aiVisionScore": 0.86,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.9,
+        "componentStructure": 0.9,
+        "formDetail": 0.85,
+        "materialSurface": 0.82,
+        "lightingCamera": 0.78
+      },
+      "featureReviews": [
+        {
+          "id": "seam-groove-read",
+          "tier": "critical",
+          "score": 0.86,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Grooves are recessed geometry, visible in the clay render, and now read at roughly the reference's contrast rather than as black outlines."
+        },
+        {
+          "id": "panel-ring-phase",
+          "tier": "critical",
+          "score": 0.83,
+          "threshold": 0.8,
+          "passed": true,
+          "notes": "Unchanged from structural-pass. The residual is the coral panel reaching the cap on the left where the reference shows cream."
+        },
+        {
+          "id": "valve-cap-read",
+          "tier": "important",
+          "score": 0.72,
+          "threshold": 0.65,
+          "passed": true,
+          "notes": "Two steps read clearly at the grazing view as well as at the reference view."
+        }
+      ],
+      "action": "continue",
+      "summary": "Halving the groove depth to 0.009 and lifting the seam-core albedo to #94897A turned the seams from near-black hairlines into soft creases that now read like the reference's. Panel boundaries, polar inset and the valve's two steps are all present as geometry and survive the clay render.",
+      "matched": [
+        "Seam grooves at 0.6 degrees and 0.009 units deep read as creases, not lines",
+        "Both polar insets are closed by the core, so no gap shows through the ball",
+        "Valve collar and plug read as two concentric steps"
+      ],
+      "mismatches": [
+        "Panel shading is flatter than the reference: the render falls about 12 percent from crown to limb against the reference's 23 percent",
+        "The reference's panels bulge between seams",
+        "a constant-radius gore cannot reproduce that and it is not modelled",
+        "Coral reads more orange than the reference's pink-leaning coral"
+      ],
+      "specFixes": [],
+      "codeFixes": [
+        "Raise the harness key and lower the hemisphere at lighting-pass so the crown-to-limb falloff matches the reference's 23 percent"
+      ],
+      "evidence": [
+        "Tier-1: silhouetteIoU 0.9174, aspectRatioDelta 0.0187, scaleDelta 0.0038",
+        "Grazing view captured: the seam relief survives a near-tangent key, so it is geometry rather than shading"
+      ],
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\form-refinement-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\ball-reference.png",
+        "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\form-refinement-reference.png",
+        "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\form-refinement-cmp.png",
+        "cameraView": "reference-elevated (azimuth 0, elevation 40.6, 10 degree lens)",
+        "notes": "",
+        "aiVisionNotes": "The flat shading is a lighting problem, not a form problem: the clay render shows the same falloff, and clay has no albedo variation at all."
+      }
+    }
+  ],
+  "lodPlan": [
+    {
+      "tier": "near",
+      "distance": 0,
+      "strategy": "six panels, seam core and two-piece valve; 256px procedural maps"
+    },
+    {
+      "tier": "mid",
+      "distance": 12,
+      "strategy": "drop the valve plug; keep the collar"
+    },
+    {
+      "tier": "far",
+      "distance": 30,
+      "strategy": "single sphere with the dominant panel albedo; no seams"
+    }
+  ],
+  "performanceBudget": {
+    "qualityPriority": "balanced",
+    "targetTriangles": 6000,
+    "maxDrawCalls": 12,
+    "textureSize": 256,
+    "fpsTarget": 60,
+    "optimizationPolicy": "Reach accepted visual fidelity first, then cut lathe segment counts and the sphere tessellation. The seam grooves set the floor on segment count: below about 20 segments per 60 degree panel the groove edges facet visibly."
+  },
+  "lightingFromPhoto": [
+    "Ambient dominance: the reference is a soft studio render. Measured yellow reads 255,200,69 at the panel crown and 196,152,55 at the seam, a 23 percent range across a full hemisphere of curvature, which needs a bright neutral hemisphere rather than a hard key.",
+    "Key light: a gentle warm directional source at about 1.15 from high and camera left, enough to put the crown 20 percent above the flank without crushing the limb.",
+    "Rim and environment light: weak neutral back light at about 0.3. No environment map: the reference shows no reflected detail anywhere on the ball.",
+    "Exposure and tone mapping: ACES filmic tone mapping with sRGB output at exposure 1.0. The reference holds a narrow value range with no blown highlights.",
+    "Contact shadow: seam-groove ambient occlusion only. The reference ball floats with no ground contact, so the review render has no ground plane and the silhouette mask stays clean."
+  ],
+  "proceduralStrategy": [
+    "Block out the core sphere and the three front panels first, and confirm the silhouette is circular at the collider radius.",
+    "Add the remaining three panels, then the valve collar and plug as separate named parts.",
+    "Create pivot nodes, the centre and valve sockets and the sphere collider proxy before visual polish.",
+    "Open the seam grooves by insetting each panel 0.55 degrees at both meridian edges over the darker core shell.",
+    "Run reference PBR extraction on per-material crops, record its confidence, and decide explicitly whether to bind or only cite the maps.",
+    "Add panel tone drift and groove darkening before any micro geometry."
+  ],
+  "animationAnchors": [
+    "sculptRuntime.nodes['ball-core'] carries whole-object translation, rotation and scale",
+    "sculptRuntime.sockets['ball-core:ball-center'] is the centre of mass",
+    "sculptRuntime.sockets['ball-core:valve-pole'] anchors an inflate or deflate effect"
+  ],
+  "destructionAnchors": [
+    "valve-assembly detaches as collar plus plug",
+    "the panel ring is not fractured; a burst would be a material state, not a fracture"
+  ],
+  "risks": [
+    "Single reference view: the rear panel's colour and the south pole are inferred.",
+    "The reference silhouette is 2.2 percent taller than it is wide. That is reproducible with a vertical scale, but it would push the visual outside the trap's spherical collider, so it is deliberately not reproduced and the render will read 2.2 percent short.",
+    "Panel count rests on a longitude solve that assumes the valve marks the true pole. If the valve is offset from the pole, the solved elevation and therefore the panel count move.",
+    "One refine-code edit to the generated factory is required and is not expressible through the generator as shipped: buildLatheGeometry must honour latheProfile.phiStart and phiLength, which the spec already carries. Without it every panel is a full revolution and only the last one drawn is visible.",
+    "Reference PBR maps were extracted and passed their confidence gate but are deliberately not bound to the runtime material; the runtime uses independent procedural canvas maps so the prop stays self-contained."
+  ],
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Beach Ball",
+    "index": {
+      "status": "reused",
+      "reason": "present"
+    },
+    "matches": []
+  },
+  "tier1Results": [
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.9745,
+        "aspectRatioDelta": 0.0263,
+        "scaleDelta": 0.0036,
+        "bilateralSymmetryError": 0.0004,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 17.17,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 3.05
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.04
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.83
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "blockout requires --map-stripped-render evidence"
+      ],
+      "renderHash": "002f3271f395c516",
+      "passId": "blockout"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.9745,
+        "aspectRatioDelta": 0.0263,
+        "scaleDelta": 0.0036,
+        "bilateralSymmetryError": 0.0004,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 17.17,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 3.05
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.04
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.83
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "blockout requires --map-stripped-render evidence"
+      ],
+      "renderHash": "002f3271f395c516",
+      "passId": "blockout"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9745,
+        "aspectRatioDelta": 0.0263,
+        "scaleDelta": 0.0036,
+        "bilateralSymmetryError": 0.0004,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 17.17,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 3.05
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.04
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.83
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "002f3271f395c516",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\blockout-reference-clay.png"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9745,
+        "aspectRatioDelta": 0.0263,
+        "scaleDelta": 0.0036,
+        "bilateralSymmetryError": 0.0004,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 17.17,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 3.05
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.04
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.83
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.17
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.34
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "002f3271f395c516",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\ball\\blockout-reference-clay.png"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9366,
+        "aspectRatioDelta": 0.0187,
+        "scaleDelta": 0.0038,
+        "bilateralSymmetryError": 0.0003,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 26.4,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 6.6
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.12
+            },
+            {
+              "componentId": null,
+              "deltaE": 14.06
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.92
+            },
+            {
+              "componentId": null,
+              "deltaE": 26.4
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.12
+            },
+            {
+              "componentId": null,
+              "deltaE": 26.4
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.12
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.12
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "164f2dcbc7ed3b66",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9175,
+        "aspectRatioDelta": 0.0187,
+        "scaleDelta": 0.0038,
+        "bilateralSymmetryError": 0.0004,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 38.06,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 38.06
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.88
+            },
+            {
+              "componentId": null,
+              "deltaE": 13.79
+            },
+            {
+              "componentId": null,
+              "deltaE": 6.24
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.03
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.88
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.03
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.88
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.88
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "86072a40c5629384",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9174,
+        "aspectRatioDelta": 0.0187,
+        "scaleDelta": 0.0038,
+        "bilateralSymmetryError": 0.0003,
+        "colorDelta": {
+          "checked": 9,
+          "maxDeltaE": 26.57,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 26.35
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 13.79
+            },
+            {
+              "componentId": null,
+              "deltaE": 6.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 26.57
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 26.57
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.9
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "91654e6501473df6",
+      "passId": "form-refinement"
+    }
+  ]
+}

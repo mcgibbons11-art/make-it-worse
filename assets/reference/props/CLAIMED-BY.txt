@@ -1,0 +1,25 @@
+props7 - TOILET ONLY (author_toilet_spec.py, toilet-sculpt-spec.json, renders/toilet,
+         components/game/models/createToiletModel.ts)
+
+This folder is shared. A claim here is per-prop, not per-folder.
+props6 is live on the VACUUM as of 2026-07-29 14:29 local; props7 stays off it,
+and off the FAN, which props6 is expected to return to for the guard spokes.
+
+props8 - VACUUM as of 2026-07-29 15:47 local (author_vacuum_spec.py,
+         vacuum-sculpt-spec.json, renders/vacuum,
+         components/game/models/createVacuumModel.ts).
+
+         props8 does NOT hold the fan. props8 claimed it at 15:40 and stood down the
+         same session: props7 was found live in author_fan_spec.py (three writes at
+         15:40:12/:19/:25, factory regenerated 15:40:33) building the same rear-cage
+         queue, and correctly - its 15:40 rebuild fixed the CAUSE of a containment
+         break props8 had independently measured at ymax 1.3187 against the 1.30
+         limit. Two writers on one spec is how a measured chain gets clobbered.
+         Team-lead ruled the fan stays with props7 and is inherited from wherever
+         props7 truly stops. props8 stays off the fan and off the toilet.
+
+         The props6 VACUUM claim above is STALE and is left in place as history.
+         props6 closed for good earlier today with "nothing else of mine is in
+         flight"; team-lead accepted that exit and released the claim by ruling at
+         15:47. A claim releases with its owner's certified exit, not by a
+         successor's own judgement - which is why props8 waited to be told.

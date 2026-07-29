@@ -1,0 +1,242 @@
+{
+  "method": "distance-transform part separation; radii read off the unforeshortened vertical axis",
+  "hubCap": {
+    "centerPx": [
+      461.0,
+      549.0
+    ],
+    "semiAxisXPx": 106.7,
+    "semiAxisYPx": 120.2,
+    "domedNotFlat": true,
+    "note": "x/y = 0.8877, but the rim measures ~0.78. The cap is domed, so its ratio is NOT the guard's foreshortening."
+  },
+  "guardRim": {
+    "verticalScanX": 461,
+    "outerTopPx": 137,
+    "outerBottomPx": 927,
+    "outerDiameterPx": 790,
+    "tubeDiameterPx": 93,
+    "centerlineDiameterPx": 697,
+    "verticalRunsPx": [
+      [
+        137,
+        671,
+        535
+      ],
+      [
+        741,
+        764,
+        24
+      ],
+      [
+        835,
+        927,
+        93
+      ]
+    ]
+  },
+  "spokes": {
+    "count": 14,
+    "gaugeMeanPx": 28.2,
+    "gaugeMedianPx": 27.9,
+    "components": [
+      {
+        "centroidPx": [
+          311.0,
+          547.3
+        ],
+        "areaPx": 1967,
+        "gaugePx": 24.3,
+        "innerRho": 1.02,
+        "outerRho": 1.84
+      },
+      {
+        "centroidPx": [
+          322.7,
+          425.6
+        ],
+        "areaPx": 7407,
+        "gaugePx": 30.0,
+        "innerRho": 1.05,
+        "outerRho": 2.38
+      },
+      {
+        "centroidPx": [
+          334.4,
+          625.2
+        ],
+        "areaPx": 1789,
+        "gaugePx": 24.2,
+        "innerRho": 0.99,
+        "outerRho": 1.73
+      },
+      {
+        "centroidPx": [
+          378.8,
+          688.3
+        ],
+        "areaPx": 2193,
+        "gaugePx": 27.8,
+        "innerRho": 1.0,
+        "outerRho": 1.82
+      },
+      {
+        "centroidPx": [
+          384.4,
+          344.3
+        ],
+        "areaPx": 4675,
+        "gaugePx": 26.3,
+        "innerRho": 1.02,
+        "outerRho": 2.77
+      },
+      {
+        "centroidPx": [
+          435.6,
+          742.1
+        ],
+        "areaPx": 4689,
+        "gaugePx": 34.1,
+        "innerRho": 1.03,
+        "outerRho": 2.25
+      },
+      {
+        "centroidPx": [
+          457.5,
+          318.1
+        ],
+        "areaPx": 5455,
+        "gaugePx": 26.8,
+        "innerRho": 1.0,
+        "outerRho": 2.88
+      },
+      {
+        "centroidPx": [
+          497.7,
+          771.5
+        ],
+        "areaPx": 4858,
+        "gaugePx": 28.6,
+        "innerRho": 1.05,
+        "outerRho": 2.68
+      },
+      {
+        "centroidPx": [
+          570.2,
+          759.5
+        ],
+        "areaPx": 5204,
+        "gaugePx": 25.1,
+        "innerRho": 1.07,
+        "outerRho": 2.99
+      },
+      {
+        "centroidPx": [
+          572.2,
+          339.9
+        ],
+        "areaPx": 9234,
+        "gaugePx": 36.1,
+        "innerRho": 0.99,
+        "outerRho": 2.75
+      },
+      {
+        "centroidPx": [
+          607.8,
+          419.8
+        ],
+        "areaPx": 4214,
+        "gaugePx": 26.9,
+        "innerRho": 0.99,
+        "outerRho": 2.56
+      },
+      {
+        "centroidPx": [
+          638.8,
+          715.3
+        ],
+        "areaPx": 6912,
+        "gaugePx": 28.1,
+        "innerRho": 1.09,
+        "outerRho": 3.03
+      },
+      {
+        "centroidPx": [
+          657.5,
+          513.0
+        ],
+        "areaPx": 4538,
+        "gaugePx": 27.9,
+        "innerRho": 1.01,
+        "outerRho": 2.7
+      },
+      {
+        "centroidPx": [
+          672.1,
+          631.0
+        ],
+        "areaPx": 6036,
+        "gaugePx": 28.1,
+        "innerRho": 1.06,
+        "outerRho": 2.93
+      }
+    ]
+  },
+  "rearCage": {
+    "count": 2,
+    "components": [
+      {
+        "centroidPx": [
+          831.0,
+          402.4
+        ],
+        "areaPx": 13217,
+        "gaugePx": 36.1,
+        "innerRho": 3.59,
+        "outerRho": 4.19
+      },
+      {
+        "centroidPx": [
+          862.7,
+          686.6
+        ],
+        "areaPx": 1273,
+        "gaugePx": 21.3,
+        "innerRho": 3.8,
+        "outerRho": 4.06
+      }
+    ]
+  },
+  "petals": {
+    "count": 2,
+    "components": [
+      {
+        "centroidPx": [
+          520.7,
+          524.8
+        ],
+        "areaPx": 201936,
+        "extentYPx": [
+          198,
+          868
+        ]
+      },
+      {
+        "centroidPx": [
+          831.0,
+          441.4
+        ],
+        "areaPx": 20569,
+        "extentYPx": [
+          166,
+          791
+        ]
+      }
+    ]
+  },
+  "ratiosOfGuardOuterDiameter": {
+    "hubCapDiameter": 0.3042,
+    "rimTubeDiameter": 0.1177,
+    "spokeGauge": 0.0353
+  }
+}

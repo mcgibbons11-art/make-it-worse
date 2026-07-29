@@ -7,10 +7,10 @@ The repository contains two deployment targets:
 
 - The Next.js application at the repository root supports the complete
   Supabase-backed, cross-device challenge loop.
-- `portals/` is a static Vite edition for Portals. Portals' game sandbox does
-  not allow the external Supabase/API connections used by the full service, so
-  this edition stores chains in that browser only. It must not be described as
-  cross-device multiplayer.
+- `portals/` is a static Vite edition for Portals. It carries no Supabase or
+  API dependency, so challenge chains stay in that browser only and it must not
+  be described as cross-device multiplayer. Its one cross-player feature is the
+  global leaderboard, which the Portals host provides through the Portals SDK.
 
 ```mermaid
 flowchart LR
@@ -117,6 +117,30 @@ The Portals edition must remain self-contained: no external `fetch`, Supabase,
 font, analytics, or CDN dependency can be required at runtime. Clipboard access
 may also be denied by the embedding iframe, so copying must always have a
 visible fallback.
+
+## Global leaderboard
+
+`portals/src/leaderboard.ts` adapts the [Portals
+SDK](https://portals.to/documentation/advanced-tooling/portals-sdk) to the
+game's fastest-clear board. Three properties of that SDK shape the design:
+
+- Portals injects `./_portals/sdk.js` into every processed preview and
+  published bundle, so the runtime is absent under `pnpm --filter
+  @make-it-worse/portals dev`. Never vendor or commit that file. Every call
+  feature-detects `window.Portals` and returns an `unavailable` status the
+  interface renders as an explanation.
+- The SDK ranks higher scores first, but a faster clear is a better clear. A
+  completed run always finishes inside `ATTEMPT_LIMIT_MS`, so the adapter
+  submits the milliseconds remaining and converts back for display.
+- Scores are grouped by `mode`. The board uses `depth-<n>`, because every
+  player at a given chain depth ran the same number of traps, while chain slugs
+  in this edition are local to one browser and would never collect a second
+  player.
+
+Submitting requires sign-in, so `Portals.identity.requestLogin()` is wired to a
+button rather than an effect, as the SDK requires. Scores are client-reported
+and carry no entitlement, matching the SDK's guidance and the same
+client-authoritative caveat that applies to attempt completion.
 
 ## Repository hygiene
 

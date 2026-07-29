@@ -38,7 +38,21 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next-build/types/**/*.ts",
-    ".next-build/dev/types/**/*.ts"
+    ".next-build/dev/types/**/*.ts",
+    ".next-audio-check/types/**/*.ts",
+    ".next-audio-check/dev/types/**/*.ts",
+    ".next-qa-bughunt/types/**/*.ts",
+    ".next-qa-bughunt/dev/types/**/*.ts",
+    ".next-props-spring/types/**/*.ts",
+    ".next-props-spring/dev/types/**/*.ts",
+    ".next-props-spring-dev/types/**/*.ts",
+    ".next-props-spring-dev/dev/types/**/*.ts",
+    ".next-maps-garments3/types/**/*.ts",
+    ".next-maps-garments3/dev/types/**/*.ts",
+    ".next-t17-garments3/types/**/*.ts",
+    ".next-t17-garments3/dev/types/**/*.ts",
+    ".next-t17-prod/types/**/*.ts",
+    ".next-t17-prod/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

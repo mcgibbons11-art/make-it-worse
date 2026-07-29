@@ -5,21 +5,120 @@ import type { RapierRigidBody } from "@react-three/rapier";
 import GameCanvas from "./GameCanvas";
 import type { TrapMechanicEvent } from "./TrapRenderer";
 import { validatePlacement } from "@/lib/game/placement";
-import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
+import { TRAP_CATALOG, TRAP_TYPES } from "@/lib/game/trap-catalog";
 import type { ChallengeDTO, TrapInstance, TrapPlacementInput, TrapType } from "@/lib/game/types";
 
+// One placement per entry in TRAP_TYPES. The sandbox exists to reach a trap
+// without playing to it, so a roster entry with no placement here is a trap QA
+// cannot open at all: `?trap=<type>` would serve an empty course.
+// The whole 54-entry roster, one placement each, solved against
+// validatePlacement rather than written by hand.
+//
+// At 38 the eight authored zones were genuinely full and the note here said the
+// next wave would not fit. Free placement is what made room: every LevelPiece is
+// a placement surface now, so `start`, `runway`, `bridge`, `finish` and the
+// islands are addressable as zoneIds alongside the authored zones, and the
+// sixteen added below sit almost entirely on that new floor. The binding
+// constraint is no longer zone occupancy - that cap is gone - but the overlap
+// rule, 0.75 x the sum of the two placement radii.
+//
+// The sixteen were solved largest-radius-first, because a wide trap has the
+// fewest legal homes and placing the small ones first strands it, and each was
+// given the legal point with the most clearance rather than the first that
+// passed, so the sandbox reads as a gallery rather than a heap.
 const placements: TrapPlacementInput[] = [
-  { type: "swinging_hammer", zoneId: "runway_front", offsetX: -1, offsetZ: 0, rotationQuarterTurns: 0 },
-  { type: "rolling_fridge", zoneId: "runway_mid", offsetX: 1, offsetZ: 0, rotationQuarterTurns: 2 },
-  { type: "floor_fan", zoneId: "runway_back", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 0 },
-  { type: "soap_slick", zoneId: "stones_front", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 1 },
-  { type: "spring_pad", zoneId: "stones_mid", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 0 },
-  { type: "angry_vacuum", zoneId: "bridge_front", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 0 },
-  { type: "rotating_toilet", zoneId: "convergence", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 1 },
-  { type: "giant_beach_ball", zoneId: "runway_front", offsetX: 1, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "ceiling_fan", zoneId: "runway_front", offsetX: -1.5, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "swinging_hammer", zoneId: "finish", offsetX: 2.75, offsetZ: 1.5, rotationQuarterTurns: 0 },
+  { type: "rotating_toilet", zoneId: "convergence", offsetX: -1.5, offsetZ: -0.25, rotationQuarterTurns: 0 },
+  { type: "angry_vacuum", zoneId: "stone-c", offsetX: 0.5, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "swing_door", zoneId: "finish", offsetX: -2.75, offsetZ: -0.75, rotationQuarterTurns: 0 },
+  { type: "rolling_fridge", zoneId: "bridge", offsetX: -0.5, offsetZ: 2, rotationQuarterTurns: 0 },
+  { type: "pile_on", zoneId: "stones_front", offsetX: -0.5, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "ice_dispenser", zoneId: "start", offsetX: 3.25, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "fridge_magnet", zoneId: "right-island", offsetX: 0.5, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "robot_mop", zoneId: "start", offsetX: -3.5, offsetZ: -1.5, rotationQuarterTurns: 0 },
+  { type: "paint_bucket", zoneId: "runway", offsetX: 2.5, offsetZ: 1, rotationQuarterTurns: 0 },
+  { type: "spin_cycle", zoneId: "finish", offsetX: 1.25, offsetZ: -2.5, rotationQuarterTurns: 0 },
+  { type: "drawer_slam", zoneId: "bridge", offsetX: -0.75, offsetZ: -2, rotationQuarterTurns: 0 },
+  { type: "shoe_rack", zoneId: "left-island", offsetX: -0.5, offsetZ: -0.75, rotationQuarterTurns: 0 },
+  { type: "clothes_airer", zoneId: "stone-b", offsetX: -0.75, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "sprinkler", zoneId: "runway", offsetX: -2.5, offsetZ: 1.75, rotationQuarterTurns: 0 },
+  { type: "rug_pull", zoneId: "finish", offsetX: -3, offsetZ: 2.5, rotationQuarterTurns: 0 },
+  { type: "bathroom_scales", zoneId: "runway", offsetX: 1.75, offsetZ: -2, rotationQuarterTurns: 0 },
+  { type: "ball_machine", zoneId: "convergence", offsetX: 1.5, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "floor_fan", zoneId: "center-island", offsetX: 0, offsetZ: -1, rotationQuarterTurns: 0 },
+  { type: "mousetrap", zoneId: "start", offsetX: -3.5, offsetZ: 1.25, rotationQuarterTurns: 0 },
+  { type: "laundry_basket", zoneId: "ramp", offsetX: -0.75, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "chute_drop", zoneId: "runway", offsetX: 0.25, offsetZ: 2.25, rotationQuarterTurns: 0 },
+  { type: "cart_blocker", zoneId: "finish", offsetX: -0.25, offsetZ: -0.25, rotationQuarterTurns: 0 },
+  { type: "mattress_rebound", zoneId: "bridge", offsetX: 0.75, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "bin_pedal", zoneId: "runway_mid", offsetX: 0.25, offsetZ: -0.25, rotationQuarterTurns: 0 },
+  { type: "cuckoo_clock", zoneId: "finish", offsetX: 3, offsetZ: -1, rotationQuarterTurns: 0 },
+  { type: "kettle_boil", zoneId: "center-island", offsetX: 0, offsetZ: 1.25, rotationQuarterTurns: 0 },
+  { type: "toaster_launcher", zoneId: "finish", offsetX: -1.25, offsetZ: -2.25, rotationQuarterTurns: 0 },
+  { type: "cord_trip", zoneId: "left-island", offsetX: -0.5, offsetZ: 1.25, rotationQuarterTurns: 0 },
+  { type: "conveyor_strip", zoneId: "island_right", offsetX: -0.5, offsetZ: 1.5, rotationQuarterTurns: 0 },
+  { type: "steam_vents", zoneId: "runway", offsetX: -1.5, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "paparazzi", zoneId: "finish_mid", offsetX: 1.5, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "fish_bowl", zoneId: "ramp", offsetX: 1, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "stove_ring", zoneId: "finish", offsetX: -3, offsetZ: -2.5, rotationQuarterTurns: 0 },
+  { type: "soap_slick", zoneId: "finish", offsetX: -2, offsetZ: 1, rotationQuarterTurns: 0 },
+  { type: "giant_beach_ball", zoneId: "right-island", offsetX: -0.5, offsetZ: -1.5, rotationQuarterTurns: 0 },
+  { type: "domino_line", zoneId: "stone-b", offsetX: 0.75, offsetZ: -0.5, rotationQuarterTurns: 0 },
+  { type: "cat_flap", zoneId: "left-island", offsetX: 0.75, offsetZ: 0.25, rotationQuarterTurns: 0 },
+  { type: "slow_fuse", zoneId: "start", offsetX: 2.25, offsetZ: 1.25, rotationQuarterTurns: 0 },
+  { type: "spring_pad", zoneId: "bridge", offsetX: 0.75, offsetZ: -2.5, rotationQuarterTurns: 0 },
+  { type: "tilt_plate", zoneId: "convergence", offsetX: 0, offsetZ: -0.5, rotationQuarterTurns: 0 },
+  { type: "flood_puddle", zoneId: "start", offsetX: -2, offsetZ: 1.5, rotationQuarterTurns: 0 },
+  { type: "junk_drift", zoneId: "start", offsetX: 3, offsetZ: -1.5, rotationQuarterTurns: 0 },
+  { type: "sticky_gum", zoneId: "runway", offsetX: 0, offsetZ: -2.25, rotationQuarterTurns: 0 },
+  { type: "bunting_line", zoneId: "runway", offsetX: 2, offsetZ: -0.5, rotationQuarterTurns: 0 },
+  { type: "plate_shards", zoneId: "bridge", offsetX: -0.75, offsetZ: -0.25, rotationQuarterTurns: 0 },
+  { type: "hot_potato", zoneId: "left-island", offsetX: 0.75, offsetZ: -1.75, rotationQuarterTurns: 0 },
+  { type: "pipe_burst", zoneId: "finish", offsetX: 2.75, offsetZ: -2.5, rotationQuarterTurns: 0 },
+  { type: "updraft_vent", zoneId: "start", offsetX: -2.75, offsetZ: 0, rotationQuarterTurns: 0 },
+  { type: "banana_peel", zoneId: "stone-c", offsetX: -1, offsetZ: -0.5, rotationQuarterTurns: 0 },
+  { type: "motion_sensor", zoneId: "stone-a", offsetX: 1, offsetZ: -0.5, rotationQuarterTurns: 0 },
+  { type: "dust_bunny", zoneId: "bridge", offsetX: 1, offsetZ: 2.5, rotationQuarterTurns: 0 },
+  { type: "ankle_weight", zoneId: "runway", offsetX: 1.75, offsetZ: 2.25, rotationQuarterTurns: 0 },
 ];
 
+/**
+ * HOW TO RE-SOLVE THIS LIST, because it will need re-solving again.
+ *
+ * The list above is a packing solution, not a layout anyone chose, and it is
+ * only valid against one particular course geometry. It has already been
+ * invalidated twice: once when the roster grew from 38 to 54, and once when the
+ * course itself was reshaped - the bridge went from 3 x 10.2 to 2.6 x 5.9 and
+ * the islands narrowed, which silently moved seventeen placements off their
+ * floor. Both times the symptom was the same, `outside_zone` from
+ * sandboxChallenge at page load.
+ *
+ * The method that works, and the order matters:
+ *   1. Solve largest placementRadius first. A wide trap has the fewest legal
+ *      homes, so placing the small ones first strands it. swinging_hammer at
+ *      1.3 is the hard case, because it also has to satisfy the geometric
+ *      unsafe_sweep rule, and on the current course only `start` and `finish`
+ *      are wide enough to hold it at all.
+ *   2. Search the LevelPiece surfaces as well as the authored zones. Free
+ *      placement made every piece a legal zoneId, and the pieces are where the
+ *      room is: four of them are hyphenated (`stone-a`, `left-island`,
+ *      `center-island`, `right-island`), which the parser in
+ *      tests/unit/trap-roster.test.ts has to keep accepting.
+ *   3. Take the legal point with the most clearance rather than the first that
+ *      passes, or everything piles into whichever surface is searched first.
+ *   4. Re-solve the WHOLE list, not just the broken entries. Keeping the
+ *      still-legal ones pinned leaves them holding the prime floor and the
+ *      re-solve then fails on the traps that were displaced.
+ *
+ * Do not shrink placementRadius to force a fit. Radius is what the overlap rule
+ * and the placement preview both read, so shrinking it to win a packing
+ * argument makes every trap on the course crowd its neighbours.
+ */
 function sandboxChallenge(onlyTrap: TrapType | null): ChallengeDTO {
+  const unplaced = TRAP_TYPES.filter((type) => !placements.some((entry) => entry.type === type));
+  if (unplaced.length > 0)
+    throw new Error(`Sandbox has no placement for ${unplaced.join(", ")}`);
   const traps: TrapInstance[] = [];
   placements.filter((placement) => !onlyTrap || placement.type === onlyTrap).forEach((placement, index) => {
     const result = validatePlacement(placement, traps);
@@ -184,7 +283,10 @@ export default function SandboxClient({ requested }: { requested: string | undef
       />
       <aside className="sandbox-banner panel">
         <strong>ALL-TRAP QA SANDBOX</strong>
-        <span>WASD · Space · hold E to grab, release to shove · all eight obstacles use release colliders and brand-safe art</span>
+        <span>
+          WASD · Space · hold E to grab, release to shove · {challenge.traps.length} of{" "}
+          {TRAP_TYPES.length} obstacles loaded; some props are still stand-ins
+        </span>
         <button className="button secondary" onClick={reset}>Reset run</button>
       </aside>
       <output className="sr-only" aria-label="Sandbox interaction telemetry">

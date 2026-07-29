@@ -1,0 +1,18 @@
+{
+  "stem": "wear-cap",
+  "image": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\wear-cap.png",
+  "md5": "0cfd3b68cd5b5120fb93645daab1141c",
+  "bytes": 1220311,
+  "checkedAt": "2026-07-29T03:09:09+00:00",
+  "automatedAdmission": {
+    "exitCode": 0,
+    "output": "ADMITTED  (reference)  pHash=13603618780925344969"
+  },
+  "probe": {
+    "exitCode": 0,
+    "output": "{\n  \"path\": \"C:\\\\Users\\\\Mcgib\\\\Partners HealthCare Dropbox\\\\Jason Gibbons\\\\Portals make it worse\\\\assets\\\\reference\\\\wear-cap.png\",\n  \"type\": \"png\",\n  \"bytes\": 1220311,\n  \"width\": 1254,\n  \"height\": 1254,\n  \"aspectRatio\": 1.0,\n  \"technicalSuitability\": \"pass\",\n  \"warnings\": [],\n  \"note\": \"This is only technical image probing. Semantic object suitability still requires visual inspection.\"\n}"
+  },
+  "contentVerdict": "pass",
+  "contentNote": "Single mint six-panel baseball cap on plain grey, front three-quarter slightly above. Coral crown button, three ventilation eyelets, navy curved brim with concentric topstitch. No second object.",
+  "contentCheckRule": "The reference must show ONLY the garment its filename names. md5 uniqueness and check_reference_admission.py both pass on a two-prompt mashup, so this verdict comes from opening the image."
+}

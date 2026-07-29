@@ -1,0 +1,88 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.723,
+  "estimatedFidelity": 0.723,
+  "targetThreshold": 0.7,
+  "materialId": "lever-yellow",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\crops\\lever-yellow-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr",
+  "palette": [
+    "#FED265",
+    "#F3B73D",
+    "#FBC54F",
+    "#E0CBAC",
+    "#D6992C"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\lever-yellow_albedo.png",
+      "url": "lever-yellow_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\lever-yellow_roughness.png",
+      "url": "lever-yellow_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\lever-yellow_height.png",
+      "url": "lever-yellow_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\lever-yellow_normal.png",
+      "url": "lever-yellow_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\lever-yellow_ao.png",
+      "url": "lever-yellow_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 200,
+    "sourceHeight": 110,
+    "mapSize": 512,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 200,
+      "height": 110
+    },
+    "mask": {
+      "backgroundColor": "#EDCCB4",
+      "backgroundNoise": 88.651,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9993
+    },
+    "mapStats": {
+      "valueRange": 0.1437,
+      "heightP90Gradient": 0.01582,
+      "roughnessBase": 0.698,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.175,
+      "blurRadius": 10
+    },
+    "palette": [
+      "#FED265",
+      "#F3B73D",
+      "#FBC54F",
+      "#E0CBAC",
+      "#D6992C"
+    ]
+  },
+  "warnings": [
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak",
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped",
+    "low value range weakens height/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

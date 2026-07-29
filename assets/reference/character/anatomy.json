@@ -1,0 +1,149 @@
+{
+ "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character-reference.png",
+ "overlayImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\character\\renders\\landmark-overlay.png",
+ "overlayLegend": {
+  "C": "center symmetry axis",
+  "1..N": "head-unit horizontal ticks (blue, dashed)",
+  "H": "hairline guide (default fraction of the first head-unit band)",
+  "E": "eye line guide",
+  "N": "nose base guide",
+  "M": "mouth line guide",
+  "S": "shoulder line guide (default fraction, adjust to observed pose)",
+  "P": "hip line guide (default fraction, adjust to observed pose)",
+  "grayDashed": "rule-of-thirds compositional grid"
+ },
+ "anatomy": {
+  "styleHeads": 3.06,
+  "proportions": {
+   "headUnit": 0.6216,
+   "totalHeight": 1.9,
+   "torso": 0.485,
+   "legs": 0.4834,
+   "shoulderWidth": 0.4497,
+   "hipWidth": 0.8809,
+   "headWidth": 0.7321,
+   "neckWidth": 0.2548
+  },
+  "pose": {
+   "type": "relaxed A-pose, weight even, facing camera, arms clear of the torso",
+   "jointAngles": {
+    "neck": [
+     0,
+     0,
+     0
+    ],
+    "leftShoulder": [
+     0,
+     0,
+     0
+    ],
+    "rightShoulder": [
+     0,
+     0,
+     0
+    ],
+    "leftElbow": [
+     0,
+     0,
+     0
+    ],
+    "rightElbow": [
+     0,
+     0,
+     0
+    ],
+    "leftWrist": [
+     0,
+     0,
+     0
+    ],
+    "rightWrist": [
+     0,
+     0,
+     0
+    ],
+    "leftHip": [
+     0,
+     0,
+     0
+    ],
+    "rightHip": [
+     0,
+     0,
+     0
+    ],
+    "leftKnee": [
+     0,
+     0,
+     0
+    ],
+    "rightKnee": [
+     0,
+     0,
+     0
+    ],
+    "leftAnkle": [
+     0,
+     0,
+     0
+    ],
+    "rightAnkle": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  "faceLandmarks": {
+   "hairline": 0.3415,
+   "eyeLine": 0.3346,
+   "eyeSpacing": 0.2302,
+   "noseBase": 0.4282,
+   "mouthLine": 0.4819,
+   "earTop": 0.3054,
+   "earBottom": 0.5049
+  },
+  "features": [],
+  "confidence": 0.0,
+  "measurementBasis": {
+   "method": "colour-segmented silhouette width profile of the reference render",
+   "imagePx": {
+    "w": 1086,
+    "h": 1448
+   },
+   "figureBboxPx": {
+    "x0": 161,
+    "x1": 924,
+    "y0": 101,
+    "y1": 1338
+   },
+   "headUnitPx": 405,
+   "note": "head unit is crown to the neck pinch (narrowest row between the head's widest row y=371 and the torso's widest row y=721)"
+  },
+  "landmarkFractions": {
+   "crown": 0.0,
+   "eyeLine": 0.176,
+   "jaw": 0.327,
+   "torsoWidest": 0.501,
+   "ground": 0.999
+  },
+  "gameplayConstraints": {
+   "maxSilhouetteWidth": 0.94,
+   "referenceArmSpanScaled": 1.1725,
+   "reason": "The reference's arm span scales to 1.17u at this height, but the narrowest walkable plank (segment 'beam', 1.2u wide) leaves 0.94u of visible deck after the platform edge band. A silhouette wider than that hides the player's own footing on the hardest segment in the game. Arms must tuck inboard of the reference; this is a deliberate, gameplay-driven departure, not a reconstruction error.",
+   "colliderReference": {
+    "capsuleRadius": 0.38,
+    "capsuleHalfHeight": 0.55,
+    "colliderWidth": 0.76
+   }
+  },
+  "hiddenFromSingleView": [
+   "entire back",
+   "backpack body shape",
+   "shoe soles",
+   "crown of the hair",
+   "palm side of hands"
+  ]
+ },
+ "authoringInstruction": "Open overlayImage and read the reference against its head-unit ticks, thirds grid, face-line guides, shoulder/hip lines, and center axis. Replace every null/placeholder value in anatomy with normalized coordinates or joint angles actually observed; the drawn guide lines are generic starting positions, not measurements."
+}

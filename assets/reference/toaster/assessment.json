@@ -1,0 +1,461 @@
+{
+  "targetName": "Apartment Toaster",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster-reference.png",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "small kitchen appliance (two-slot pop-up toaster)",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "chamfered-hard-surface",
+        "stylized-low-poly",
+        "rounded-bevel"
+      ],
+      "structureKind": [
+        "shell-on-plinth",
+        "recessed-cavity",
+        "surface-mounted-controls"
+      ],
+      "motionPotential": [
+        "lever-slide-vertical",
+        "dial-rotate-yaw",
+        "carriage-eject-impulse"
+      ],
+      "materialFamilies": [
+        "matte-plastic-cream",
+        "matte-plastic-coral",
+        "matte-plastic-yellow",
+        "dark-cavity-interior"
+      ],
+      "notes": "Hard-surface object. Every corner carries a ~45 degree chamfer; this facet language is the identity, not smooth fillets. Body tapers slightly inward toward the top. Single three-quarter view: rear face, left face, and underside are inferred by symmetry and carry reduced confidence."
+    },
+    "complexity": {
+      "tier": "moderate",
+      "scores": {
+        "silhouetteComplexity": 2,
+        "componentCount": 2,
+        "hierarchyDepth": 2,
+        "repetitionDensity": 1,
+        "materialLayerCount": 2,
+        "localDetailDensity": 2,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 3
+      },
+      "estimatedCounts": {
+        "macroComponents": 3,
+        "mesoComponents": 6,
+        "microFeatureGroups": 3,
+        "materialLayers": 4,
+        "repetitionSystems": 2
+      },
+      "reasoning": [
+        "Six distinct meso parts: body shell, top bezel, slot cavity, base plinth, lever, dial.",
+        "Two repetition systems: nine dial tick marks and six internal element tabs in the cavity.",
+        "Action readiness is high because this becomes a launching trap: the lever and carriage must animate and the toast is ejected.",
+        "Occlusion risk is moderate: only one view, so rear and left faces are inferred from symmetry."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "moderate",
+      "minimumComponentLevels": [
+        "macro",
+        "meso"
+      ],
+      "needsRepetitionSystems": false,
+      "needsMaterialLocalOverrides": false,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Choose simple/moderate/complex/ultra-complex from observed structure, not from a hardcoded domain."
+    },
+    "unknownsToResolveBeforeImplementation": [
+      "Rear face detail is not visible; assumed plain shell matching the front.",
+      "Underside and foot geometry are not visible; four corner feet inferred from the plinth silhouette.",
+      "Cavity depth is not measurable from this view; set to a plausible fraction of body height."
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zone scan of the three-quarter reference at 3x and 4x magnification, cross-checked against per-material crops",
+      "targetMinDetails": 6,
+      "note": "Every detail below resolves to a component.localFeatures id or a material.localOverrides id; none is prose only.",
+      "details": [
+        {
+          "id": "corner-chamfers",
+          "zone": "body-all-edges",
+          "kind": "bevel",
+          "description": "Every vertical and horizontal corner of the shell carries a wide flat 45 degree chamfer, giving a faceted octagonal plan rather than a rounded box.",
+          "mapsTo": {
+            "ref": "plan-chamfer-facets",
+            "owner": "body-shell",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Extruded Shape with a chamfered plan outline; never a rounded box.",
+          "evidenceRef": "full-object",
+          "confidence": 0.92
+        },
+        {
+          "id": "body-taper",
+          "zone": "body-upper",
+          "kind": "contour",
+          "description": "The shell narrows by 0.03 units per side between the plinth seam and the top of the vertical wall, about 3.8 percent on the width.",
+          "mapsTo": {
+            "ref": "upward-taper",
+            "owner": "body-shell",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "profileStops scale the shape-plane coordinates along the extrusion axis.",
+          "evidenceRef": "full-object",
+          "confidence": 0.72
+        },
+        {
+          "id": "top-chamfer-band",
+          "zone": "body-top",
+          "kind": "bevel",
+          "description": "A 0.14 unit tall chamfer band insets the plan a further 0.11 units before the flat top deck begins.",
+          "mapsTo": {
+            "ref": "top-chamfer-band",
+            "owner": "body-shell",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Final profileStop turns the top of the prism into a frustum band.",
+          "evidenceRef": "full-object",
+          "confidence": 0.82
+        },
+        {
+          "id": "bezel-proud-lip",
+          "zone": "top-face",
+          "kind": "ridge",
+          "description": "The coral bezel stands 0.055 units above the cream deck and frames the opening as a chamfered rounded-rectangle ring.",
+          "mapsTo": {
+            "ref": "proud-lip-step",
+            "owner": "top-bezel",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Extruded octagonal ring with a hole, seated 0.02 units into the deck.",
+          "evidenceRef": "full-object",
+          "confidence": 0.9
+        },
+        {
+          "id": "bezel-crown-chamfer",
+          "zone": "top-face",
+          "kind": "bevel",
+          "description": "The bezel crown chamfers inward by 0.03 units instead of rounding over.",
+          "mapsTo": {
+            "ref": "bezel-crown-chamfer",
+            "owner": "top-bezel",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Final profileStop on the bezel extrusion.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "cavity-element-tabs",
+          "zone": "slot-interior",
+          "kind": "ridge",
+          "description": "Six small dark tabs project from the slot walls, three per slot, reading as heating element brackets.",
+          "mapsTo": {
+            "ref": "element-tab-rows",
+            "owner": "slot-cavity",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "InstancedMesh of six boxes in two rows of three.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "cavity-divider-crown",
+          "zone": "slot-interior",
+          "kind": "ridge",
+          "description": "The divider stops 0.08 units below the rim so its lit crown reads as a pale strip along the opening.",
+          "mapsTo": {
+            "ref": "divider-crown",
+            "owner": "cavity-divider",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Box partition whose top ends below the deck plane.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "dial-tick-ring",
+          "zone": "lower-right-face",
+          "kind": "linework",
+          "description": "Nine short coral tick marks ring the rotary dial; the plinth hides the lowest three, so the reference reads as an arc.",
+          "mapsTo": {
+            "ref": "tick-arc",
+            "owner": "control-plate",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "InstancedMesh of nine boxes on a radial placement about the dial axis.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "dial-pointer-rib",
+          "zone": "lower-right-face",
+          "kind": "groove",
+          "description": "A raised rib runs from the knob centre toward its rim and marks the current setting.",
+          "mapsTo": {
+            "ref": "pointer-rib",
+            "owner": "dial-notch",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Box bar parented to the knob so it turns with it.",
+          "evidenceRef": "full-object",
+          "confidence": 0.7
+        },
+        {
+          "id": "lever-track-channel",
+          "zone": "right-face",
+          "kind": "groove",
+          "description": "The yellow lever rides in a channel whose floor sits 0.036 units below the surrounding collar crown, visible above and below the knob.",
+          "mapsTo": {
+            "ref": "recessed-channel",
+            "owner": "lever-track",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Proud collar ring with a chamfered-rect opening and a dark floor plate behind it.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "lever-knob-chamfers",
+          "zone": "right-face",
+          "kind": "bevel",
+          "description": "Every edge of the yellow knob carries a flat chamfer about 0.06 units wide.",
+          "mapsTo": {
+            "ref": "knob-chamfers",
+            "owner": "lever-knob",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Chamfered-rect extrude profile plus an end-chamfer profileStop.",
+          "evidenceRef": "full-object",
+          "confidence": 0.9
+        },
+        {
+          "id": "plinth-overhang",
+          "zone": "base",
+          "kind": "contour",
+          "description": "The coral plinth is 0.05 units wider than the shell on every side and carries its own chamfer, reading as a separate slab.",
+          "mapsTo": {
+            "ref": "overhang-ledge",
+            "owner": "base-plinth",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Separate chamfered extrude, wider footprint, 0.02 unit seam overlap into the shell.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "plinth-double-bevel",
+          "zone": "base",
+          "kind": "bevel",
+          "description": "Both the top and the bottom edge of the plinth bevel inward by 0.05 units.",
+          "mapsTo": {
+            "ref": "double-bevel-profile",
+            "owner": "base-plinth",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "profileStops at t=0, 0.23, 0.77 and 1.0.",
+          "evidenceRef": "full-object",
+          "confidence": 0.78
+        },
+        {
+          "id": "corner-feet",
+          "zone": "underside",
+          "kind": "contour",
+          "description": "Four small pads at the plinth corners lift it 0.06 units off the counter.",
+          "mapsTo": {
+            "ref": "foot-pad-front-right",
+            "owner": "foot-front-right",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Four box pads inset from the plinth corner facets. Two are visible; two are inferred.",
+          "evidenceRef": "full-object",
+          "confidence": 0.45
+        },
+        {
+          "id": "plinth-seam-shadow",
+          "zone": "base",
+          "kind": "seam",
+          "description": "A hard contact shadow runs along the joint where the cream shell enters the coral plinth.",
+          "mapsTo": {
+            "ref": "plinth-seam-shadow",
+            "owner": "shell-cream",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override raising roughness and AO in the lowest 0.05 units of the wall.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "pocket-depth-gradient",
+          "zone": "slot-interior",
+          "kind": "stain",
+          "description": "The slot pocket darkens sharply with depth; the floor is the darkest value in the frame.",
+          "mapsTo": {
+            "ref": "pocket-depth-gradient",
+            "owner": "cavity-gray",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override with a depth-driven AO boost on the pocket walls.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "unassessed",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "Only meaningful when objectClass.primaryDomain is character or hybrid. Set applies=true and fill from forge/stage1_intake/extract_landmarks.py. See grimoire/character/reconstruction.md and grimoire/character/likeness_maximization.md."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster-reference.png"
+  },
+  "qualityContract": {
+    "qualityBar": "moderate",
+    "definitionOfDone": [
+      "The rendered model matches the reference silhouette, primary proportions, visible component hierarchy, material response, and most recognizable local features for the selected fidelity tier."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 2,
+      "mesoComponents": 3,
+      "microFeatureGroups": 2,
+      "materialLayers": 2,
+      "repetitionSystems": 0,
+      "reviewViewpoints": 3
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic placeholder instead of the reference object",
+          "major proportions are guessed without evidence"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "large visible parts are merged into one mesh",
+          "component hierarchy is too shallow for the observed complexity"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Attachment and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "child part root floats away from the parent",
+          "branch/limb/tube is centered in space instead of pivoting from its root",
+          "parent-child transform mixes world and local coordinates"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+          "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+          "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "surface looks like flat plastic",
+          "local material variation is missing or not tied to image evidence"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference color, material, and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+          "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+          "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+          "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model has acceptable shape but reads as flat shaded or plastic",
+          "colors are a generic average instead of reference-observed local color zones",
+          "lighting is evenly ambient and cannot reproduce the source value range"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "component hierarchy depth delta",
+      "repetition density and distribution delta",
+      "material albedo/roughness/normal response delta",
+      "local feature placement and scale delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+      "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+      "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Toaster",
+    "index": {
+      "status": "rebuilt",
+      "reason": "missing",
+      "fingerprint": "ac4f0bc9028e34083dbb5d5531ae3df7699c8e7641d5f8e6d42e7492ea1be1d0"
+    },
+    "matches": []
+  }
+}

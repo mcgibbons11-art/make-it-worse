@@ -1,0 +1,18 @@
+{
+  "stem": "wear-buckethat",
+  "image": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\wear-buckethat.png",
+  "md5": "1af5d8086a96f13af6bbb2f78363d1a7",
+  "bytes": 1325550,
+  "checkedAt": "2026-07-29T03:09:31+00:00",
+  "automatedAdmission": {
+    "exitCode": 0,
+    "output": "ADMITTED  (reference)  pHash=13590389665056851509"
+  },
+  "probe": {
+    "exitCode": 0,
+    "output": "{\n  \"path\": \"C:\\\\Users\\\\Mcgib\\\\Partners HealthCare Dropbox\\\\Jason Gibbons\\\\Portals make it worse\\\\assets\\\\reference\\\\wear-buckethat.png\",\n  \"type\": \"png\",\n  \"bytes\": 1325550,\n  \"width\": 1254,\n  \"height\": 1254,\n  \"aspectRatio\": 1.0,\n  \"technicalSuitability\": \"pass\",\n  \"warnings\": [],\n  \"note\": \"This is only technical image probing. Semantic object suitability still requires visual inspection.\"\n}"
+  },
+  "contentVerdict": "pass",
+  "contentNote": "Single pale-yellow bucket hat on plain grey, front view slightly above. Lavender band at crown base, wide downward brim with concentric topstitch rings. No second object.",
+  "contentCheckRule": "The reference must show ONLY the garment its filename names. md5 uniqueness and check_reference_admission.py both pass on a two-prompt mashup, so this verdict comes from opening the image."
+}

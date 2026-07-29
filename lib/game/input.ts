@@ -17,10 +17,55 @@ const state: InputSnapshot = {
 };
 let mobileX = 0;
 let mobileY = 0;
+/**
+ * Where the camera is pointing, in radians about world Y, 0 being the default
+ * chase view looking up the course.
+ *
+ * It lives here rather than in the camera because BOTH halves of third-person
+ * control need it. CameraRig writes it while the pointer drags, and
+ * PlayerController reads it to rotate the movement input, so "forward" keeps
+ * meaning "away from the camera" once the camera has swung round. Without that
+ * second half, turning the view silently mirrors the controls, which is worse
+ * than not being able to turn at all.
+ *
+ * A module singleton, like the input state above, so neither side has to own
+ * the other or thread a ref through the scene graph.
+ */
+let cameraYaw = 0;
 let jumpPressSequence = 0;
 let pendingJumpPresses = 0;
 let jumpConsumedSequence = 0;
 let jumpAppliedSequence = 0;
+
+/**
+ * True when a key event belongs to the interface rather than the runner.
+ *
+ * The movement listener calls preventDefault on Space, WASD, E and the arrows.
+ * Registered on window and never target-guarded, that swallowed Space on every
+ * focused button (Space is one of the two standard activation keys), ate WASD
+ * and E out of the display-name field, and blocked arrow keys on the quality
+ * select. Game keys must only reach the game.
+ */
+export function isInterfaceTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A", "OPTION"].includes(
+    target.tagName,
+  );
+}
+
+export function setCameraYaw(radians: number): void {
+  cameraYaw = radians;
+}
+
+export function getCameraYaw(): number {
+  return cameraYaw;
+}
+
+/** Back to the default chase view. Called when a fresh attempt starts. */
+export function resetCameraYaw(): void {
+  cameraYaw = 0;
+}
 
 export function queueJumpPress(): void {
   jumpPressSequence += 1;

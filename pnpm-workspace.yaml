@@ -1,6 +1,14 @@
 packages:
   - portals
 
+allowBuilds:
+  # Vite and Vitest need esbuild's platform binary.
+  esbuild: true
+  # Next.js image optimization only; the game ships static assets.
+  sharp: false
+  # ESLint falls back to its JavaScript resolver without the native binding.
+  unrs-resolver: false
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

@@ -45,6 +45,9 @@ yarn-error.log*
 # local scaffold scratch space; never commit its nested dependency tree
 /miw-scaffold/
 
+# compiled output of the sculpt review harness (regenerate with its tsconfig)
+/assets/reference/*/preview/js/
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
@@ -55,3 +58,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# session build variants (generalizes the specific .next-* entries above)
+/.next-*/
+/.playwright-mcp/
+/portals/dist-*/
+__pycache__/
+
+# sculpt review renders: regenerable from spec + factory via the preview
+# harness; the specs' reviewHistory references them by path but the specs are
+# the source of truth. Reference images, specs, evidence JSONs and measure
+# scripts ARE committed - only rendered review output is not.
+/assets/reference/*/renders/

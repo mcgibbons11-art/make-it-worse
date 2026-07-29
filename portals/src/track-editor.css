@@ -1,0 +1,537 @@
+/* Track editor. Same toy-box language as the rest of the Portals edition:
+   3px ink borders, 18px radii, cream panels, coral on the one action that
+   matters. The compound selectors exist because .portals-overlay .panel caps
+   the width at 720px and this panel needs two columns.
+
+   Every colour pairing below was measured rather than eyeballed, against the
+   panel as it actually composites (95% cream over the sky gradient reads as
+   #f8f6e9). Three of them used to fail:
+
+     - quiet text was #6e7487, which is 4.29:1 on the panel. It is now #5c6274,
+       which is 5.60:1 there and 6.08:1 on a white card.
+     - white on coral #ff5c65 is 3.01:1, so the "cannot be finished" badge and
+       the remove button now use #d92d3c at 4.78:1. Coral survives where it is
+       only a fill, never behind text.
+     - the global focus ring, #4b8dff, is 2.95:1 on the panel and 2.58:1 on the
+       pinned cards, under the 3:1 a focus indicator needs. Inside the editor it
+       is #2563d6, which is 5.05:1 on the panel and 3.92:1 at its worst. */
+
+.track-editor {
+  --editor-ink: #171a2b;
+  --editor-quiet: #5c6274;
+  --editor-danger: #d92d3c;
+  --editor-focus: #2563d6;
+  --editor-cream: #fff8e8;
+}
+
+.track-editor.panel {
+  width: min(1040px, 100%);
+  max-height: calc(100svh - 40px);
+  overflow: auto;
+  padding: 28px;
+  text-align: left;
+}
+.portals-overlay .track-editor.panel {
+  width: min(1040px, 100%);
+  max-height: calc(100svh - 40px);
+}
+.track-editor h2 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 0.95;
+  margin: 0.22em 0;
+}
+.track-editor h3.eyebrow,
+.track-editor h4.eyebrow {
+  margin: 0 0 10px;
+  color: var(--editor-quiet);
+}
+.track-editor-lede {
+  max-width: 62ch;
+  margin: 0 0 16px;
+  font-weight: 750;
+}
+.track-editor button:focus-visible,
+.track-editor.panel:focus-visible {
+  outline: 4px solid var(--editor-focus);
+  outline-offset: 3px;
+}
+/* The panel takes focus when it opens so its shortcuts are live straight away.
+   That is a landing place, not a control, so it only shows a ring when the
+   keyboard put it there. */
+.track-editor.panel:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.track-editor-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+.track-editor-stats > div {
+  padding: 10px 14px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 18px;
+  background: white;
+}
+.track-editor-stats dt {
+  color: var(--editor-quiet);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.track-editor-stats dd {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The shape of the course. Drawn from the built track, so a segment added to
+   the catalogue draws itself with no work here. */
+.track-editor-figure {
+  margin: 14px 0 0;
+}
+.track-editor-profile {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 18px;
+  background: white;
+}
+.track-editor-profile-bed {
+  fill: var(--editor-cream);
+  stroke: rgba(23, 26, 43, 0.3);
+  stroke-width: 1.5;
+}
+.track-editor-profile-datum {
+  stroke: var(--editor-quiet);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+.track-editor-profile-piece,
+.track-editor-profile-slot {
+  stroke: var(--editor-ink);
+  stroke-width: 1.5;
+}
+.track-editor-profile-number {
+  fill: var(--editor-ink);
+  font-size: 11px;
+  font-weight: 950;
+}
+.track-editor-profile-blocked {
+  stroke: var(--editor-danger);
+  stroke-width: 3;
+}
+.track-editor-profile-blocked-cell {
+  fill: none;
+  stroke: var(--editor-danger);
+  stroke-width: 3.5;
+}
+.track-editor-figure figcaption {
+  margin: 7px 2px 0;
+  color: var(--editor-quiet);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.track-editor-validity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  align-items: baseline;
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 18px;
+  font-weight: 800;
+}
+.track-editor-validity b {
+  flex: none;
+  padding: 5px 10px;
+  border: 2px solid var(--editor-ink);
+  border-radius: 999px;
+  background: var(--editor-ink);
+  color: white;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+}
+.track-editor-validity span {
+  flex: 1 1 24ch;
+}
+.track-editor-validity.is-ok {
+  background: rgba(87, 223, 161, 0.32);
+}
+.track-editor-validity.is-bad {
+  background: rgba(255, 92, 101, 0.24);
+}
+.track-editor-validity.is-bad b {
+  background: var(--editor-danger);
+  border-color: var(--editor-danger);
+}
+
+.track-editor-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* Undo, redo and clear. Every one of them stays focusable when it has nothing
+   to do: a keyboard user should never tab into a control that has vanished,
+   and the refusal is spoken through the live region instead. */
+.track-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.track-editor-tool {
+  max-width: 100%;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 14px;
+  background: var(--editor-cream);
+  color: var(--editor-ink);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+.track-editor-tool:hover[aria-disabled="false"] {
+  background: #ffd84d;
+}
+.track-editor-tool[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.track-editor-starters {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.track-editor-preset {
+  display: grid;
+  gap: 2px;
+  padding: 10px 13px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 16px;
+  background: white;
+  color: var(--editor-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.track-editor-preset:hover {
+  background: var(--editor-cream);
+}
+.track-editor-preset strong {
+  font-size: 0.96rem;
+}
+.track-editor-preset small {
+  color: var(--editor-quiet);
+  font-weight: 800;
+}
+
+.track-editor-course {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.track-editor-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 18px;
+  background: white;
+}
+.track-editor-card.is-pinned {
+  background: rgba(255, 216, 77, 0.55);
+}
+/* The chosen card is where the next piece lands, so it is called out by an ink
+   halo rather than a tint: 15.9:1 against the panel, and it still reads on the
+   pinned yellow and the blocked pink. */
+.track-editor-card.is-selected {
+  box-shadow: 0 0 0 4px var(--editor-ink);
+}
+.track-editor-card.is-blocked {
+  border-color: var(--editor-danger);
+  background: #fff4f5;
+}
+.track-editor-index {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 50%;
+  background: var(--editor-cream);
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+.track-editor-body,
+.track-editor-pick {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+.track-editor-pick {
+  padding: 3px 2px;
+  border: 0;
+  background: none;
+  color: var(--editor-ink);
+  cursor: pointer;
+}
+.track-editor-body strong,
+.track-editor-pick strong {
+  overflow: hidden;
+  font-size: 1.02rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track-editor-body small,
+.track-editor-pick small {
+  color: var(--editor-quiet);
+  font-weight: 800;
+}
+.track-editor-pick[aria-pressed="true"] strong {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 3px;
+}
+.track-editor-controls {
+  display: flex;
+  gap: 6px;
+}
+.track-editor-controls button {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 13px;
+  background: var(--editor-cream);
+  color: var(--editor-ink);
+  font-size: 0.95rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+.track-editor-controls button:hover {
+  background: #ffd84d;
+}
+.track-editor-controls button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.track-editor-controls button[aria-disabled="true"]:hover {
+  background: var(--editor-cream);
+}
+.track-editor-controls .track-editor-drop {
+  background: var(--editor-danger);
+  color: white;
+}
+.track-editor-controls .track-editor-drop:hover {
+  background: var(--editor-ink);
+}
+/* Where the measurement lives: on the card that changed it, not in a footnote
+   at the bottom of the panel. */
+.track-editor-seam {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: #f0f1f5;
+  font-size: 0.78rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.track-editor-seam.is-blocked {
+  background: #ffe3e5;
+  box-shadow: inset 0 0 0 2px var(--editor-danger);
+}
+.track-editor-empty {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 3px dashed rgba(23, 26, 43, 0.55);
+  border-radius: 18px;
+  color: var(--editor-quiet);
+  font-weight: 800;
+}
+.track-editor-keys {
+  margin: 12px 0 0;
+  color: var(--editor-quiet);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.track-editor-note {
+  margin: 0 0 10px;
+  color: var(--editor-quiet);
+  font-weight: 800;
+}
+.track-editor-tier {
+  margin: 0 0 16px;
+}
+.track-editor-palette {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.track-editor-add {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 3px solid var(--editor-ink);
+  border-radius: 18px;
+  background: white;
+  color: var(--editor-ink);
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--editor-ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.track-editor-add:hover[aria-disabled="false"] {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 var(--editor-ink);
+}
+.track-editor-add:active[aria-disabled="false"] {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--editor-ink);
+}
+.track-editor-add[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: 0 3px 0 rgba(23, 26, 43, 0.5);
+}
+.track-editor-add-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.track-editor-add-head strong {
+  font-size: 1rem;
+}
+.track-editor-pips {
+  display: flex;
+  flex: none;
+  gap: 3px;
+}
+.track-editor-pips i {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--editor-ink);
+  border-radius: 50%;
+  background: white;
+}
+.track-editor-pips i.on {
+  background: #ff5c65;
+}
+.track-editor-desc {
+  color: var(--editor-quiet);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+/* Checked with isPlayableTrack against the exact position this piece would
+   land in, so it is a fact about the course rather than a guess. */
+.track-editor-misfit {
+  display: block;
+  margin-top: 6px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: #ffe3e5;
+  box-shadow: inset 0 0 0 2px var(--editor-danger);
+  color: var(--editor-ink);
+  font-weight: 900;
+}
+
+.track-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+.track-editor-actions .button:disabled {
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .track-editor.panel {
+    padding: 20px;
+  }
+  .track-editor-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .track-editor-actions .button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .track-editor-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .track-editor-controls {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-editor-add {
+    transition: none;
+  }
+  .track-editor-add:hover[aria-disabled="false"],
+  .track-editor-add:active[aria-disabled="false"] {
+    transform: none;
+  }
+}
+
+/* Saved courses. The row is a name field and a save button; the list below is
+   a load button per course with its delete alongside, so the destructive
+   action is never the one under the cursor when you meant to load. */
+.track-editor-saves { margin-bottom: 1rem; }
+.track-editor-saverow { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.track-editor-savename {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.5rem 0.65rem;
+  border: 2px solid var(--ink, #171a2b);
+  border-radius: 0.5rem;
+  font: inherit;
+  background: #fffdf6;
+  color: var(--ink, #171a2b);
+}
+.track-editor-savelist { list-style: none; margin: 0; padding: 0; }
+.track-editor-savelist li { display: flex; gap: 0.5rem; align-items: stretch; margin-bottom: 0.4rem; }
+.track-editor-savelist li .track-editor-preset { flex: 1 1 auto; margin: 0; }
+.track-editor-savelist li .track-editor-tool { flex: 0 0 auto; }
+
+/* The lane band: how far the course wanders across the corridor. The limit
+   lines are the envelope isPlayableTrack enforces, so a course crowding them
+   looks like it is crowding them. */
+.track-editor-lane-limit {
+  stroke: #c9a227;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.75;
+}
+.track-editor-lane-piece {
+  stroke: rgba(23, 26, 43, 0.55);
+  stroke-width: 0.75;
+  rx: 1.5;
+}

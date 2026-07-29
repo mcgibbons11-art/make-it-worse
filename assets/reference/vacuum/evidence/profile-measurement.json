@@ -1,0 +1,533 @@
+{
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\vacuum-reference.png",
+  "bodyProfileRows": {
+    "left": [
+      {
+        "imageRow": 360,
+        "radiusPx": 286,
+        "radiusPerMaxRadius": 0.88,
+        "heightPerCanisterHeight": 0.8786
+      },
+      {
+        "imageRow": 370,
+        "radiusPx": 5,
+        "radiusPerMaxRadius": 0.0154,
+        "heightPerCanisterHeight": 0.8522
+      },
+      {
+        "imageRow": 380,
+        "radiusPx": 25,
+        "radiusPerMaxRadius": 0.0769,
+        "heightPerCanisterHeight": 0.8258
+      },
+      {
+        "imageRow": 390,
+        "radiusPx": 298,
+        "radiusPerMaxRadius": 0.9169,
+        "heightPerCanisterHeight": 0.7993
+      },
+      {
+        "imageRow": 400,
+        "radiusPx": 301,
+        "radiusPerMaxRadius": 0.9262,
+        "heightPerCanisterHeight": 0.7729
+      },
+      {
+        "imageRow": 410,
+        "radiusPx": 304,
+        "radiusPerMaxRadius": 0.9354,
+        "heightPerCanisterHeight": 0.7464
+      },
+      {
+        "imageRow": 420,
+        "radiusPx": 307,
+        "radiusPerMaxRadius": 0.9446,
+        "heightPerCanisterHeight": 0.72
+      },
+      {
+        "imageRow": 430,
+        "radiusPx": 309,
+        "radiusPerMaxRadius": 0.9508,
+        "heightPerCanisterHeight": 0.6935
+      },
+      {
+        "imageRow": 440,
+        "radiusPx": 311,
+        "radiusPerMaxRadius": 0.9569,
+        "heightPerCanisterHeight": 0.6671
+      },
+      {
+        "imageRow": 450,
+        "radiusPx": 314,
+        "radiusPerMaxRadius": 0.9662,
+        "heightPerCanisterHeight": 0.6407
+      },
+      {
+        "imageRow": 460,
+        "radiusPx": 320,
+        "radiusPerMaxRadius": 0.9846,
+        "heightPerCanisterHeight": 0.6142
+      },
+      {
+        "imageRow": 470,
+        "radiusPx": 324,
+        "radiusPerMaxRadius": 0.9969,
+        "heightPerCanisterHeight": 0.5878
+      },
+      {
+        "imageRow": 480,
+        "radiusPx": 326,
+        "radiusPerMaxRadius": 1.0031,
+        "heightPerCanisterHeight": 0.5613
+      },
+      {
+        "imageRow": 490,
+        "radiusPx": 328,
+        "radiusPerMaxRadius": 1.0092,
+        "heightPerCanisterHeight": 0.5349
+      }
+    ],
+    "right": [
+      {
+        "imageRow": 360,
+        "radiusPx": 306,
+        "radiusPerMaxRadius": 0.9415,
+        "heightPerCanisterHeight": 0.8786
+      },
+      {
+        "imageRow": 370,
+        "radiusPx": 309,
+        "radiusPerMaxRadius": 0.9508,
+        "heightPerCanisterHeight": 0.8522
+      },
+      {
+        "imageRow": 380,
+        "radiusPx": 312,
+        "radiusPerMaxRadius": 0.96,
+        "heightPerCanisterHeight": 0.8258
+      },
+      {
+        "imageRow": 390,
+        "radiusPx": 314,
+        "radiusPerMaxRadius": 0.9662,
+        "heightPerCanisterHeight": 0.7993
+      },
+      {
+        "imageRow": 400,
+        "radiusPx": 316,
+        "radiusPerMaxRadius": 0.9723,
+        "heightPerCanisterHeight": 0.7729
+      },
+      {
+        "imageRow": 410,
+        "radiusPx": 318,
+        "radiusPerMaxRadius": 0.9785,
+        "heightPerCanisterHeight": 0.7464
+      },
+      {
+        "imageRow": 420,
+        "radiusPx": 319,
+        "radiusPerMaxRadius": 0.9815,
+        "heightPerCanisterHeight": 0.72
+      },
+      {
+        "imageRow": 430,
+        "radiusPx": 321,
+        "radiusPerMaxRadius": 0.9877,
+        "heightPerCanisterHeight": 0.6935
+      },
+      {
+        "imageRow": 440,
+        "radiusPx": 326,
+        "radiusPerMaxRadius": 1.0031,
+        "heightPerCanisterHeight": 0.6671
+      },
+      {
+        "imageRow": 450,
+        "radiusPx": 327,
+        "radiusPerMaxRadius": 1.0062,
+        "heightPerCanisterHeight": 0.6407
+      },
+      {
+        "imageRow": 460,
+        "radiusPx": 326,
+        "radiusPerMaxRadius": 1.0031,
+        "heightPerCanisterHeight": 0.6142
+      },
+      {
+        "imageRow": 470,
+        "radiusPx": 242,
+        "radiusPerMaxRadius": 0.7446,
+        "heightPerCanisterHeight": 0.5878
+      },
+      {
+        "imageRow": 480,
+        "radiusPx": 236,
+        "radiusPerMaxRadius": 0.7262,
+        "heightPerCanisterHeight": 0.5613
+      },
+      {
+        "imageRow": 490,
+        "radiusPx": 233,
+        "radiusPerMaxRadius": 0.7169,
+        "heightPerCanisterHeight": 0.5349
+      }
+    ],
+    "note": "The two flanks put the widest band at different heights - the left near 0.55 of the canister's height and the right near 0.67 - which cannot happen for a revolve under an orthographic camera and is the same perspective error the belt shows. The spec averages them and records the spread; what both agree on is that the body holds NEAR its maximum radius across a broad band rather than peaking at a point, which is the finding that matters, because a profile that narrows straight off its maximum renders as a sphere rather than as a drum."
+  },
+  "scaleAnchor": {
+    "canisterDiameterPx": 646.0,
+    "why": "a vertical-axis revolve's image width is its true diameter"
+  },
+  "pitchDegrees": 28.1,
+  "blobCensus": {
+    "navy": [
+      {
+        "areaPx": 120911,
+        "bboxPx": [
+          167,
+          458,
+          899,
+          939
+        ],
+        "widthPx": 732,
+        "heightPx": 481,
+        "widthPerCanisterD": 1.1331,
+        "heightPerCanisterD": 0.7446,
+        "centroidPx": [
+          424.4,
+          703.1
+        ]
+      },
+      {
+        "areaPx": 4750,
+        "bboxPx": [
+          584,
+          241,
+          777,
+          310
+        ],
+        "widthPx": 193,
+        "heightPx": 69,
+        "widthPerCanisterD": 0.2988,
+        "heightPerCanisterD": 0.1068,
+        "centroidPx": [
+          689.1,
+          269.6
+        ]
+      },
+      {
+        "areaPx": 1371,
+        "bboxPx": [
+          943,
+          437,
+          984,
+          497
+        ],
+        "widthPx": 41,
+        "heightPx": 60,
+        "widthPerCanisterD": 0.0635,
+        "heightPerCanisterD": 0.0929,
+        "centroidPx": [
+          964.5,
+          466.6
+        ]
+      }
+    ],
+    "coral": [
+      {
+        "areaPx": 39079,
+        "bboxPx": [
+          850,
+          462,
+          1044,
+          791
+        ],
+        "widthPx": 194,
+        "heightPx": 329,
+        "widthPerCanisterD": 0.3003,
+        "heightPerCanisterD": 0.5093,
+        "centroidPx": [
+          937.8,
+          639.2
+        ]
+      },
+      {
+        "areaPx": 1175,
+        "bboxPx": [
+          526,
+          363,
+          597,
+          386
+        ],
+        "widthPx": 71,
+        "heightPx": 23,
+        "widthPerCanisterD": 0.1099,
+        "heightPerCanisterD": 0.0356,
+        "centroidPx": [
+          563.4,
+          375.0
+        ]
+      }
+    ],
+    "mint": [
+      {
+        "areaPx": 26312,
+        "bboxPx": [
+          528,
+          160,
+          853,
+          322
+        ],
+        "widthPx": 325,
+        "heightPx": 162,
+        "widthPerCanisterD": 0.5031,
+        "heightPerCanisterD": 0.2508,
+        "centroidPx": [
+          702.7,
+          226.0
+        ]
+      },
+      {
+        "areaPx": 6168,
+        "bboxPx": [
+          503,
+          854,
+          613,
+          962
+        ],
+        "widthPx": 110,
+        "heightPx": 108,
+        "widthPerCanisterD": 0.1703,
+        "heightPerCanisterD": 0.1672,
+        "centroidPx": [
+          547.1,
+          902.8
+        ]
+      }
+    ],
+    "yellow": [
+      {
+        "areaPx": 10054,
+        "bboxPx": [
+          504,
+          292,
+          663,
+          380
+        ],
+        "widthPx": 159,
+        "heightPx": 88,
+        "widthPerCanisterD": 0.2461,
+        "heightPerCanisterD": 0.1362,
+        "centroidPx": [
+          586.5,
+          331.2
+        ]
+      },
+      {
+        "areaPx": 5767,
+        "bboxPx": [
+          963,
+          599,
+          1024,
+          730
+        ],
+        "widthPx": 61,
+        "heightPx": 131,
+        "widthPerCanisterD": 0.0944,
+        "heightPerCanisterD": 0.2028,
+        "centroidPx": [
+          993.0,
+          663.5
+        ]
+      }
+    ],
+    "lilac": [
+      {
+        "areaPx": 135775,
+        "bboxPx": [
+          343,
+          238,
+          976,
+          584
+        ],
+        "widthPx": 633,
+        "heightPx": 346,
+        "widthPerCanisterD": 0.9799,
+        "heightPerCanisterD": 0.5356,
+        "centroidPx": [
+          666.8,
+          418.1
+        ]
+      },
+      {
+        "areaPx": 50108,
+        "bboxPx": [
+          510,
+          557,
+          888,
+          781
+        ],
+        "widthPx": 378,
+        "heightPx": 224,
+        "widthPerCanisterD": 0.5851,
+        "heightPerCanisterD": 0.3467,
+        "centroidPx": [
+          699.1,
+          688.3
+        ]
+      },
+      {
+        "areaPx": 2307,
+        "bboxPx": [
+          606,
+          227,
+          759,
+          270
+        ],
+        "widthPx": 153,
+        "heightPx": 43,
+        "widthPerCanisterD": 0.2368,
+        "heightPerCanisterD": 0.0666,
+        "centroidPx": [
+          679.6,
+          245.3
+        ]
+      },
+      {
+        "areaPx": 1235,
+        "bboxPx": [
+          335,
+          532,
+          375,
+          589
+        ],
+        "widthPx": 40,
+        "heightPx": 57,
+        "widthPerCanisterD": 0.0619,
+        "heightPerCanisterD": 0.0882,
+        "centroidPx": [
+          349.4,
+          563.7
+        ]
+      },
+      {
+        "areaPx": 1028,
+        "bboxPx": [
+          371,
+          672,
+          422,
+          707
+        ],
+        "widthPx": 51,
+        "heightPx": 35,
+        "widthPerCanisterD": 0.0789,
+        "heightPerCanisterD": 0.0542,
+        "centroidPx": [
+          398.2,
+          691.3
+        ]
+      },
+      {
+        "areaPx": 890,
+        "bboxPx": [
+          948,
+          476,
+          980,
+          519
+        ],
+        "widthPx": 32,
+        "heightPx": 43,
+        "widthPerCanisterD": 0.0495,
+        "heightPerCanisterD": 0.0666,
+        "centroidPx": [
+          967.5,
+          500.6
+        ]
+      }
+    ],
+    "cream": [
+      {
+        "areaPx": 60010,
+        "bboxPx": [
+          448,
+          881,
+          839,
+          1133
+        ],
+        "widthPx": 391,
+        "heightPx": 252,
+        "widthPerCanisterD": 0.6053,
+        "heightPerCanisterD": 0.3901,
+        "centroidPx": [
+          635.3,
+          996.8
+        ]
+      }
+    ]
+  },
+  "rimFits": {
+    "bottom": {
+      "radiusPx": 211.5,
+      "constantC": 692.3,
+      "rmsPx": 19.08,
+      "samples": 399
+    },
+    "top": {
+      "radiusPx": 243.5,
+      "constantC": 314.1,
+      "rmsPx": 12.52,
+      "samples": 470
+    },
+    "note": "orthographic arc model against a perspective render; the rms is the perspective error, not noise"
+  },
+  "maximumRadius": {
+    "radiusPx": 325.0,
+    "atImageRow": 481,
+    "perCanisterD": 1.0062
+  },
+  "canisterHeight": {
+    "RETRACTED": {
+      "value": 297.0,
+      "heightOverDiameter": 0.459,
+      "source": "assessment-seed.json measurementBasis.solvedCamera.crossCheck",
+      "whyWrong": "solves 566 = H*cos(P) + 646*sin(P), which takes BOTH cap radii to equal the maximum radius. The measured top rim is 0.749 of the maximum radius and the bottom rim 0.651, so the cap term is far smaller and the height correspondingly larger."
+    },
+    "fromSilhouetteEquation": {
+      "heightPx": 398.7,
+      "heightOverDiameter": 0.6172,
+      "derivation": "H = (566 - (R_top + R_bottom) * sin(P)) / cos(P)"
+    },
+    "fromFittedArcs": {
+      "heightPx": 428.7,
+      "heightOverDiameter": 0.6637,
+      "derivation": "the base plane and the top face both come out of the arc fits, so their separation needs no cap assumption at all"
+    },
+    "bottomFitCrossCheck": {
+      "predictedLowestPixel": 791.9,
+      "measuredLowestPixel": 793,
+      "note": "the bottom fit reproduces the silhouette's lowest pixel to ~1 px, which is what makes it the more trustworthy of the two fits"
+    },
+    "buttonConsistency": {
+      "buttonCentrePx": [
+        586.0,
+        332.0
+      ],
+      "plandepthRequiredByCorrectedHeight": 38.0,
+      "plandepthRequiredByRetractedHeight": -208.7,
+      "topFaceRadiusPx": 243.5,
+      "verdict": "the corrected height puts the button just forward of the axis, which is where the reference shows it; the retracted height demands it sit hard against the rear rim, which it does not."
+    },
+    "ADOPTED": {
+      "heightOverDiameter": 0.63,
+      "why": "midpoint of the two surviving routes, 0.617 and 0.664. The spread is the orthographic-model error against a perspective render and is recorded rather than argued away.",
+      "confidence": 0.7
+    }
+  },
+  "profileLandmarks": {
+    "widestAtHeightFraction": 0.559,
+    "bottomContactRadiusPerMaxRadius": 0.6508,
+    "topFaceRadiusPerMaxRadius": 0.7492
+  },
+  "orthographicCaveat": "Every arc fit here assumes an orthographic camera. The reference is a perspective render, which is why the belt's arc could not be fitted at all: its left and right extreme meridians, which an orthographic camera puts on the same image row, sit ~77 px apart. Radii read as horizontal extents are unaffected; heights derived through sin(P) carry this error."
+}

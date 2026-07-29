@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.736,
+  "estimatedFidelity": 0.736,
+  "targetThreshold": 0.7,
+  "materialId": "blade-cream",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\crops\\blade-cream-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr",
+  "palette": [
+    "#E5E0CD",
+    "#C5BDA5",
+    "#C3BAA1",
+    "#C8C0A7",
+    "#CDC4AB"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\blade-cream_albedo.png",
+      "url": "blade-cream_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\blade-cream_roughness.png",
+      "url": "blade-cream_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\blade-cream_height.png",
+      "url": "blade-cream_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\blade-cream_normal.png",
+      "url": "blade-cream_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\pbr\\blade-cream_ao.png",
+      "url": "blade-cream_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 150,
+    "sourceHeight": 120,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 150,
+      "height": 120
+    },
+    "mask": {
+      "backgroundColor": "#C8C1AA",
+      "backgroundNoise": 20.833,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.1028
+    },
+    "mapStats": {
+      "valueRange": 0.1561,
+      "heightP90Gradient": 0.00776,
+      "roughnessBase": 0.68,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.165,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#E5E0CD",
+      "#C5BDA5",
+      "#C3BAA1",
+      "#C8C0A7",
+      "#CDC4AB"
+    ]
+  },
+  "warnings": [
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped",
+    "low value range weakens height/roughness inference",
+    "low high-frequency detail weakens normal/roughness inference"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

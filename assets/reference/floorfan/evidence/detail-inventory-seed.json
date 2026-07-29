@@ -1,0 +1,331 @@
+{
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan-reference.png",
+  "zonesDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones",
+  "detailInventory": {
+    "scanMethod": "grid-4x4",
+    "targetMinDetails": 10,
+    "details": [
+      {
+        "id": "zone-r0c0",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.0,
+          "y": 0.0,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r0c0.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r0c1",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.25,
+          "y": 0.0,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r0c1.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r0c2",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.5,
+          "y": 0.0,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r0c2.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r0c3",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.75,
+          "y": 0.0,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r0c3.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r1c0",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.0,
+          "y": 0.25,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r1c0.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r1c1",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.25,
+          "y": 0.25,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r1c1.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r1c2",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.5,
+          "y": 0.25,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r1c2.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r1c3",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.75,
+          "y": 0.25,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r1c3.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r2c0",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.0,
+          "y": 0.5,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r2c0.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r2c1",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.25,
+          "y": 0.5,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r2c1.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r2c2",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.5,
+          "y": 0.5,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r2c2.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r2c3",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.75,
+          "y": 0.5,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r2c3.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r3c0",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.0,
+          "y": 0.75,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r3c0.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r3c1",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.25,
+          "y": 0.75,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r3c1.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r3c2",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.5,
+          "y": 0.75,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r3c2.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "zone-r3c3",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.75,
+          "y": 0.75,
+          "width": 0.25,
+          "height": 0.25,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\floorfan\\evidence\\zones\\zone-r3c3.png",
+        "confidence": 0.0
+      }
+    ]
+  },
+  "authoringInstruction": "Open each zone crop under zonesDir and replace every detail stub's kind, description, scale, affects, mapsTo, and confidence with what is actually observed. Add more detail entries per zone if a single zone contains multiple distinct marks; do not leave stubs unfilled or unlinked (mapsTo must reference a real component.localFeatures or material.localOverrides entry)."
+}

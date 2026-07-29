@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.848,
+  "estimatedFidelity": 0.848,
+  "targetThreshold": 0.7,
+  "materialId": "accent-coral",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\crops\\accent-coral-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr",
+  "palette": [
+    "#E2564B",
+    "#F66D61",
+    "#ED5D53",
+    "#E8D5BF",
+    "#C1453A"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\accent-coral_albedo.png",
+      "url": "accent-coral_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\accent-coral_roughness.png",
+      "url": "accent-coral_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\accent-coral_height.png",
+      "url": "accent-coral_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\accent-coral_normal.png",
+      "url": "accent-coral_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\toaster\\evidence\\pbr\\accent-coral_ao.png",
+      "url": "accent-coral_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 440,
+    "sourceHeight": 100,
+    "mapSize": 512,
+    "cropBBoxPixels": {
+      "x": 82,
+      "y": 0,
+      "width": 358,
+      "height": 100
+    },
+    "mask": {
+      "backgroundColor": "#EACDCD",
+      "backgroundNoise": 29.0,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.5398
+    },
+    "mapStats": {
+      "valueRange": 0.4078,
+      "heightP90Gradient": 0.0141,
+      "roughnessBase": 0.685,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.173,
+      "blurRadius": 10
+    },
+    "palette": [
+      "#E2564B",
+      "#F66D61",
+      "#ED5D53",
+      "#E8D5BF",
+      "#C1453A"
+    ]
+  },
+  "warnings": [
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

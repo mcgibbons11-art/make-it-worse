@@ -1,0 +1,2188 @@
+{
+  "target": "make-it-worse-runner",
+  "factoryFrame": {
+    "rawBox": {
+      "min": [
+        -0.4085,
+        -0.001,
+        -0.352
+      ],
+      "max": [
+        0.4085,
+        1.898,
+        0.328
+      ],
+      "size": [
+        0.817,
+        1.899,
+        0.68
+      ]
+    },
+    "visibleBox": {
+      "min": [
+        -0.4085,
+        0,
+        -0.352
+      ],
+      "max": [
+        0.4085,
+        1.898,
+        0.328
+      ],
+      "size": [
+        0.817,
+        1.898,
+        0.68
+      ]
+    },
+    "invisibleStubs": [
+      {
+        "name": "Runner (root)",
+        "size": [
+          0.0017,
+          0.002,
+          0.0015
+        ]
+      },
+      {
+        "name": "Head mass",
+        "size": [
+          0.0017,
+          0.002,
+          0.0015
+        ]
+      },
+      {
+        "name": "Body mass",
+        "size": [
+          0.0017,
+          0.002,
+          0.0015
+        ]
+      },
+      {
+        "name": "Leg mass",
+        "size": [
+          0.0017,
+          0.002,
+          0.0015
+        ]
+      }
+    ],
+    "stubPoisonsWidth": 0
+  },
+  "playSpace": {
+    "targetHeight": 1.86,
+    "fitScale": 0.979979,
+    "fittedWidth": 0.8006,
+    "fittedDepth": 0.6664,
+    "widthBudget": 0.94,
+    "headroomWorldU": 0.1394,
+    "headroomFactoryU": 0.1422,
+    "landingSquashWidthMultiplier": 1.1323
+  },
+  "sockets": [
+    {
+      "name": "Head mass__pivot",
+      "found": true,
+      "parent": "Runner (root)__pivot",
+      "children": [
+        "Head mass",
+        "Head__pivot",
+        "Hair cap__pivot",
+        "Ear left__pivot",
+        "Ear right__pivot",
+        "Eye left__pivot",
+        "Eye right__pivot",
+        "Nose__pivot",
+        "Mouth__pivot"
+      ],
+      "localPosition": [
+        0,
+        1.56,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        0,
+        1.56,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.369,
+          1.235,
+          -0.352
+        ],
+        "max": [
+          0.369,
+          1.898,
+          0.328
+        ],
+        "size": [
+          0.738,
+          0.663,
+          0.68
+        ]
+      }
+    },
+    {
+      "name": "Torso__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Torso"
+      ],
+      "localPosition": [
+        0,
+        0,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        0.8
+      ],
+      "worldPosition": [
+        0,
+        0.95,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        0.8
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.2619,
+          0.632,
+          -0.2095
+        ],
+        "max": [
+          0.2619,
+          1.275,
+          0.2095
+        ],
+        "size": [
+          0.5238,
+          0.643,
+          0.419
+        ]
+      }
+    },
+    {
+      "name": "Arm left__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Arm left",
+        "Hand left__pivot"
+      ],
+      "localPosition": [
+        -0.15,
+        0.18,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        -0.15,
+        1.13,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.4085,
+          0.653,
+          -0.082
+        ],
+        "max": [
+          -0.0781,
+          1.1694,
+          0.082
+        ],
+        "size": [
+          0.3304,
+          0.5164,
+          0.164
+        ]
+      }
+    },
+    {
+      "name": "Arm right__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Arm right",
+        "Hand right__pivot"
+      ],
+      "localPosition": [
+        0.15,
+        0.18,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        0.15,
+        1.13,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          0.0781,
+          0.653,
+          -0.082
+        ],
+        "max": [
+          0.4085,
+          1.1694,
+          0.082
+        ],
+        "size": [
+          0.3304,
+          0.5164,
+          0.164
+        ]
+      }
+    },
+    {
+      "name": "Hand left__pivot",
+      "found": true,
+      "parent": "Arm left__pivot",
+      "children": [
+        "Hand left"
+      ],
+      "localPosition": [
+        -0.186,
+        -0.402,
+        0.01
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.145,
+        0.15,
+        0.105
+      ],
+      "worldPosition": [
+        -0.336,
+        0.728,
+        0.01
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.145,
+        0.15,
+        0.105
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.4085,
+          0.653,
+          -0.0425
+        ],
+        "max": [
+          -0.2635,
+          0.803,
+          0.0625
+        ],
+        "size": [
+          0.145,
+          0.15,
+          0.105
+        ]
+      }
+    },
+    {
+      "name": "Hand right__pivot",
+      "found": true,
+      "parent": "Arm right__pivot",
+      "children": [
+        "Hand right"
+      ],
+      "localPosition": [
+        0.186,
+        -0.402,
+        0.01
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.145,
+        0.15,
+        0.105
+      ],
+      "worldPosition": [
+        0.336,
+        0.728,
+        0.01
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.145,
+        0.15,
+        0.105
+      ],
+      "subtreeBox": {
+        "min": [
+          0.2635,
+          0.653,
+          -0.0425
+        ],
+        "max": [
+          0.4085,
+          0.803,
+          0.0625
+        ],
+        "size": [
+          0.145,
+          0.15,
+          0.105
+        ]
+      }
+    },
+    {
+      "name": "Leg left__pivot",
+      "found": true,
+      "parent": "Leg mass__pivot",
+      "children": [
+        "Leg left",
+        "Sneaker left__pivot",
+        "Sole left__pivot"
+      ],
+      "localPosition": [
+        -0.105,
+        0,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        -0.105,
+        0.66,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.276,
+          0,
+          -0.099
+        ],
+        "max": [
+          -0.0222,
+          0.6662,
+          0.219
+        ],
+        "size": [
+          0.2538,
+          0.6662,
+          0.318
+        ]
+      }
+    },
+    {
+      "name": "Leg right__pivot",
+      "found": true,
+      "parent": "Leg mass__pivot",
+      "children": [
+        "Leg right",
+        "Sneaker right__pivot",
+        "Sole right__pivot"
+      ],
+      "localPosition": [
+        0.105,
+        0,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        0.105,
+        0.66,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          0.0222,
+          0,
+          -0.099
+        ],
+        "max": [
+          0.276,
+          0.6662,
+          0.219
+        ],
+        "size": [
+          0.2538,
+          0.6662,
+          0.318
+        ]
+      }
+    },
+    {
+      "name": "Sneaker left__pivot",
+      "found": true,
+      "parent": "Leg left__pivot",
+      "children": [
+        "Sneaker left"
+      ],
+      "localPosition": [
+        -0.055,
+        -0.4725,
+        0.06
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.198,
+        0.205,
+        0.3
+      ],
+      "worldPosition": [
+        -0.16,
+        0.1875,
+        0.06
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.198,
+        0.205,
+        0.3
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.259,
+          0.085,
+          -0.09
+        ],
+        "max": [
+          -0.061,
+          0.29,
+          0.21
+        ],
+        "size": [
+          0.198,
+          0.205,
+          0.3
+        ]
+      }
+    },
+    {
+      "name": "Sneaker right__pivot",
+      "found": true,
+      "parent": "Leg right__pivot",
+      "children": [
+        "Sneaker right"
+      ],
+      "localPosition": [
+        0.055,
+        -0.4725,
+        0.06
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.198,
+        0.205,
+        0.3
+      ],
+      "worldPosition": [
+        0.16,
+        0.1875,
+        0.06
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.198,
+        0.205,
+        0.3
+      ],
+      "subtreeBox": {
+        "min": [
+          0.061,
+          0.085,
+          -0.09
+        ],
+        "max": [
+          0.259,
+          0.29,
+          0.21
+        ],
+        "size": [
+          0.198,
+          0.205,
+          0.3
+        ]
+      }
+    },
+    {
+      "name": "Shoulder cap left__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Shoulder cap left"
+      ],
+      "localPosition": [
+        -0.168,
+        0.19,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.165,
+        0.165,
+        0.165
+      ],
+      "worldPosition": [
+        -0.168,
+        1.14,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.165,
+        0.165,
+        0.165
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.2505,
+          1.0575,
+          -0.0825
+        ],
+        "max": [
+          -0.0855,
+          1.2225,
+          0.0825
+        ],
+        "size": [
+          0.165,
+          0.165,
+          0.165
+        ]
+      }
+    },
+    {
+      "name": "Shoulder cap right__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Shoulder cap right"
+      ],
+      "localPosition": [
+        0.168,
+        0.19,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        0.165,
+        0.165,
+        0.165
+      ],
+      "worldPosition": [
+        0.168,
+        1.14,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        0.165,
+        0.165,
+        0.165
+      ],
+      "subtreeBox": {
+        "min": [
+          0.0855,
+          1.0575,
+          -0.0825
+        ],
+        "max": [
+          0.2505,
+          1.2225,
+          0.0825
+        ],
+        "size": [
+          0.165,
+          0.165,
+          0.165
+        ]
+      }
+    },
+    {
+      "name": "Neck__pivot",
+      "found": true,
+      "parent": "Body mass__pivot",
+      "children": [
+        "Neck"
+      ],
+      "localPosition": [
+        0,
+        0.285,
+        0
+      ],
+      "localRotation": [
+        0,
+        0,
+        0
+      ],
+      "localScale": [
+        1,
+        1,
+        1
+      ],
+      "worldPosition": [
+        0,
+        1.235,
+        0
+      ],
+      "worldRotation": [
+        0,
+        0,
+        0
+      ],
+      "worldScale": [
+        1,
+        1,
+        1
+      ],
+      "subtreeBox": {
+        "min": [
+          -0.14,
+          1.235,
+          -0.14
+        ],
+        "max": [
+          0.14,
+          1.39,
+          0.14
+        ],
+        "size": [
+          0.28,
+          0.155,
+          0.28
+        ]
+      }
+    }
+  ],
+  "partBoxes": {
+    "Head": {
+      "min": [
+        -0.325,
+        1.235,
+        -0.31
+      ],
+      "max": [
+        0.325,
+        1.885,
+        0.31
+      ],
+      "size": [
+        0.65,
+        0.65,
+        0.62
+      ]
+    },
+    "Hair cap": {
+      "min": [
+        -0.345,
+        1.428,
+        -0.352
+      ],
+      "max": [
+        0.345,
+        1.898,
+        0.328
+      ],
+      "size": [
+        0.69,
+        0.47,
+        0.68
+      ]
+    },
+    "Ear left": {
+      "min": [
+        -0.369,
+        1.418,
+        -0.041
+      ],
+      "max": [
+        -0.291,
+        1.538,
+        0.021
+      ],
+      "size": [
+        0.078,
+        0.12,
+        0.062
+      ]
+    },
+    "Ear right": {
+      "min": [
+        0.291,
+        1.418,
+        -0.041
+      ],
+      "max": [
+        0.369,
+        1.538,
+        0.021
+      ],
+      "size": [
+        0.078,
+        0.12,
+        0.062
+      ]
+    },
+    "Eye left": {
+      "min": [
+        -0.139,
+        1.453,
+        0.248
+      ],
+      "max": [
+        -0.077,
+        1.515,
+        0.296
+      ],
+      "size": [
+        0.062,
+        0.062,
+        0.048
+      ]
+    },
+    "Eye right": {
+      "min": [
+        0.077,
+        1.453,
+        0.248
+      ],
+      "max": [
+        0.139,
+        1.515,
+        0.296
+      ],
+      "size": [
+        0.062,
+        0.062,
+        0.048
+      ]
+    },
+    "Nose": {
+      "min": [
+        -0.0275,
+        1.4145,
+        0.261
+      ],
+      "max": [
+        0.0275,
+        1.4595,
+        0.311
+      ],
+      "size": [
+        0.055,
+        0.045,
+        0.05
+      ]
+    },
+    "Mouth": {
+      "min": [
+        -0.053,
+        1.386,
+        0.25
+      ],
+      "max": [
+        0.053,
+        1.4164,
+        0.283
+      ],
+      "size": [
+        0.1059,
+        0.0304,
+        0.0329
+      ]
+    },
+    "Torso": {
+      "min": [
+        -0.2619,
+        0.632,
+        -0.2095
+      ],
+      "max": [
+        0.2619,
+        1.275,
+        0.2095
+      ],
+      "size": [
+        0.5238,
+        0.643,
+        0.419
+      ]
+    },
+    "Neck": {
+      "min": [
+        -0.14,
+        1.235,
+        -0.14
+      ],
+      "max": [
+        0.14,
+        1.39,
+        0.14
+      ],
+      "size": [
+        0.28,
+        0.155,
+        0.28
+      ]
+    },
+    "Backpack strap left": {
+      "min": [
+        -0.2475,
+        0.8583,
+        0.0764
+      ],
+      "max": [
+        -0.1025,
+        1.2517,
+        0.2136
+      ],
+      "size": [
+        0.145,
+        0.3934,
+        0.1373
+      ]
+    },
+    "Backpack strap right": {
+      "min": [
+        0.1025,
+        0.8583,
+        0.0764
+      ],
+      "max": [
+        0.2475,
+        1.2517,
+        0.2136
+      ],
+      "size": [
+        0.145,
+        0.3934,
+        0.1373
+      ]
+    },
+    "Arm left": {
+      "min": [
+        -0.4079,
+        0.7506,
+        -0.082
+      ],
+      "max": [
+        -0.0781,
+        1.1694,
+        0.082
+      ],
+      "size": [
+        0.3299,
+        0.4187,
+        0.164
+      ]
+    },
+    "Hand left": {
+      "min": [
+        -0.4085,
+        0.653,
+        -0.0425
+      ],
+      "max": [
+        -0.2635,
+        0.803,
+        0.0625
+      ],
+      "size": [
+        0.145,
+        0.15,
+        0.105
+      ]
+    },
+    "Arm right": {
+      "min": [
+        0.0781,
+        0.7506,
+        -0.082
+      ],
+      "max": [
+        0.4079,
+        1.1694,
+        0.082
+      ],
+      "size": [
+        0.3299,
+        0.4187,
+        0.164
+      ]
+    },
+    "Hand right": {
+      "min": [
+        0.2635,
+        0.653,
+        -0.0425
+      ],
+      "max": [
+        0.4085,
+        0.803,
+        0.0625
+      ],
+      "size": [
+        0.145,
+        0.15,
+        0.105
+      ]
+    },
+    "Shoulder cap left": {
+      "min": [
+        -0.2505,
+        1.0575,
+        -0.0825
+      ],
+      "max": [
+        -0.0855,
+        1.2225,
+        0.0825
+      ],
+      "size": [
+        0.165,
+        0.165,
+        0.165
+      ]
+    },
+    "Shoulder cap right": {
+      "min": [
+        0.0855,
+        1.0575,
+        -0.0825
+      ],
+      "max": [
+        0.2505,
+        1.2225,
+        0.0825
+      ],
+      "size": [
+        0.165,
+        0.165,
+        0.165
+      ]
+    },
+    "Leg left": {
+      "min": [
+        -0.2158,
+        0.2808,
+        -0.083
+      ],
+      "max": [
+        -0.0222,
+        0.6662,
+        0.083
+      ],
+      "size": [
+        0.1935,
+        0.3854,
+        0.166
+      ]
+    },
+    "Sneaker left": {
+      "min": [
+        -0.259,
+        0.085,
+        -0.09
+      ],
+      "max": [
+        -0.061,
+        0.29,
+        0.21
+      ],
+      "size": [
+        0.198,
+        0.205,
+        0.3
+      ]
+    },
+    "Sole left": {
+      "min": [
+        -0.276,
+        0,
+        -0.099
+      ],
+      "max": [
+        -0.044,
+        0.085,
+        0.219
+      ],
+      "size": [
+        0.232,
+        0.085,
+        0.318
+      ]
+    },
+    "Leg right": {
+      "min": [
+        0.0222,
+        0.2808,
+        -0.083
+      ],
+      "max": [
+        0.2158,
+        0.6662,
+        0.083
+      ],
+      "size": [
+        0.1935,
+        0.3854,
+        0.166
+      ]
+    },
+    "Sneaker right": {
+      "min": [
+        0.061,
+        0.085,
+        -0.09
+      ],
+      "max": [
+        0.259,
+        0.29,
+        0.21
+      ],
+      "size": [
+        0.198,
+        0.205,
+        0.3
+      ]
+    },
+    "Sole right": {
+      "min": [
+        0.044,
+        0,
+        -0.099
+      ],
+      "max": [
+        0.276,
+        0.085,
+        0.219
+      ],
+      "size": [
+        0.232,
+        0.085,
+        0.318
+      ]
+    }
+  },
+  "envelope": [
+    {
+      "y": 0,
+      "maxRadius": 0.3523,
+      "maxAbsX": 0.276,
+      "maxAbsZ": 0.219,
+      "vertices": 42
+    },
+    {
+      "y": 0.05,
+      "maxRadius": 0.3523,
+      "maxAbsX": 0.276,
+      "maxAbsZ": 0.219,
+      "vertices": 24
+    },
+    {
+      "y": 0.1,
+      "maxRadius": 0.3523,
+      "maxAbsX": 0.276,
+      "maxAbsZ": 0.219,
+      "vertices": 84
+    },
+    {
+      "y": 0.2,
+      "maxRadius": 0.3334,
+      "maxAbsX": 0.259,
+      "maxAbsZ": 0.21,
+      "vertices": 24
+    },
+    {
+      "y": 0.3,
+      "maxRadius": 0.3334,
+      "maxAbsX": 0.259,
+      "maxAbsZ": 0.21,
+      "vertices": 166
+    },
+    {
+      "y": 0.4,
+      "maxRadius": 0.1958,
+      "maxAbsX": 0.1958,
+      "maxAbsZ": 0.0723,
+      "vertices": 42
+    },
+    {
+      "y": 0.55,
+      "maxRadius": 0.1918,
+      "maxAbsX": 0.1918,
+      "maxAbsZ": 0.0777,
+      "vertices": 42
+    },
+    {
+      "y": 0.65,
+      "maxRadius": 0.3874,
+      "maxAbsX": 0.3873,
+      "maxAbsZ": 0.1552,
+      "vertices": 570
+    },
+    {
+      "y": 0.7,
+      "maxRadius": 0.4072,
+      "maxAbsX": 0.4071,
+      "maxAbsZ": 0.1622,
+      "vertices": 297
+    },
+    {
+      "y": 0.75,
+      "maxRadius": 0.4086,
+      "maxAbsX": 0.4085,
+      "maxAbsZ": 0.1794,
+      "vertices": 424
+    },
+    {
+      "y": 0.8,
+      "maxRadius": 0.3939,
+      "maxAbsX": 0.3939,
+      "maxAbsZ": 0.1914,
+      "vertices": 542
+    },
+    {
+      "y": 0.85,
+      "maxRadius": 0.2947,
+      "maxAbsX": 0.2572,
+      "maxAbsZ": 0.2072,
+      "vertices": 302
+    },
+    {
+      "y": 0.9,
+      "maxRadius": 0.3161,
+      "maxAbsX": 0.3108,
+      "maxAbsZ": 0.2094,
+      "vertices": 197
+    },
+    {
+      "y": 0.95,
+      "maxRadius": 0.3366,
+      "maxAbsX": 0.3366,
+      "maxAbsZ": 0.2095,
+      "vertices": 206
+    },
+    {
+      "y": 1,
+      "maxRadius": 0.2724,
+      "maxAbsX": 0.2561,
+      "maxAbsZ": 0.2049,
+      "vertices": 262
+    },
+    {
+      "y": 1.05,
+      "maxRadius": 0.2793,
+      "maxAbsX": 0.2793,
+      "maxAbsZ": 0.1995,
+      "vertices": 414
+    },
+    {
+      "y": 1.1,
+      "maxRadius": 0.2489,
+      "maxAbsX": 0.2489,
+      "maxAbsZ": 0.1923,
+      "vertices": 425
+    },
+    {
+      "y": 1.15,
+      "maxRadius": 0.2505,
+      "maxAbsX": 0.2505,
+      "maxAbsZ": 0.1852,
+      "vertices": 434
+    },
+    {
+      "y": 1.2,
+      "maxRadius": 0.2366,
+      "maxAbsX": 0.2366,
+      "maxAbsZ": 0.173,
+      "vertices": 496
+    },
+    {
+      "y": 1.25,
+      "maxRadius": 0.2028,
+      "maxAbsX": 0.1897,
+      "maxAbsZ": 0.1518,
+      "vertices": 457
+    },
+    {
+      "y": 1.3,
+      "maxRadius": 0.1806,
+      "maxAbsX": 0.1806,
+      "maxAbsZ": 0.1722,
+      "vertices": 46
+    },
+    {
+      "y": 1.35,
+      "maxRadius": 0.2298,
+      "maxAbsX": 0.2298,
+      "maxAbsZ": 0.2192,
+      "vertices": 46
+    },
+    {
+      "y": 1.4,
+      "maxRadius": 0.3451,
+      "maxAbsX": 0.3449,
+      "maxAbsZ": 0.3068,
+      "vertices": 666
+    },
+    {
+      "y": 1.45,
+      "maxRadius": 0.3684,
+      "maxAbsX": 0.3683,
+      "maxAbsZ": 0.311,
+      "vertices": 1000
+    },
+    {
+      "y": 1.5,
+      "maxRadius": 0.3691,
+      "maxAbsX": 0.369,
+      "maxAbsZ": 0.304,
+      "vertices": 800
+    },
+    {
+      "y": 1.55,
+      "maxRadius": 0.3518,
+      "maxAbsX": 0.3517,
+      "maxAbsZ": 0.3261,
+      "vertices": 275
+    },
+    {
+      "y": 1.6,
+      "maxRadius": 0.3455,
+      "maxAbsX": 0.3384,
+      "maxAbsZ": 0.3455,
+      "vertices": 50
+    },
+    {
+      "y": 1.65,
+      "maxRadius": 0.352,
+      "maxAbsX": 0.345,
+      "maxAbsZ": 0.352,
+      "vertices": 25
+    },
+    {
+      "y": 1.7,
+      "maxRadius": 0.3455,
+      "maxAbsX": 0.3384,
+      "maxAbsZ": 0.3455,
+      "vertices": 50
+    },
+    {
+      "y": 1.75,
+      "maxRadius": 0.3261,
+      "maxAbsX": 0.3187,
+      "maxAbsZ": 0.3261,
+      "vertices": 50
+    },
+    {
+      "y": 1.8,
+      "maxRadius": 0.2947,
+      "maxAbsX": 0.2869,
+      "maxAbsZ": 0.2947,
+      "vertices": 50
+    },
+    {
+      "y": 1.85,
+      "maxRadius": 0.2524,
+      "maxAbsX": 0.244,
+      "maxAbsZ": 0.2524,
+      "vertices": 100
+    },
+    {
+      "y": 1.9,
+      "maxRadius": 0.1421,
+      "maxAbsX": 0.132,
+      "maxAbsZ": 0.1421,
+      "vertices": 125
+    }
+  ],
+  "poses": [
+    {
+      "id": "rest",
+      "swing": 0,
+      "armLift": 0,
+      "effort": 0,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4085,
+          0,
+          -0.352
+        ],
+        "max": [
+          0.4085,
+          1.898,
+          0.328
+        ],
+        "size": [
+          0.817,
+          1.898,
+          0.68
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          0.728,
+          0.01
+        ],
+        "Hand right__pivot": [
+          0.336,
+          0.728,
+          0.01
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.1875,
+          0.06
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.1875,
+          0.06
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "run-forward",
+      "swing": 0.72,
+      "armLift": 0,
+      "effort": 1,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4085,
+          -0.0299,
+          -0.3764
+        ],
+        "max": [
+          0.4085,
+          1.9048,
+          0.4825
+        ],
+        "size": [
+          0.817,
+          1.9346,
+          0.8589
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          0.8212,
+          -0.2576
+        ],
+        "Hand right__pivot": [
+          0.336,
+          0.8344,
+          0.2726
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.2597,
+          0.2581
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.2079,
+          -0.1499
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "run-back",
+      "swing": -0.72,
+      "armLift": 0,
+      "effort": 1,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4085,
+          -0.0299,
+          -0.3764
+        ],
+        "max": [
+          0.4085,
+          1.9048,
+          0.4825
+        ],
+        "size": [
+          0.817,
+          1.9346,
+          0.8589
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          0.8344,
+          0.2726
+        ],
+        "Hand right__pivot": [
+          0.336,
+          0.8212,
+          -0.2576
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.2079,
+          -0.1499
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.2597,
+          0.2581
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "jump-rise",
+      "swing": -0.75,
+      "armLift": -0.8,
+      "effort": 1,
+      "airborne": true,
+      "box": {
+        "min": [
+          -0.4085,
+          -0.0281,
+          -0.3844
+        ],
+        "max": [
+          0.4085,
+          1.905,
+          0.4917
+        ],
+        "size": [
+          0.817,
+          1.9331,
+          0.8762
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          1.1316,
+          0.4021
+        ],
+        "Hand right__pivot": [
+          0.336,
+          0.729,
+          0.0301
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.2108,
+          -0.1583
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.2646,
+          0.2655
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "jump-fall",
+      "swing": 0.6,
+      "armLift": -0.8,
+      "effort": 1,
+      "airborne": true,
+      "box": {
+        "min": [
+          -0.4085,
+          -0.0345,
+          -0.3724
+        ],
+        "max": [
+          0.4085,
+          1.9038,
+          0.4863
+        ],
+        "size": [
+          0.817,
+          1.9383,
+          0.8587
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          0.738,
+          0.0897
+        ],
+        "Hand right__pivot": [
+          0.336,
+          1.0715,
+          0.3979
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.2416,
+          0.2276
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.198,
+          -0.1158
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "stun-forward",
+      "swing": 1.15,
+      "armLift": -1.1,
+      "effort": 1,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4085,
+          0.0175,
+          -0.5066
+        ],
+        "max": [
+          0.4085,
+          1.9073,
+          0.5974
+        ],
+        "size": [
+          0.817,
+          1.8898,
+          1.104
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          0.728,
+          -0.0101
+        ],
+        "Hand right__pivot": [
+          0.336,
+          1.3903,
+          0.3065
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.3418,
+          0.3544
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.2634,
+          -0.2637
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "stun-back",
+      "swing": -1.15,
+      "armLift": -1.1,
+      "effort": 1,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4085,
+          0.0175,
+          -0.5066
+        ],
+        "max": [
+          0.4085,
+          1.9073,
+          0.5974
+        ],
+        "size": [
+          0.817,
+          1.8898,
+          1.104
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          1.3903,
+          0.3065
+        ],
+        "Hand right__pivot": [
+          0.336,
+          0.728,
+          -0.0101
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.2634,
+          -0.2637
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.3418,
+          0.3544
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    },
+    {
+      "id": "victory",
+      "swing": -2.35,
+      "armLift": -0.35,
+      "effort": 1,
+      "airborne": false,
+      "box": {
+        "min": [
+          -0.4188,
+          0.3653,
+          -0.667
+        ],
+        "max": [
+          0.4201,
+          1.9053,
+          0.6806
+        ],
+        "size": [
+          0.839,
+          1.54,
+          1.3476
+        ]
+      },
+      "socketPositions": {
+        "Head mass__pivot": [
+          0,
+          1.56,
+          0
+        ],
+        "Torso__pivot": [
+          0,
+          0.95,
+          0
+        ],
+        "Arm left__pivot": [
+          -0.15,
+          1.13,
+          0
+        ],
+        "Arm right__pivot": [
+          0.15,
+          1.13,
+          0
+        ],
+        "Hand left__pivot": [
+          -0.336,
+          1.4977,
+          0.1628
+        ],
+        "Hand right__pivot": [
+          0.336,
+          1.2882,
+          -0.3697
+        ],
+        "Leg left__pivot": [
+          -0.105,
+          0.66,
+          0
+        ],
+        "Leg right__pivot": [
+          0.105,
+          0.66,
+          0
+        ],
+        "Sneaker left__pivot": [
+          -0.16,
+          0.5467,
+          -0.4626
+        ],
+        "Sneaker right__pivot": [
+          0.16,
+          0.666,
+          0.4763
+        ],
+        "Shoulder cap left__pivot": [
+          -0.168,
+          1.14,
+          0
+        ],
+        "Shoulder cap right__pivot": [
+          0.168,
+          1.14,
+          0
+        ],
+        "Neck__pivot": [
+          0,
+          1.235,
+          0
+        ]
+      }
+    }
+  ]
+}

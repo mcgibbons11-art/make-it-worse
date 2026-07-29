@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "verdict": "pass",
+  "confidence": 0.793,
+  "estimatedFidelity": 0.793,
+  "targetThreshold": 0.7,
+  "materialId": "trim-navy",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\crops\\trim-navy-crop.png",
+  "outDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr",
+  "palette": [
+    "#384153",
+    "#3B4559",
+    "#CC975D",
+    "#474E5E",
+    "#201F28"
+  ],
+  "maps": {
+    "albedo": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\trim-navy_albedo.png",
+      "url": "trim-navy_albedo.png",
+      "channel": "albedo",
+      "source": "reference-pixel-extraction"
+    },
+    "roughness": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\trim-navy_roughness.png",
+      "url": "trim-navy_roughness.png",
+      "channel": "roughness",
+      "source": "reference-pixel-extraction"
+    },
+    "height": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\trim-navy_height.png",
+      "url": "trim-navy_height.png",
+      "channel": "height",
+      "source": "reference-pixel-extraction"
+    },
+    "normal": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\trim-navy_normal.png",
+      "url": "trim-navy_normal.png",
+      "channel": "normal",
+      "source": "reference-pixel-extraction"
+    },
+    "ao": {
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\apartment\\evidence\\pbr\\trim-navy_ao.png",
+      "url": "trim-navy_ao.png",
+      "channel": "ao",
+      "source": "reference-pixel-extraction"
+    }
+  },
+  "diagnostics": {
+    "sourceWidth": 30,
+    "sourceHeight": 18,
+    "mapSize": 1024,
+    "cropBBoxPixels": {
+      "x": 0,
+      "y": 0,
+      "width": 30,
+      "height": 18
+    },
+    "mask": {
+      "backgroundColor": "#3C4559",
+      "backgroundNoise": 119.958,
+      "transparentPixelFraction": 0.0,
+      "foregroundCoverage": 0.9926
+    },
+    "mapStats": {
+      "valueRange": 0.4702,
+      "heightP90Gradient": 0.01523,
+      "roughnessBase": 0.682,
+      "roughnessVariation": 0.05,
+      "normalStrength": 0.174,
+      "blurRadius": 21
+    },
+    "palette": [
+      "#384153",
+      "#3B4559",
+      "#CC975D",
+      "#474E5E",
+      "#201F28"
+    ]
+  },
+  "warnings": [
+    "image is not clearly isolated from background; using most pixels as material evidence",
+    "object/background separation is weak",
+    "single-image inverse rendering cannot prove true physical PBR; confidence is capped"
+  ],
+  "limitation": "single-image PBR extraction is an estimate; 70%+ extraction confidence still needs render screenshot review"
+}

@@ -1,0 +1,18 @@
+{
+  "stem": "wear-hoodie",
+  "image": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\wear-hoodie.png",
+  "md5": "850f7e9d713a7572eec7211c1060a123",
+  "bytes": 1380924,
+  "checkedAt": "2026-07-29T03:08:18+00:00",
+  "automatedAdmission": {
+    "exitCode": 0,
+    "output": "ADMITTED  (reference)  pHash=17268155890095659363"
+  },
+  "probe": {
+    "exitCode": 0,
+    "output": "{\n  \"path\": \"C:\\\\Users\\\\Mcgib\\\\Partners HealthCare Dropbox\\\\Jason Gibbons\\\\Portals make it worse\\\\assets\\\\reference\\\\wear-hoodie.png\",\n  \"type\": \"png\",\n  \"bytes\": 1380924,\n  \"width\": 1254,\n  \"height\": 1254,\n  \"aspectRatio\": 1.0,\n  \"technicalSuitability\": \"pass\",\n  \"warnings\": [],\n  \"note\": \"This is only technical image probing. Semantic object suitability still requires visual inspection.\"\n}"
+  },
+  "contentVerdict": "pass",
+  "contentNote": "Single royal-blue pullover hoodie on plain grey, three-quarter from upper-left. Hood with lighter lining, two cream drawstrings with barrel aglets, yellow kangaroo pocket, ribbed cuffs and hem. No second object.",
+  "contentCheckRule": "The reference must show ONLY the garment its filename names. md5 uniqueness and check_reference_admission.py both pass on a two-prompt mashup, so this verdict comes from opening the image."
+}

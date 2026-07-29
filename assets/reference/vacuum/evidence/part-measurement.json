@@ -1,0 +1,371 @@
+{
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\vacuum-reference.png",
+  "backgroundRgb": [
+    219.0,
+    218.0,
+    218.0
+  ],
+  "referenceBBox": {
+    "x0": 152,
+    "y0": 160,
+    "x1": 1062,
+    "y1": 1151,
+    "imageSize": [
+      1254,
+      1254
+    ]
+  },
+  "silhouette": {
+    "width": 910,
+    "height": 991,
+    "widthToHeight": 0.9183
+  },
+  "envelope": {
+    "callSite": "components/game/TrapRenderer.tsx vacuum",
+    "collider": "CuboidCollider args=[0.5, 0.55, 0.45], model at [0, -0.55, 0]",
+    "worldBox": [
+      1.0,
+      1.1,
+      0.9
+    ],
+    "allowedWidthToHeight": 0.9091
+  },
+  "paletteClusters": [
+    {
+      "part": "lilac",
+      "medianHex": "#bca6da",
+      "medianRgb": [
+        188.0,
+        166.0,
+        218.0
+      ],
+      "areaPx": 192880,
+      "areaFractionOfObject": 0.3254,
+      "bboxPx": {
+        "x0": 334,
+        "y0": 227,
+        "x1": 980,
+        "y1": 793
+      },
+      "centroidPx": [
+        673.0,
+        490.9
+      ],
+      "widthFractionOfSilhouette": 0.7099,
+      "heightFractionOfSilhouette": 0.5711
+    },
+    {
+      "part": "navy",
+      "medianHex": "#374c72",
+      "medianRgb": [
+        55.0,
+        76.0,
+        114.0
+      ],
+      "areaPx": 129210,
+      "areaFractionOfObject": 0.218,
+      "bboxPx": {
+        "x0": 167,
+        "y0": 227,
+        "x1": 984,
+        "y1": 939
+      },
+      "centroidPx": [
+        442.5,
+        682.5
+      ],
+      "widthFractionOfSilhouette": 0.8978,
+      "heightFractionOfSilhouette": 0.7185
+    },
+    {
+      "part": "cream",
+      "medianHex": "#f9e9c4",
+      "medianRgb": [
+        249.0,
+        233.0,
+        196.0
+      ],
+      "areaPx": 60316,
+      "areaFractionOfObject": 0.1018,
+      "bboxPx": {
+        "x0": 302,
+        "y0": 292,
+        "x1": 1044,
+        "y1": 1135
+      },
+      "centroidPx": [
+        635.3,
+        995.1
+      ],
+      "widthFractionOfSilhouette": 0.8154,
+      "heightFractionOfSilhouette": 0.8507
+    },
+    {
+      "part": "coral",
+      "medianHex": "#eb8273",
+      "medianRgb": [
+        235.0,
+        130.0,
+        115.0
+      ],
+      "areaPx": 41358,
+      "areaFractionOfObject": 0.0698,
+      "bboxPx": {
+        "x0": 504,
+        "y0": 338,
+        "x1": 1044,
+        "y1": 791
+      },
+      "centroidPx": [
+        918.3,
+        625.2
+      ],
+      "widthFractionOfSilhouette": 0.5934,
+      "heightFractionOfSilhouette": 0.4571
+    },
+    {
+      "part": "mint",
+      "medianHex": "#91c4ae",
+      "medianRgb": [
+        145.0,
+        196.0,
+        174.0
+      ],
+      "areaPx": 32499,
+      "areaFractionOfObject": 0.0548,
+      "bboxPx": {
+        "x0": 503,
+        "y0": 160,
+        "x1": 853,
+        "y1": 963
+      },
+      "centroidPx": [
+        673.1,
+        354.7
+      ],
+      "widthFractionOfSilhouette": 0.3846,
+      "heightFractionOfSilhouette": 0.8103
+    },
+    {
+      "part": "yellow",
+      "medianHex": "#fdda9c",
+      "medianRgb": [
+        253.0,
+        218.0,
+        156.0
+      ],
+      "areaPx": 16413,
+      "areaFractionOfObject": 0.0277,
+      "bboxPx": {
+        "x0": 504,
+        "y0": 292,
+        "x1": 1024,
+        "y1": 1135
+      },
+      "centroidPx": [
+        730.2,
+        451.3
+      ],
+      "widthFractionOfSilhouette": 0.5714,
+      "heightFractionOfSilhouette": 0.8507
+    }
+  ],
+  "camera": {
+    "solved": true,
+    "method": "ellipse axis ratio of the yellow top button, a circle in a horizontal plane",
+    "pitchDegrees": 28.1,
+    "button": {
+      "centroidPx": [
+        586.1,
+        332.2
+      ],
+      "semiMajorPx": 85.5,
+      "semiMinorPx": 40.2,
+      "axisRatio": 0.4707,
+      "majorAxisTiltDeg": -177.7,
+      "areaPx": 10371
+    },
+    "otherYellowBlobs": [
+      {
+        "centroidPx": [
+          992.7,
+          663.8
+        ],
+        "semiMajorPx": 67.1,
+        "semiMinorPx": 27.7,
+        "axisRatio": 0.4122,
+        "majorAxisTiltDeg": 104.3,
+        "areaPx": 5821
+      }
+    ],
+    "groundPlane": {
+      "depthToImageY": 0.4707,
+      "heightToImageY": 0.8823,
+      "widthToImageX": 1.0,
+      "howToUse": "A floor displacement away from the camera moves a point DOWN the image by depth * sin(pitch); an elevation moves it UP by height * cos(pitch); a sideways displacement moves it by its own length in X. Decompose any vertical image span into elevation and depth with these before treating it as a world dimension."
+    },
+    "caveat": "The button reads as a disc but is a moulded cap with a rounded edge, so its silhouette is marginally wider than the true circle and the recovered pitch is a slight underestimate. Treat it as +/- 3 degrees."
+  },
+  "cameraFromShadow": {
+    "solved": true,
+    "method": "ellipse axis ratio of the canister's contact shadow, a circle in the ground plane",
+    "pitchDegrees": 10.7,
+    "shadow": {
+      "centroidPx": [
+        671.8,
+        806.7
+      ],
+      "semiMajorPx": 427.6,
+      "semiMinorPx": 79.3,
+      "axisRatio": 0.1854,
+      "majorAxisTiltDeg": -177.1,
+      "areaPx": 65759
+    },
+    "allShadowBlobs": [
+      {
+        "centroidPx": [
+          671.8,
+          806.7
+        ],
+        "semiMajorPx": 427.6,
+        "semiMinorPx": 79.3,
+        "axisRatio": 0.1854,
+        "majorAxisTiltDeg": -177.1,
+        "areaPx": 65759
+      },
+      {
+        "centroidPx": [
+          392.5,
+          992.7
+        ],
+        "semiMajorPx": 330.7,
+        "semiMinorPx": 96.6,
+        "axisRatio": 0.2921,
+        "majorAxisTiltDeg": -161.9,
+        "areaPx": 47569
+      }
+    ],
+    "assumption": "near-overhead or ambient contact shadow; a raked key light would shear it"
+  },
+  "cleanSilhouette": {
+    "bboxPx": {
+      "x0": 167,
+      "y0": 160,
+      "x1": 1044,
+      "y1": 1135
+    },
+    "width": 877,
+    "height": 975,
+    "note": "Measured off the union of the part masks. The obj-based bbox includes the contact shadow."
+  },
+  "shadowAreaPx": 114130,
+  "rowProfile": [
+    {
+      "rowFraction": 0.0,
+      "widthPx": 19,
+      "fractionOfSilhouetteWidth": 0.0209
+    },
+    {
+      "rowFraction": 0.05,
+      "widthPx": 278,
+      "fractionOfSilhouetteWidth": 0.3055
+    },
+    {
+      "rowFraction": 0.1,
+      "widthPx": 392,
+      "fractionOfSilhouetteWidth": 0.4308
+    },
+    {
+      "rowFraction": 0.15,
+      "widthPx": 532,
+      "fractionOfSilhouetteWidth": 0.5846
+    },
+    {
+      "rowFraction": 0.2,
+      "widthPx": 590,
+      "fractionOfSilhouetteWidth": 0.6484
+    },
+    {
+      "rowFraction": 0.25,
+      "widthPx": 620,
+      "fractionOfSilhouetteWidth": 0.6813
+    },
+    {
+      "rowFraction": 0.3,
+      "widthPx": 648,
+      "fractionOfSilhouetteWidth": 0.7121
+    },
+    {
+      "rowFraction": 0.35,
+      "widthPx": 652,
+      "fractionOfSilhouetteWidth": 0.7165
+    },
+    {
+      "rowFraction": 0.4,
+      "widthPx": 698,
+      "fractionOfSilhouetteWidth": 0.767
+    },
+    {
+      "rowFraction": 0.45,
+      "widthPx": 737,
+      "fractionOfSilhouetteWidth": 0.8099
+    },
+    {
+      "rowFraction": 0.5,
+      "widthPx": 823,
+      "fractionOfSilhouetteWidth": 0.9044
+    },
+    {
+      "rowFraction": 0.55,
+      "widthPx": 867,
+      "fractionOfSilhouetteWidth": 0.9527
+    },
+    {
+      "rowFraction": 0.6,
+      "widthPx": 878,
+      "fractionOfSilhouetteWidth": 0.9648
+    },
+    {
+      "rowFraction": 0.65,
+      "widthPx": 856,
+      "fractionOfSilhouetteWidth": 0.9407
+    },
+    {
+      "rowFraction": 0.7,
+      "widthPx": 742,
+      "fractionOfSilhouetteWidth": 0.8154
+    },
+    {
+      "rowFraction": 0.75,
+      "widthPx": 628,
+      "fractionOfSilhouetteWidth": 0.6901
+    },
+    {
+      "rowFraction": 0.8,
+      "widthPx": 665,
+      "fractionOfSilhouetteWidth": 0.7308
+    },
+    {
+      "rowFraction": 0.85,
+      "widthPx": 601,
+      "fractionOfSilhouetteWidth": 0.6604
+    },
+    {
+      "rowFraction": 0.9,
+      "widthPx": 397,
+      "fractionOfSilhouetteWidth": 0.4363
+    },
+    {
+      "rowFraction": 0.95,
+      "widthPx": 249,
+      "fractionOfSilhouetteWidth": 0.2736
+    },
+    {
+      "rowFraction": 1.0,
+      "widthPx": 13,
+      "fractionOfSilhouetteWidth": 0.0143
+    }
+  ],
+  "method": "channel-dominance albedo separation, verified against evidence/masks.png",
+  "knownLimitation": "cream and yellow are both warm and low-saturation, so each bbox carries a few stray pixels of the other; the centroids and areas are sound but the cream and yellow bounding boxes are not tight."
+}

@@ -1,0 +1,129 @@
+{
+  "image": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\mop-reference.png",
+  "imageSize": [
+    1086,
+    1448
+  ],
+  "backgroundColor": "#d8d7d7",
+  "silhouette": {
+    "minX": 70,
+    "maxX": 1010,
+    "minY": 421,
+    "maxY": 1042,
+    "widthPx": 941,
+    "heightPx": 622,
+    "aspectRatio": 1.5129
+  },
+  "silhouetteNdc": {
+    "minX": -0.8711,
+    "maxX": 0.8619,
+    "minY": -0.4406,
+    "maxY": 0.4185
+  },
+  "widestRow": {
+    "y": 680,
+    "minX": 70,
+    "maxX": 1010,
+    "widthPx": 941
+  },
+  "regions": {
+    "shell-cream": {
+      "minX": 83,
+      "maxX": 999,
+      "minY": 421,
+      "maxY": 1040,
+      "count": 137193,
+      "meanColor": "#ede5d8",
+      "widthPx": 917,
+      "heightPx": 620
+    },
+    "deck-green": {
+      "minX": 147,
+      "maxX": 933,
+      "minY": 435,
+      "maxY": 821,
+      "count": 232484,
+      "meanColor": "#a9ceb7",
+      "widthPx": 787,
+      "heightPx": 387
+    },
+    "fringe-grey": {
+      "minX": 71,
+      "maxX": 1010,
+      "minY": 460,
+      "maxY": 1042,
+      "count": 9153,
+      "meanColor": "#b0aca8",
+      "widthPx": 940,
+      "heightPx": 583
+    },
+    "button-red": {
+      "minX": 474,
+      "maxX": 607,
+      "minY": 481,
+      "maxY": 551,
+      "count": 7639,
+      "meanColor": "#ec7e79",
+      "widthPx": 134,
+      "heightPx": 71
+    },
+    "bumper-navy": {
+      "minX": 72,
+      "maxX": 1009,
+      "minY": 641,
+      "maxY": 966,
+      "count": 82860,
+      "meanColor": "#404650",
+      "widthPx": 938,
+      "heightPx": 326
+    }
+  },
+  "cameraElevationDegFromDeckEllipse": 29.46,
+  "centreColumnBands": [
+    {
+      "region": "shell-cream",
+      "startY": 421,
+      "endY": 433
+    },
+    {
+      "region": "deck-green",
+      "startY": 435,
+      "endY": 479
+    },
+    {
+      "region": "button-red",
+      "startY": 481,
+      "endY": 551
+    },
+    {
+      "region": "deck-green",
+      "startY": 554,
+      "endY": 821
+    },
+    {
+      "region": "shell-cream",
+      "startY": 823,
+      "endY": 909
+    },
+    {
+      "region": "bumper-navy",
+      "startY": 913,
+      "endY": 966
+    },
+    {
+      "region": "shell-cream",
+      "startY": 968,
+      "endY": 989
+    },
+    {
+      "region": "other",
+      "startY": 990,
+      "endY": 1003
+    },
+    {
+      "region": "shell-cream",
+      "startY": 1004,
+      "endY": 1040
+    }
+  ]
+}

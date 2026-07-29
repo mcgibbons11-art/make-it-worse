@@ -1,0 +1,3009 @@
+{
+  "targetName": "Apartment Soap Dish",
+  "targetId": "apartment-soap-dish",
+  "schemaVersion": "2.1",
+  "terminologyProfile": {
+    "domain": "real-time procedural Three.js game prop",
+    "geometryTerms": [
+      "silhouette",
+      "topology",
+      "primitive",
+      "chamfer",
+      "facet",
+      "taper",
+      "extrude profile",
+      "profile stop",
+      "edge crease",
+      "surface normal",
+      "lathe profile",
+      "instanced cluster"
+    ],
+    "materialTerms": [
+      "albedo",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "normal map",
+      "ambient occlusion",
+      "cavity darkening",
+      "edge wear",
+      "clearcoat"
+    ],
+    "lightingTerms": [
+      "key light",
+      "fill light",
+      "rim light",
+      "environment reflection",
+      "contact shadow",
+      "tone mapping",
+      "exposure"
+    ],
+    "descriptionRule": "Use measurable 3D graphics terms. Every shape claim carries a number or a named geometry operation."
+  },
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\soap-reference.png",
+  "referenceCamera": {
+    "solved": true,
+    "solveMethod": "azimuth from the 4 degree tilt of the long axis in the silhouette; elevation seeded at 58 degrees from the rim-band ratios and refined by a harness sweep scored on Tier-1 silhouette IoU",
+    "fovDegrees": 12.0,
+    "aspect": 0.75,
+    "orientation": {
+      "yaw": 4.0,
+      "pitch": -58.0,
+      "roll": 0.0
+    },
+    "targetHint": [
+      0.0,
+      0.06,
+      0.0
+    ],
+    "note": "Elevation and plan aspect cannot be separated from one view: a wider dish seen from a steeper angle projects the same silhouette. 58 degrees is the seed; the sweep result is recorded in reviewHistory. Distance is not fixed here: the preview harness solves it by fitting the render's projected bounding box to the reference bounding box (x 80-1011, y 378-1035 of 1086x1448)."
+  },
+  "measurementBasis": {
+    "pixelsPerWorldUnit": 1331.4,
+    "referenceBBox": {
+      "x0": 80,
+      "y0": 378,
+      "x1": 1011,
+      "y1": 1035,
+      "imageSize": [
+        1086,
+        1448
+      ]
+    },
+    "derivations": [
+      "Projected length 932 px set to 0.70 world units, the width of the hand-authored dish this replaces, so the soap-slick trap's layout does not move.",
+      "Column 545: far rim band 47 px, near rim band 146 px, opening 441 px. With outer height 658 px these give W sin(e) = 560, Ho cos(e) = 91 and t sin(e) = 55.",
+      "At the seeded 58 degrees those become width 0.496, height 0.129 and wall thickness 0.0487 world units.",
+      "Row 660 gives the bar 682 px of projected length = 0.5122 world units; column 545 gives 436 px of projected height, which resolves to 0.1259."
+    ]
+  },
+  "suitability": "pass",
+  "scores": {
+    "object_isolation": 3,
+    "silhouette_readability": 3,
+    "depth_inference": 2,
+    "primitive_decomposition": 3,
+    "material_procedurality": 3,
+    "occlusion_risk": 2,
+    "interaction_fit": 2
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "bathroom soap dish with a cast bar",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "rolled-moulded-edge"
+      ],
+      "structureKind": [
+        "open-tray",
+        "recessed-interior",
+        "loose-contents"
+      ],
+      "motionPotential": [
+        "bar-lift",
+        "dish-slide",
+        "bar-detach"
+      ],
+      "materialFamilies": [
+        "matte-plastic-blue",
+        "matte-cast-soap-cream"
+      ],
+      "notes": "Smooth organic object with no crease anywhere. The identity is the rolled rim section and the pillow bar standing proud of it, not the oval outline, which a flat disc would also give. One view: the underside and most of the interior floor are inferred."
+    },
+    "complexity": {
+      "tier": "simple",
+      "scores": {
+        "silhouetteComplexity": 1,
+        "componentCount": 1,
+        "hierarchyDepth": 1,
+        "repetitionDensity": 0,
+        "materialLayerCount": 1,
+        "localDetailDensity": 1,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 1
+      },
+      "estimatedCounts": {
+        "macroComponents": 1,
+        "mesoComponents": 2,
+        "microFeatureGroups": 0,
+        "materialLayers": 2,
+        "repetitionSystems": 0
+      },
+      "reasoning": [
+        "Three parts and two albedos: this is a genuinely simple object and inflating the component tree would not make it more like the reference.",
+        "There is no repeated structure anywhere in the reference.",
+        "Action readiness is low: the dish is dressing on a distance-triggered slick.",
+        "Occlusion risk is moderate: the underside and most of the interior floor are never seen."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "simple",
+      "minimumComponentLevels": [
+        "macro",
+        "meso"
+      ],
+      "needsRepetitionSystems": false,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": false,
+      "rationale": "The object has no repeated structure and no micro parts, but its whole identity is a shading response on rolled surfaces, so material local overrides are required even though the component tree is shallow."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "resolvedUnknowns": [
+      {
+        "unknown": "Camera elevation cannot be separated from the plan aspect by one view.",
+        "resolution": "Seeded at 58 degrees from the rim-band ratios and refined by a harness sweep scored on Tier-1 silhouette IoU. Every derived width and height moves with it, which is recorded in measurementBasis.",
+        "confidence": 0.6
+      },
+      {
+        "unknown": "The interior floor depth is not measurable: the bar covers it.",
+        "resolution": "Set so the recess is 0.0709 units deep, which holds the bar's lower third and matches the reference's shadow line.",
+        "confidence": 0.5
+      },
+      {
+        "unknown": "The underside is not visible.",
+        "resolution": "Closed flat with the same tuck radius as the outer wall. A soap dish has no feature there that would show in play.",
+        "confidence": 0.6
+      }
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zone scan of the reference at 3x, with colour-run scans along rows 480, 560, 660, 760, 860 and 950 and columns 250, 400, 545, 700 and 880 to place the rim bands, the opening and the bar in pixels before converting to world units.",
+      "targetMinDetails": 6,
+      "note": "Every detail below resolves to a component.localFeatures id or a material.localOverrides id; none is prose only.",
+      "details": [
+        {
+          "id": "rim-roll",
+          "zone": "rim",
+          "kind": "bevel",
+          "description": "The dish wall rolls inward 0.0268 units over its crown with no crease, so the rim reads as a continuous moulded curve.",
+          "mapsTo": {
+            "ref": "rim-roll-over",
+            "owner": "dish-wall",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "profileStops on a quarter cosine plus welded vertices before normal generation.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "base-tuck",
+          "zone": "base",
+          "kind": "contour",
+          "description": "The outer wall tucks back in at the base by the same amount, which is why the bottom silhouette curves inward instead of meeting the ground square.",
+          "mapsTo": {
+            "ref": "outer-tuck",
+            "owner": "dish-wall",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Mirrored profileStops at the start of the sweep.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "stadium-plan",
+          "zone": "plan",
+          "kind": "contour",
+          "description": "The plan is a stadium: the long sides run straight for about 30 percent of the length before the semicircular caps begin. An ellipse would bow those sides.",
+          "mapsTo": {
+            "ref": "stadium-plan",
+            "owner": "dish-wall",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Rectangle capped by two semicircles, sampled at 28 sides.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        },
+        {
+          "id": "wall-thickness",
+          "zone": "rim",
+          "kind": "contour",
+          "description": "The wall is 0.0487 units thick, measured from the 441 pixel opening against the 560 pixel outer width at the solved elevation.",
+          "mapsTo": {
+            "ref": "inner-wall",
+            "owner": "dish-wall",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "profile2D hole inset from the outer plan.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "bar-pillow",
+          "zone": "bar",
+          "kind": "contour",
+          "description": "The bar is domed at both ends with no flat face and no edge; it is a cast pillow.",
+          "mapsTo": {
+            "ref": "pillow-crown",
+            "owner": "soap-bar",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Symmetric profileStops rolling the plan inward at both ends of the extrusion.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "bar-stands-proud",
+          "zone": "bar",
+          "kind": "contour",
+          "description": "The bar rises 0.049 units above the rim, which is what makes the dish read as full rather than empty.",
+          "mapsTo": {
+            "ref": "dish-contact",
+            "owner": "soap-bar",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Component position derived from the measured projected heights.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "rim-crown-sheen",
+          "zone": "rim",
+          "kind": "gloss",
+          "description": "The rim crown is the brightest blue in the frame, measured at (64,148,229) against (26,101,174) on the shaded inner wall.",
+          "mapsTo": {
+            "ref": "rim-crown-sheen",
+            "owner": "dish-blue",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override lowering roughness on the crown band.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "interior-occlusion",
+          "zone": "interior",
+          "kind": "stain",
+          "description": "The inner wall darkens sharply toward the floor and carries the darkest blue in the frame.",
+          "mapsTo": {
+            "ref": "inner-wall-occlusion",
+            "owner": "dish-blue",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override with an AO boost on the inner wall.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        },
+        {
+          "id": "bar-contact-shadow",
+          "zone": "interior",
+          "kind": "seam",
+          "description": "A contact shadow runs where the bar meets the dish floor.",
+          "mapsTo": {
+            "ref": "bar-contact-shadow",
+            "owner": "bar-cream",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override raising AO on the bar's lowest band.",
+          "evidenceRef": "full-object",
+          "confidence": 0.7
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "not-applicable",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "primaryDomain is object, so the character track does not apply."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\soap-reference.png"
+  },
+  "qualityContract": {
+    "qualityBar": "moderate",
+    "definitionOfDone": [
+      "The rendered dish matches the reference silhouette, the stadium plan, the rolled rim section, the recessed interior and the pillow bar standing proud of the rim.",
+      "No crease appears anywhere on the dish or the bar under any of the review lights.",
+      "The dish's long axis stays at 0.70 world units so the soap-slick trap's layout does not move."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 1,
+      "mesoComponents": 2,
+      "microFeatureGroups": 0,
+      "materialLayers": 2,
+      "repetitionSystems": 0,
+      "reviewViewpoints": 3
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Length, width, height and wall thickness are stated as measured numbers derived from named pixel spans.",
+          "The plan is stated as a stadium with its straight run quantified."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic oval bowl",
+          "proportions guessed rather than derived from the rim bands"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Wall, floor and bar are separate named parts.",
+          "Every contact records a seam overlap of at least 0.02 world units."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "interior-zone"
+        ],
+        "failureModes": [
+          "dish and bar merged into one mesh",
+          "no floor, so the dish reads through"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Contact and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "The bar is buried in the floor plate rather than resting on it, so no gap can open under it.",
+          "The floor plate's contour is buried in the wall."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "interior-zone"
+        ],
+        "failureModes": [
+          "bar floats above the floor",
+          "gap opens between floor and wall"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal intent and local overrides are specified per material and tied to evidenceRefs.",
+          "Albedo, roughness, height, normal and AO are independent fields.",
+          "Surface response is decomposed into macro, meso and micro bands."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "rim-zone"
+        ],
+        "failureModes": [
+          "surface looks like glossy toy plastic",
+          "no value gradient down the inner wall"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference colour, material and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "The two-layer palette traces to median-sampled reference pixels.",
+          "Reference PBR extraction ran on both material crops and its confidence and binding decision are recorded.",
+          "Lighting names key, fill, rim or environment, exposure, tone mapping, background and contact shadow behaviour.",
+          "Neutral, grazing and reference-matched renders prove the rolled rim survives relighting rather than being painted."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "acceptable shape but flat-shaded read",
+          "blue drifts to the level palette's own blue",
+          "lighting evenly ambient"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "rim band width delta",
+      "component hierarchy depth delta",
+      "interior occlusion gradient delta",
+      "material albedo, roughness and normal response delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ],
+    "mustNotDo": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "qualityTargets": {
+    "targetFidelity": 0.8,
+    "mustMatch": [
+      "stadium plan with straight long sides",
+      "rolled rim crown and base tuck with no crease",
+      "recessed interior with a visible occlusion gradient",
+      "pillow bar standing proud of the rim",
+      "two-albedo palette: one blue, one cream"
+    ],
+    "niceToHave": [
+      "the faint mould parting line along the bar's flank",
+      "the exact interior floor depth"
+    ],
+    "fpsTarget": 60,
+    "reviewViewpoints": [
+      "reference-elevated",
+      "front",
+      "right",
+      "top-down",
+      "grazing"
+    ]
+  },
+  "selfCorrectLoop": {
+    "enabled": true,
+    "visualAcceptance": {
+      "reviewer": "ai-vision",
+      "threshold": 0.7,
+      "comparisonArtifactRequired": true,
+      "layerScoresRequired": true,
+      "codePixelDiffIsAcceptanceAuthority": false,
+      "scoringRule": "AI vision must inspect a side-by-side reference/render sheet and score the current pass from 0 to 1. Pixel-diff code may assist diagnostics but cannot approve a pass.",
+      "requiredLayerScores": [
+        "silhouetteProportion",
+        "componentStructure",
+        "formDetail",
+        "materialSurface",
+        "lightingCamera"
+      ],
+      "featureReviewPolicy": {
+        "enabled": true,
+        "reviewUnit": "semantic-subsystem",
+        "maxCriticalFeaturesPerPass": 5,
+        "maxImportantFeaturesPerPass": 3,
+        "criticalDefaultThreshold": 0.8,
+        "importantAverageThreshold": 0.65,
+        "adaptiveEscalation": true,
+        "singleImagePairOnly": true,
+        "selectionRule": "Score only identity-defining semantic systems, never generic quality adjectives."
+      }
+    },
+    "reviewAfterPasses": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "allowedActions": [
+      "continue",
+      "refine-spec",
+      "refine-code",
+      "request-input",
+      "stop"
+    ],
+    "specRefineTriggers": [
+      "missing component",
+      "wrong primitive family",
+      "wrong proportions",
+      "material layer under-specified",
+      "local feature not traceable to viewEvidence",
+      "reference ambiguity discovered during implementation"
+    ],
+    "codeRefineTriggers": [
+      "spec is adequate but generated geometry or material does not match",
+      "browser render differs from reference",
+      "performance budget exceeded",
+      "lighting hides geometry or material response"
+    ],
+    "stopCriteria": [
+      "target fidelity reached or the user accepts the current approximation",
+      "remaining gaps require reference views the single image does not cover"
+    ],
+    "screenshotPolicy": {
+      "requiredForPasses": [
+        "blockout",
+        "structural-pass",
+        "form-refinement",
+        "material-pass",
+        "surface-pass",
+        "lighting-pass",
+        "interaction-pass"
+      ],
+      "preferredCapture": "playwright screenshot of the shared props preview harness",
+      "fallbackCapture": "user-supplied-screenshot-path",
+      "minimumEvidence": "Each visual pass needs a reference image, a rendered screenshot framed to the reference bounding box, a side-by-side comparison sheet, an AI vision score, layer scores and a critique before choosing continue.",
+      "reviewPairRule": "The review render always uses the solved reference camera; orbit views are judged for self-consistency only, never against the reference angle.",
+      "acceptanceAuthority": "AI vision review of the comparison sheet. Code-generated pixel similarity is not sufficient evidence."
+    }
+  },
+  "featureReviewTargets": [
+    {
+      "id": "stadium-plan-and-proportion",
+      "name": "Stadium plan and dish proportions",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "form-refinement"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "dish-wall"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "plan reads as an ellipse with bowed sides",
+        "dish too deep or too shallow",
+        "opening inset by the wrong wall thickness"
+      ]
+    },
+    {
+      "id": "rim-roll-continuity",
+      "name": "Rolled rim with no crease",
+      "tier": "critical",
+      "passIds": [
+        "form-refinement",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "dish-wall"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "rim-zone"
+      ],
+      "failureModes": [
+        "rim reads as a chamfer or a hard edge",
+        "wall facets visibly",
+        "crown and outer wall shade as separate surfaces"
+      ]
+    },
+    {
+      "id": "bar-pillow-form",
+      "name": "Soap bar as a cast pillow",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "soap-bar"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "bar-zone"
+      ],
+      "failureModes": [
+        "bar reads as a rounded box",
+        "flat top",
+        "bar sits below the rim"
+      ]
+    },
+    {
+      "id": "two-tone-palette",
+      "name": "Blue dish against cream bar",
+      "tier": "critical",
+      "passIds": [
+        "material-pass",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.75,
+      "mustPass": true,
+      "componentRefs": [
+        "dish-wall",
+        "soap-bar"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "blue drifts toward the level's own blue rather than the reference's",
+        "bar reads white rather than warm cream",
+        "glossy highlights on matte plastic"
+      ]
+    },
+    {
+      "id": "interior-read",
+      "name": "Recessed interior with a visible floor",
+      "tier": "important",
+      "passIds": [
+        "structural-pass",
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.65,
+      "mustPass": false,
+      "componentRefs": [
+        "dish-floor",
+        "dish-wall"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "interior-zone"
+      ],
+      "failureModes": [
+        "dish reads solid with no recess",
+        "floor missing so the dish is see-through",
+        "no occlusion gradient down the inner wall"
+      ]
+    }
+  ],
+  "sculptPipeline": {
+    "passGateMode": "locked-sequential",
+    "passOrder": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "currentPass": "form-refinement",
+    "completedPasses": [
+      "blockout",
+      "structural-pass"
+    ],
+    "lastCompletedPass": "structural-pass",
+    "blockedReason": "",
+    "nextRequiredEvidence": [
+      "The rim crown and the base tuck read as continuous curves, with no chamfer facet anywhere.",
+      "The bar reads as a pillow with no flat top.",
+      "The opening's inner edge sits at the measured wall thickness on every side.",
+      "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold.",
+      "attachment contracts for child appendages/connectors",
+      "no floating child roots/joints in the browser screenshot",
+      "browser render screenshot from your agent's browser/screenshot tool",
+      "side-by-side reference/render comparison sheet for AI vision review",
+      "AI vision score at or above the visual acceptance threshold",
+      "all critical semantic feature scores from the shared image pair at or above their thresholds",
+      "self-correction review appended with action=continue before the next pass"
+    ]
+  },
+  "lookDevTargets": {
+    "qualityPriority": "reference-fidelity",
+    "materialPass": {
+      "albedoPaletteRequired": true,
+      "roughnessVariationRequired": true,
+      "normalOrBumpRequired": true,
+      "localOverridesRequired": true,
+      "minimumTextureResolution": 256,
+      "preferredTextureResolution": 1024,
+      "independentMapChannels": [
+        "albedo",
+        "roughness",
+        "height",
+        "normal",
+        "ambient-occlusion"
+      ],
+      "requiredSurfaceFrequencyBands": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "geometryReliefRequiredWhenSilhouetteAffected": true,
+      "referencePbrExtraction": {
+        "requiredWhenSourceImagePresent": false,
+        "ranAnyway": true,
+        "targetThreshold": 0.7,
+        "stopOnLowConfidence": true,
+        "script": "forge/stage1_intake/extract_pbr_evidence.py",
+        "acceptedLimitation": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars."
+      },
+      "mustAvoid": [
+        "single flat albedo per material",
+        "uniform roughness",
+        "albedo texture reused as roughness, height, normal or AO",
+        "single-frequency random noise",
+        "glossy toy-plastic highlights on a matte moulded surface",
+        "local colour described only in prose without material masks",
+        "claiming exact PBR recovery from one image"
+      ]
+    },
+    "lightingPass": {
+      "requiredTerms": [
+        "key light",
+        "fill light",
+        "rim or environment light",
+        "exposure",
+        "tone mapping",
+        "background",
+        "contact shadow"
+      ],
+      "mustAvoid": [
+        "ambient-only lighting",
+        "flat value range",
+        "missing contact shadow",
+        "reference lighting copied without separating material readability"
+      ]
+    },
+    "screenshotReview": [
+      "Compare the albedo palette and the local colour zones.",
+      "Compare roughness and normal response under the key light.",
+      "Compare contact darkening, seam occlusion and crown polish.",
+      "Compare key, fill and rim structure, exposure, tone mapping and background.",
+      "Capture a neutral-light render to verify material readability without reference lighting.",
+      "Capture a grazing-light close-up to expose flat normals and uniform roughness.",
+      "Capture a reference-matched render from the solved camera."
+    ]
+  },
+  "actionReadiness": {
+    "contract": "Every macro and meso component is a named Object3D pivot node with a mesh child, action metadata, sockets where relevant, a collider proxy and destruction metadata. The runtime reads root.userData.sculptRuntime.",
+    "defaultRigType": "action-ready-prop-rig",
+    "rootMotionNode": "dish-wall",
+    "requiredComponentFields": [
+      "id",
+      "parent",
+      "transform",
+      "seams for every contacting part",
+      "actionProfile.animationRole",
+      "actionProfile.pivot",
+      "actionProfile.collider",
+      "actionProfile.destruction"
+    ],
+    "transformChannels": [
+      "translate",
+      "rotate",
+      "scale",
+      "detach",
+      "visibility",
+      "material-state"
+    ],
+    "authoringRules": [
+      "Do not collapse independently movable parts into one mesh.",
+      "Put transforms on component pivot groups, not on raw meshes.",
+      "Animated parts keep their pivot node at the axis of motion so children ride along.",
+      "Represent hinge, socket, detachable and breakable intent even when no animation is implemented yet.",
+      "Use simplified collider proxies for runtime physics instead of visual mesh colliders."
+    ],
+    "runtimeContract": {
+      "rootMotion": "sculptRuntime.nodes['dish-wall'] carries translation, rotation and scale; the floor and the bar are its children so the dish moves as one.",
+      "barSeat": "sculptRuntime.sockets['dish-wall:bar-seat'] is the interior floor centre; sculptRuntime.sockets['soap-bar:bar-crown'] is where a lather effect anchors.",
+      "collider": "colliders['dish-wall'] is a box proxy over the dish. The soap-slick trap uses a distance trigger and adds no collider of its own, so this proxy is advisory."
+    },
+    "destructionPolicy": {
+      "defaultBreakable": false,
+      "fractureGroupNaming": "dish, bar",
+      "debrisStrategy": "Detach the bar as a whole; the dish is not fractured."
+    }
+  },
+  "assumptions": [
+    "Camera elevation is 58 degrees. Every derived width and height scales with that choice, which is why the sweep result is recorded rather than the seed being presented as measured.",
+    "The interior recess is 0.0709 units deep; the bar covers the floor in the reference so this is inferred.",
+    "The underside is flat with the same tuck as the outer wall.",
+    "One world unit is about 12 cm, making the modelled dish about 8 cm long.",
+    "The hand-authored dish this replaces carried a rubber duck. The reference has no duck, so it is not rebuilt."
+  ],
+  "coordinateFrame": {
+    "front": "+Z, the near long side in the reference",
+    "up": "+Y, with the underside of the dish at y = 0",
+    "right": "+X, along the dish's long axis",
+    "scaleReference": "dish length = 0.7 world units; 1331 reference pixels per world unit"
+  },
+  "silhouette": {
+    "boundingShape": "stadium tray 0.7 by 0.496 by 0.129, with a 0.5122 by 0.3075 by 0.1259 pillow standing proud of it",
+    "aspectRatios": [
+      {
+        "id": "length-to-width",
+        "value": 1.411,
+        "notes": "outer plan length over width at the solved elevation"
+      },
+      {
+        "id": "length-to-height",
+        "value": 5.426,
+        "notes": "outer plan length over dish height"
+      },
+      {
+        "id": "bar-to-interior-length",
+        "value": 0.85,
+        "notes": "how much of the opening the bar fills"
+      }
+    ],
+    "symmetry": "mirror symmetric on both plan axes",
+    "dominantCurves": [
+      "the rim's rolled section",
+      "the bar's double dome",
+      "the stadium plan's semicircular end caps"
+    ],
+    "negativeSpaces": [
+      "the recessed interior between the bar and the inner wall",
+      "the undercut where the outer wall tucks back at the base"
+    ],
+    "landmarks": [
+      "rim crown at y = 0.129",
+      "interior floor at y = 0.0581",
+      "bar crown at y = 0.178"
+    ]
+  },
+  "viewEvidence": [
+    {
+      "id": "full-object",
+      "view": "primary elevated view down the short axis (elevation about 58 deg)",
+      "imageRegion": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1.0,
+        "height": 1.0,
+        "units": "normalized"
+      },
+      "observations": [
+        "Silhouette box spans x 80-1011 and y 378-1035 of a 1086x1448 image: 932 by 658 pixels.",
+        "The long axis is 4 degrees off screen horizontal, so the plan rotation is effectively zero and the view is down the short axis.",
+        "Exactly two albedos: one blue for the whole dish and one cream for the bar.",
+        "The underside and the far end of the interior floor are not visible."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "rim-zone",
+      "view": "rim section at the near and far edges",
+      "imageRegion": {
+        "x": 0.06,
+        "y": 0.24,
+        "width": 0.88,
+        "height": 0.48,
+        "units": "normalized"
+      },
+      "observations": [
+        "Column 545 gives a 47 pixel far rim band and a 146 pixel near rim band, which separate the wall's top face from its outer wall.",
+        "No crease appears anywhere on the wall: the crown rolls continuously into the outer face.",
+        "The crown reads (64,148,229) against (26,101,174) on the shaded inner wall."
+      ],
+      "confidence": 0.8
+    },
+    {
+      "id": "interior-zone",
+      "view": "opening and inner wall",
+      "imageRegion": {
+        "x": 0.14,
+        "y": 0.28,
+        "width": 0.72,
+        "height": 0.36,
+        "units": "normalized"
+      },
+      "observations": [
+        "The opening between the inner rim edges is 441 pixels at column 545.",
+        "The inner wall darkens toward the floor; the floor itself is almost entirely covered.",
+        "A contact shadow runs where the bar meets the floor."
+      ],
+      "confidence": 0.7
+    },
+    {
+      "id": "bar-zone",
+      "view": "soap bar",
+      "imageRegion": {
+        "x": 0.18,
+        "y": 0.28,
+        "width": 0.62,
+        "height": 0.34,
+        "units": "normalized"
+      },
+      "observations": [
+        "Row 660 puts the bar's projected length at 682 pixels; column 545 puts its projected height at 436 pixels.",
+        "The bar has no flat face and no edge: it is domed at both ends.",
+        "Its crown reads (255,251,242), the brightest value in the frame."
+      ],
+      "confidence": 0.8
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "dish-wall",
+      "name": "Dish rim wall",
+      "level": "macro",
+      "role": "shell",
+      "importance": 1.0,
+      "confidence": 0.85,
+      "primitive": "extrude",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "One smoothly varying moulded wall with no flat face and no crease: the reference shows the outer surface rolling continuously from the rim crown down and under, so it is a continuous form rather than an assembly of panels.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(60, 138, 214, 1.0)",
+        "secondaryAlbedo": "rgba(54, 124, 192, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "stadium ring swept vertically, rolled inward at both the crown and the base so the section is a rounded moulded rim",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "crown roll inward 0.0268",
+          "base tuck inward 0.0268"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs; one tile per part",
+        "normalStrategy": "welded vertices then smooth vertex normals; the reference has no crease",
+        "profile2D": {
+          "points": [
+            [
+              0.102,
+              -0.248
+            ],
+            [
+              0.15719,
+              -0.24178
+            ],
+            [
+              0.2096,
+              -0.22344
+            ],
+            [
+              0.25663,
+              -0.19389
+            ],
+            [
+              0.29589,
+              -0.15463
+            ],
+            [
+              0.32544,
+              -0.1076
+            ],
+            [
+              0.34378,
+              -0.05519
+            ],
+            [
+              0.35,
+              0.0
+            ],
+            [
+              0.34378,
+              0.05519
+            ],
+            [
+              0.32544,
+              0.1076
+            ],
+            [
+              0.29589,
+              0.15463
+            ],
+            [
+              0.25663,
+              0.19389
+            ],
+            [
+              0.2096,
+              0.22344
+            ],
+            [
+              0.15719,
+              0.24178
+            ],
+            [
+              0.102,
+              0.248
+            ],
+            [
+              -0.102,
+              0.248
+            ],
+            [
+              -0.15719,
+              0.24178
+            ],
+            [
+              -0.2096,
+              0.22344
+            ],
+            [
+              -0.25663,
+              0.19389
+            ],
+            [
+              -0.29589,
+              0.15463
+            ],
+            [
+              -0.32544,
+              0.1076
+            ],
+            [
+              -0.34378,
+              0.05519
+            ],
+            [
+              -0.35,
+              0.0
+            ],
+            [
+              -0.34378,
+              -0.05519
+            ],
+            [
+              -0.32544,
+              -0.1076
+            ],
+            [
+              -0.29589,
+              -0.15463
+            ],
+            [
+              -0.25663,
+              -0.19389
+            ],
+            [
+              -0.2096,
+              -0.22344
+            ],
+            [
+              -0.15719,
+              -0.24178
+            ],
+            [
+              -0.102,
+              -0.248
+            ]
+          ],
+          "depth": 0.129,
+          "axis": "y",
+          "axisOffset": 0.0,
+          "steps": 12,
+          "profileStops": [
+            [
+              0.0,
+              0.9234,
+              0.8919
+            ],
+            [
+              0.0533,
+              0.9617,
+              0.946
+            ],
+            [
+              0.1067,
+              0.9897,
+              0.9855
+            ],
+            [
+              0.16,
+              1.0,
+              1.0
+            ],
+            [
+              0.84,
+              1.0,
+              1.0
+            ],
+            [
+              0.8933,
+              0.9897,
+              0.9855
+            ],
+            [
+              0.9467,
+              0.9617,
+              0.946
+            ],
+            [
+              1.0,
+              0.9234,
+              0.8919
+            ]
+          ],
+          "holes": [
+            [
+              [
+                0.102,
+                -0.1993
+              ],
+              [
+                0.14635,
+                -0.1943
+              ],
+              [
+                0.18847,
+                -0.17956
+              ],
+              [
+                0.22626,
+                -0.15582
+              ],
+              [
+                0.25782,
+                -0.12426
+              ],
+              [
+                0.28156,
+                -0.08647
+              ],
+              [
+                0.2963,
+                -0.04435
+              ],
+              [
+                0.3013,
+                0.0
+              ],
+              [
+                0.2963,
+                0.04435
+              ],
+              [
+                0.28156,
+                0.08647
+              ],
+              [
+                0.25782,
+                0.12426
+              ],
+              [
+                0.22626,
+                0.15582
+              ],
+              [
+                0.18847,
+                0.17956
+              ],
+              [
+                0.14635,
+                0.1943
+              ],
+              [
+                0.102,
+                0.1993
+              ],
+              [
+                -0.102,
+                0.1993
+              ],
+              [
+                -0.14635,
+                0.1943
+              ],
+              [
+                -0.18847,
+                0.17956
+              ],
+              [
+                -0.22626,
+                0.15582
+              ],
+              [
+                -0.25782,
+                0.12426
+              ],
+              [
+                -0.28156,
+                0.08647
+              ],
+              [
+                -0.2963,
+                0.04435
+              ],
+              [
+                -0.3013,
+                0.0
+              ],
+              [
+                -0.2963,
+                -0.04435
+              ],
+              [
+                -0.28156,
+                -0.08647
+              ],
+              [
+                -0.25782,
+                -0.12426
+              ],
+              [
+                -0.22626,
+                -0.15582
+              ],
+              [
+                -0.18847,
+                -0.17956
+              ],
+              [
+                -0.14635,
+                -0.1943
+              ],
+              [
+                -0.102,
+                -0.1993
+              ]
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": null,
+      "attachment": null,
+      "dimensions": {
+        "width": 0.7,
+        "height": 0.129,
+        "depth": 0.496,
+        "units": "world",
+        "confidence": 0.75
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "root",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0645,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.9
+        },
+        "transformChannels": {
+          "translate": true,
+          "rotate": true,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "dish-base",
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Underside of the dish; sits on the floor plane."
+          },
+          {
+            "id": "bar-seat",
+            "localPosition": [
+              0.0,
+              0.0581,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Centre of the interior floor, where the bar rests."
+          }
+        ],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0645,
+            0.0
+          ],
+          "scale": [
+            0.7,
+            0.129,
+            0.496
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy over the dish. The soap-slick trap is a distance trigger and adds no collider of its own."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "dish",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "dish-blue",
+      "materialLayers": [
+        "dish-blue"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        {
+          "id": "rim-roll-over",
+          "description": "The wall's plan rolls inward by 0.0268 units over the top of the extrusion, so the crown is a continuous curve rather than a chamfer.",
+          "geometry": "profileStops easing on a quarter cosine over the last sixth of the sweep",
+          "evidenceRefs": [
+            "full-object",
+            "rim-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "outer-tuck",
+          "description": "The wall tucks inward by the same 0.0268 at the base, which is why the bottom silhouette curves in rather than meeting the ground square.",
+          "geometry": "mirrored profileStops at the start of the sweep",
+          "evidenceRefs": [
+            "full-object",
+            "rim-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "inner-wall",
+          "description": "The opening is a stadium 0.6026 by 0.3986, which is the outer plan inset by the measured wall thickness of 0.0487 on every side.",
+          "geometry": "profile2D hole sharing the outer plan's stadium construction",
+          "evidenceRefs": [
+            "full-object",
+            "interior-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "stadium-plan",
+          "description": "The plan is a stadium, not an ellipse: the reference's long sides run straight for about 30 percent of the length before the end caps begin.",
+          "geometry": "stadium outline of a rectangle capped by two semicircles",
+          "evidenceRefs": [
+            "full-object"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.58,
+        "microRoughness": 0.09,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded polypropylene with slight tone drift",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion down the inner wall and under the outer tuck",
+        "edgeWearPattern": "none - the reference dish shows no wear",
+        "notes": "Matte plastic. No specular coat anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "rim-zone",
+        "interior-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "dish-floor",
+      "name": "Dish floor",
+      "level": "meso",
+      "role": "floor",
+      "importance": 0.4,
+      "confidence": 0.5,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat rigid plate closing the bottom of the dish; it has one visible planar face, which is why it is a plate rather than part of the sculpted wall.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(60, 138, 214, 1.0)",
+        "secondaryAlbedo": "rgba(55, 126, 196, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "flat stadium plate closing the dish, overlapping the wall so no gap opens at the join",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "ExtrudeGeometry cap UVs",
+        "normalStrategy": "flat facet normals",
+        "profile2D": {
+          "points": [
+            [
+              0.102,
+              -0.23826
+            ],
+            [
+              0.15502,
+              -0.23229
+            ],
+            [
+              0.20538,
+              -0.21466
+            ],
+            [
+              0.25055,
+              -0.18628
+            ],
+            [
+              0.28828,
+              -0.14855
+            ],
+            [
+              0.31666,
+              -0.10338
+            ],
+            [
+              0.33429,
+              -0.05302
+            ],
+            [
+              0.34026,
+              0.0
+            ],
+            [
+              0.33429,
+              0.05302
+            ],
+            [
+              0.31666,
+              0.10338
+            ],
+            [
+              0.28828,
+              0.14855
+            ],
+            [
+              0.25055,
+              0.18628
+            ],
+            [
+              0.20538,
+              0.21466
+            ],
+            [
+              0.15502,
+              0.23229
+            ],
+            [
+              0.102,
+              0.23826
+            ],
+            [
+              -0.102,
+              0.23826
+            ],
+            [
+              -0.15502,
+              0.23229
+            ],
+            [
+              -0.20538,
+              0.21466
+            ],
+            [
+              -0.25055,
+              0.18628
+            ],
+            [
+              -0.28828,
+              0.14855
+            ],
+            [
+              -0.31666,
+              0.10338
+            ],
+            [
+              -0.33429,
+              0.05302
+            ],
+            [
+              -0.34026,
+              0.0
+            ],
+            [
+              -0.33429,
+              -0.05302
+            ],
+            [
+              -0.31666,
+              -0.10338
+            ],
+            [
+              -0.28828,
+              -0.14855
+            ],
+            [
+              -0.25055,
+              -0.18628
+            ],
+            [
+              -0.20538,
+              -0.21466
+            ],
+            [
+              -0.15502,
+              -0.23229
+            ],
+            [
+              -0.102,
+              -0.23826
+            ]
+          ],
+          "depth": 0.0581,
+          "axis": "y",
+          "axisOffset": 0.0
+        }
+      },
+      "parent": "dish-wall",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.6026,
+        "height": 0.0581,
+        "depth": 0.3986,
+        "units": "world",
+        "confidence": 0.5
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.02905,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.6
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "dish",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "dish-blue",
+      "materialLayers": [
+        "dish-blue"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "floor-wall-seam",
+          "with": "dish-wall",
+          "overlap": 0.039,
+          "notes": "Plate contour is buried inside the wall."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "floor-plate",
+          "description": "Closes the dish 0.0709 units below the rim, which is the recess depth the reference's shadow line implies.",
+          "geometry": "plate wider than the opening so it is buried in the wall",
+          "evidenceRefs": [
+            "full-object",
+            "interior-zone"
+          ],
+          "confidence": 0.5
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.6,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded plastic",
+        "displacementPattern": "none",
+        "occlusionPattern": "deep occlusion where it meets the wall",
+        "edgeWearPattern": "none",
+        "notes": "Not directly observed: the bar covers most of it in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "interior-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "soap-bar",
+      "name": "Soap bar",
+      "level": "meso",
+      "role": "contents",
+      "importance": 0.9,
+      "confidence": 0.8,
+      "primitive": "extrude",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "One smoothly varying rounded mass with no flat face and no crease anywhere: a cast pillow, not a box with bevels.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(251, 243, 228, 1.0)",
+        "secondaryAlbedo": "rgba(225, 218, 205, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "stadium plan swept vertically and rolled inward at both ends over most of the sweep, giving a pillow whose top and bottom are domed",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "crown dome",
+          "base dome"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs",
+        "normalStrategy": "welded vertices then smooth vertex normals",
+        "profile2D": {
+          "points": [
+            [
+              0.10235,
+              -0.15375
+            ],
+            [
+              0.13656,
+              -0.1499
+            ],
+            [
+              0.16906,
+              -0.13852
+            ],
+            [
+              0.19821,
+              -0.12021
+            ],
+            [
+              0.22256,
+              -0.09586
+            ],
+            [
+              0.24087,
+              -0.06671
+            ],
+            [
+              0.25225,
+              -0.03421
+            ],
+            [
+              0.2561,
+              0.0
+            ],
+            [
+              0.25225,
+              0.03421
+            ],
+            [
+              0.24087,
+              0.06671
+            ],
+            [
+              0.22256,
+              0.09586
+            ],
+            [
+              0.19821,
+              0.12021
+            ],
+            [
+              0.16906,
+              0.13852
+            ],
+            [
+              0.13656,
+              0.1499
+            ],
+            [
+              0.10235,
+              0.15375
+            ],
+            [
+              -0.10235,
+              0.15375
+            ],
+            [
+              -0.13656,
+              0.1499
+            ],
+            [
+              -0.16906,
+              0.13852
+            ],
+            [
+              -0.19821,
+              0.12021
+            ],
+            [
+              -0.22256,
+              0.09586
+            ],
+            [
+              -0.24087,
+              0.06671
+            ],
+            [
+              -0.25225,
+              0.03421
+            ],
+            [
+              -0.2561,
+              0.0
+            ],
+            [
+              -0.25225,
+              -0.03421
+            ],
+            [
+              -0.24087,
+              -0.06671
+            ],
+            [
+              -0.22256,
+              -0.09586
+            ],
+            [
+              -0.19821,
+              -0.12021
+            ],
+            [
+              -0.16906,
+              -0.13852
+            ],
+            [
+              -0.13656,
+              -0.1499
+            ],
+            [
+              -0.10235,
+              -0.15375
+            ]
+          ],
+          "depth": 0.1259,
+          "axis": "y",
+          "axisOffset": 0.0521,
+          "steps": 14,
+          "profileStops": [
+            [
+              0.0,
+              0.6398,
+              0.4
+            ],
+            [
+              0.07,
+              0.733,
+              0.5553
+            ],
+            [
+              0.14,
+              0.8199,
+              0.7
+            ],
+            [
+              0.21,
+              0.8945,
+              0.8243
+            ],
+            [
+              0.28,
+              0.9517,
+              0.9196
+            ],
+            [
+              0.35,
+              0.9877,
+              0.9796
+            ],
+            [
+              0.42,
+              1.0,
+              1.0
+            ],
+            [
+              0.58,
+              1.0,
+              1.0
+            ],
+            [
+              0.65,
+              0.9877,
+              0.9796
+            ],
+            [
+              0.72,
+              0.9517,
+              0.9196
+            ],
+            [
+              0.79,
+              0.8945,
+              0.8243
+            ],
+            [
+              0.86,
+              0.8199,
+              0.7
+            ],
+            [
+              0.93,
+              0.733,
+              0.5553
+            ],
+            [
+              1.0,
+              0.6398,
+              0.4
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": "dish-wall",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.5122,
+        "height": 0.1259,
+        "depth": 0.3075,
+        "units": "world",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "socket",
+          "localPosition": [
+            0.0,
+            0.1151,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "bar-crown",
+            "localPosition": [
+              0.0,
+              0.178,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Top of the bar; a lather or bubble effect anchors here."
+          }
+        ],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.1151,
+            0.0
+          ],
+          "scale": [
+            0.5122,
+            0.1259,
+            0.3075
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy over the bar."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "bar",
+          "seamRefs": [],
+          "detachableFragments": [
+            "soap-bar"
+          ],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "bar-cream",
+      "materialLayers": [
+        "bar-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "bar-floor-seam",
+          "with": "dish-floor",
+          "overlap": 0.006,
+          "notes": "Bar base is buried in the floor plate."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "pillow-crown",
+          "description": "The bar's plan rolls inward over the top 6 sweep samples so the crown is domed; the reference shows no flat top and no edge anywhere on it.",
+          "geometry": "profileStops easing on a quarter cosine at both ends of the extrusion",
+          "evidenceRefs": [
+            "full-object",
+            "bar-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "dish-contact",
+          "description": "The bar is buried 0.006 units into the dish floor so no gap can open under it, and it stands 0.049 units above the rim, which is what the reference shows.",
+          "geometry": "component position, not geometry",
+          "evidenceRefs": [
+            "full-object",
+            "interior-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "bar-proportion",
+          "description": "The bar is 0.5122 by 0.3075 by 0.1259, which is 85 percent of the interior length: the reference bar nearly fills the dish.",
+          "geometry": "stadium plan scaled from the measured projected extents",
+          "evidenceRefs": [
+            "full-object",
+            "bar-zone"
+          ],
+          "confidence": 0.75
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.48,
+        "microRoughness": 0.1,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth cast soap",
+        "displacementPattern": "none",
+        "occlusionPattern": "contact shadow at the dish floor",
+        "edgeWearPattern": "none",
+        "notes": "The brightest and smoothest surface in the frame."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "bar-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    }
+  ],
+  "materials": [
+    {
+      "id": "dish-blue",
+      "name": "Dish plastic",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded polypropylene)",
+      "baseColor": "#3C8AD6",
+      "color": "#3C8AD6",
+      "albedo": {
+        "dominant": "#3C8AD6",
+        "secondary": [
+          "#2A72BA",
+          "#4E9CE6"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#3C8AD6",
+          "#2A72BA",
+          "#4E9CE6"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.58,
+        "variation": 0.09,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.3,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "rim-crown-sheen",
+          "target": "dish-wall/rim-roll-over",
+          "notes": "The rolled rim crown is the brightest blue in the frame, measured at (64,148,229) against (26,101,174) on the shaded inner wall.",
+          "evidenceRefs": [
+            "full-object",
+            "rim-zone"
+          ],
+          "roughness": 0.5,
+          "mask": "rim crown band, the top 25 percent of the wall"
+        },
+        {
+          "id": "inner-wall-occlusion",
+          "target": "dish-wall/inner-wall",
+          "notes": "The inner wall darkens sharply toward the floor; it is the darkest blue in the frame.",
+          "evidenceRefs": [
+            "full-object",
+            "interior-zone"
+          ],
+          "roughness": 0.66,
+          "aoBoost": 0.6,
+          "mask": "inner wall below the rim crown"
+        },
+        {
+          "id": "underside-shade",
+          "target": "dish-wall/outer-tuck",
+          "notes": "The outer wall tucks under and loses the key entirely along the bottom silhouette.",
+          "evidenceRefs": [
+            "full-object",
+            "rim-zone"
+          ],
+          "roughness": 0.64,
+          "aoBoost": 0.35,
+          "mask": "lower third of the outer wall"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\crops\\dish-blue-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.847,
+        "estimatedFidelity": 0.847,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\dish-blue_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\dish-blue_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\dish-blue_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\dish-blue_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\dish-blue_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Single moulded dish: wall and floor share one pigment and one finish."
+    },
+    {
+      "id": "bar-cream",
+      "name": "Soap bar",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#FBF3E4",
+      "color": "#FBF3E4",
+      "albedo": {
+        "dominant": "#FBF3E4",
+        "secondary": [
+          "#EFE0CB",
+          "#FFFCF4"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#FBF3E4",
+          "#EFE0CB",
+          "#FFFCF4"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.48,
+        "variation": 0.1,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.22,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "bar-crown-sheen",
+          "target": "soap-bar/pillow-crown",
+          "notes": "The bar's crown reads (255,251,242), the brightest value in the frame, and slightly smoother than its flanks: cast soap is polished by the mould.",
+          "evidenceRefs": [
+            "full-object",
+            "bar-zone"
+          ],
+          "roughness": 0.4,
+          "mask": "upper 35 percent of the pillow"
+        },
+        {
+          "id": "bar-contact-shadow",
+          "target": "soap-bar/dish-contact",
+          "notes": "A contact shadow runs where the bar meets the dish floor and darkens the bar's lowest band.",
+          "evidenceRefs": [
+            "full-object",
+            "interior-zone"
+          ],
+          "roughness": 0.55,
+          "aoBoost": 0.55,
+          "mask": "lowest 12 percent of the bar"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\crops\\bar-cream-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.803,
+        "estimatedFidelity": 0.803,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\bar-cream_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\bar-cream_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\bar-cream_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\bar-cream_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\soap\\pbr\\bar-cream_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Cast soap. Slightly smoother than the dish and with no colour variation of its own."
+    }
+  ],
+  "repetitionSystems": [],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Match the macro silhouette: a stadium dish of the measured plan with the bar standing proud of its rim.",
+      "componentRefs": [
+        "dish-wall",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "Silhouette reads correctly without materials.",
+        "Quality contract has named all required macro feature groups before code generation.",
+        "Macro proportions match the measured reference bounding box.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Build the wall, the floor plate and the bar as separate named parts with recorded seams.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "Macro, meso and repeated structures meet qualityContract.minimumSpecDepth.",
+        "Parent-child relations, seams and contact points are explicit.",
+        "Every part that touches another overlaps it by at least 0.02 world units.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "form-refinement",
+      "goal": "Deliver the rim roll, the base tuck and the bar's double dome as real profile deformations.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "The rim crown and the base tuck read as continuous curves, with no chamfer facet anywhere.",
+        "The bar reads as a pillow with no flat top.",
+        "The opening's inner edge sits at the measured wall thickness on every side.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Match the two-layer palette and the matte moulded-plastic response.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "Reference-derived albedo palette records dominant, secondary and accent colours per material.",
+        "Each material defines roughness variation and an independent normal response.",
+        "Local material overrides are tied to evidenceRefs.",
+        "Albedo, roughness, height, normal and AO are generated independently.",
+        "Macro, meso and micro surface frequency bands are present without visible tiling.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "surface-pass",
+      "goal": "Add seam occlusion, contact darkening and crown polish.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "Every material feature group has local overrides or surfaceDetail tied to evidenceRefs.",
+        "A grazing-angle render shows form breaks without plastic-looking uniform highlights.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "lighting-pass",
+      "goal": "Reproduce the reference key/fill/rim structure and prove the form survives relighting.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "lightingFromPhoto names key direction, fill, rim or environment, exposure, tone mapping and contact shadow behaviour.",
+        "Neutral, grazing and reference-matched renders distinguish material errors from lighting errors.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Expose the runtime rig: named pivots, sockets and collider proxies.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "root.userData.sculptRuntime exposes nodes, meshes, sockets, colliders and destruction groups.",
+        "Every moving node carries its children instead of detaching them.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "optimization-pass",
+      "goal": "Protect real-time budget after fidelity is accepted.",
+      "componentRefs": [
+        "dish-wall",
+        "dish-floor",
+        "soap-bar"
+      ],
+      "acceptance": [
+        "Triangle count, draw calls and instancing are measured against performanceBudget.",
+        "Segment counts are reduced wherever the silhouette does not change."
+      ]
+    }
+  ],
+  "visualEvidence": [
+    {
+      "timestamp": "2026-07-29T07:24:45.062047+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.8,
+      "aiVisionScore": 0.8,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.86,
+        "componentStructure": 0.55,
+        "formDetail": 0.6,
+        "materialSurface": 0.82,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "stadium-plan-and-proportion",
+          "score": 0.84,
+          "tier": "critical",
+          "notes": "Stadium plan and dish proportion read correctly; scale delta 0.0008 and max deltaE 8.55, the closest colour match of any prop in this set. Silhouette IoU 0.818 misses because the dish has no floor at this pass, so the opening reads through to the background and the mask loses the interior."
+        },
+        {
+          "id": "rim-roll-continuity",
+          "score": 0.8,
+          "tier": "critical",
+          "notes": "The rim crown and base tuck are continuous with no chamfer facet, which is what the rolled profileStops and the welded smooth normals are for."
+        },
+        {
+          "id": "bar-pillow-form",
+          "score": 0.82,
+          "tier": "critical",
+          "notes": "The bar reads as a cast pillow standing proud of the rim, domed at both ends with no flat top."
+        }
+      ],
+      "referenceScreenshot": "../soap-reference.png",
+      "renderScreenshot": "renders/soap/blockout-reference.png",
+      "comparisonImage": "renders/soap/blockout-cmp.png",
+      "cameraView": "solved reference elevation 58, azimuth 4, 12 degree lens",
+      "notes": "",
+      "aiVisionNotes": ""
+    },
+    {
+      "timestamp": "2026-07-29T07:26:45.750682+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.83,
+      "aiVisionScore": 0.83,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.87,
+        "componentStructure": 0.85,
+        "formDetail": 0.78,
+        "materialSurface": 0.84,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "stadium-plan-and-proportion",
+          "score": 0.85,
+          "tier": "critical",
+          "notes": "Scale delta 0.0008, max deltaE 8.44, silhouette IoU up from 0.818 to 0.840 now the interior no longer reads through to the background. The residual miss is the reference's softer end caps against this build's 28-sided stadium."
+        },
+        {
+          "id": "rim-roll-continuity",
+          "score": 0.8,
+          "tier": "critical",
+          "notes": "Rolled crown and base tuck, no chamfer facet under the review light."
+        },
+        {
+          "id": "bar-pillow-form",
+          "score": 0.82,
+          "tier": "critical",
+          "notes": "Cast pillow proud of the rim, domed both ends."
+        },
+        {
+          "id": "interior-read",
+          "score": 0.8,
+          "tier": "important",
+          "notes": "THE FIX. dish-floor is built, so the top-down render shows a closed dish instead of a hole. This is the angle that matters: the chase camera looks down at the deck, so the see-through was visible at all five call sites in TrapsWaveA and TrapRenderer at every scale from 0.5 to 1.0."
+        }
+      ],
+      "referenceScreenshot": "../soap-reference.png",
+      "renderScreenshot": "renders/soap/structural-reference.png",
+      "comparisonImage": "renders/soap/structural-cmp.png",
+      "cameraView": "solved reference elevation 58, azimuth 4, 12 degree lens; a top-down orbit was also captured because that is the angle the game camera has",
+      "notes": "",
+      "aiVisionNotes": ""
+    }
+  ],
+  "reviewHistory": [
+    {
+      "timestamp": "2026-07-29T07:24:45.062047+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.8,
+      "aiVisionScore": 0.8,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.86,
+        "componentStructure": 0.55,
+        "formDetail": 0.6,
+        "materialSurface": 0.82,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "stadium-plan-and-proportion",
+          "score": 0.84,
+          "tier": "critical",
+          "notes": "Stadium plan and dish proportion read correctly; scale delta 0.0008 and max deltaE 8.55, the closest colour match of any prop in this set. Silhouette IoU 0.818 misses because the dish has no floor at this pass, so the opening reads through to the background and the mask loses the interior."
+        },
+        {
+          "id": "rim-roll-continuity",
+          "score": 0.8,
+          "tier": "critical",
+          "notes": "The rim crown and base tuck are continuous with no chamfer facet, which is what the rolled profileStops and the welded smooth normals are for."
+        },
+        {
+          "id": "bar-pillow-form",
+          "score": 0.82,
+          "tier": "critical",
+          "notes": "The bar reads as a cast pillow standing proud of the rim, domed at both ends with no flat top."
+        }
+      ],
+      "action": "continue",
+      "summary": "Stadium dish and pillow bar match the reference; the one Tier-1 miss is silhouette IoU 0.818, caused by the missing floor plate letting the opening read through to the background.",
+      "matched": [
+        "stadium plan with straight long sides",
+        "rolled rim crown and base tuck",
+        "pillow bar proud of the rim",
+        "two-albedo palette"
+      ],
+      "mismatches": [
+        "silhouette IoU 0.818: dish-floor is meso and gated out of this pass, so the dish is see-through from above - which is exactly the defect this spec's own risks predicted and the reason structural-pass has to be reached"
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [],
+      "mapStrippedRender": "renders/soap/blockout-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "../soap-reference.png",
+        "renderScreenshot": "renders/soap/blockout-reference.png",
+        "comparisonImage": "renders/soap/blockout-cmp.png",
+        "cameraView": "solved reference elevation 58, azimuth 4, 12 degree lens",
+        "notes": "",
+        "aiVisionNotes": ""
+      }
+    },
+    {
+      "timestamp": "2026-07-29T07:26:45.750682+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.83,
+      "aiVisionScore": 0.83,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.87,
+        "componentStructure": 0.85,
+        "formDetail": 0.78,
+        "materialSurface": 0.84,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "stadium-plan-and-proportion",
+          "score": 0.85,
+          "tier": "critical",
+          "notes": "Scale delta 0.0008, max deltaE 8.44, silhouette IoU up from 0.818 to 0.840 now the interior no longer reads through to the background. The residual miss is the reference's softer end caps against this build's 28-sided stadium."
+        },
+        {
+          "id": "rim-roll-continuity",
+          "score": 0.8,
+          "tier": "critical",
+          "notes": "Rolled crown and base tuck, no chamfer facet under the review light."
+        },
+        {
+          "id": "bar-pillow-form",
+          "score": 0.82,
+          "tier": "critical",
+          "notes": "Cast pillow proud of the rim, domed both ends."
+        },
+        {
+          "id": "interior-read",
+          "score": 0.8,
+          "tier": "important",
+          "notes": "THE FIX. dish-floor is built, so the top-down render shows a closed dish instead of a hole. This is the angle that matters: the chase camera looks down at the deck, so the see-through was visible at all five call sites in TrapsWaveA and TrapRenderer at every scale from 0.5 to 1.0."
+        }
+      ],
+      "action": "continue",
+      "summary": "dish-floor is built, so the dish is no longer see-through from above. Three named parts; silhouette IoU 0.818 to 0.840, scale delta 0.0008, max deltaE 8.44.",
+      "matched": [
+        "closed interior floor",
+        "stadium plan",
+        "rolled rim and base tuck",
+        "pillow bar proud of the rim"
+      ],
+      "mismatches": [
+        "silhouette IoU 0.840 still 0.010 under the gate: the reference's end caps are softer than a 28-sided stadium resolves. Bounds unchanged at 0.700 x 0.178 x 0.496."
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [],
+      "mapStrippedRender": "renders/soap/structural-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "../soap-reference.png",
+        "renderScreenshot": "renders/soap/structural-reference.png",
+        "comparisonImage": "renders/soap/structural-cmp.png",
+        "cameraView": "solved reference elevation 58, azimuth 4, 12 degree lens; a top-down orbit was also captured because that is the angle the game camera has",
+        "notes": "",
+        "aiVisionNotes": ""
+      }
+    }
+  ],
+  "lodPlan": [
+    {
+      "tier": "near",
+      "distance": 0,
+      "strategy": "wall, floor and bar with full profile stops; 256px procedural maps"
+    },
+    {
+      "tier": "mid",
+      "distance": 12,
+      "strategy": "drop the floor plate; the bar hides it"
+    },
+    {
+      "tier": "far",
+      "distance": 30,
+      "strategy": "wall and bar only, halved stadium sampling"
+    }
+  ],
+  "performanceBudget": {
+    "qualityPriority": "balanced",
+    "targetTriangles": 3500,
+    "maxDrawCalls": 8,
+    "textureSize": 256,
+    "fpsTarget": 60,
+    "optimizationPolicy": "Reach accepted visual fidelity first, then cut the stadium sampling from 28 sides. The rolled rim sets the floor on the extrusion step count: below about 10 steps the roll stairsteps visibly."
+  },
+  "lightingFromPhoto": [
+    "Ambient dominance: the reference is a soft studio render. The dish's lit crown reads (64,148,229) and its shaded inner wall (26,101,174), a range a bright neutral hemisphere plus a gentle key reproduces without a hard terminator anywhere.",
+    "Key light: a warm-neutral directional source at about 1.15 from high and camera left. It only has to lift the bar's crown to (255,251,242), about 8 percent above its flanks.",
+    "Rim and environment light: weak neutral back light at about 0.3, enough to keep the far rim from crushing. No environment map: the reference shows no reflected detail.",
+    "Exposure and tone mapping: ACES filmic tone mapping with sRGB output at exposure 1.0.",
+    "Contact shadow: interior ambient occlusion plus the bar's contact ring. The reference dish floats with no ground contact, so the review render has no ground plane and the silhouette mask stays clean."
+  ],
+  "proceduralStrategy": [
+    "Block out the stadium wall and the pillow bar first, and confirm the silhouette matches the measured bounding box.",
+    "Add the floor plate, buried in the wall, so the dish is not see-through.",
+    "Create pivot nodes, the base and bar-seat sockets and the collider proxy before polish.",
+    "Roll the rim crown and the base tuck with profile stops, then weld the extrusion's vertices so the wall shades as one surface instead of 28 facets.",
+    "Run reference PBR extraction on both material crops, record its confidence, and decide explicitly whether to bind or only cite the maps.",
+    "Add the interior occlusion gradient and the crown sheen last."
+  ],
+  "animationAnchors": [
+    "sculptRuntime.nodes['dish-wall'] carries whole-object translation, rotation and scale",
+    "sculptRuntime.nodes['soap-bar'] can be lifted or detached without rebuilding geometry",
+    "sculptRuntime.sockets['soap-bar:bar-crown'] anchors a lather or bubble effect"
+  ],
+  "destructionAnchors": [
+    "the bar detaches as a whole",
+    "the dish is not fractured"
+  ],
+  "risks": [
+    "Elevation and plan aspect are not separable from one view. Width, height and wall thickness all move with the 58 degree seed; a 10 degree error moves the height by about 20 percent.",
+    "The interior floor depth is inferred, not measured: the bar covers it.",
+    "The reference shows no crease anywhere, so the whole read depends on welded vertices and smooth normals. If the refine-code merge step is dropped, ExtrudeGeometry's non-indexed output makes the wall read as 28 flat facets.",
+    "One refine-code edit to the generated factory is required and is not expressible through the generator as shipped: buildExtrudeGeometry must honour profile2D axis, axisOffset, steps, profileStops and smoothShading, all of which the spec already carries.",
+    "Reference PBR maps were extracted and passed their confidence gate but are deliberately not bound to the runtime material; the runtime uses independent procedural canvas maps."
+  ],
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Soap Dish",
+    "index": {
+      "status": "reused",
+      "reason": "present"
+    },
+    "matches": []
+  },
+  "tier1Results": [
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.4588,
+        "aspectRatioDelta": 0.0412,
+        "scaleDelta": 0.0008,
+        "bilateralSymmetryError": 0.0446,
+        "colorDelta": {
+          "checked": 3,
+          "maxDeltaE": 8.53,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 8.53
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.53
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.0
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.459 is below threshold 0.85"
+      ],
+      "renderHash": "6dcb45516897119c",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\soap\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.8183,
+        "aspectRatioDelta": 0.0412,
+        "scaleDelta": 0.0008,
+        "bilateralSymmetryError": 0.0296,
+        "colorDelta": {
+          "checked": 3,
+          "maxDeltaE": 8.55,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 8.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 7.62
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.818 is below threshold 0.85"
+      ],
+      "renderHash": "1c358576b5ff2d22",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\soap\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.8183,
+        "aspectRatioDelta": 0.0412,
+        "scaleDelta": 0.0008,
+        "bilateralSymmetryError": 0.0296,
+        "colorDelta": {
+          "checked": 3,
+          "maxDeltaE": 8.55,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 8.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 7.62
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.818 is below threshold 0.85"
+      ],
+      "renderHash": "1c358576b5ff2d22",
+      "passId": "blockout",
+      "mapStrippedRender": "renders\\soap\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.8395,
+        "aspectRatioDelta": 0.0412,
+        "scaleDelta": 0.0008,
+        "bilateralSymmetryError": 0.0187,
+        "colorDelta": {
+          "checked": 3,
+          "maxDeltaE": 8.44,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 8.44
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.44
+            },
+            {
+              "componentId": null,
+              "deltaE": 7.59
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.840 is below threshold 0.85"
+      ],
+      "renderHash": "0cabbea09e2bf409",
+      "passId": "structural-pass"
+    }
+  ]
+}

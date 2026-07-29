@@ -6,7 +6,53 @@ export type TrapType =
   | "spring_pad"
   | "angry_vacuum"
   | "rotating_toilet"
-  | "giant_beach_ball";
+  | "giant_beach_ball"
+  | "toaster_launcher"
+  | "ceiling_fan"
+  | "banana_peel"
+  | "robot_mop"
+  | "mousetrap"
+  | "sprinkler"
+  | "laundry_basket"
+  | "fridge_magnet"
+  | "paint_bucket"
+  | "spin_cycle"
+  | "sticky_gum"
+  | "cord_trip"
+  | "drawer_slam"
+  | "rug_pull"
+  | "conveyor_strip"
+  | "tilt_plate"
+  | "motion_sensor"
+  | "domino_line"
+  | "bunting_line"
+  | "steam_vents"
+  | "pipe_burst"
+  | "ankle_weight"
+  | "chute_drop"
+  | "cart_blocker"
+  | "dust_bunny"
+  | "flood_puddle"
+  | "updraft_vent"
+  | "mattress_rebound"
+  | "plate_shards"
+  | "cat_flap"
+  | "paparazzi"
+  | "bathroom_scales"
+  | "slow_fuse"
+  | "pile_on"
+  | "bin_pedal"
+  | "swing_door"
+  | "ball_machine"
+  | "cuckoo_clock"
+  | "fish_bowl"
+  | "shoe_rack"
+  | "hot_potato"
+  | "stove_ring"
+  | "clothes_airer"
+  | "ice_dispenser"
+  | "kettle_boil"
+  | "junk_drift";
 
 export type GamePhase = "booting" | "intro" | "ready" | "playing" | "failed" | "finished" | "choosing_trap" | "placing_trap" | "publishing" | "sharing" | "paused" | "fatal_error";
 export type AttemptOutcome = "started" | "completed" | "fell" | "timeout" | "reset" | "quit";
@@ -26,6 +72,12 @@ export interface ChallengeDTO {
   baseSeed: number; levelVersion: 1; createdByName: string; createdByAvatarSeed: number;
   addedTrap: TrapInstance | null; traps: TrapInstance[]; ghostTrace: GhostTrace | null;
   stats: ChallengeStats; createdAt: string; isDemo: boolean;
+  /**
+   * Ordered track segment ids. Absent means the original fixed course.
+   * `| undefined` is required because exactOptionalPropertyTypes is on and
+   * the Zod-parsed value carries undefined explicitly.
+   */
+  track?: readonly string[] | undefined;
 }
 export interface GuestProfile { id: string; displayName: string; avatarSeed: number; }
 export interface AttemptStartResult { attemptId: string; offeredTraps: readonly [TrapType, TrapType, TrapType] | null; }

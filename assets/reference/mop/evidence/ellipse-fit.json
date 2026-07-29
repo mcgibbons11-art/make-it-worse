@@ -1,0 +1,37 @@
+{
+  "elevationDeg": 29.46,
+  "silhouetteSpanPx": 621,
+  "maxHalfWidthPx": 470.0,
+  "deckRadiusPx": 393.5,
+  "topCap": {
+    "radiusPx": 468.5,
+    "rmsPx": 20.071,
+    "admissibleRangePx": [
+      434.0,
+      470.0
+    ],
+    "overMaxRadius": 0.9968
+  },
+  "bottomCap": {
+    "radiusPx": 468.7,
+    "rmsPx": 81.792,
+    "admissibleRangePx": [
+      332.7,
+      469.7
+    ],
+    "overMaxRadius": 0.9972
+  },
+  "objectHeightPx": 183.84,
+  "objectHeightRangePx": [
+    182.43,
+    280.15
+  ],
+  "objectDiameterPx": 940.0,
+  "heightOverDiameter": 0.1956,
+  "heightOverDiameterRange": [
+    0.1941,
+    0.298
+  ],
+  "deckOverMaxRadius": 0.8372,
+  "note": "Cap radii bounded by the silhouette's own max half-width. H/D is a starting proportion with a real uncertainty band, not a precise measurement; the build loop refines it by sweeping vertical scale against silhouette IoU."
+}

@@ -1,71 +1,166 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import type { ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
-import {
-  CatmullRomCurve3,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-} from "three";
+import * as THREE from "three";
+import { CatmullRomCurve3, Vector3 } from "three";
+import { ProceduralToilet } from "./models/LargeProps";
+import { ProceduralFloorFan } from "./models/MechProps";
+import { createApartmentSpringJumpPadModel } from "./models/createSpringModel";
+import { createRobotMopModel } from "./models/createMopModel";
+import { createApartmentToasterModel } from "./models/createToasterModel";
+import { createApartmentSoapDishModel } from "./models/createSoapDishModel";
+import { createApartmentBeachBallModel } from "./models/createBeachBallModel";
+import { createApartmentRefrigeratorModel } from "./models/createRefrigeratorModel";
+import { createApartmentClawHammerOnWallBracketModel } from "./models/createHammerModel";
 
-const assetBase = process.env.NEXT_PUBLIC_ASSET_BASE ?? "/";
-
-export const MODEL_URLS = {
-  hammer: `${assetBase}assets/models/cartoon_hammer.glb`,
-  refrigerator: `${assetBase}assets/models/refrigerator.glb`,
-  fan: `${assetBase}assets/models/standing_fan.glb`,
-  soap: `${assetBase}assets/models/duck_soap_dish.glb`,
-  spring: `${assetBase}assets/models/jump_pad.glb`,
-  toilet: `${assetBase}assets/models/toilet.glb`,
-  ball: `${assetBase}assets/models/beach_ball.glb`,
-} as const;
-
-export type ModelName = keyof typeof MODEL_URLS | "vacuum";
-
-const CANDY_COLORS: Record<Exclude<ModelName, "vacuum">, readonly string[]> = {
-  hammer: ["#ff5964", "#ffd84d", "#24324a"],
-  refrigerator: ["#bfe8ff", "#fff3cf", "#ff7b6b", "#78aee8"],
-  fan: ["#6bbcff", "#ffd84d", "#fff3cf", "#24324a"],
-  soap: ["#73dff2", "#ffd84d", "#fff3cf", "#24324a"],
-  spring: ["#54d69a", "#ffd84d", "#ff7b6b", "#24324a"],
-  toilet: ["#b9a7ff", "#fff3cf", "#ff7b6b", "#24324a"],
-  ball: ["#ff5964", "#ffd84d", "#6bbcff", "#54d69a"],
-};
+export type ModelName =
+  | "hammer"
+  | "refrigerator"
+  | "fan"
+  | "soap"
+  | "spring"
+  | "toilet"
+  | "ball"
+  | "vacuum"
+  | "toaster"
+  | "mop";
 
 interface Props extends Omit<ThreeElements["group"], "children"> {
   model: ModelName;
 }
 
-function stableIndex(name: string, index: number, length: number): number {
-  let hash = index + 7;
-  for (const character of name) hash = (hash * 31 + character.charCodeAt(0)) | 0;
-  return Math.abs(hash) % length;
+// Built by the img2threejs pipeline as an imperative factory rather than a
+// component. Two things matter here:
+//
+// 1. The factory defaults to 1024px maps at reference fidelity, which
+//    rasterises four materials x five procedural maps per call. That is around
+//    21 megapixels of CPU-side noise for a prop the size of a toaster, and it
+//    would run again for every instance.
+// 2. sculptRuntime holds circular Object3D references in userData, so cloning
+//    the root as-built throws. Stripping userData first makes it clonable.
+//
+// So build one template per session at a size that suits a game prop and clone
+// it, sharing geometry and materials across every instance.
+const templates = new Map<string, THREE.Group>();
+
+function prototypeOf(id: string, build: () => THREE.Group): THREE.Group {
+  let template = templates.get(id);
+  if (!template) {
+    template = build();
+    template.traverse((node) => {
+      node.userData = {};
+    });
+    templates.set(id, template);
+  }
+  return template;
 }
 
-function LoadedAsset({ model }: { model: Exclude<ModelName, "vacuum"> }) {
-  const { scene } = useGLTF(MODEL_URLS[model]);
-  const clone = useMemo(() => {
-    const next = scene.clone(true);
-    let meshIndex = 0;
-    next.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      const palette = CANDY_COLORS[model];
-      const color = palette[stableIndex(object.name, meshIndex, palette.length)]!;
-      object.material = new MeshStandardMaterial({
-        color,
-        roughness: 0.78,
-        metalness: 0.02,
-      });
-      object.castShadow = true;
-      object.receiveShadow = true;
-      meshIndex += 1;
-    });
-    return next;
-  }, [model, scene]);
-  return <primitive object={clone} />;
+/**
+ * One sculpted prop, built once per session and cloned per instance.
+ *
+ * `build` is deliberately not a dependency of the memo: the id identifies the
+ * template, and an inline arrow would otherwise rebuild on every render.
+ *
+ * `fitHeight` exists because a sculpt is authored to look right on its own, not
+ * to match the prop it replaces, and the two need not agree. It is applied only
+ * where a measurement said it was needed. Nothing needs it today: the beach ball
+ * matches its call site (1.50u across, centred on its origin, which is what
+ * `position={[0, -0.75, 0]}` in TrapRenderer expects), the soap dish matches
+ * DISH_WIDTH, and the refrigerator and the claw hammer were both authored
+ * straight into the envelope their call site fixes.
+ */
+function Sculpted({
+  id,
+  build,
+  fitHeight,
+}: {
+  id: string;
+  build: () => THREE.Group;
+  fitHeight?: number;
+}) {
+  const model = useMemo(() => {
+    const clone = prototypeOf(id, build).clone(true);
+    if (fitHeight !== undefined) {
+      const size = new THREE.Box3().setFromObject(clone).getSize(new THREE.Vector3());
+      if (size.y > 0) clone.scale.setScalar(fitHeight / size.y);
+    }
+    return clone;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, fitHeight]);
+  return <primitive object={model} />;
 }
+
+const SCULPT_OPTIONS = { textureSize: 256, qualityPriority: "balanced" } as const;
+
+const ProceduralToaster = () => (
+  <Sculpted id="toaster" build={() => createApartmentToasterModel(SCULPT_OPTIONS)} />
+);
+// The reference frames the claw hammer on a wall bracket, so the sculpt builds one:
+// plate, arm, pivot boss, clamp collar, lug and bolt. The swinging hammer draws its own
+// pendulum rig, and shipping the bracket visible would put two mounting systems on one
+// prop, so it is hidden here rather than deleted from the spec. destructionGroups holds
+// the whole chain as one array, which is what makes that a single call.
+//
+// No fitHeight. The sculpt measures 2.20u along its own +Y, butt at the origin, which is
+// the span the hand-authored hammer it replaces occupied and what the [0, -2.25, 0]
+// mount in TrapRenderer expects. tests/unit/sculpted-props.test.ts pins that.
+function buildHammer(): THREE.Group {
+  const model = createApartmentClawHammerOnWallBracketModel(SCULPT_OPTIONS);
+  const runtime = model.userData.sculptRuntime as
+    | { destructionGroups?: Record<string, THREE.Object3D[]> }
+    | undefined;
+  const bracket = runtime?.destructionGroups?.bracket;
+  if (!bracket?.length) {
+    // prototypeOf strips userData straight after this, so a silent miss here would ship
+    // a hammer with a wall bracket bolted through the pendulum arm and no way to tell.
+    console.warn("hammer sculpt: no 'bracket' destruction group, wall mount will render");
+  }
+  for (const node of bracket ?? []) node.visible = false;
+  return model;
+}
+const SculptedHammer = () => <Sculpted id="hammer" build={buildHammer} />;
+const SculptedSoapDish = () => (
+  <Sculpted id="soap" build={() => createApartmentSoapDishModel(SCULPT_OPTIONS)} />
+);
+const SculptedBeachBall = () => (
+  <Sculpted id="ball" build={() => createApartmentBeachBallModel(SCULPT_OPTIONS)} />
+);
+// No fitHeight. The refrigerator sculpt was authored straight into the envelope its
+// trap collider fixes rather than at the reference's own proportions, because the two
+// disagree: the reference cabinet's front face is 1.79 times its width and the collider
+// is a box 1.34 by 1.84 by 0.96. Measured, it is 1.34 x 1.84 x 0.8866 sitting on y = 0,
+// so every part is inside CuboidCollider args={[0.68, 0.92, 0.48]} at the [0, -0.92, 0]
+// mount, trim included. tests/unit/sculpted-props.test.ts pins that.
+const SculptedRefrigerator = () => (
+  <Sculpted id="refrigerator" build={() => createApartmentRefrigeratorModel(SCULPT_OPTIONS)} />
+);
+// No fitHeight. The jump pad is the one prop whose envelope comes from a trigger rather than
+// a collider: TrapRenderer's Spring launches on |dx| < 0.7 and |dz| < 0.7 with no collider at
+// all, and PLAYER.stepAssistHeight is 0.45, the tallest riser the controller lifts the runner
+// over. So the sculpt is authored at exactly 1.40 x 0.45 x 1.40, floor-centred, which is what
+// the [0, -0.18, 0] mount inside a group at trap.position.y + 0.18 stands on the deck.
+//
+// The reference is a stool as tall as it is wide. Fitting it cost 68.5% of its height, which is
+// the largest reference deviation in this prop set and is recorded in the spec rather than
+// presented as a match; the preview harness renders its review pass at yscale 3.18 to undo
+// exactly that squash so the Tier-1 aspect gate scores shape.
+// tests/unit/sculpted-props.test.ts pins both numbers.
+const SculptedJumpPad = () => (
+  <Sculpted id="spring" build={() => createApartmentSpringJumpPadModel(SCULPT_OPTIONS)} />
+);
+// No fitHeight. Measured 0.72 x 0.1635 x 0.7196 sitting on y = 0, so its radius is exactly
+// MOP_RADIUS and it clears MOP_HALF_HEIGHT: LauncherTraps mounts it at [0, -MOP_HALF_HEIGHT, 0]
+// because the trap's RigidBody origin is the shell CENTRE while the sculpt sits on its own
+// base, which puts every part inside CylinderCollider args={[0.1, 0.36]}.
+//
+// The factory had no caller at all until now, while two tests asserted its fit. Its spinning
+// brushes are NOT part of the sculpt: the reference has a revolved microfibre skirt instead,
+// and a solid of revolution shows nothing when it turns. LauncherTraps therefore keeps its own
+// brush ring under this, which is what carries the rotation.
+const SculptedRobotMop = () => (
+  <Sculpted id="mop" build={() => createRobotMopModel(SCULPT_OPTIONS)} />
+);
 
 function OriginalAngryVacuum() {
   const hose = useMemo(
@@ -121,15 +216,40 @@ function OriginalAngryVacuum() {
 }
 
 export function AssetReadinessGate({ onReady }: { onReady(): void }) {
-  useGLTF(Object.values(MODEL_URLS));
-  useEffect(() => onReady(), [onReady]);
+  // Props are authored in code now, so nothing has to decode before play. The
+  // gate is kept because callers depend on it and a future streamed asset
+  // would need somewhere to suspend.
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
   return null;
 }
 
+// Every prop is now authored in code. The seven CC BY Sketchfab GLBs this
+// replaced are gone from the runtime, which drops seven network fetches and
+// leaves the build with no third-party art to attribute.
+// The fan accepts an optional ref so a caller can spin its blade group; every
+// other prop takes no props, hence the loose component signature here.
+// Sculpted entries come from the img2threejs pipeline; the rest are still the
+// hand-authored components and are the remaining work on this map.
+const PROCEDURAL: Record<ModelName, React.ComponentType> = {
+  hammer: SculptedHammer,
+  refrigerator: SculptedRefrigerator,
+  fan: ProceduralFloorFan,
+  soap: SculptedSoapDish,
+  spring: SculptedJumpPad,
+  toilet: ProceduralToilet,
+  ball: SculptedBeachBall,
+  vacuum: OriginalAngryVacuum,
+  toaster: ProceduralToaster,
+  mop: SculptedRobotMop,
+};
+
 export function AssetModel({ model, ...props }: Props) {
+  const Prop = PROCEDURAL[model];
   return (
     <group {...props}>
-      {model === "vacuum" ? <OriginalAngryVacuum /> : <LoadedAsset model={model} />}
+      <Prop />
     </group>
   );
 }

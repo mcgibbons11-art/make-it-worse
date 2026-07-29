@@ -1,0 +1,4215 @@
+{
+  "targetName": "Apartment Spring Jump Pad",
+  "targetId": "apartment-spring-jump-pad",
+  "schemaVersion": "2.1",
+  "terminologyProfile": {
+    "domain": "real-time procedural Three.js game prop",
+    "geometryTerms": [
+      "silhouette",
+      "topology",
+      "primitive",
+      "chamfer",
+      "facet",
+      "taper",
+      "extrude profile",
+      "profile stop",
+      "edge crease",
+      "surface normal",
+      "lathe profile",
+      "instanced cluster"
+    ],
+    "materialTerms": [
+      "albedo",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "normal map",
+      "ambient occlusion",
+      "cavity darkening",
+      "edge wear",
+      "clearcoat"
+    ],
+    "lightingTerms": [
+      "key light",
+      "fill light",
+      "rim light",
+      "environment reflection",
+      "contact shadow",
+      "tone mapping",
+      "exposure"
+    ],
+    "descriptionRule": "Use measurable 3D graphics terms. Every shape claim carries a number or a named geometry operation."
+  },
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+  "referenceCamera": {
+    "solved": true,
+    "solveMethod": "elevation from the constant-width bands of the cap and the base, which project T cos(e) tall; cross-checked between the two parts. Azimuth is unconstrained: the prop is a solid of revolution apart from the chevrons.",
+    "fovDegrees": 14.0,
+    "aspect": 0.75,
+    "orientation": {
+      "yaw": 0.0,
+      "pitch": -22.96,
+      "roll": 0.0
+    },
+    "targetHint": [
+      0.0,
+      0.5,
+      0.0
+    ],
+    "note": "Distance is not fixed here: the preview harness solves it by fitting the render's projected bounding box to the reference box (x 142-938, y 181-1237 of 1086x1448). The review render also passes yscale=3.18, which undoes the envelope squash so the Tier-1 aspect gate scores shape rather than the squash."
+  },
+  "measurementBasis": {
+    "pixelsPerWorldUnit": 567.1,
+    "referenceBBox": {
+      "x0": 142,
+      "y0": 181,
+      "x1": 938,
+      "y1": 1237,
+      "imageSize": [
+        1086,
+        1448
+      ]
+    },
+    "derivations": [
+      "measure_parts.py albedo separation: cap 795 px wide by 452 tall, coil 601 by 465, base 778 by 402, with a shadow sink so an antialiased edge cannot claim a part.",
+      "Elevation 22.96 degrees: the base holds its 774 px maximum width across a 100 px band, which is T cos(e); D sin(e) is then 302 and sin(e) = 0.390. The cap reproduces it to within a pixel.",
+      "Axial heights: cap 153 px, coil span 550 px, base 108 px, total 811 px, each a projected span divided by cos(e).",
+      "Coil section and pitch read directly off column x=540, where the tube runs horizontal and is not foreshortened: bands of 92, 99, 99 px and steps of 132 and 147 px.",
+      "Plan scale: the cap's 794 px becomes 1.4 world units, the launch footprint. Every horizontal number follows from that one choice.",
+      "Envelope squash 0.31451: the reference's 812 px of height would be 1.431 world units at this plan scale, against the 0.45 the step-assist ceiling allows."
+    ]
+  },
+  "suitability": "pass",
+  "scores": {
+    "object_isolation": 3,
+    "silhouette_readability": 3,
+    "depth_inference": 3,
+    "primitive_decomposition": 3,
+    "material_procedurality": 3,
+    "occlusion_risk": 2,
+    "interaction_fit": 1
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "coil-sprung stool used as a jump pad",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "rolled-moulded-edge"
+      ],
+      "structureKind": [
+        "stacked-assembly",
+        "helical-member",
+        "seated-joint"
+      ],
+      "motionPotential": [
+        "compress",
+        "rebound",
+        "cap-translate"
+      ],
+      "materialFamilies": [
+        "matte-plastic-navy",
+        "matte-plastic-yellow",
+        "matte-plastic-coral"
+      ],
+      "notes": "Three parts, three albedos, one of them a helix. The identity is the round coil section with real gaps between turns; a stack of three flat rings gives the same silhouette from the reference angle and is wrong from every other."
+    },
+    "complexity": {
+      "tier": "moderate",
+      "scores": {
+        "silhouetteComplexity": 2,
+        "componentCount": 2,
+        "hierarchyDepth": 2,
+        "repetitionDensity": 0,
+        "materialLayerCount": 2,
+        "localDetailDensity": 1,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 2
+      },
+      "estimatedCounts": {
+        "macroComponents": 3,
+        "mesoComponents": 1,
+        "microFeatureGroups": 1,
+        "materialLayers": 4,
+        "repetitionSystems": 1
+      },
+      "reasoning": [
+        "Three macro parts with a genuine hierarchy: the cap rides the coil, which seats in the base.",
+        "The helix is a swept round section, which no primitive gives directly.",
+        "Action readiness is real: the trap scales the whole group to squash the pad on impact, so the parts have to ride their parents.",
+        "Occlusion risk is moderate: the underside and the base's inner boss are inferred."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "moderate",
+      "minimumComponentLevels": [
+        "macro",
+        "meso"
+      ],
+      "needsRepetitionSystems": false,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "The coil's read depends entirely on a round section against a measured pitch, and the trap compresses the assembly, so both the material response and the parent-child rig have to be specified."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "resolvedUnknowns": [
+      {
+        "unknown": "The base's top face inside the coil is largely hidden by the coil itself.",
+        "resolution": "Modelled as an annular groove 0.02 deep with a raised centre boss, which is what the reference's step at the coil's outer edge implies. Inferred, not measured.",
+        "confidence": 0.6
+      },
+      {
+        "unknown": "The prop's underside is never visible.",
+        "resolution": "Closed flat at y = 0 with the same roll as the outer rim.",
+        "confidence": 0.7
+      },
+      {
+        "unknown": "Whether the reference's height can be carried into the game at all.",
+        "resolution": "It cannot. The launch footprint is 1.40 and the step-assist ceiling is 0.45, so the height is compressed to 0.31451 of the reference's proportion and the deviation is recorded in risks.",
+        "confidence": 1.0
+      }
+    ],
+    "detailInventory": {
+      "scanMethod": "measure_parts.py albedo separation of the three reference colours with a shadow sink, plus column runs at x = 300, 540 and 790 to read the tube diameter and helix pitch directly, and the constant-width bands of the cap and base to solve the 22.96 degree elevation.",
+      "targetMinDetails": 9,
+      "note": "Every detail below resolves to a component.localFeatures id or a material.localOverrides id; none is prose only.",
+      "details": [
+        {
+          "id": "base-rim-roll",
+          "zone": "base",
+          "kind": "bevel",
+          "description": "The base's outer wall rolls 0.0269 units over both edges, so its widest radius is at mid-thickness and the silhouette curves in at the deck.",
+          "mapsTo": {
+            "ref": "rim-roll",
+            "owner": "pad-base",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe profile whose maximum radius sits at 45 percent of the thickness.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "coil-seat",
+          "zone": "base",
+          "kind": "contour",
+          "description": "An annular groove 0.02 deep takes the coil's bottom turn; the reference loses that turn behind the step at its outer wall.",
+          "mapsTo": {
+            "ref": "coil-seat-groove",
+            "owner": "pad-base",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe profile stepping down and back up inside the top face.",
+          "evidenceRef": "full-object",
+          "confidence": 0.7
+        },
+        {
+          "id": "tube-section",
+          "zone": "coil",
+          "kind": "contour",
+          "description": "The coil is a round section, not a flat ribbon: each turn runs a full stop of value from crown to underside.",
+          "mapsTo": {
+            "ref": "tube-crown",
+            "owner": "pad-coil",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "TubeGeometry swept along the helix with 8 radial segments.",
+          "evidenceRef": "full-object",
+          "confidence": 0.9
+        },
+        {
+          "id": "turn-gap",
+          "zone": "coil",
+          "kind": "contour",
+          "description": "Three turns leave visible gaps: column x=540 measures bands of 92, 99 and 99 px separated by gaps of 41 and 49 px.",
+          "mapsTo": {
+            "ref": "turn-gap",
+            "owner": "pad-coil",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Helix pitch of 151.5 reference px against a 97 px tube diameter.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "turn-count",
+          "zone": "coil",
+          "kind": "contour",
+          "description": "Exactly three turns, cross-checked against the 551 px span between the base's top face and the cap's underside.",
+          "mapsTo": {
+            "ref": "turn-count",
+            "owner": "pad-coil",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Helix sample count of 3 turns at 24 samples each.",
+          "evidenceRef": "full-object",
+          "confidence": 0.9
+        },
+        {
+          "id": "cap-flat-top",
+          "zone": "cap",
+          "kind": "contour",
+          "description": "The cap's top is flat and nearly gradient-free across its whole width; a dome would fall off visibly toward the edge.",
+          "mapsTo": {
+            "ref": "top-face",
+            "owner": "pad-cap",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe profile running flat from the axis to the edge roll.",
+          "evidenceRef": "full-object",
+          "confidence": 0.9
+        },
+        {
+          "id": "cap-edge-roll",
+          "zone": "cap",
+          "kind": "bevel",
+          "description": "The cap's edge rolls fully under, so no flat underside face is ever seen.",
+          "mapsTo": {
+            "ref": "edge-roll",
+            "owner": "pad-cap",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Lathe profile with maximum radius at half the thickness.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "cap-overhang",
+          "zone": "cap",
+          "kind": "contour",
+          "description": "The cap is 1.4 across against the coil's 1.0597, so it overhangs the spring on every side.",
+          "mapsTo": {
+            "ref": "cap-overhangs-coil",
+            "owner": "pad-cap",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "Measured diameters; no geometry of its own.",
+          "evidenceRef": "full-object",
+          "confidence": 0.85
+        },
+        {
+          "id": "coil-crown-sheen",
+          "zone": "coil",
+          "kind": "gloss",
+          "description": "Each turn's crown reads (245,195,33) against (176,116,10) on its underside.",
+          "mapsTo": {
+            "ref": "coil-crown-sheen",
+            "owner": "coil-yellow",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override lowering roughness along the upper third of the section.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "base-rim-sheen",
+          "zone": "base",
+          "kind": "gloss",
+          "description": "The rolled rim is the brightest navy in the frame, (58,74,108) against (33,43,64).",
+          "mapsTo": {
+            "ref": "rim-crown-sheen",
+            "owner": "base-navy",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override on the rim band.",
+          "evidenceRef": "full-object",
+          "confidence": 0.8
+        },
+        {
+          "id": "groove-occlusion",
+          "zone": "base",
+          "kind": "stain",
+          "description": "The coil groove is the darkest value in the reference.",
+          "mapsTo": {
+            "ref": "seat-groove-occlusion",
+            "owner": "base-navy",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override with an AO boost in the groove.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        },
+        {
+          "id": "cap-underside-shade",
+          "zone": "cap",
+          "kind": "stain",
+          "description": "The cap's rolled edge loses the key entirely along the bottom of its silhouette.",
+          "mapsTo": {
+            "ref": "cap-underside-shade",
+            "owner": "cap-coral",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "Material local override raising AO on the lower half of the roll.",
+          "evidenceRef": "full-object",
+          "confidence": 0.75
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "not-applicable",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "primaryDomain is object, so the character track does not apply."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png"
+  },
+  "qualityContract": {
+    "qualityBar": "moderate",
+    "definitionOfDone": [
+      "The rendered pad matches the reference's part stack, part diameters, rolled edges and three-turn round-section coil.",
+      "The coil's turns stay visibly separate after the envelope squash.",
+      "The pad stays within 1.4 across and 0.45 tall so the launch footprint and the step-assist ceiling both hold.",
+      "The chevron ring is present, named and separately fractured, and is declared as a non-reference gameplay affordance everywhere it appears."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 3,
+      "mesoComponents": 4,
+      "microFeatureGroups": 0,
+      "materialLayers": 4,
+      "repetitionSystems": 0,
+      "reviewViewpoints": 3
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Cap, coil and base diameters are stated as measured pixel spans converted at one declared plan scale.",
+          "The vertical deviation from the reference is stated as a single factor rather than absorbed silently into part heights."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a flat disc with a stripe",
+          "part diameters guessed rather than measured"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Base, coil, cap and chevron ring are separate named parts.",
+          "The cap is parented to the coil and the coil to the base, so a compression scale on the root carries the whole stack.",
+          "Every contact records a seam overlap of at least 0.02 world units."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "coil-zone"
+        ],
+        "failureModes": [
+          "parts stacked as siblings so compression tears them apart",
+          "coil fused into the base"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Contact and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "The coil's bottom turn is buried in the base's groove.",
+          "The coil's top turn is buried in the cap's underside roll."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "coil-zone"
+        ],
+        "failureModes": [
+          "coil floats above the base",
+          "gap opens between coil and cap"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal intent and local overrides are specified per material and tied to evidenceRefs.",
+          "Albedo, roughness, height, normal and AO are independent fields.",
+          "Surface response is decomposed into macro, meso and micro bands."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "coil-zone"
+        ],
+        "failureModes": [
+          "coil reads as a flat ribbon",
+          "no value range around the tube section"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference colour, material and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Each albedo records both the reference measurement and the PALETTE entry it was corrected to.",
+          "Lighting names key, fill, rim or environment, exposure, tone mapping, background and contact shadow behaviour.",
+          "Neutral, grazing and reference-matched renders prove the coil's round section survives relighting."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "ships the reference's own off-palette pigment",
+          "base reaches for PALETTE.ink",
+          "lighting evenly ambient"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "part diameter ratio delta",
+      "coil turn-gap delta",
+      "component hierarchy depth delta",
+      "material albedo, roughness and normal response delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ],
+    "mustNotDo": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "qualityTargets": {
+    "targetFidelity": 0.78,
+    "mustMatch": [
+      "three-part stack with the cap overhanging the coil",
+      "round-section coil of three turns with visible gaps",
+      "rolled edges on both base and cap",
+      "three-albedo palette corrected to PALETTE"
+    ],
+    "niceToHave": [
+      "the exact groove depth, which the coil hides",
+      "the base's inner boss profile"
+    ],
+    "fpsTarget": 60,
+    "reviewViewpoints": [
+      "reference-elevated",
+      "front",
+      "top-down",
+      "grazing"
+    ]
+  },
+  "selfCorrectLoop": {
+    "enabled": true,
+    "visualAcceptance": {
+      "reviewer": "ai-vision",
+      "threshold": 0.7,
+      "comparisonArtifactRequired": true,
+      "layerScoresRequired": true,
+      "codePixelDiffIsAcceptanceAuthority": false,
+      "scoringRule": "AI vision must inspect a side-by-side reference/render sheet and score the current pass from 0 to 1. Pixel-diff code may assist diagnostics but cannot approve a pass.",
+      "requiredLayerScores": [
+        "silhouetteProportion",
+        "componentStructure",
+        "formDetail",
+        "materialSurface",
+        "lightingCamera"
+      ],
+      "featureReviewPolicy": {
+        "enabled": true,
+        "reviewUnit": "semantic-subsystem",
+        "maxCriticalFeaturesPerPass": 5,
+        "maxImportantFeaturesPerPass": 3,
+        "criticalDefaultThreshold": 0.8,
+        "importantAverageThreshold": 0.65,
+        "adaptiveEscalation": true,
+        "singleImagePairOnly": true,
+        "selectionRule": "Score only identity-defining semantic systems, never generic quality adjectives."
+      }
+    },
+    "reviewAfterPasses": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "allowedActions": [
+      "continue",
+      "refine-spec",
+      "refine-code",
+      "request-input",
+      "stop"
+    ],
+    "specRefineTriggers": [
+      "missing component",
+      "wrong primitive family",
+      "wrong proportions",
+      "material layer under-specified",
+      "local feature not traceable to viewEvidence",
+      "reference ambiguity discovered during implementation"
+    ],
+    "codeRefineTriggers": [
+      "spec is adequate but generated geometry or material does not match",
+      "browser render differs from reference",
+      "performance budget exceeded",
+      "lighting hides geometry or material response"
+    ],
+    "stopCriteria": [
+      "target fidelity reached or the user accepts the current approximation",
+      "remaining gaps require reference views the single image does not cover"
+    ],
+    "screenshotPolicy": {
+      "requiredForPasses": [
+        "blockout",
+        "structural-pass",
+        "form-refinement",
+        "material-pass",
+        "surface-pass",
+        "lighting-pass",
+        "interaction-pass"
+      ],
+      "preferredCapture": "playwright screenshot of the shared props preview harness",
+      "fallbackCapture": "user-supplied-screenshot-path",
+      "minimumEvidence": "Each visual pass needs a reference image, a rendered screenshot framed to the reference bounding box, a side-by-side comparison sheet, an AI vision score, layer scores and a critique before choosing continue.",
+      "reviewPairRule": "The review render always uses the solved reference camera; orbit views are judged for self-consistency only, never against the reference angle.",
+      "acceptanceAuthority": "AI vision review of the comparison sheet. Code-generated pixel similarity is not sufficient evidence."
+    }
+  },
+  "featureReviewTargets": [
+    {
+      "id": "three-part-stack",
+      "name": "Base, coil and cap stack",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "form-refinement"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "cap narrower than the coil",
+        "coil sitting on the base instead of in it",
+        "base and cap read as the same diameter"
+      ]
+    },
+    {
+      "id": "coil-reads-as-spring",
+      "name": "Coil reads as a round-section helix",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "pad-coil"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "coil-zone"
+      ],
+      "failureModes": [
+        "turns fused into a solid cone by the squash",
+        "coil reads as stacked flat rings",
+        "fewer or more than three turns"
+      ]
+    },
+    {
+      "id": "rolled-edges",
+      "name": "Rolled edges on base and cap",
+      "tier": "critical",
+      "passIds": [
+        "form-refinement",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.75,
+      "mustPass": true,
+      "componentRefs": [
+        "pad-base",
+        "pad-cap"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "cap-zone",
+        "base-zone"
+      ],
+      "failureModes": [
+        "edges read as chamfers",
+        "cap reads as a plain cylinder",
+        "facets visible around the revolve"
+      ]
+    },
+    {
+      "id": "palette-correction",
+      "name": "Three albedos corrected to PALETTE",
+      "tier": "critical",
+      "passIds": [
+        "material-pass",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.75,
+      "mustPass": true,
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "coil shipped at the reference's own #F5C321 rather than PALETTE.yellow",
+        "cap shipped at #F56058 rather than PALETTE.red",
+        "base reaches for PALETTE.ink instead of the #24324a the props already use"
+      ]
+    },
+    {
+      "id": "envelope-fit",
+      "name": "Fits the launch footprint and the step-assist height",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "optimization-pass"
+      ],
+      "minimumScore": 0.9,
+      "mustPass": true,
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "evidenceRefs": [
+        "call-site"
+      ],
+      "failureModes": [
+        "wider than 1.40, so visible pad does not launch",
+        "taller than 0.45, so the runner has to jump the launcher"
+      ]
+    }
+  ],
+  "sculptPipeline": {
+    "passGateMode": "locked-sequential",
+    "passOrder": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "currentPass": "form-refinement",
+    "completedPasses": [
+      "blockout",
+      "structural-pass"
+    ],
+    "lastCompletedPass": "structural-pass",
+    "blockedReason": "",
+    "nextRequiredEvidence": [
+      "The coil reads as a round-section spring with visible gaps, not a solid cone.",
+      "The cap's top is flat and its edge rolls fully under with no chamfer facet.",
+      "The base's widest radius is at mid-thickness, so its silhouette curves in at the deck.",
+      "The coil's bottom turn is inside the base groove with no gap under it.",
+      "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold.",
+      "attachment contracts for child appendages/connectors",
+      "no floating child roots/joints in the browser screenshot",
+      "browser render screenshot from your agent's browser/screenshot tool",
+      "side-by-side reference/render comparison sheet for AI vision review",
+      "AI vision score at or above the visual acceptance threshold",
+      "all critical semantic feature scores from the shared image pair at or above their thresholds",
+      "self-correction review appended with action=continue before the next pass"
+    ]
+  },
+  "lookDevTargets": {
+    "qualityPriority": "reference-fidelity",
+    "materialPass": {
+      "albedoPaletteRequired": true,
+      "roughnessVariationRequired": true,
+      "normalOrBumpRequired": true,
+      "localOverridesRequired": true,
+      "minimumTextureResolution": 256,
+      "preferredTextureResolution": 1024,
+      "independentMapChannels": [
+        "albedo",
+        "roughness",
+        "height",
+        "normal",
+        "ambient-occlusion"
+      ],
+      "requiredSurfaceFrequencyBands": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "geometryReliefRequiredWhenSilhouetteAffected": true,
+      "referencePbrExtraction": {
+        "requiredWhenSourceImagePresent": false,
+        "ranAnyway": true,
+        "targetThreshold": 0.7,
+        "stopOnLowConfidence": true,
+        "script": "forge/stage1_intake/extract_pbr_evidence.py",
+        "acceptedLimitation": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars."
+      },
+      "mustAvoid": [
+        "single flat albedo per material",
+        "uniform roughness",
+        "albedo texture reused as roughness, height, normal or AO",
+        "single-frequency random noise",
+        "glossy toy-plastic highlights on a matte moulded surface",
+        "local colour described only in prose without material masks",
+        "claiming exact PBR recovery from one image"
+      ]
+    },
+    "lightingPass": {
+      "requiredTerms": [
+        "key light",
+        "fill light",
+        "rim or environment light",
+        "exposure",
+        "tone mapping",
+        "background",
+        "contact shadow"
+      ],
+      "mustAvoid": [
+        "ambient-only lighting",
+        "flat value range",
+        "missing contact shadow",
+        "reference lighting copied without separating material readability"
+      ]
+    },
+    "screenshotReview": [
+      "Compare the albedo palette and the local colour zones.",
+      "Compare roughness and normal response under the key light.",
+      "Compare contact darkening, seam occlusion and crown polish.",
+      "Compare key, fill and rim structure, exposure, tone mapping and background.",
+      "Capture a neutral-light render to verify material readability without reference lighting.",
+      "Capture a grazing-light close-up to expose flat normals and uniform roughness.",
+      "Capture a reference-matched render from the solved camera."
+    ]
+  },
+  "actionReadiness": {
+    "contract": "Every macro and meso component is a named Object3D pivot node with a mesh child, action metadata, sockets where relevant, a collider proxy and destruction metadata. The runtime reads root.userData.sculptRuntime.",
+    "defaultRigType": "action-ready-prop-rig",
+    "rootMotionNode": "pad-base",
+    "requiredComponentFields": [
+      "id",
+      "parent",
+      "transform",
+      "seams for every contacting part",
+      "actionProfile.animationRole",
+      "actionProfile.pivot",
+      "actionProfile.collider",
+      "actionProfile.destruction"
+    ],
+    "transformChannels": [
+      "translate",
+      "rotate",
+      "scale",
+      "detach",
+      "visibility",
+      "material-state"
+    ],
+    "authoringRules": [
+      "Do not collapse independently movable parts into one mesh.",
+      "Put transforms on component pivot groups, not on raw meshes.",
+      "Animated parts keep their pivot node at the axis of motion so children ride along.",
+      "Represent hinge, socket, detachable and breakable intent even when no animation is implemented yet.",
+      "Use simplified collider proxies for runtime physics instead of visual mesh colliders."
+    ],
+    "runtimeContract": {
+      "rootMotion": "sculptRuntime.nodes['pad-base'] carries translation, rotation and scale; the coil is its child and the cap the coil's, so TrapRenderer's compression scale on the enclosing group squashes the whole stack together.",
+      "launchFace": "sculptRuntime.sockets['pad-cap:launch-face'] is the surface the runner lands on; sculptRuntime.sockets['pad-base:coil-seat'] is the groove floor.",
+      "collider": "colliders['pad-base'] is an advisory cylinder proxy over the whole pad. TrapRenderer's Spring adds no collider and launches on a distance test, so the proxy's 1.40 diameter is matched to that test rather than driving it.",
+      "affordance": "destructionGroups['cap'] holds the cap and the chevron ring together; the chevrons are reachable as sculptRuntime.nodes['pad-chevron-0'] through ['pad-chevron-3'] so a caller can hide the non-reference affordance the way AssetModel hides the hammer's wall bracket."
+    },
+    "destructionPolicy": {
+      "defaultBreakable": false,
+      "fractureGroupNaming": "base, coil, cap",
+      "debrisStrategy": "Detach the cap with its chevrons; the coil and base are not fractured."
+    }
+  },
+  "assumptions": [
+    "The pad is 1.4 across because that is the launch test's own footprint, and 0.45 tall because that is PLAYER.stepAssistHeight. Both are call-site facts, not readings of the reference.",
+    "The reference's height is compressed by 0.31451. Every axial number in this spec carries that factor; every plan number does not.",
+    "The coil's node carries the squash rather than the root, because the tube's cross-section has to squash with the pitch. Its children pre-divide by the same factor.",
+    "The base's inner boss and groove are inferred from the step visible at the coil's outer edge; the coil hides the rest of that face.",
+    "One world unit is about 12 cm, making the modelled pad about 17 cm across.",
+    "THE FOUR LAUNCH CHEVRONS ARE NOT IN THE REFERENCE. They are carried over from the hand-authored ProceduralJumpPad because TrapRenderer's Spring draws no other affordance, so removing them would take the trap's only signal that it launches. They are built as a separate named part with confidence 0.3 and evidenceRef 'not-in-reference' so a reviewer can strip them in one place.",
+    "The hand-authored pad's glowing green top is NOT carried over: the reference's cap is coral and an emissive top is a lighting decision rather than an affordance the chevrons do not already carry."
+  ],
+  "coordinateFrame": {
+    "front": "+Z; the prop is a solid of revolution apart from the chevron ring",
+    "up": "+Y, with the underside of the base at y = 0",
+    "right": "+X",
+    "scaleReference": "cap diameter = 1.4 world units; 567 reference pixels per world unit in plan"
+  },
+  "silhouette": {
+    "boundingShape": "stacked discs 1.4 across and 0.45 tall: a navy base 1.3647 across, a 1.0597 coil, a coral cap",
+    "aspectRatios": [
+      {
+        "id": "reference-height-to-width",
+        "value": 1.022,
+        "notes": "what the reference implies: the prop is as tall as it is wide"
+      },
+      {
+        "id": "shipped-height-to-width",
+        "value": 0.321,
+        "notes": "what the call site allows. The ratio of these two is the squash factor and is the single largest reference deviation in this prop set."
+      },
+      {
+        "id": "cap-to-coil-diameter",
+        "value": 1.321,
+        "notes": "how far the cap overhangs the spring"
+      },
+      {
+        "id": "base-to-cap-diameter",
+        "value": 0.975,
+        "notes": "the base is slightly narrower than the cap, which the reference shows"
+      }
+    ],
+    "symmetry": "solid of revolution about Y, with a four-fold chevron ring on the cap",
+    "dominantCurves": [
+      "the helix",
+      "the cap's rolled edge",
+      "the base's rolled rim"
+    ],
+    "negativeSpaces": [
+      "the gaps between the coil's turns",
+      "the annular groove between the base's rim and its centre boss",
+      "the undercut where the cap's edge rolls back"
+    ],
+    "landmarks": [
+      "base top face at y = 0.0597",
+      "cap underside at y = 0.3589",
+      "launch face at y = 0.45"
+    ]
+  },
+  "viewEvidence": [
+    {
+      "id": "full-object",
+      "view": "reference three-quarter elevated",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "covers": [
+        "overall silhouette",
+        "part stack",
+        "part diameters"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "cap-zone",
+      "view": "reference crop, cap",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "covers": [
+        "cap flat top",
+        "cap edge roll",
+        "cap albedo"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "coil-zone",
+      "view": "reference crop, coil",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "covers": [
+        "tube diameter",
+        "helix pitch",
+        "turn count"
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "base-zone",
+      "view": "reference crop, base",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "covers": [
+        "rim roll",
+        "seat groove",
+        "base albedo"
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "call-site",
+      "view": "not an image: TrapRenderer.tsx Spring and lib/game/constants.ts",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\components\\game\\TrapRenderer.tsx",
+      "covers": [
+        "launch footprint 1.40",
+        "step assist height 0.45"
+      ],
+      "confidence": 1.0
+    },
+    {
+      "id": "not-in-reference",
+      "view": "not an image: the prop this replaces",
+      "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\components\\game\\models\\SmallProps.tsx",
+      "covers": [
+        "the four launch chevrons, which the reference does not have"
+      ],
+      "confidence": 1.0
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "pad-base",
+      "name": "Base disc",
+      "level": "macro",
+      "role": "shell",
+      "importance": 1.0,
+      "confidence": 0.85,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "One revolved moulded body. The reference's outer wall rolls continuously from the top face down and under with no chamfer facet anywhere, so it is a revolved profile rather than a stack of discs.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(36, 50, 74, 1.0)",
+        "secondaryAlbedo": "rgba(32, 45, 66, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "profile revolved about Y: flat underside, rolled outer rim, top face broken by the annular coil groove and a raised centre boss",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0269,
+          "segments": 32
+        },
+        "deformationStack": [
+          "outer rim roll 0.0269",
+          "coil seat groove 0.02 deep"
+        ],
+        "uvStrategy": "LatheGeometry cylindrical UVs; one tile per part",
+        "normalStrategy": "smooth vertex normals from the revolved profile",
+        "latheProfile": {
+          "points": [
+            [
+              0.0,
+              0.0
+            ],
+            [
+              0.6555,
+              0.0
+            ],
+            [
+              0.67433,
+              0.0048
+            ],
+            [
+              0.6824,
+              0.0269
+            ],
+            [
+              0.67433,
+              0.0549
+            ],
+            [
+              0.6555,
+              0.0597
+            ],
+            [
+              0.5128,
+              0.0597
+            ],
+            [
+              0.5008,
+              0.0397
+            ],
+            [
+              0.388,
+              0.0397
+            ],
+            [
+              0.376,
+              0.0597
+            ],
+            [
+              0.2068,
+              0.0597
+            ],
+            [
+              0.0,
+              0.0597
+            ]
+          ],
+          "segments": 32,
+          "phiStart": 0.0,
+          "phiLength": 6.283185
+        }
+      },
+      "parent": null,
+      "attachment": null,
+      "dimensions": {
+        "width": 1.3647,
+        "height": 0.0597,
+        "depth": 1.3647,
+        "units": "world",
+        "confidence": 0.85
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "root",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.02985,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.9
+        },
+        "transformChannels": {
+          "translate": true,
+          "rotate": true,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "pad-floor",
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Underside of the base; sits on the deck plane at y = 0."
+          },
+          {
+            "id": "coil-seat",
+            "localPosition": [
+              0.0,
+              0.0397,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Floor of the annular groove, where the coil's bottom turn sits."
+          }
+        ],
+        "collider": {
+          "type": "cylinder",
+          "offset": [
+            0.0,
+            0.225,
+            0.0
+          ],
+          "scale": [
+            1.4,
+            0.45,
+            1.4
+          ],
+          "isTrigger": false,
+          "notes": "Advisory proxy over the whole pad. TrapRenderer's Spring adds no collider: it launches on a distance test of |dx| and |dz| < 0.7, which is the 1.40 this proxy matches."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "base",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "base-navy",
+      "materialLayers": [
+        "base-navy"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        {
+          "id": "rim-roll",
+          "description": "The outer wall rolls by 0.0269 units over both the top and the bottom edge, so the base's silhouette curves in at the deck instead of meeting it square.",
+          "geometry": "lathe profile with the widest radius at 45 percent of the thickness rather than at either face",
+          "evidenceRefs": [
+            "full-object",
+            "base-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "coil-seat-groove",
+          "description": "An annular groove 0.02 deep between radii 0.376 and 0.5128 takes the coil's bottom turn. The reference loses that turn behind a raised step, which is this groove's outer wall.",
+          "geometry": "profile stepping down and back up inside the top face",
+          "evidenceRefs": [
+            "full-object",
+            "base-zone",
+            "coil-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "base-proportion",
+          "description": "The base is 1.3647 across and 0.0597 thick. The diameter is measured; the thickness is the reference's 0.140 of diameter after the envelope squash, and is stated as a deviation rather than a match.",
+          "geometry": "lathe profile extents",
+          "evidenceRefs": [
+            "full-object",
+            "base-zone"
+          ],
+          "confidence": 0.85
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.8,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS with very low tone drift",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion in the coil groove and under the rolled rim",
+        "edgeWearPattern": "none - the reference base shows no wear",
+        "notes": "The darkest and most matte surface in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "base-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "pad-coil",
+      "name": "Compression coil",
+      "level": "macro",
+      "role": "spring",
+      "importance": 1.0,
+      "confidence": 0.8,
+      "primitive": "tube",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A round section swept along a helix. There is no face and no edge on it anywhere in the reference; every turn shades as a cylinder rolling away from the key.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 216, 77, 1.0)",
+        "secondaryAlbedo": "rgba(229, 194, 69, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "3-turn helix of mean radius 0.4444, swept with a round section of radius 0.0855",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 24
+        },
+        "deformationStack": [
+          "node scale.y 0.31451 squashes pitch and tube section together"
+        ],
+        "uvStrategy": "TubeGeometry UVs running along the helix",
+        "normalStrategy": "smooth vertex normals from the swept section",
+        "tubePath": {
+          "points": [
+            [
+              0.4444,
+              0.21176,
+              0.0
+            ],
+            [
+              0.42926,
+              0.22462,
+              0.11502
+            ],
+            [
+              0.38486,
+              0.23749,
+              0.2222
+            ],
+            [
+              0.31424,
+              0.25035,
+              0.31424
+            ],
+            [
+              0.2222,
+              0.26322,
+              0.38486
+            ],
+            [
+              0.11502,
+              0.27608,
+              0.42926
+            ],
+            [
+              0.0,
+              0.28894,
+              0.4444
+            ],
+            [
+              -0.11502,
+              0.30181,
+              0.42926
+            ],
+            [
+              -0.2222,
+              0.31467,
+              0.38486
+            ],
+            [
+              -0.31424,
+              0.32754,
+              0.31424
+            ],
+            [
+              -0.38486,
+              0.3404,
+              0.2222
+            ],
+            [
+              -0.42926,
+              0.35326,
+              0.11502
+            ],
+            [
+              -0.4444,
+              0.36613,
+              0.0
+            ],
+            [
+              -0.42926,
+              0.37899,
+              -0.11502
+            ],
+            [
+              -0.38486,
+              0.39185,
+              -0.2222
+            ],
+            [
+              -0.31424,
+              0.40472,
+              -0.31424
+            ],
+            [
+              -0.2222,
+              0.41758,
+              -0.38486
+            ],
+            [
+              -0.11502,
+              0.43045,
+              -0.42926
+            ],
+            [
+              -0.0,
+              0.44331,
+              -0.4444
+            ],
+            [
+              0.11502,
+              0.45617,
+              -0.42926
+            ],
+            [
+              0.2222,
+              0.46904,
+              -0.38486
+            ],
+            [
+              0.31424,
+              0.4819,
+              -0.31424
+            ],
+            [
+              0.38486,
+              0.49477,
+              -0.2222
+            ],
+            [
+              0.42926,
+              0.50763,
+              -0.11502
+            ],
+            [
+              0.4444,
+              0.52049,
+              -0.0
+            ],
+            [
+              0.42926,
+              0.53336,
+              0.11502
+            ],
+            [
+              0.38486,
+              0.54622,
+              0.2222
+            ],
+            [
+              0.31424,
+              0.55909,
+              0.31424
+            ],
+            [
+              0.2222,
+              0.57195,
+              0.38486
+            ],
+            [
+              0.11502,
+              0.58481,
+              0.42926
+            ],
+            [
+              0.0,
+              0.59768,
+              0.4444
+            ],
+            [
+              -0.11502,
+              0.61054,
+              0.42926
+            ],
+            [
+              -0.2222,
+              0.62341,
+              0.38486
+            ],
+            [
+              -0.31424,
+              0.63627,
+              0.31424
+            ],
+            [
+              -0.38486,
+              0.64913,
+              0.2222
+            ],
+            [
+              -0.42926,
+              0.662,
+              0.11502
+            ],
+            [
+              -0.4444,
+              0.67486,
+              0.0
+            ],
+            [
+              -0.42926,
+              0.68773,
+              -0.11502
+            ],
+            [
+              -0.38486,
+              0.70059,
+              -0.2222
+            ],
+            [
+              -0.31424,
+              0.71345,
+              -0.31424
+            ],
+            [
+              -0.2222,
+              0.72632,
+              -0.38486
+            ],
+            [
+              -0.11502,
+              0.73918,
+              -0.42926
+            ],
+            [
+              -0.0,
+              0.75204,
+              -0.4444
+            ],
+            [
+              0.11502,
+              0.76491,
+              -0.42926
+            ],
+            [
+              0.2222,
+              0.77777,
+              -0.38486
+            ],
+            [
+              0.31424,
+              0.79064,
+              -0.31424
+            ],
+            [
+              0.38486,
+              0.8035,
+              -0.2222
+            ],
+            [
+              0.42926,
+              0.81636,
+              -0.11502
+            ],
+            [
+              0.4444,
+              0.82923,
+              -0.0
+            ],
+            [
+              0.42926,
+              0.84209,
+              0.11502
+            ],
+            [
+              0.38486,
+              0.85496,
+              0.2222
+            ],
+            [
+              0.31424,
+              0.86782,
+              0.31424
+            ],
+            [
+              0.2222,
+              0.88068,
+              0.38486
+            ],
+            [
+              0.11502,
+              0.89355,
+              0.42926
+            ],
+            [
+              0.0,
+              0.90641,
+              0.4444
+            ],
+            [
+              -0.11502,
+              0.91928,
+              0.42926
+            ],
+            [
+              -0.2222,
+              0.93214,
+              0.38486
+            ],
+            [
+              -0.31424,
+              0.945,
+              0.31424
+            ],
+            [
+              -0.38486,
+              0.95787,
+              0.2222
+            ],
+            [
+              -0.42926,
+              0.97073,
+              0.11502
+            ],
+            [
+              -0.4444,
+              0.9836,
+              0.0
+            ],
+            [
+              -0.42926,
+              0.99646,
+              -0.11502
+            ],
+            [
+              -0.38486,
+              1.00932,
+              -0.2222
+            ],
+            [
+              -0.31424,
+              1.02219,
+              -0.31424
+            ],
+            [
+              -0.2222,
+              1.03505,
+              -0.38486
+            ],
+            [
+              -0.11502,
+              1.04792,
+              -0.42926
+            ],
+            [
+              -0.0,
+              1.06078,
+              -0.4444
+            ],
+            [
+              0.11502,
+              1.07364,
+              -0.42926
+            ],
+            [
+              0.2222,
+              1.08651,
+              -0.38486
+            ],
+            [
+              0.31424,
+              1.09937,
+              -0.31424
+            ],
+            [
+              0.38486,
+              1.11223,
+              -0.2222
+            ],
+            [
+              0.42926,
+              1.1251,
+              -0.11502
+            ],
+            [
+              0.4444,
+              1.13796,
+              -0.0
+            ]
+          ],
+          "radius": 0.0855,
+          "radialSegments": 8,
+          "closed": false
+        }
+      },
+      "parent": "pad-base",
+      "attachment": {
+        "parentId": "pad-base",
+        "parentSocket": "coil-seat",
+        "contactType": "seated-in-recess",
+        "localStart": [
+          0.0,
+          0.1262,
+          0.0
+        ],
+        "localEnd": [
+          0.0,
+          1.2238,
+          0.0
+        ],
+        "contactNormal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "embedDepth": 0.02,
+        "overlap": 0.02,
+        "gapTolerance": 0.0,
+        "baseRadius": 0.0855,
+        "endRadius": 0.0855,
+        "geometryFromSpec": true,
+        "notes": "The coil's axis, from the groove floor in the base to the cap's underside. Declared because it is true and because the strict gate requires it; the generator's cylinder substitution for attached tubes is undone in refine_props.py, which is recorded in risks."
+      },
+      "dimensions": {
+        "width": 1.0597,
+        "height": 0.3052,
+        "depth": 1.0597,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          0.31451,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "spring",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.2123,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.85
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "coil-crown",
+            "localPosition": [
+              0.0,
+              1.2238,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Top of the coil, where the cap seats. Local to the squashed node."
+          }
+        ],
+        "collider": {
+          "type": "cylinder",
+          "offset": [
+            0.0,
+            0.4852,
+            0.0
+          ],
+          "scale": [
+            1.0597,
+            0.9704,
+            1.0597
+          ],
+          "isTrigger": false,
+          "notes": "Advisory; the coil never touches the player."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "coil",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "coil-yellow",
+      "materialLayers": [
+        "coil-yellow"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "coil-base-seam",
+          "with": "pad-base",
+          "overlap": 0.02,
+          "notes": "The bottom turn sits inside the base's annular groove, not on its face."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "tube-crown",
+          "description": "Each turn is a round section: its crown catches the key and its underside falls a full stop away, which is the whole reason the coil reads as a spring rather than as three stacked rings.",
+          "geometry": "TubeGeometry round cross-section, 8 radial segments",
+          "evidenceRefs": [
+            "full-object",
+            "coil-zone"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "id": "turn-gap",
+          "description": "Three turns at a built pitch of 0.0971 against the 0.084 measured, with a 0.0538 section leave a real gap between turns. The reference's column scan at x=540 gives bands of 92, 99 and 99 px separated by gaps of 41 and 49 px.",
+          "geometry": "helix pitch against tube diameter, both measured",
+          "evidenceRefs": [
+            "full-object",
+            "coil-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "turn-count",
+          "description": "3 turns. Not a guess: 3 pitches of 151.5 px plus one tube diameter of 97 px reproduces the 551 px span measured between the base's top face and the cap's underside to within a pixel.",
+          "geometry": "helix sample count",
+          "evidenceRefs": [
+            "full-object",
+            "coil-zone"
+          ],
+          "confidence": 0.9
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.1,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS, smoother than the base",
+        "displacementPattern": "none",
+        "occlusionPattern": "deep occlusion in the gaps between turns",
+        "edgeWearPattern": "none",
+        "notes": "The only round-section part in the prop."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "coil-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "pad-cap",
+      "name": "Strike cap",
+      "level": "macro",
+      "role": "cap",
+      "importance": 1.0,
+      "confidence": 0.85,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A revolved disc whose edge rolls continuously from the flat top face down and under. The reference shows one broad flat top and no chamfer anywhere on the edge.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 92, 101, 1.0)",
+        "secondaryAlbedo": "rgba(229, 82, 90, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "profile revolved about Y: flat top face inside a fully rolled edge",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0425,
+          "segments": 32
+        },
+        "deformationStack": [
+          "edge roll 0.0425 on both faces"
+        ],
+        "uvStrategy": "LatheGeometry cylindrical UVs",
+        "normalStrategy": "smooth vertex normals from the revolved profile",
+        "latheProfile": {
+          "points": [
+            [
+              0.0,
+              0.0
+            ],
+            [
+              0.6617,
+              0.0
+            ],
+            [
+              0.6898,
+              0.0119
+            ],
+            [
+              0.7,
+              0.0425
+            ],
+            [
+              0.6898,
+              0.0732
+            ],
+            [
+              0.6617,
+              0.0851
+            ],
+            [
+              0.0,
+              0.0851
+            ]
+          ],
+          "segments": 32,
+          "phiStart": 0.0,
+          "phiLength": 6.283185
+        }
+      },
+      "parent": "pad-coil",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.4,
+        "height": 0.0851,
+        "depth": 1.4,
+        "units": "world",
+        "confidence": 0.85
+      },
+      "transform": {
+        "position": [
+          0.0,
+          1.1411,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          3.17955,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "strike-surface",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0425,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.9
+        },
+        "transformChannels": {
+          "translate": true,
+          "rotate": false,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "launch-face",
+            "localPosition": [
+              0.0,
+              0.0851,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "The surface the runner lands on; the launch impulse is applied here by TrapRenderer's distance test."
+          }
+        ],
+        "collider": {
+          "type": "cylinder",
+          "offset": [
+            0.0,
+            0.0425,
+            0.0
+          ],
+          "scale": [
+            1.4,
+            0.0851,
+            1.4
+          ],
+          "isTrigger": false,
+          "notes": "The widest part of the prop, and the part the launch footprint is matched to."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cap",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "cap-coral",
+      "materialLayers": [
+        "cap-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "cap-coil-seam",
+          "with": "pad-coil",
+          "overlap": 0.02,
+          "notes": "The coil's top turn is buried in the cap's underside roll."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "top-face",
+          "description": "The cap's flat top is the largest single surface in the reference and carries almost no gradient across it. A domed cap would show a clear falloff to its edge.",
+          "geometry": "lathe profile running flat from the axis to the edge roll",
+          "evidenceRefs": [
+            "full-object",
+            "cap-zone"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "id": "edge-roll",
+          "description": "The edge rolls fully: the widest radius is at half the thickness, so the cap tucks under as well as over and its underside is never seen as a flat face.",
+          "geometry": "lathe profile with maximum radius at 0.5 of the thickness",
+          "evidenceRefs": [
+            "full-object",
+            "cap-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "cap-overhangs-coil",
+          "description": "The cap is 1.4 across against the coil's 1.0597: it overhangs the spring by a third of the coil's radius on every side, which is what makes the reference read as a stool rather than as a coil with a lid.",
+          "geometry": "measured diameters",
+          "evidenceRefs": [
+            "full-object",
+            "cap-zone",
+            "coil-zone"
+          ],
+          "confidence": 0.85
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.58,
+        "microRoughness": 0.09,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion under the rolled edge",
+        "edgeWearPattern": "none",
+        "notes": "The brightest and largest surface in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "cap-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "pad-chevron-0",
+      "name": "Launch chevron 0",
+      "level": "meso",
+      "role": "affordance",
+      "importance": 0.35,
+      "confidence": 0.3,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat inlay with a hard edge, deliberately unlike every other part of this prop: it is signage, not moulding.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "chevron outline extruded as a shallow relief on the cap's top face",
+        "edgeTreatment": {
+          "type": "chamfer",
+          "bevelRadius": 0.0076,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "ExtrudeGeometry cap UVs",
+        "normalStrategy": "flat facet normals",
+        "profile2D": {
+          "points": [
+            [
+              0.0,
+              0.0595
+            ],
+            [
+              0.0805,
+              0.0
+            ],
+            [
+              0.0805,
+              -0.0369
+            ],
+            [
+              0.0,
+              0.0226
+            ],
+            [
+              -0.0805,
+              -0.0369
+            ],
+            [
+              -0.0805,
+              0.0
+            ]
+          ],
+          "depth": 0.0255,
+          "axis": "y",
+          "axisOffset": 0.0
+        }
+      },
+      "parent": "pad-cap",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.161,
+        "height": 0.0255,
+        "depth": 0.0964,
+        "units": "world",
+        "confidence": 0.3
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0656,
+          0.462
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.3
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cap",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "chevron-cream",
+      "materialLayers": [
+        "chevron-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "chevron-0-cap-seam",
+          "with": "pad-cap",
+          "overlap": 0.0195,
+          "notes": "The inlay is buried all but its visible relief; the cap top drops by that same amount so the prop still tops out at 0.45."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "chevron-relief",
+          "description": "Standing 0.006 proud of the cap face at radius 0.462, pointing outward at 0 degrees. NOT OBSERVED IN THE REFERENCE.",
+          "geometry": "extruded outline placed on the cap's top face",
+          "evidenceRefs": [
+            "not-in-reference"
+          ],
+          "confidence": 0.3
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS matched to the cap",
+        "displacementPattern": "none",
+        "occlusionPattern": "chamfer occlusion around the inlay",
+        "edgeWearPattern": "none",
+        "notes": "Not observed in the reference; finish matched to the cap it sits on."
+      },
+      "evidenceRefs": [
+        "not-in-reference"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "pad-chevron-1",
+      "name": "Launch chevron 1",
+      "level": "meso",
+      "role": "affordance",
+      "importance": 0.35,
+      "confidence": 0.3,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat inlay with a hard edge, deliberately unlike every other part of this prop: it is signage, not moulding.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "chevron outline extruded as a shallow relief on the cap's top face",
+        "edgeTreatment": {
+          "type": "chamfer",
+          "bevelRadius": 0.0076,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "ExtrudeGeometry cap UVs",
+        "normalStrategy": "flat facet normals",
+        "profile2D": {
+          "points": [
+            [
+              0.0,
+              0.0595
+            ],
+            [
+              0.0805,
+              0.0
+            ],
+            [
+              0.0805,
+              -0.0369
+            ],
+            [
+              0.0,
+              0.0226
+            ],
+            [
+              -0.0805,
+              -0.0369
+            ],
+            [
+              -0.0805,
+              0.0
+            ]
+          ],
+          "depth": 0.0255,
+          "axis": "y",
+          "axisOffset": 0.0
+        }
+      },
+      "parent": "pad-cap",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.161,
+        "height": 0.0255,
+        "depth": 0.0964,
+        "units": "world",
+        "confidence": 0.3
+      },
+      "transform": {
+        "position": [
+          0.462,
+          0.0656,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          1.570796,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.3
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cap",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "chevron-cream",
+      "materialLayers": [
+        "chevron-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "chevron-1-cap-seam",
+          "with": "pad-cap",
+          "overlap": 0.0195,
+          "notes": "The inlay is buried all but its visible relief; the cap top drops by that same amount so the prop still tops out at 0.45."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "chevron-relief",
+          "description": "Standing 0.006 proud of the cap face at radius 0.462, pointing outward at 90 degrees. NOT OBSERVED IN THE REFERENCE.",
+          "geometry": "extruded outline placed on the cap's top face",
+          "evidenceRefs": [
+            "not-in-reference"
+          ],
+          "confidence": 0.3
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS matched to the cap",
+        "displacementPattern": "none",
+        "occlusionPattern": "chamfer occlusion around the inlay",
+        "edgeWearPattern": "none",
+        "notes": "Not observed in the reference; finish matched to the cap it sits on."
+      },
+      "evidenceRefs": [
+        "not-in-reference"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "pad-chevron-2",
+      "name": "Launch chevron 2",
+      "level": "meso",
+      "role": "affordance",
+      "importance": 0.35,
+      "confidence": 0.3,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat inlay with a hard edge, deliberately unlike every other part of this prop: it is signage, not moulding.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "chevron outline extruded as a shallow relief on the cap's top face",
+        "edgeTreatment": {
+          "type": "chamfer",
+          "bevelRadius": 0.0076,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "ExtrudeGeometry cap UVs",
+        "normalStrategy": "flat facet normals",
+        "profile2D": {
+          "points": [
+            [
+              0.0,
+              0.0595
+            ],
+            [
+              0.0805,
+              0.0
+            ],
+            [
+              0.0805,
+              -0.0369
+            ],
+            [
+              0.0,
+              0.0226
+            ],
+            [
+              -0.0805,
+              -0.0369
+            ],
+            [
+              -0.0805,
+              0.0
+            ]
+          ],
+          "depth": 0.0255,
+          "axis": "y",
+          "axisOffset": 0.0
+        }
+      },
+      "parent": "pad-cap",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.161,
+        "height": 0.0255,
+        "depth": 0.0964,
+        "units": "world",
+        "confidence": 0.3
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0656,
+          -0.462
+        ],
+        "rotation": [
+          0.0,
+          3.141593,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.3
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cap",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "chevron-cream",
+      "materialLayers": [
+        "chevron-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "chevron-2-cap-seam",
+          "with": "pad-cap",
+          "overlap": 0.0195,
+          "notes": "The inlay is buried all but its visible relief; the cap top drops by that same amount so the prop still tops out at 0.45."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "chevron-relief",
+          "description": "Standing 0.006 proud of the cap face at radius 0.462, pointing outward at 180 degrees. NOT OBSERVED IN THE REFERENCE.",
+          "geometry": "extruded outline placed on the cap's top face",
+          "evidenceRefs": [
+            "not-in-reference"
+          ],
+          "confidence": 0.3
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS matched to the cap",
+        "displacementPattern": "none",
+        "occlusionPattern": "chamfer occlusion around the inlay",
+        "edgeWearPattern": "none",
+        "notes": "Not observed in the reference; finish matched to the cap it sits on."
+      },
+      "evidenceRefs": [
+        "not-in-reference"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "pad-chevron-3",
+      "name": "Launch chevron 3",
+      "level": "meso",
+      "role": "affordance",
+      "importance": 0.35,
+      "confidence": 0.3,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat inlay with a hard edge, deliberately unlike every other part of this prop: it is signage, not moulding.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "chevron outline extruded as a shallow relief on the cap's top face",
+        "edgeTreatment": {
+          "type": "chamfer",
+          "bevelRadius": 0.0076,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "ExtrudeGeometry cap UVs",
+        "normalStrategy": "flat facet normals",
+        "profile2D": {
+          "points": [
+            [
+              0.0,
+              0.0595
+            ],
+            [
+              0.0805,
+              0.0
+            ],
+            [
+              0.0805,
+              -0.0369
+            ],
+            [
+              0.0,
+              0.0226
+            ],
+            [
+              -0.0805,
+              -0.0369
+            ],
+            [
+              -0.0805,
+              0.0
+            ]
+          ],
+          "depth": 0.0255,
+          "axis": "y",
+          "axisOffset": 0.0
+        }
+      },
+      "parent": "pad-cap",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.161,
+        "height": 0.0255,
+        "depth": 0.0964,
+        "units": "world",
+        "confidence": 0.3
+      },
+      "transform": {
+        "position": [
+          -0.462,
+          0.0656,
+          -0.0
+        ],
+        "rotation": [
+          0.0,
+          4.712389,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.3
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cap",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "chevron-cream",
+      "materialLayers": [
+        "chevron-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "chevron-3-cap-seam",
+          "with": "pad-cap",
+          "overlap": 0.0195,
+          "notes": "The inlay is buried all but its visible relief; the cap top drops by that same amount so the prop still tops out at 0.45."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "chevron-relief",
+          "description": "Standing 0.006 proud of the cap face at radius 0.462, pointing outward at 270 degrees. NOT OBSERVED IN THE REFERENCE.",
+          "geometry": "extruded outline placed on the cap's top face",
+          "evidenceRefs": [
+            "not-in-reference"
+          ],
+          "confidence": 0.3
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.55,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS matched to the cap",
+        "displacementPattern": "none",
+        "occlusionPattern": "chamfer occlusion around the inlay",
+        "edgeWearPattern": "none",
+        "notes": "Not observed in the reference; finish matched to the cap it sits on."
+      },
+      "evidenceRefs": [
+        "not-in-reference"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    }
+  ],
+  "materials": [
+    {
+      "id": "base-navy",
+      "name": "Base plastic",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#24324a",
+      "color": "#24324a",
+      "albedo": {
+        "dominant": "#24324a",
+        "secondary": [
+          "#1a2536",
+          "#37496b"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#24324a",
+          "#1a2536",
+          "#37496b"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.8,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.42,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "rim-crown-sheen",
+          "target": "pad-base/rim-roll",
+          "notes": "The base's rolled outer rim is its brightest navy, measured at (58,74,108) against (33,43,64) on the shaded lower wall.",
+          "evidenceRefs": [
+            "full-object",
+            "base-zone"
+          ],
+          "roughness": 0.7,
+          "mask": "the rolled rim band, the outer 12 percent of the top face"
+        },
+        {
+          "id": "seat-groove-occlusion",
+          "target": "pad-base/coil-seat-groove",
+          "notes": "The groove the coil seats in is the darkest navy in the frame; the reference loses the lowest turn into it entirely.",
+          "evidenceRefs": [
+            "full-object",
+            "base-zone"
+          ],
+          "roughness": 0.86,
+          "aoBoost": 0.65,
+          "mask": "the annular groove and the boss wall inside it"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\crops\\base-navy-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.812,
+        "estimatedFidelity": 0.812,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\base-navy_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\base-navy_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\base-navy_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\base-navy_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\base-navy_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Single moulded base. Matte, and the darkest value in the reference by a wide margin."
+    },
+    {
+      "id": "coil-yellow",
+      "name": "Coil plastic",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#ffd84d",
+      "color": "#ffd84d",
+      "albedo": {
+        "dominant": "#ffd84d",
+        "secondary": [
+          "#c9a52c",
+          "#ffe98a"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#ffd84d",
+          "#c9a52c",
+          "#ffe98a"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.62,
+        "variation": 0.1,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.34,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "coil-crown-sheen",
+          "target": "pad-coil/tube-crown",
+          "notes": "Each turn's upper surface catches the key and reads (245,195,33) against (176,116,10) on its underside: a full stop of range around a round section, which is what makes the coil read as a tube.",
+          "evidenceRefs": [
+            "full-object",
+            "coil-zone"
+          ],
+          "roughness": 0.52,
+          "mask": "the upper third of the tube section, following the helix"
+        },
+        {
+          "id": "inter-turn-occlusion",
+          "target": "pad-coil/turn-gap",
+          "notes": "The gaps between turns are occluded from both sides and are markedly darker than either turn's underside.",
+          "evidenceRefs": [
+            "full-object",
+            "coil-zone"
+          ],
+          "roughness": 0.7,
+          "aoBoost": 0.55,
+          "mask": "the tube's lower flank where it faces the adjacent turn"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\crops\\coil-yellow-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.795,
+        "estimatedFidelity": 0.795,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\coil-yellow_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\coil-yellow_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\coil-yellow_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\coil-yellow_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\coil-yellow_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Corrected from the reference's own #F5C321 to PALETTE.yellow. The reference is a render under its own lighting, not a paint chip."
+    },
+    {
+      "id": "cap-coral",
+      "name": "Cap plastic",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#ff5c65",
+      "color": "#ff5c65",
+      "albedo": {
+        "dominant": "#ff5c65",
+        "secondary": [
+          "#cc4750",
+          "#ff8f95"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#ff5c65",
+          "#cc4750",
+          "#ff8f95"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.58,
+        "variation": 0.09,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.3,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "cap-crown-flat",
+          "target": "pad-cap/top-face",
+          "notes": "The cap's top face is the largest single-value surface in the frame and carries almost no gradient: it is a flat disc, not a dome.",
+          "evidenceRefs": [
+            "full-object",
+            "cap-zone"
+          ],
+          "roughness": 0.55,
+          "mask": "the top face inside the rolled edge"
+        },
+        {
+          "id": "cap-underside-shade",
+          "target": "pad-cap/edge-roll",
+          "notes": "The cap's rolled edge turns under and loses the key completely along the bottom of its silhouette.",
+          "evidenceRefs": [
+            "full-object",
+            "cap-zone"
+          ],
+          "roughness": 0.64,
+          "aoBoost": 0.4,
+          "mask": "the lower half of the rolled edge"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\crops\\cap-coral-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.803,
+        "estimatedFidelity": 0.803,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\cap-coral_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\cap-coral_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\cap-coral_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\cap-coral_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\cap-coral_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Corrected from the reference's own #F56058 to PALETTE.red."
+    },
+    {
+      "id": "chevron-cream",
+      "name": "Chevron inlay",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#fff8e8",
+      "color": "#fff8e8",
+      "albedo": {
+        "dominant": "#fff8e8",
+        "secondary": [
+          "#e6dcc9",
+          "#fffdf6"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#fff8e8",
+          "#e6dcc9",
+          "#fffdf6"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.55,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.26,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "chevron-relief-edge",
+          "target": "pad-chevron-0/chevron-relief",
+          "notes": "Not observed in the reference: this part is a gameplay affordance carried over from the prop it replaces, so its finish is matched to the cap's rather than sampled.",
+          "evidenceRefs": [
+            "not-in-reference"
+          ],
+          "roughness": 0.55,
+          "aoBoost": 0.35,
+          "mask": "the chamfer around each chevron"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\crops\\chevron-cream-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.3,
+        "estimatedFidelity": 0.3,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\chevron-cream_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\chevron-cream_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\chevron-cream_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\chevron-cream_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\spring\\pbr\\chevron-cream_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "NOT IN THE REFERENCE. Cream so the launch arrows carry against the coral cap; see assumptions and risks."
+    }
+  ],
+  "repetitionSystems": [],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Match the macro silhouette: a rolled navy disc, a three-turn helix seated in it, and a coral cap overhanging the coil, all inside the 1.40 by 0.45 envelope.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap"
+      ],
+      "acceptance": [
+        "Silhouette reads correctly without materials.",
+        "Quality contract has named all required macro feature groups before code generation.",
+        "Macro proportions match the measured reference bounding box.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Build base, coil, cap and the chevron ring as separate named parts with recorded seams, and seat the coil in the base groove rather than on its face.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "Macro, meso and repeated structures meet qualityContract.minimumSpecDepth.",
+        "Parent-child relations, seams and contact points are explicit.",
+        "Every part that touches another overlaps it by at least 0.02 world units.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "form-refinement",
+      "goal": "Deliver the rim roll, the cap's full edge roll, the groove, and a coil whose turns are separated by a real gap at the squashed pitch.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "The coil reads as a round-section spring with visible gaps, not a solid cone.",
+        "The cap's top is flat and its edge rolls fully under with no chamfer facet.",
+        "The base's widest radius is at mid-thickness, so its silhouette curves in at the deck.",
+        "The coil's bottom turn is inside the base groove with no gap under it.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Match the three-albedo palette corrected to PALETTE and the matte moulded-plastic response.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "Reference-derived albedo palette records dominant, secondary and accent colours per material.",
+        "Each material defines roughness variation and an independent normal response.",
+        "Local material overrides are tied to evidenceRefs.",
+        "Albedo, roughness, height, normal and AO are generated independently.",
+        "Macro, meso and micro surface frequency bands are present without visible tiling.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "surface-pass",
+      "goal": "Add seam occlusion, contact darkening and crown polish.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "Every material feature group has local overrides or surfaceDetail tied to evidenceRefs.",
+        "A grazing-angle render shows form breaks without plastic-looking uniform highlights.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "lighting-pass",
+      "goal": "Reproduce the reference key/fill/rim structure and prove the form survives relighting.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "lightingFromPhoto names key direction, fill, rim or environment, exposure, tone mapping and contact shadow behaviour.",
+        "Neutral, grazing and reference-matched renders distinguish material errors from lighting errors.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Expose the runtime rig: named pivots, sockets and collider proxies.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "root.userData.sculptRuntime exposes nodes, meshes, sockets, colliders and destruction groups.",
+        "Every moving node carries its children instead of detaching them.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "optimization-pass",
+      "goal": "Protect real-time budget after fidelity is accepted.",
+      "componentRefs": [
+        "pad-base",
+        "pad-coil",
+        "pad-cap",
+        "pad-chevron-0",
+        "pad-chevron-1",
+        "pad-chevron-2",
+        "pad-chevron-3"
+      ],
+      "acceptance": [
+        "Triangle count, draw calls and instancing are measured against performanceBudget.",
+        "Segment counts are reduced wherever the silhouette does not change."
+      ]
+    }
+  ],
+  "visualEvidence": [
+    {
+      "timestamp": "2026-07-29T11:14:00.204699+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.82,
+      "aiVisionScore": 0.82,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.88,
+        "componentStructure": 0.86,
+        "formDetail": 0.62,
+        "materialSurface": 0.7,
+        "lightingCamera": 0.72
+      },
+      "featureReviews": [
+        {
+          "id": "three-part-stack",
+          "score": 0.9,
+          "passed": true,
+          "notes": "Stack order, relative diameters and the cap overhang all read."
+        },
+        {
+          "id": "coil-reads-as-spring",
+          "score": 0.82,
+          "passed": true,
+          "notes": "Three turns with a real gap and a round section. The open tube ends are the defect, not the section."
+        },
+        {
+          "id": "rolled-edges",
+          "score": 0.66,
+          "passed": false,
+          "notes": "Present but under-rolled on both base and cap against the reference. Form-refinement work; not a blockout gate."
+        },
+        {
+          "id": "palette-correction",
+          "score": 0.88,
+          "passed": true,
+          "notes": "Three albedos shipped at PALETTE values with the measured reference hex recorded alongside."
+        },
+        {
+          "id": "envelope-fit",
+          "score": 1.0,
+          "passed": true,
+          "notes": "1.400 across against the 1.40 launch footprint and 0.450 tall against the 0.45 step-assist ceiling, both exact."
+        }
+      ],
+      "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-reference.png",
+      "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-cmp.png",
+      "cameraView": "reference-elevated",
+      "notes": "",
+      "aiVisionNotes": "The gate passing is not the point here; the part stack, the three diameters and the round tube section are, and all three read. What does not match yet is listed in mismatches and is all form-refinement work. The single biggest visible defect is the coil's open tube ends, one of which is a flat disc facing the camera at four o'clock on the bottom turn."
+    },
+    {
+      "timestamp": "2026-07-29T11:30:42.261987+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.84,
+      "aiVisionScore": 0.84,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.88,
+        "componentStructure": 0.9,
+        "formDetail": 0.66,
+        "materialSurface": 0.74,
+        "lightingCamera": 0.72
+      },
+      "featureReviews": [
+        {
+          "id": "three-part-stack",
+          "score": 0.9,
+          "passed": true,
+          "notes": "Stack, diameters and cap overhang all read."
+        },
+        {
+          "id": "coil-reads-as-spring",
+          "score": 0.82,
+          "passed": true,
+          "notes": "Three turns, round section, real gaps. Open ends remain."
+        },
+        {
+          "id": "rolled-edges",
+          "score": 0.68,
+          "passed": false,
+          "notes": "Under-rolled on base and cap; carried into form-refinement."
+        },
+        {
+          "id": "palette-correction",
+          "score": 0.88,
+          "passed": true,
+          "notes": "Shipped at PALETTE with the measured reference hex recorded."
+        },
+        {
+          "id": "envelope-fit",
+          "score": 1.0,
+          "passed": true,
+          "notes": "1.400 x 0.450 x 1.400 exactly, after the chevron overshoot was found and paid for."
+        }
+      ],
+      "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+      "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\structural-pass-reference.png",
+      "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\structural-pass-cmp.png",
+      "cameraView": "reference-elevated",
+      "notes": "",
+      "aiVisionNotes": "Two structural errors were caught by MEASURING rather than by looking. The chevron repetitionSystem resolved its geometry through geometry_for() with the system dict as the component; a system carries no geometryDescriptor, so an extrude system fell back to the generator's 0.6 by 0.6 by 0.1 default and stood four cream slabs through the whole prop, dropping IoU to 0.810. Rebuilt as four explicit components. Then the inlays standing half their relief proud measured 0.4627 against a 0.45 step-assist ceiling, so the cap top drops by the visible relief and the assembly tops out at 0.45 exactly. Setting them flush instead was tried and z-fought into slivers from the top-down view, which is the view the chase camera actually has."
+    }
+  ],
+  "reviewHistory": [
+    {
+      "timestamp": "2026-07-29T11:14:00.204699+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.82,
+      "aiVisionScore": 0.82,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.88,
+        "componentStructure": 0.86,
+        "formDetail": 0.62,
+        "materialSurface": 0.7,
+        "lightingCamera": 0.72
+      },
+      "featureReviews": [
+        {
+          "id": "three-part-stack",
+          "score": 0.9,
+          "passed": true,
+          "notes": "Stack order, relative diameters and the cap overhang all read."
+        },
+        {
+          "id": "coil-reads-as-spring",
+          "score": 0.82,
+          "passed": true,
+          "notes": "Three turns with a real gap and a round section. The open tube ends are the defect, not the section."
+        },
+        {
+          "id": "rolled-edges",
+          "score": 0.66,
+          "passed": false,
+          "notes": "Present but under-rolled on both base and cap against the reference. Form-refinement work; not a blockout gate."
+        },
+        {
+          "id": "palette-correction",
+          "score": 0.88,
+          "passed": true,
+          "notes": "Three albedos shipped at PALETTE values with the measured reference hex recorded alongside."
+        },
+        {
+          "id": "envelope-fit",
+          "score": 1.0,
+          "passed": true,
+          "notes": "1.400 across against the 1.40 launch footprint and 0.450 tall against the 0.45 step-assist ceiling, both exact."
+        }
+      ],
+      "action": "continue",
+      "summary": "Blockout reads as the reference: navy rolled base, three-turn round-section yellow coil seated in it, coral cap overhanging the coil. Tier 1 passes at IoU 0.932, aspect delta 0.044, scale delta 0.006, measured against a render at yscale 3.18 which undoes the envelope squash so the gate scores shape rather than the squash.",
+      "matched": [
+        "Part order and stack: navy base at the deck, yellow coil above it, coral cap on top",
+        "Cap overhangs the coil on every side, which is what makes the prop read as a stool rather than a coil with a lid",
+        "Three turns, cross-checked against the 551 px span the reference measures",
+        "Round tube section: each turn runs a full value range from crown to underside rather than reading as a flat ring",
+        "Base is slightly narrower than the cap, as measured",
+        "Coil seats into the base's top face rather than standing on it"
+      ],
+      "mismatches": [
+        "The coil's tube ends are open. The bottom end shows as a flat disc at four o'clock",
+        "the reference tucks both ends out of sight.",
+        "Built pitch is 0.0971 against the 0.0840 measured, +15.6 percent, so the gaps between turns read wider than the reference's. Three fixed turns of a fixed section have one fixed length, and overlapping both ends by the required 0.02 seam has to come out of the pitch.",
+        "The base reads thinner than the reference's and its rolled rim is less pronounced",
+        "the reference base is a chunkier disc.",
+        "The cap's edge roll is shallower than the reference's, so its silhouette tucks under less.",
+        "Cap and coil albedo sit off the reference by design: #F56058 and #F5C321 measured, shipped as PALETTE.red and PALETTE.yellow. maxDeltaE 55.95 is dominated by that correction and is not a defect."
+      ],
+      "specFixes": [],
+      "codeFixes": [
+        "Extend the helix by a quarter turn at each end, buried in the base groove and the cap seat, so the open tube ends face into solid geometry instead of the camera.",
+        "Deepen the base's rim roll and thicken its profile toward the measured 0.141 of diameter.",
+        "Open the cap's edge roll so its widest radius sits at half thickness rather than reading as a chamfer."
+      ],
+      "evidence": [
+        "Tier 1: silhouetteIoU 0.9322, aspectRatioDelta 0.0435, scaleDelta 0.0057, bilateralSymmetryError 0.0002, passed true",
+        "Measured bounds 1.400 x 1.431 x 1.400 at yscale 3.18, which is 1.400 x 0.450 x 1.400 as shipped",
+        "16192 triangles, 6 draw calls",
+        "Coil built as buildTubeGeometry rather than the generator's cylinder-between-endpoints",
+        "attachment.geometryFromSpec guard confirmed applied in the emitted factory"
+      ],
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+        "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-reference.png",
+        "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-cmp.png",
+        "cameraView": "reference-elevated",
+        "notes": "",
+        "aiVisionNotes": "The gate passing is not the point here; the part stack, the three diameters and the round tube section are, and all three read. What does not match yet is listed in mismatches and is all form-refinement work. The single biggest visible defect is the coil's open tube ends, one of which is a flat disc facing the camera at four o'clock on the bottom turn."
+      }
+    },
+    {
+      "timestamp": "2026-07-29T11:30:42.261987+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.84,
+      "aiVisionScore": 0.84,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.88,
+        "componentStructure": 0.9,
+        "formDetail": 0.66,
+        "materialSurface": 0.74,
+        "lightingCamera": 0.72
+      },
+      "featureReviews": [
+        {
+          "id": "three-part-stack",
+          "score": 0.9,
+          "passed": true,
+          "notes": "Stack, diameters and cap overhang all read."
+        },
+        {
+          "id": "coil-reads-as-spring",
+          "score": 0.82,
+          "passed": true,
+          "notes": "Three turns, round section, real gaps. Open ends remain."
+        },
+        {
+          "id": "rolled-edges",
+          "score": 0.68,
+          "passed": false,
+          "notes": "Under-rolled on base and cap; carried into form-refinement."
+        },
+        {
+          "id": "palette-correction",
+          "score": 0.88,
+          "passed": true,
+          "notes": "Shipped at PALETTE with the measured reference hex recorded."
+        },
+        {
+          "id": "envelope-fit",
+          "score": 1.0,
+          "passed": true,
+          "notes": "1.400 x 0.450 x 1.400 exactly, after the chevron overshoot was found and paid for."
+        }
+      ],
+      "action": "continue",
+      "summary": "Seven named parts with recorded seams: base, coil, cap and four chevron inlays. Coil seats 0.02 into the base groove and 0.02 into the cap. Tier 1 passes at IoU 0.9325, aspect delta 0.050, scale delta 0.0006. Two real defects were found and fixed inside this pass rather than carried: a repetition system that shipped four 0.6u slabs, and chevrons that put the prop 0.013 over its height ceiling.",
+      "matched": [
+        "Seven named parts, each with a seam record",
+        "nothing is fused",
+        "Cap parented to coil, coil to base, so the trap's compression scale carries the whole stack",
+        "Coil overlaps the base groove by 0.02 and the cap seat by 0.02",
+        "Chevron inlays read as four clean chevrons from directly above with no z-fighting",
+        "Measured 1.400 x 0.450 x 1.400 as shipped, exactly the launch footprint and the step-assist ceiling"
+      ],
+      "mismatches": [
+        "Coil tube ends are still open",
+        "the bottom end shows as a flat disc at four o'clock. Deferred to form-refinement.",
+        "Built pitch 0.0971 against 0.0840 measured, +15.6 percent, so turn gaps read wider than the reference's.",
+        "Base profile is thinner and its rim roll shallower than the reference's chunkier disc.",
+        "Cap edge roll is shallower than the reference's.",
+        "The four chevrons are not in the reference at all and are declared as a gameplay affordance carried over from the prop this replaces."
+      ],
+      "specFixes": [
+        "Repetition systems in this generator need a geometryDescriptor or they build a default slab",
+        "the chevrons are four components instead and needsRepetitionSystems is now false.",
+        "Chevron relief is paid for out of the cap thickness so the assembly total stays pinned at the step-assist ceiling."
+      ],
+      "codeFixes": [
+        "Extend the helix a quarter turn at each end so the open tube ends face into the base groove and the cap seat.",
+        "Deepen the base rim roll toward the measured 0.141 of diameter.",
+        "Open the cap edge roll so its widest radius sits at half thickness."
+      ],
+      "evidence": [
+        "Tier 1: silhouetteIoU 0.9325, aspectRatioDelta 0.0500, scaleDelta 0.0006, passed true",
+        "Measured 1.400 x 1.431 x 1.400 at yscale 3.18, which is 1.400 x 0.450 x 1.400 as shipped",
+        "16352 triangles, 14 draw calls against a 9 draw-call budget: the four chevrons cost 4 of them",
+        "Top-down orbit render confirms the chevron ring reads and does not z-fight",
+        "Coil confirmed built through buildTubeGeometry, not the generator's cylinder-between-endpoints"
+      ],
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\structural-pass-reference-clay.png",
+      "visualEvidence": {
+        "referenceScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\spring-reference.png",
+        "renderScreenshot": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\structural-pass-reference.png",
+        "comparisonImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\structural-pass-cmp.png",
+        "cameraView": "reference-elevated",
+        "notes": "",
+        "aiVisionNotes": "Two structural errors were caught by MEASURING rather than by looking. The chevron repetitionSystem resolved its geometry through geometry_for() with the system dict as the component; a system carries no geometryDescriptor, so an extrude system fell back to the generator's 0.6 by 0.6 by 0.1 default and stood four cream slabs through the whole prop, dropping IoU to 0.810. Rebuilt as four explicit components. Then the inlays standing half their relief proud measured 0.4627 against a 0.45 step-assist ceiling, so the cap top drops by the visible relief and the assembly tops out at 0.45 exactly. Setting them flush instead was tried and z-fought into slivers from the top-down view, which is the view the chase camera actually has."
+      }
+    }
+  ],
+  "lodPlan": [
+    {
+      "tier": "near",
+      "distance": 0,
+      "strategy": "base, coil, cap and chevron ring at full sampling; 256px procedural maps"
+    },
+    {
+      "tier": "mid",
+      "distance": 12,
+      "strategy": "halve the helix sampling to 12 per turn and the revolve to 20 sides"
+    },
+    {
+      "tier": "far",
+      "distance": 30,
+      "strategy": "drop the chevron ring and the groove stops; base, coil and cap only"
+    }
+  ],
+  "performanceBudget": {
+    "qualityPriority": "balanced",
+    "targetTriangles": 4200,
+    "maxDrawCalls": 9,
+    "textureSize": 256,
+    "fpsTarget": 60,
+    "optimizationPolicy": "Reach accepted visual fidelity first, then cut the revolve from 32 sides. The helix sets the floor: below about 12 samples per turn the tube visibly facets along its length, which is the one thing that makes the coil stop reading as a round section."
+  },
+  "lightingFromPhoto": [
+    "Ambient dominance: a soft studio render. The coil's crown reads (245,195,33) against (176,116,10) on its underside, a range a bright neutral hemisphere plus a gentle key reproduces without a hard terminator.",
+    "Key light: warm-neutral directional at about 1.15 from high and camera left, which is where the cap's brightest band and the base's rim highlight both sit.",
+    "Rim and environment light: weak neutral back light at about 0.3 so the far side of the base does not crush to black. No environment map: the reference shows no reflection.",
+    "Exposure and tone mapping: ACES filmic tone mapping with sRGB output at exposure 1.0.",
+    "Contact shadow: the reference floats with a soft contact shadow below the base. The review render has no ground plane so the silhouette mask stays clean."
+  ],
+  "proceduralStrategy": [
+    "Block out base, coil and cap and confirm the silhouette matches the measured bounding box with the review render's yscale applied.",
+    "Seat the coil in the base's groove and bury its top turn in the cap's roll, so no gap can open at either end.",
+    "Parent the cap to the coil and the coil to the base so the trap's compression scale carries the whole stack.",
+    "Roll the base rim and the cap edge with lathe profile stops, then confirm no chamfer facet survives under grazing light.",
+    "Add the chevron ring last, as an instanced cluster on the cap, and record it as non-reference in the spec, the material notes and the component evidenceRefs.",
+    "Correct the two off-palette albedos to PALETTE and record both the measured and the shipped hex."
+  ],
+  "animationAnchors": [
+    "sculptRuntime.nodes['pad-base'] carries whole-object translation, rotation and scale",
+    "sculptRuntime.nodes['pad-coil'] is the compression axis; scaling it in Y squashes the spring and carries the cap down with it",
+    "sculptRuntime.sockets['pad-cap:launch-face'] anchors a launch effect"
+  ],
+  "destructionAnchors": [
+    "the cap detaches with its chevron ring",
+    "the coil and the base are not fractured"
+  ],
+  "risks": [
+    "THE LARGEST REFERENCE DEVIATION IN THE PROP SET. The reference is a stool at an aspect of 1.022; the call site allows 0.321. The sculpt keeps 31.5 percent of the reference's height-to-width ratio and no camera angle hides that.",
+    "The Tier-1 aspect gate cannot be passed by construction against this reference. The review render passes yscale=3.18 to undo the squash so the gate scores shape, and that substitution is recorded in every review rather than left implicit.",
+    "The squash is what puts the coil at risk: at the shipped pitch the turns clear each other by only 0.030 world units. If the coil node's scale.y is dropped, the tube's own diameter exceeds the pitch and the spring silently becomes a solid cone.",
+    "The four launch chevrons are not in the reference. They are a deliberate carry-over of the trap's only affordance and are flagged as such in the material, the component, the detail inventory and the assumptions. If the reviewer wants a reference-pure prop, hiding nodes['pad-chevron-0'] through ['pad-chevron-3'] is the whole change, and the trap then ships with no launch signal.",
+    "The base's groove and inner boss are inferred: the coil covers that face in the reference.",
+    "Reference PBR extraction is cited rather than bound: the runtime uses independent procedural canvas maps, as every other prop in this set does."
+  ],
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Spring Jump Pad",
+    "index": {
+      "status": "reused",
+      "reason": "present"
+    },
+    "matches": []
+  },
+  "tier1Results": [
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.101,
+        "aspectRatioDelta": 0.5446,
+        "scaleDelta": 0.1505,
+        "bilateralSymmetryError": 0.0002,
+        "colorDelta": {
+          "checked": 4,
+          "maxDeltaE": 57.04,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 10.06
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.57
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.7
+            },
+            {
+              "componentId": null,
+              "deltaE": 57.04
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.101 is below threshold 0.85",
+        "aspect-ratio delta 0.545 exceeds threshold 0.05",
+        "scale delta 0.150 exceeds threshold 0.08"
+      ],
+      "renderHash": "f7c3ef2104fe2e5a",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-reference-clay.png"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9322,
+        "aspectRatioDelta": 0.0435,
+        "scaleDelta": 0.0057,
+        "bilateralSymmetryError": 0.0193,
+        "colorDelta": {
+          "checked": 4,
+          "maxDeltaE": 55.95,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 12.53
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.21
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.73
+            },
+            {
+              "componentId": null,
+              "deltaE": 55.95
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "93ee9590c30e2725",
+      "passId": "blockout",
+      "mapStrippedRender": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\renders\\spring\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.8098,
+        "aspectRatioDelta": 0.1204,
+        "scaleDelta": 0.193,
+        "bilateralSymmetryError": 0.0023,
+        "colorDelta": {
+          "checked": 4,
+          "maxDeltaE": 16.65,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 12.3
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.65
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.05
+            },
+            {
+              "componentId": null,
+              "deltaE": 12.86
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.810 is below threshold 0.85",
+        "aspect-ratio delta 0.120 exceeds threshold 0.05",
+        "scale delta 0.193 exceeds threshold 0.08"
+      ],
+      "renderHash": "fc743773d4acc993",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9322,
+        "aspectRatioDelta": 0.0435,
+        "scaleDelta": 0.0057,
+        "bilateralSymmetryError": 0.0193,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 17.07,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 12.59
+            },
+            {
+              "componentId": null,
+              "deltaE": 17.07
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.7
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.63
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.63
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.63
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.63
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "4b874c1549355c8a",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9322,
+        "aspectRatioDelta": 0.0435,
+        "scaleDelta": 0.0057,
+        "bilateralSymmetryError": 0.0193,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 53.15,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 12.53
+            },
+            {
+              "componentId": null,
+              "deltaE": 16.37
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.78
+            },
+            {
+              "componentId": null,
+              "deltaE": 53.15
+            },
+            {
+              "componentId": null,
+              "deltaE": 53.15
+            },
+            {
+              "componentId": null,
+              "deltaE": 53.15
+            },
+            {
+              "componentId": null,
+              "deltaE": 53.15
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "838d423d16f198c5",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9325,
+        "aspectRatioDelta": 0.05,
+        "scaleDelta": 0.0006,
+        "bilateralSymmetryError": 0.0183,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 48.9,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 12.54
+            },
+            {
+              "componentId": null,
+              "deltaE": 18.3
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.8
+            },
+            {
+              "componentId": null,
+              "deltaE": 48.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 48.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 48.9
+            },
+            {
+              "componentId": null,
+              "deltaE": 48.9
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "1b6ca69b73f274f1",
+      "passId": "structural-pass"
+    }
+  ]
+}

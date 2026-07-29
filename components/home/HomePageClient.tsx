@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createRepository } from "@/lib/repository/createRepository";
+import { NAMED_TRACKS } from "@/lib/game/track";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type { ChallengeDTO } from "@/lib/game/types";
 import { TrapIcon } from "@/components/icons/TrapIcon";
@@ -13,6 +14,7 @@ export default function HomePageClient() {
   const [trending, setTrending] = useState<ChallengeDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [maps, setMaps] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     void repository
@@ -20,14 +22,27 @@ export default function HomePageClient() {
       .then(setTrending)
       .catch(() => setError("Trending disasters are taking a nap."));
   }, [repository]);
-  const fresh = async () => {
+  /**
+   * Start a chain, on a named course or on a fresh roll of the dice.
+   *
+   * One function for both because the only difference is whether a course is
+   * named: createRootChain composes a random one from the catalogue when it is
+   * handed nothing. The track rides on the challenge from there, and
+   * publishChild spreads the parent, so a picked map propagates down the whole
+   * share chain without anything here arranging it.
+   */
+  const startChain = async (track?: readonly string[]) => {
     setLoading(true);
     setError("");
     try {
-      const challenge = await repository.createRootChain();
+      const challenge = await repository.createRootChain(track);
       router.push(`/c/${challenge.slug}`);
     } catch {
-      setError("Could not start a fresh chain. Try once more.");
+      setError(
+        track
+          ? "Could not open that map. Try once more."
+          : "Could not start a fresh chain. Try once more.",
+      );
       setLoading(false);
     }
   };
@@ -54,10 +69,18 @@ export default function HomePageClient() {
           <div className="hero-actions">
             <button
               className="button danger mega"
-              onClick={() => void fresh()}
+              onClick={() => void startChain()}
               disabled={loading}
             >
               {loading ? "Creating clean-ish level…" : "Start a fresh chain"}
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => setMaps((open) => !open)}
+              disabled={loading}
+              aria-expanded={maps}
+            >
+              {maps ? "Hide the maps" : "Pick a map"}
             </button>
             {trending[0] && (
               <Link
@@ -68,6 +91,32 @@ export default function HomePageClient() {
               </Link>
             )}
           </div>
+          {maps && (
+            // The curated courses, beside the dice roll, for a player who wants
+            // a KNOWN one - to race a friend on the same ground, or to avoid
+            // the harder rooms on purpose. Every entry is gated through
+            // isPlayableTrack by named-tracks.test.ts, so nothing here can hand
+            // out a course a runner cannot finish.
+            //
+            // A list of buttons rather than the Portals edition's buttons
+            // carrying role="listitem", which costs them their button
+            // semantics. The how-strip above is already an ol/li, so this is
+            // the shape this page reads in.
+            <ul className="home-maps">
+              {NAMED_TRACKS.map((map) => (
+                <li key={map.id}>
+                  <button
+                    className="home-map"
+                    onClick={() => void startChain(map.segmentIds)}
+                    disabled={loading}
+                  >
+                    <strong>{map.name}</strong>
+                    <span>{map.tagline}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <small>No download. No account. Just consequences.</small>
           {error && (
             <p className="inline-error" role="alert">

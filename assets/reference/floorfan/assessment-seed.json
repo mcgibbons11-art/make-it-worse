@@ -1,0 +1,411 @@
+{
+  "targetName": "Apartment Floor Fan",
+  "sourceImage": "C:/Users/Mcgib/Partners HealthCare Dropbox/Jason Gibbons/Portals make it worse/assets/reference/floorfan-reference.png",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "desk fan on a weighted disc base, guard cage facing the camera",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "rolled-moulded-edge"
+      ],
+      "structureKind": [
+        "revolved-shell",
+        "radial-repetition",
+        "stacked-assembly"
+      ],
+      "motionPotential": [
+        "blade-spin",
+        "head-tilt",
+        "whole-body-orbit"
+      ],
+      "materialFamilies": [
+        "matte-plastic-mint",
+        "matte-plastic-cream",
+        "matte-plastic-navy"
+      ],
+      "notes": "The identity is the mint guard cage: it is 99.2 percent of the silhouette's width and the only part with radial repetition. The navy base is the value anchor at 8.91:1 against the palest deck wash, where the guard mint is 1.59:1 and the cream blades disappear entirely. Blades are cream petals read THROUGH the cage rather than as a separate outline, so the cage and not the blades carries the read."
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 3,
+        "componentCount": 3,
+        "hierarchyDepth": 3,
+        "repetitionDensity": 3,
+        "materialLayerCount": 2,
+        "localDetailDensity": 2,
+        "occlusionRisk": 3,
+        "actionReadinessNeed": 3
+      },
+      "estimatedCounts": {
+        "macroComponents": 4,
+        "mesoComponents": 4,
+        "microFeatureGroups": 0,
+        "materialLayers": 3,
+        "repetitionSystems": 2
+      },
+      "reasoning": [
+        "Two repetition systems rather than one: the cream blades on the hub and the mint guard spokes on the ring. They differ in count, so they cannot share a system.",
+        "Occlusion risk is high and is the prop's defining difficulty: the blades are seen THROUGH the guard from every angle the game shows, so the cage's spoke count and gauge decide whether the blades read at all.",
+        "The blade group spins and is exposed through bladesRef, so the rig is load-bearing rather than decorative.",
+        "Three genuinely different albedos, but one material response - everything is the same matte moulded plastic."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Two repetition systems with different counts, a spinning group the caller drives through bladesRef, and a read that depends entirely on blades staying legible behind a cage."
+    },
+    "unknownsToResolveBeforeImplementation": [
+      {
+        "unknown": "A round guard and a filled collider width are mutually exclusive.",
+        "why": "The guard is a circle in the XY plane. The base takes rows 0.676-0.999, which is 0.324 of the height, so a round guard gets 0.8775 of the 1.30 ceiling and is therefore 0.8775 across. Filling the collider's 1.20 width with a ROUND guard needs 1.20 of height for the guard plus 0.42 for the base, which is 1.62 against a 1.30 ceiling.",
+        "options": [
+          "Guard goes elliptical at 1.20 x 0.8775, a 1.37 oval, which reads wrong on a fan.",
+          "The BASE carries the width. Natural for a disc in the ground plane, but it inverts the reference's 1.276 guard-to-base width ratio so the base becomes the widest part, which the reference does not show.",
+          "Keep the ratio and ship 73 percent of the collider's width, leaving the player hittable by air at the sides."
+        ],
+        "confidence": 0.0
+      },
+      {
+        "unknown": "Where the plan width is authored, given the base is a revolve.",
+        "why": "generate_threejs_factory hangs a component's dimensions on its PIVOT node when the xform omits scale, and children inherit it. The pole, hub, blades and guard all stack above the base, so a non-uniform plan scale on the base's node reaches every one of them. The toilet lost its raised lid to this class of bug twice over.",
+        "options": [
+          "Author the ellipse into the lathe profile so the base's node stays unit-scaled.",
+          "Hang the pole off the root rather than off the base."
+        ],
+        "confidence": 0.0
+      }
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zones",
+      "targetMinDetails": 10,
+      "note": "Enumerate every identity-defining small detail before authoring the spec. Each detail must map to a component.localFeatures entry or material.localOverrides entry, never prose only. Use forge/stage1_intake/build_detail_inventory.py to scan zones.",
+      "details": []
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "unassessed",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "Only meaningful when objectClass.primaryDomain is character or hybrid. Set applies=true and fill from forge/stage1_intake/extract_landmarks.py. See grimoire/character/reconstruction.md and grimoire/character/likeness_maximization.md."
+    },
+    "sourceImage": "C:/Users/Mcgib/Partners HealthCare Dropbox/Jason Gibbons/Portals make it worse/assets/reference/floorfan-reference.png",
+    "measurementBasis": {
+      "referenceBBox": {
+        "x0": 167,
+        "y0": 134,
+        "x1": 907,
+        "y1": 1323,
+        "imageSize": [
+          1086,
+          1448
+        ]
+      },
+      "silhouette": {
+        "width": 741,
+        "height": 1190,
+        "heightToWidth": 1.6059
+      },
+      "envelope": {
+        "callSite": "components/game/TrapRenderer.tsx Fan",
+        "collider": "CuboidCollider args=[0.6, 0.65, 0.35] at trap.position.y + 0.65, model mounted at [0, -0.65, 0]",
+        "worldBox": [
+          1.2,
+          1.3,
+          0.7
+        ],
+        "allowedHeightToWidth": 1.0833,
+        "squash": 0.6746,
+        "reviewYScale": 1.4824
+      },
+      "bands": [
+        {
+          "albedo": "mint guard",
+          "rows": [
+            0.0,
+            0.675
+          ],
+          "widestRow": 0.325,
+          "widestPx": 735,
+          "fractionOfSilhouetteWidth": 0.992
+        },
+        {
+          "albedo": "navy base",
+          "rows": [
+            0.676,
+            0.999
+          ],
+          "widestRow": 0.807,
+          "widestPx": 576,
+          "fractionOfSilhouetteWidth": 0.777
+        }
+      ],
+      "ratios": [
+        {
+          "id": "guard-to-base-width",
+          "value": 1.276,
+          "notes": "735 px against 576 px. Inverting it is the cost of letting the base carry the plan width."
+        }
+      ],
+      "derivations": [
+        "Albedo separation by channel dominance against the #d4d4d4 background with a distance floor of 24: mint where green leads red and blue by 15, navy where blue leads red by 25 and green by 15, cream as the remainder.",
+        "Row scans of each albedo mask at 19 fractions of the 1190 px silhouette height.",
+        "The guard's widest row is 0.325 at 735 px against the silhouette's own 741, so the guard sets the prop's width and the base never does."
+      ],
+      "notMeasured": [
+        "Blade count and blade plan shape. The blades are read through the cage and their outlines overlap, so a row scan cannot separate them; count them off the zone tiles in evidence/zones before authoring the repetition system.",
+        "Guard spoke count and gauge.",
+        "Depth of every part. One head-on view cannot give it, and the collider's 0.70 is the only constraint that exists."
+      ]
+    }
+  },
+  "qualityContract": {
+    "qualityBar": "complex",
+    "definitionOfDone": [
+      "The rendered model matches the reference silhouette, primary proportions, visible component hierarchy, material response, and most recognizable local features for the selected fidelity tier."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 3,
+      "mesoComponents": 8,
+      "microFeatureGroups": 5,
+      "materialLayers": 3,
+      "repetitionSystems": 1,
+      "reviewViewpoints": 4
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic placeholder instead of the reference object",
+          "major proportions are guessed without evidence"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "large visible parts are merged into one mesh",
+          "component hierarchy is too shallow for the observed complexity"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Attachment and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "child part root floats away from the parent",
+          "branch/limb/tube is centered in space instead of pivoting from its root",
+          "parent-child transform mixes world and local coordinates"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+          "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+          "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "surface looks like flat plastic",
+          "local material variation is missing or not tied to image evidence"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference color, material, and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+          "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+          "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+          "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model has acceptable shape but reads as flat shaded or plastic",
+          "colors are a generic average instead of reference-observed local color zones",
+          "lighting is evenly ambient and cannot reproduce the source value range"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "component hierarchy depth delta",
+      "repetition density and distribution delta",
+      "material albedo/roughness/normal response delta",
+      "local feature placement and scale delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+      "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+      "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Floor Fan fan guard cage radial spokes ring fan blade petal pitch hub injection moulded matte plastic roughness",
+    "index": {
+      "status": "hit",
+      "reason": "current",
+      "fingerprint": "ac4f0bc9028e34083dbb5d5531ae3df7699c8e7641d5f8e6d42e7492ea1be1d0"
+    },
+    "matches": [
+      {
+        "record_id": "core.pbr-roughness",
+        "file_path": "grimoire/glossary/3d_vocabulary.md",
+        "heading": "Material And PBR",
+        "key_path": null,
+        "score": 10.049883676851,
+        "snippets": [
+          "Roughness is microfacet scatter: high roughness reads matte and low roughness reads glossy. Recognition cues: low roughness reads as a sharp, mirror-like, tight specular highlight; high roughness reads as a blurry, wide, dim highlight and matte ..."
+        ],
+        "source_refs": [
+          {
+            "path": "grimoire/glossary/3d_vocabulary.md",
+            "heading": "Material And PBR",
+            "key_path": null
+          },
+          {
+            "path": "grimoire/intake/image_analysis.md",
+            "heading": "Layer 5 — Materials & surface (PBR)",
+            "key_path": null
+          },
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.material_pbr[1]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "grimoire/glossary/3d_vocabulary.md"
+          },
+          {
+            "kind": "notebooklm-research",
+            "ref": "notebooklm:4b03c2f9-8393-411f-b5b4-039ab9532843",
+            "note": "Validated generic schema vocabulary; numeric claims remain backed by local source_refs."
+          },
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation — merged recognition cues + Three.js target instead of duplicating this entity."
+          }
+        ]
+      },
+      {
+        "record_id": "core.shader-mapping-torusgeometry-rings-loops",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.rendering_shader_mapping[8]",
+        "score": 7.964121613602,
+        "snippets": [
+          "... features. Ánh xạ tới các chi tiết hình vòng tròn kiểu donut. Recognition cues: Circular loop feature — bayonet handle ring, finger loop on a Talon knife, trigger guard loop, carrying handle Dấu hiệu nhận diện: Chi tiết vòng tròn — vòng ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.rendering_shader_mapping[8]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      },
+      {
+        "record_id": "core.pbr-orm-channel-packing",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.material_pbr[10]",
+        "score": 3.44606566173,
+        "snippets": [
+          "Convention of packing AO, Roughness, and Metalness grayscale maps into the R, G, B channels of a single texture to cut texture-fetch and VRAM cost. Quy ước đóng gói ba bản đồ grayscale AO, Roughness, Metalness vào các kênh R, G, B của một ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.material_pbr[10]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      }
+    ]
+  }
+}

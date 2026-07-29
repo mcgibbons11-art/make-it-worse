@@ -1,0 +1,476 @@
+{
+ "targetName": "MAKE IT WORSE Runner",
+ "sourceImage": "assets/reference/character-reference.png",
+ "preSpecAssessment": {
+  "objectClass": {
+   "primaryType": "stylized humanoid game character",
+   "primaryDomain": "character",
+   "formLanguage": [
+    "rounded primitives",
+    "uniform edge bevel",
+    "no sharp corners",
+    "chibi exaggeration"
+   ],
+   "structureKind": [
+    "bilateral symmetry about a vertical axis",
+    "segmented limb hierarchy",
+    "rigid parts, no deformation"
+   ],
+   "motionPotential": [
+    "walk/run limb swing",
+    "jump crouch and stretch",
+    "stun wobble",
+    "victory arm raise"
+   ],
+   "materialFamilies": [
+    "matte diffuse plastic"
+   ],
+   "notes": "Toy/soft-plastic render. Every surface is high-roughness diffuse with zero metalness and no texture maps; identity comes from silhouette and flat per-part albedo, not from surface detail."
+  },
+  "complexity": {
+   "tier": "complex",
+   "scores": {
+    "silhouetteComplexity": 6,
+    "componentCount": 7,
+    "hierarchyDepth": 6,
+    "repetitionDensity": 4,
+    "materialLayerCount": 3,
+    "localDetailDensity": 4,
+    "occlusionRisk": 7,
+    "actionReadinessNeed": 9
+   },
+   "estimatedCounts": {
+    "macroComponents": 4,
+    "mesoComponents": 14,
+    "microFeatureGroups": 6,
+    "materialLayers": 6,
+    "repetitionSystems": 2
+   },
+   "reasoning": [
+    "14 distinct meso parts (head, hair, 2 ears, 2 eyes, mouth, torso, 2 straps, 2 arms, 2 hands, legs, 2 shoes) across 4 macro groups.",
+    "occlusionRisk 7: a single front view hides the whole back, so the backpack body, the shoe soles and the crown are inferred rather than observed.",
+    "actionReadinessNeed 9: this is the player character. Limb pivots must be authored, not baked, because the existing animation drives arm/leg rotation, squash on landing, lean, and yaw every frame."
+   ]
+  },
+  "specDepthDecision": {
+   "requiredDepth": "complex",
+   "minimumComponentLevels": [
+    "macro",
+    "meso",
+    "micro"
+   ],
+   "needsRepetitionSystems": true,
+   "needsMaterialLocalOverrides": true,
+   "needsMultipleReviewViews": true,
+   "needsActionReadyHierarchy": true,
+   "rationale": "Choose simple/moderate/complex/ultra-complex from observed structure, not from a hardcoded domain."
+  },
+  "unknownsToResolveBeforeImplementation": [
+   "Depth of the torso: unobservable from one view, assumed near-circular in plan consistent with the toy idiom.",
+   "Backpack body: only the straps are visible; the pack itself is entirely hidden behind the torso.",
+   "Shoe sole tread and the crown of the hair are outside the view frustum of this reference.",
+   "Arm span must be narrower than the reference to satisfy the 0.94u beam-plank constraint; see anatomy.gameplayConstraints."
+  ],
+  "detailInventory": {
+   "scanMethod": "component-zones",
+   "targetMinDetails": 10,
+   "note": "Enumerate every identity-defining small detail before authoring the spec. Each detail must map to a component.localFeatures entry or material.localOverrides entry, never prose only. Use forge/stage1_intake/build_detail_inventory.py to scan zones.",
+   "details": [
+    {
+     "zone": "head",
+     "detail": "navy cap hair with a centre fringe that dips lower on the wearer's right",
+     "mapsTo": "component.hairCap.localFeatures"
+    },
+    {
+     "zone": "head",
+     "detail": "sideburn tabs descending in front of each ear",
+     "mapsTo": "component.hairCap.localFeatures"
+    },
+    {
+     "zone": "head",
+     "detail": "rounded disc ears set at the eye line, projecting laterally",
+     "mapsTo": "component.ear.localFeatures"
+    },
+    {
+     "zone": "face",
+     "detail": "black dot eyes, fully opaque, no sclera and no highlight",
+     "mapsTo": "material.eyeInk.localOverrides"
+    },
+    {
+     "zone": "face",
+     "detail": "single upward-curved mouth line, no opening",
+     "mapsTo": "component.mouth.localFeatures"
+    },
+    {
+     "zone": "face",
+     "detail": "soft nose bump reading only through shading, no distinct silhouette",
+     "mapsTo": "component.nose.localFeatures"
+    },
+    {
+     "zone": "torso",
+     "detail": "pear torso, narrow at the shoulders and widest at the hem",
+     "mapsTo": "component.torso.localFeatures"
+    },
+    {
+     "zone": "torso",
+     "detail": "coral backpack straps over both shoulders, tapering toward the hem",
+     "mapsTo": "component.strap.localFeatures"
+    },
+    {
+     "zone": "arms",
+     "detail": "sleeve ends in a clean purple-to-cream cuff at the wrist",
+     "mapsTo": "material.sleeveCuff.localOverrides"
+    },
+    {
+     "zone": "hands",
+     "detail": "three-lobed mitten hand: separated thumb, merged fingers",
+     "mapsTo": "component.hand.localFeatures"
+    },
+    {
+     "zone": "legs",
+     "detail": "legs merge into one navy mass at the hip with no crotch gap",
+     "mapsTo": "component.legs.localFeatures"
+    },
+    {
+     "zone": "feet",
+     "detail": "chunky sneaker with a raised sole rim proud of the upper",
+     "mapsTo": "component.shoe.localFeatures"
+    },
+    {
+     "zone": "feet",
+     "detail": "lace/panel lines incised across the sneaker tongue",
+     "mapsTo": "component.shoe.localFeatures"
+    },
+    {
+     "zone": "global",
+     "detail": "uniform edge bevel on every part; nothing in the figure has a hard edge",
+     "mapsTo": "material.bodyMatte.localOverrides"
+    }
+   ]
+  },
+  "anatomy": {
+   "applies": true,
+   "styleHeads": 3.06,
+   "proportions": {
+    "headUnit": 0.6216,
+    "torso": 0.485,
+    "legs": 0.4834,
+    "shoulderWidth": 0.4497,
+    "hipWidth": 0.8809
+   },
+   "pose": {
+    "type": "relaxed A-pose, weight even, facing camera, arms clear of the torso",
+    "jointAngles": {
+     "neck": [
+      0,
+      0,
+      0
+     ],
+     "leftShoulder": [
+      0,
+      0,
+      0
+     ],
+     "rightShoulder": [
+      0,
+      0,
+      0
+     ],
+     "leftElbow": [
+      0,
+      0,
+      0
+     ],
+     "rightElbow": [
+      0,
+      0,
+      0
+     ],
+     "leftWrist": [
+      0,
+      0,
+      0
+     ],
+     "rightWrist": [
+      0,
+      0,
+      0
+     ],
+     "leftHip": [
+      0,
+      0,
+      0
+     ],
+     "rightHip": [
+      0,
+      0,
+      0
+     ],
+     "leftKnee": [
+      0,
+      0,
+      0
+     ],
+     "rightKnee": [
+      0,
+      0,
+      0
+     ],
+     "leftAnkle": [
+      0,
+      0,
+      0
+     ],
+     "rightAnkle": [
+      0,
+      0,
+      0
+     ]
+    }
+   },
+   "faceLandmarks": {
+    "eyeLine": 0.3346,
+    "eyeSpacing": 0.2302,
+    "noseBase": 0.4282,
+    "mouthLine": 0.4819,
+    "hairline": 0.3415
+   },
+   "features": [
+    "navy cap hair with a centre fringe that dips lower on the wearer's right",
+    "sideburn tabs descending in front of each ear",
+    "rounded disc ears set at the eye line, projecting laterally",
+    "black dot eyes, fully opaque, no sclera and no highlight",
+    "single upward-curved mouth line, no opening",
+    "soft nose bump reading only through shading, no distinct silhouette"
+   ],
+   "confidence": 0.82,
+   "note": "Proportions measured from the reference silhouette's width profile, not estimated. Confidence 0.82 because the front view fixes every frontal proportion but leaves all depth (torso front-to-back, backpack body, shoe length) inferred from the stylistic convention that these forms are near-circular in plan."
+  },
+  "sourceImage": "assets/reference/character-reference.png"
+ },
+ "qualityContract": {
+  "qualityBar": "complex",
+  "definitionOfDone": [
+   "Rendered silhouette matches the reference at 3.06 head units with the eye line at 0.54 head units below the crown.",
+   "All 14 inventoried details are present as authored geometry or material overrides, not prose.",
+   "Resting silhouette width stays at or under 0.94u so the player never occludes their own footing on the beam segment.",
+   "Limb pivots are exposed so the existing animation contract (speed, verticalVelocity, grounded, yaw, stunned + pose idle/playing/victory/failure) drives them unchanged.",
+   "Every material is matte diffuse: zero metalness, no clearcoat, no texture maps."
+  ],
+  "minimumSpecDepth": {
+   "macroComponents": 3,
+   "mesoComponents": 8,
+   "microFeatureGroups": 5,
+   "materialLayers": 3,
+   "repetitionSystems": 1,
+   "reviewViewpoints": 4
+  },
+  "featureGroups": [
+   {
+    "id": "overall-silhouette",
+    "name": "Overall silhouette and proportions",
+    "required": true,
+    "qualityCriteria": [
+     "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+    ],
+    "evidenceRefs": [
+     "full-object"
+    ],
+    "failureModes": [
+     "model reads as a generic placeholder instead of the reference object",
+     "major proportions are guessed without evidence"
+    ]
+   },
+   {
+    "id": "primary-structure",
+    "name": "Primary structure and hierarchy",
+    "required": true,
+    "qualityCriteria": [
+     "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+    ],
+    "evidenceRefs": [
+     "full-object"
+    ],
+    "failureModes": [
+     "large visible parts are merged into one mesh",
+     "component hierarchy is too shallow for the observed complexity"
+    ]
+   },
+   {
+    "id": "attachment-joint-correctness",
+    "name": "Attachment and joint correctness",
+    "required": true,
+    "qualityCriteria": [
+     "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+    ],
+    "evidenceRefs": [
+     "full-object"
+    ],
+    "failureModes": [
+     "child part root floats away from the parent",
+     "branch/limb/tube is centered in space instead of pivoting from its root",
+     "parent-child transform mixes world and local coordinates"
+    ]
+   },
+   {
+    "id": "surface-material-response",
+    "name": "Surface material response",
+    "required": true,
+    "qualityCriteria": [
+     "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+     "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+     "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+    ],
+    "evidenceRefs": [
+     "full-object"
+    ],
+    "failureModes": [
+     "surface looks like flat plastic",
+     "local material variation is missing or not tied to image evidence"
+    ]
+   },
+   {
+    "id": "reference-lookdev",
+    "name": "Reference color, material, and lighting response",
+    "required": true,
+    "qualityCriteria": [
+     "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+     "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+     "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+     "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+    ],
+    "evidenceRefs": [
+     "full-object"
+    ],
+    "failureModes": [
+     "model has acceptable shape but reads as flat shaded or plastic",
+     "colors are a generic average instead of reference-observed local color zones",
+     "lighting is evenly ambient and cannot reproduce the source value range"
+    ]
+   }
+  ],
+  "visualDeltaChecks": [
+   "silhouette and negative-space delta",
+   "component hierarchy depth delta",
+   "repetition density and distribution delta",
+   "material albedo/roughness/normal response delta",
+   "local feature placement and scale delta"
+  ],
+  "antiShallowSpecRules": [
+   "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+   "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+   "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+   "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+   "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+   "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+   "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+   "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+   "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+   "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+   "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+  ]
+ },
+ "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+ "localSpecSearch": {
+  "collection": "core_3d",
+  "query": "MAKE IT WORSE Runner stylized character proportions head units matte diffuse toon material roughness capsule limb rig real-time character",
+  "index": {
+   "status": "hit",
+   "reason": "current",
+   "fingerprint": "ac4f0bc9028e34083dbb5d5531ae3df7699c8e7641d5f8e6d42e7492ea1be1d0"
+  },
+  "matches": [
+   {
+    "record_id": "core.pbr-roughness",
+    "file_path": "grimoire/glossary/3d_vocabulary.md",
+    "heading": "Material And PBR",
+    "key_path": null,
+    "score": 10.049883676851,
+    "snippets": [
+     "Roughness is microfacet scatter: high roughness reads matte and low roughness reads glossy. Recognition cues: low roughness reads as a sharp, mirror-like, tight specular highlight; high roughness reads as a blurry, wide, dim highlight and matte ..."
+    ],
+    "source_refs": [
+     {
+      "path": "grimoire/glossary/3d_vocabulary.md",
+      "heading": "Material And PBR",
+      "key_path": null
+     },
+     {
+      "path": "grimoire/intake/image_analysis.md",
+      "heading": "Layer 5 \u00e2\u20ac\u201d Materials & surface (PBR)",
+      "key_path": null
+     },
+     {
+      "path": "docs/raw/img2threejs-skill-dataset.json",
+      "heading": null,
+      "key_path": "categories.material_pbr[1]"
+     }
+    ],
+    "evidence_refs": [
+     {
+      "kind": "source",
+      "ref": "grimoire/glossary/3d_vocabulary.md"
+     },
+     {
+      "kind": "notebooklm-research",
+      "ref": "notebooklm:4b03c2f9-8393-411f-b5b4-039ab9532843",
+      "note": "Validated generic schema vocabulary; numeric claims remain backed by local source_refs."
+     },
+     {
+      "kind": "source",
+      "ref": "docs/raw/img2threejs-skill-dataset.json",
+      "note": "img2threejs NotebookLM research distillation \u00e2\u20ac\u201d merged recognition cues + Three.js target instead of duplicating this entity."
+     }
+    ]
+   },
+   {
+    "record_id": "core.pbr-hand-painted-vs-pbr-texture",
+    "file_path": "docs/raw/img2threejs-skill-dataset.json",
+    "heading": null,
+    "key_path": "categories.material_pbr[12]",
+    "score": 7.620353343934,
+    "snippets": [
+     "Distinguishes textures with lighting baked directly into color (static, stylized) from textures that respond dynamically to scene lighting via separate PBR channels. Ph\u00c3\u00a2n bi\u00e1\u00bb\u2021t k\u00e1\u00ba\u00bft c\u00e1\u00ba\u00a5u c\u00c3\u00b3 \u00c3\u00a1nh s\u00c3\u00a1ng \u00c4\u2018\u00c6\u00b0\u00e1\u00bb\u00a3c n\u00c6\u00b0\u00e1\u00bb\u203ang tr\u00e1\u00bb\u00b1c ti\u00e1\u00ba\u00bfp v\u00c3\u00a0o m\u00c3\u00a0u (t\u00c4\u00a9nh, c\u00c3\u00a1ch \u00c4\u2018i\u00e1\u00bb\u2021u) ..."
+    ],
+    "source_refs": [
+     {
+      "path": "docs/raw/img2threejs-skill-dataset.json",
+      "heading": null,
+      "key_path": "categories.material_pbr[12]"
+     }
+    ],
+    "evidence_refs": [
+     {
+      "kind": "source",
+      "ref": "docs/raw/img2threejs-skill-dataset.json",
+      "note": "img2threejs NotebookLM research distillation"
+     }
+    ]
+   },
+   {
+    "record_id": "core.description-vra-core-40-attribute-value-schema",
+    "file_path": "docs/raw/img2threejs-skill-dataset.json",
+    "heading": null,
+    "key_path": "categories.description_conventions[1]",
+    "score": 6.691113001005,
+    "snippets": [
+     "XML-derived global attribute qualifiers (vocab, refid, xml:lang, extent) that make every described data element machine-readable and scoped. C\u00c3\u00a1c b\u00e1\u00bb\u2122 \u00c4\u2018\u00e1\u00bb\u2039nh t\u00c3\u00adnh thu\u00e1\u00bb\u2122c t\u00c3\u00adnh to\u00c3\u00a0n c\u00e1\u00bb\u00a5c c\u00c3\u00b3 ngu\u00e1\u00bb\u201cn g\u00e1\u00bb\u2018c XML (vocab, refid, xml:lang, extent) gi\u00c3\u00bap m\u00e1\u00bb\u2014i ph\u00e1\u00ba\u00a7n t\u00e1\u00bb\u00ad ..."
+    ],
+    "source_refs": [
+     {
+      "path": "docs/raw/img2threejs-skill-dataset.json",
+      "heading": null,
+      "key_path": "categories.description_conventions[1]"
+     }
+    ],
+    "evidence_refs": [
+     {
+      "kind": "source",
+      "ref": "docs/raw/img2threejs-skill-dataset.json",
+      "note": "img2threejs NotebookLM research distillation"
+     }
+    ]
+   }
+  ]
+ }
+}

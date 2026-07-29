@@ -1,0 +1,18 @@
+{
+  "stem": "wear-puffer",
+  "image": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\wear-puffer.png",
+  "md5": "7362f8e1f5d3b5a0c9641c8d5da046c0",
+  "bytes": 1254433,
+  "checkedAt": "2026-07-29T03:08:41+00:00",
+  "automatedAdmission": {
+    "exitCode": 0,
+    "output": "ADMITTED  (reference)  pHash=16984710313740351877"
+  },
+  "probe": {
+    "exitCode": 0,
+    "output": "{\n  \"path\": \"C:\\\\Users\\\\Mcgib\\\\Partners HealthCare Dropbox\\\\Jason Gibbons\\\\Portals make it worse\\\\assets\\\\reference\\\\wear-puffer.png\",\n  \"type\": \"png\",\n  \"bytes\": 1254433,\n  \"width\": 1254,\n  \"height\": 1254,\n  \"aspectRatio\": 1.0,\n  \"technicalSuitability\": \"pass\",\n  \"warnings\": [],\n  \"note\": \"This is only technical image probing. Semantic object suitability still requires visual inspection.\"\n}"
+  },
+  "contentVerdict": "pass",
+  "contentNote": "Single coral puffer jacket on plain grey, three-quarter from upper-left. Mint stand collar, navy full-length zip with visible teeth, horizontal quilted baffles on body and sleeves, two welt pockets, gathered cuffs. No second object.",
+  "contentCheckRule": "The reference must show ONLY the garment its filename names. md5 uniqueness and check_reference_admission.py both pass on a two-prompt mashup, so this verdict comes from opening the image."
+}

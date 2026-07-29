@@ -1,0 +1,4561 @@
+{
+  "targetName": "Apartment Refrigerator",
+  "targetId": "apartment-refrigerator",
+  "schemaVersion": "2.1",
+  "terminologyProfile": {
+    "domain": "real-time procedural Three.js game prop",
+    "geometryTerms": [
+      "silhouette",
+      "topology",
+      "primitive",
+      "chamfer",
+      "facet",
+      "taper",
+      "extrude profile",
+      "profile stop",
+      "edge crease",
+      "surface normal",
+      "lathe profile",
+      "instanced cluster"
+    ],
+    "materialTerms": [
+      "albedo",
+      "baseColor",
+      "roughness",
+      "metalness",
+      "normal map",
+      "ambient occlusion",
+      "cavity darkening",
+      "edge wear",
+      "clearcoat"
+    ],
+    "lightingTerms": [
+      "key light",
+      "fill light",
+      "rim light",
+      "environment reflection",
+      "contact shadow",
+      "tone mapping",
+      "exposure"
+    ],
+    "descriptionRule": "Use measurable 3D graphics terms. Every shape claim carries a number or a named geometry operation."
+  },
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\fridge-reference.png",
+  "referenceCamera": {
+    "solved": true,
+    "solveMethod": "azimuth and elevation separated by the product and ratio of the plinth's two top-edge screen slopes (0.12 on the door face, 0.667 on the left face), which give sin(e)^2 = 0.080 and tan(a)^2 = 0.180 without needing any length; the door seam independently confirms the door-face slope",
+    "fovDegrees": 12.0,
+    "aspect": 0.75,
+    "orientation": {
+      "yaw": 23.0,
+      "pitch": -16.4,
+      "roll": 0.0
+    },
+    "targetHint": [
+      0.0,
+      0.92,
+      0.0
+    ],
+    "note": "Both angles come from edge slopes rather than from a length fit, so they do not move when the envelope is fitted to the collider. Distance is not fixed here: the preview harness solves it by fitting the render's projected bounding box to the reference bounding box (x 246-838, y 121-1302 of 1086x1448)."
+  },
+  "measurementBasis": {
+    "pixelsPerWorldUnit": {
+      "horizontal": 332.1,
+      "vertical": 625.0
+    },
+    "referenceBBox": {
+      "x0": 246,
+      "y0": 121,
+      "x1": 838,
+      "y1": 1302,
+      "imageSize": [
+        1086,
+        1448
+      ]
+    },
+    "derivations": [
+      "Camera solved at azimuth 23.0 and elevation 16.4 degrees from the plinth's two top-edge slopes.",
+      "At that camera the reference's front face resolves to 1.786 times the cabinet's width against this model's 1.19. The trap mounts this prop inside a CuboidCollider of args [0.68, 0.92, 0.48], The envelope is taken from the call site and every reference measurement enters as a fraction of it; the vertical fit is 0.667 and is listed as the first risk.",
+      "Horizontal scale: the door face spans x 393-838, 445 px, set to the collider's 1.34 units, giving 332.1 px per world unit.",
+      "Vertical scale: column 600 spans y 231-1281 from the front face's top edge to the plinth's bottom, 1050 px, set to 1.75 units, giving 600.0 px per world unit.",
+      "Plinth height from y 1228-1281: 0.0848 units. Door seam centre y=598: 1.0928 units, with a 0.0288-unit groove from the 18 px dark band.",
+      "Handles from x 449-480 y 386-577 and x 450-479 y 662-859: radius 0.0466, lengths 0.3056 and 0.3152, both at x=-0.4547.",
+      "Badge from x 718-769 y 329-383: 51 by 54 px is a circle at the solved camera, so the fitted radius 0.0576 is the geometric mean of the two fitted extents rather than either one, which keeps the disc round under an anisotropic fit."
+    ]
+  },
+  "suitability": "pass",
+  "scores": {
+    "object_isolation": 3,
+    "silhouette_readability": 3,
+    "depth_inference": 2,
+    "primitive_decomposition": 3,
+    "material_procedurality": 3,
+    "occlusion_risk": 2,
+    "interaction_fit": 3
+  },
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "two-door domestic refrigerator on an inset plinth",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "rolled-moulded-edge"
+      ],
+      "structureKind": [
+        "monolithic-cabinet",
+        "hinged-panels",
+        "applied-trim"
+      ],
+      "motionPotential": [
+        "door-swing",
+        "cabinet-topple",
+        "cabinet-charge"
+      ],
+      "materialFamilies": [
+        "matte-plastic-mint",
+        "matte-plastic-navy",
+        "matte-plastic-cream",
+        "matte-plastic-coral"
+      ],
+      "notes": "The identity is the rounded slab standing on a darker inset plinth, split by one groove into a short upper door and a tall lower one, with two short cream pulls on the same vertical axis and a single coral badge diagonally opposite the upper pull. One view: the back, the underside and the interior are inferred."
+    },
+    "complexity": {
+      "tier": "moderate",
+      "scores": {
+        "silhouetteComplexity": 2,
+        "componentCount": 2,
+        "hierarchyDepth": 2,
+        "repetitionDensity": 1,
+        "materialLayerCount": 2,
+        "localDetailDensity": 2,
+        "occlusionRisk": 2,
+        "actionReadinessNeed": 3
+      },
+      "estimatedCounts": {
+        "macroComponents": 2,
+        "mesoComponents": 4,
+        "microFeatureGroups": 1,
+        "materialLayers": 4,
+        "repetitionSystems": 0
+      },
+      "reasoning": [
+        "Seven parts across four albedos, with a real hierarchy: handles ride doors and the badge rides the freezer door, so a door that swings carries its trim.",
+        "The two handles are a near-repeat but differ in length, so they are authored as two components rather than as a repetition system over one.",
+        "Action readiness is high: the trap charges the cabinet down a corridor, so the root has to carry translation and the collider proxy has to match the trap's own.",
+        "Occlusion risk is moderate: the back and underside are never seen and the interior never opens."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "moderate",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": false,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "The appliance is simple in plan but its whole read is a set of rolled edges and one groove, so both the component tree and the material local overrides have to carry that; and the trap moves it, so the rig matters."
+    },
+    "unknownsToResolveBeforeImplementation": [],
+    "resolvedUnknowns": [
+      {
+        "unknown": "The reference's proportion does not fit the trap collider.",
+        "resolution": "The envelope is taken from the collider (1.34 x 1.84 x 0.94) and every reference measurement enters as a fraction of it. Reproducing the reference's 1.786 front-face aspect would either overflow the collider and pass the runner's 2.17-unit jump ceiling, or leave 0.27 units of invisible collider on each side. Both are fairness bugs.",
+        "confidence": 0.9
+      },
+      {
+        "unknown": "The crown roll's radius is not separable from the top face's foreshortening in one view.",
+        "resolution": "Set to 0.16 units, which reads at the reference's softness. Every other vertical number is measured, so an error here moves only the crown.",
+        "confidence": 0.5
+      },
+      {
+        "unknown": "The vertical corner radius cannot be measured, because the rounding is what stops the silhouette reaching the corners that would measure it.",
+        "resolution": "Held at 0.16, the radius the hand-authored fridge used.",
+        "confidence": 0.5
+      },
+      {
+        "unknown": "How far each door wraps around the cabinet is not observable.",
+        "resolution": "Modelled as full-perimeter bands. The row scans find no vertical step on the door face, so the doors are at least as wide as the cabinet; a band reads correctly from every angle the game uses and keeps each door a separate openable part.",
+        "confidence": 0.55
+      },
+      {
+        "unknown": "The back, the underside and the interior are never visible.",
+        "resolution": "Closed with the same plan and the same roll as the front. A charging fridge never shows its back in play.",
+        "confidence": 0.6
+      }
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zone scan of the reference at 3x, with green-channel step scans down columns 420, 500, 600, 700, 800 and 825 and across rows 400, 480, 700, 900 and 1100 to place the door seam, the door-panel top edge, the plinth and both handles in pixels before converting to world units.",
+      "targetMinDetails": 12,
+      "note": "Every detail below resolves to a component.localFeatures id or a material.localOverrides id; none is prose only.",
+      "details": [
+        {
+          "id": "d-crown-roll",
+          "zone": "top",
+          "kind": "contour",
+          "description": "The cabinet rolls over onto its top face instead of meeting it at an edge.",
+          "mapsTo": {
+            "ref": "crown-roll",
+            "owner": "shell",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "profileStops easing the plan inward over the top of the sweep",
+          "evidenceRef": "full-object",
+          "confidence": 0.6
+        },
+        {
+          "id": "d-crown-highlight",
+          "zone": "top",
+          "kind": "gloss",
+          "description": "The crown carries the brightest mint in the frame at (193,224,195).",
+          "mapsTo": {
+            "ref": "crown-highlight",
+            "owner": "shell-mint",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "roughness override on the crown band",
+          "evidenceRef": "crown-zone",
+          "confidence": 0.75
+        },
+        {
+          "id": "d-corner-round",
+          "zone": "sides",
+          "kind": "bevel",
+          "description": "All four vertical corners carry a 0.16 radius.",
+          "mapsTo": {
+            "ref": "corner-round",
+            "owner": "shell",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "rounded-rectangle plan",
+          "evidenceRef": "full-object",
+          "confidence": 0.5
+        },
+        {
+          "id": "d-side-shade",
+          "zone": "left",
+          "kind": "contour",
+          "description": "The shaded face is the same pigment at a different orientation, not a second albedo.",
+          "mapsTo": {
+            "ref": "side-face-shade",
+            "owner": "shell-mint",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "roughness override on the shaded face",
+          "evidenceRef": "side-zone",
+          "confidence": 0.85
+        },
+        {
+          "id": "d-door-seam",
+          "zone": "front",
+          "kind": "contour",
+          "description": "A 0.0288-unit groove separates the two doors, reading (9,26,14) at its floor.",
+          "mapsTo": {
+            "ref": "door-under-edge",
+            "owner": "freezer-door",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "gap between two proud door bands with rolled edges",
+          "evidenceRef": "seam-zone",
+          "confidence": 0.8
+        },
+        {
+          "id": "d-seam-occlusion",
+          "zone": "front",
+          "kind": "stain",
+          "description": "The groove floor is the darkest value in the frame: contact occlusion, not paint.",
+          "mapsTo": {
+            "ref": "seam-occlusion",
+            "owner": "shell-mint",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "AO boost in the groove",
+          "evidenceRef": "seam-zone",
+          "confidence": 0.8
+        },
+        {
+          "id": "d-door-proud",
+          "zone": "front",
+          "kind": "bevel",
+          "description": "Each door stands 0.02 proud of the cabinet with a rolled edge.",
+          "mapsTo": {
+            "ref": "door-proud",
+            "owner": "freezer-door",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "larger plan over the door's height range",
+          "evidenceRef": "freezer-zone",
+          "confidence": 0.7
+        },
+        {
+          "id": "d-handle-upper",
+          "zone": "front",
+          "kind": "contour",
+          "description": "The freezer handle is a 0.306-unit capsule at x=-0.4547.",
+          "mapsTo": {
+            "ref": "bar-length",
+            "owner": "handle-upper",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "capsule from the measured 31 by 191 px run",
+          "evidenceRef": "handle-zone",
+          "confidence": 0.85
+        },
+        {
+          "id": "d-handle-lower",
+          "zone": "front",
+          "kind": "contour",
+          "description": "The fridge handle is a 0.315-unit capsule on the same axis.",
+          "mapsTo": {
+            "ref": "bar-length",
+            "owner": "handle-lower",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "capsule from the measured 29 by 197 px run",
+          "evidenceRef": "handle-zone",
+          "confidence": 0.85
+        },
+        {
+          "id": "d-handle-sheen",
+          "zone": "front",
+          "kind": "gloss",
+          "description": "Both handle crowns are the brightest values on the door face at (240,222,189).",
+          "mapsTo": {
+            "ref": "bar-crown-sheen",
+            "owner": "trim-cream",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "roughness override on the outward third of each bar",
+          "evidenceRef": "handle-zone",
+          "confidence": 0.8
+        },
+        {
+          "id": "d-handle-contact",
+          "zone": "front",
+          "kind": "stain",
+          "description": "Each bar keeps a contact shadow where it meets the door.",
+          "mapsTo": {
+            "ref": "bar-root-shadow",
+            "owner": "trim-cream",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "AO boost at the bar root",
+          "evidenceRef": "handle-zone",
+          "confidence": 0.7
+        },
+        {
+          "id": "d-badge",
+          "zone": "front",
+          "kind": "contour",
+          "description": "A 0.115-unit coral disc on the freezer door's outboard corner.",
+          "mapsTo": {
+            "ref": "dome-crown",
+            "owner": "badge",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "revolved domed disc",
+          "evidenceRef": "badge-zone",
+          "confidence": 0.75
+        },
+        {
+          "id": "d-badge-sheen",
+          "zone": "front",
+          "kind": "gloss",
+          "description": "The badge's crown catches the key and its rim falls away.",
+          "mapsTo": {
+            "ref": "badge-dome-sheen",
+            "owner": "badge-coral",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "roughness override on the crown",
+          "evidenceRef": "badge-zone",
+          "confidence": 0.7
+        },
+        {
+          "id": "d-plinth-inset",
+          "zone": "base",
+          "kind": "contour",
+          "description": "The plinth is inset 0.07 on every side, so the cabinet overhangs it.",
+          "mapsTo": {
+            "ref": "cabinet-inset",
+            "owner": "plinth",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "smaller plan than the cabinet's",
+          "evidenceRef": "plinth-zone",
+          "confidence": 0.8
+        },
+        {
+          "id": "d-plinth-tuck",
+          "zone": "base",
+          "kind": "bevel",
+          "description": "The plinth tucks inward at the bottom rather than meeting the ground square.",
+          "mapsTo": {
+            "ref": "base-tuck",
+            "owner": "plinth",
+            "kind": "component.localFeatures"
+          },
+          "geometryRecipe": "mirrored profileStops at the start of the sweep",
+          "evidenceRef": "plinth-zone",
+          "confidence": 0.7
+        },
+        {
+          "id": "d-plinth-contact",
+          "zone": "base",
+          "kind": "stain",
+          "description": "The plinth's lowest band loses the key entirely where it tucks under.",
+          "mapsTo": {
+            "ref": "floor-contact",
+            "owner": "plinth-navy",
+            "kind": "material.localOverrides"
+          },
+          "geometryRecipe": "AO boost on the bottom band",
+          "evidenceRef": "plinth-zone",
+          "confidence": 0.75
+        }
+      ]
+    },
+    "anatomy": {
+      "applies": false,
+      "styleHeads": 0.0,
+      "proportions": {
+        "headUnit": 0.0,
+        "torso": 0.0,
+        "legs": 0.0,
+        "shoulderWidth": 0.0,
+        "hipWidth": 0.0
+      },
+      "pose": {
+        "type": "not-applicable",
+        "jointAngles": {}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.0,
+        "eyeSpacing": 0.0,
+        "noseBase": 0.0,
+        "mouthLine": 0.0,
+        "hairline": 0.0
+      },
+      "features": [],
+      "confidence": 0.0,
+      "note": "primaryDomain is object, so the character track does not apply."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\fridge-reference.png"
+  },
+  "qualityContract": {
+    "qualityBar": "moderate",
+    "definitionOfDone": [
+      "The rendered cabinet matches the reference's part layout: one groove splitting a short upper door from a tall lower one, two short cream pulls on one vertical axis, one coral badge diagonally opposite the upper pull, and an inset darker plinth.",
+      "No crease appears anywhere on the cabinet, the doors or the plinth under any review light; every edge is a roll.",
+      "The model stays inside 1.34 x 1.84 x 0.96 world units, trim included, and sits on y=0, which is what the trap's CuboidCollider and its [0, -0.92, 0] mount assume."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 2,
+      "mesoComponents": 4,
+      "microFeatureGroups": 1,
+      "materialLayers": 4,
+      "repetitionSystems": 0,
+      "reviewViewpoints": 3
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Cabinet, plinth and door heights are stated as measured numbers derived from named pixel spans.",
+          "The envelope is stated as the call site's, with the compression against the reference quantified rather than hidden."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "plinth-zone"
+        ],
+        "failureModes": [
+          "model reads as a plain box",
+          "plinth flush with the cabinet",
+          "proportions guessed rather than derived"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Cabinet, plinth, two doors, two handles and the badge are separate named parts.",
+          "Handles parent to their own door and the badge to the freezer door, so a swinging door carries its trim.",
+          "Every contact records a seam overlap of at least 0.02 world units."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "seam-zone"
+        ],
+        "failureModes": [
+          "cabinet and doors merged into one mesh",
+          "handles parented to the cabinet so a door swing leaves them behind"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Contact and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Each handle is buried in its door skin rather than resting on it.",
+          "The door bands overlap the cabinet by their own proud depth.",
+          "The cabinet's sweep starts inside the plinth's top roll."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "handle-zone"
+        ],
+        "failureModes": [
+          "handles float off the door",
+          "gap opens between cabinet and plinth"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal intent and local overrides are specified per material and tied to evidenceRefs.",
+          "Albedo, roughness, height, normal and AO are independent fields.",
+          "Surface response is decomposed into macro, meso and micro bands."
+        ],
+        "evidenceRefs": [
+          "full-object",
+          "side-zone"
+        ],
+        "failureModes": [
+          "surface looks like glossy toy plastic",
+          "the shaded face authored as a second albedo rather than as orientation"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference colour, material and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "The four-layer palette traces to median-sampled reference pixels.",
+          "Reference PBR extraction ran on every material crop and its confidence and binding decision are recorded.",
+          "Lighting names key, fill, rim or environment, exposure, tone mapping, background and contact shadow behaviour.",
+          "Neutral, grazing and reference-matched renders prove the rolls survive relighting rather than being painted."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "acceptable shape but flat-shaded read",
+          "mint drifts to the level palette's own green",
+          "lighting evenly ambient"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "door groove height and depth delta",
+      "handle length and offset delta",
+      "component hierarchy depth delta",
+      "material albedo, roughness and normal response delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ],
+    "mustNotDo": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components, materials and evidenceRefs.",
+      "Do not proceed past structural-pass if a contacting part lacks a seam overlap record.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal or AO.",
+      "Do not pass material look-dev without macro, meso and micro surface frequency bands.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not claim a procedural finish reproduces a patterned reference finish.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "qualityTargets": {
+    "targetFidelity": 0.8,
+    "mustMatch": [
+      "rounded cabinet slab on an inset darker plinth",
+      "one modelled groove splitting a short upper door from a tall lower one",
+      "two short cream capsule pulls on one vertical axis near the door's edge",
+      "one domed coral badge on the freezer door's outboard corner",
+      "four-albedo palette: mint, navy, cream, coral"
+    ],
+    "niceToHave": [
+      "the exact crown roll radius",
+      "the hinge hardware the reference never shows",
+      "the door gasket line"
+    ],
+    "fpsTarget": 60,
+    "reviewViewpoints": [
+      "reference-three-quarter",
+      "front",
+      "right",
+      "top-down",
+      "grazing"
+    ]
+  },
+  "selfCorrectLoop": {
+    "enabled": true,
+    "visualAcceptance": {
+      "reviewer": "ai-vision",
+      "threshold": 0.7,
+      "comparisonArtifactRequired": true,
+      "layerScoresRequired": true,
+      "codePixelDiffIsAcceptanceAuthority": false,
+      "scoringRule": "AI vision must inspect a side-by-side reference/render sheet and score the current pass from 0 to 1. Pixel-diff code may assist diagnostics but cannot approve a pass.",
+      "requiredLayerScores": [
+        "silhouetteProportion",
+        "componentStructure",
+        "formDetail",
+        "materialSurface",
+        "lightingCamera"
+      ],
+      "featureReviewPolicy": {
+        "enabled": true,
+        "reviewUnit": "semantic-subsystem",
+        "maxCriticalFeaturesPerPass": 5,
+        "maxImportantFeaturesPerPass": 3,
+        "criticalDefaultThreshold": 0.8,
+        "importantAverageThreshold": 0.65,
+        "adaptiveEscalation": true,
+        "singleImagePairOnly": true,
+        "selectionRule": "Score only identity-defining semantic systems, never generic quality adjectives."
+      }
+    },
+    "reviewAfterPasses": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "allowedActions": [
+      "continue",
+      "refine-spec",
+      "refine-code",
+      "request-input",
+      "stop"
+    ],
+    "specRefineTriggers": [
+      "missing component",
+      "wrong primitive family",
+      "wrong proportions",
+      "material layer under-specified",
+      "local feature not traceable to viewEvidence",
+      "reference ambiguity discovered during implementation"
+    ],
+    "codeRefineTriggers": [
+      "spec is adequate but generated geometry or material does not match",
+      "browser render differs from reference",
+      "performance budget exceeded",
+      "lighting hides geometry or material response"
+    ],
+    "stopCriteria": [
+      "target fidelity reached or the user accepts the current approximation",
+      "remaining gaps require reference views the single image does not cover"
+    ],
+    "screenshotPolicy": {
+      "requiredForPasses": [
+        "blockout",
+        "structural-pass",
+        "form-refinement",
+        "material-pass",
+        "surface-pass",
+        "lighting-pass",
+        "interaction-pass"
+      ],
+      "preferredCapture": "playwright screenshot of the shared props preview harness",
+      "fallbackCapture": "user-supplied-screenshot-path",
+      "minimumEvidence": "Each visual pass needs a reference image, a rendered screenshot framed to the reference bounding box, a side-by-side comparison sheet, an AI vision score, layer scores and a critique before choosing continue.",
+      "reviewPairRule": "The review render always uses the solved reference camera; orbit views are judged for self-consistency only, never against the reference angle.",
+      "acceptanceAuthority": "AI vision review of the comparison sheet. Code-generated pixel similarity is not sufficient evidence."
+    }
+  },
+  "featureReviewTargets": [
+    {
+      "id": "cabinet-silhouette",
+      "name": "Cabinet slab and plinth proportions",
+      "tier": "critical",
+      "passIds": [
+        "blockout",
+        "structural-pass",
+        "form-refinement"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "shell",
+        "plinth"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "cabinet reads as a hard-edged box",
+        "plinth flush with the cabinet",
+        "corner radius so large the cabinet reads as a capsule"
+      ]
+    },
+    {
+      "id": "door-split",
+      "name": "Two-door split with a real groove",
+      "tier": "critical",
+      "passIds": [
+        "structural-pass",
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "freezer-door",
+        "fridge-door"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "seam-zone"
+      ],
+      "failureModes": [
+        "seam painted rather than modelled",
+        "doors flush with the cabinet",
+        "seam at the wrong height so the freezer reads as half the cabinet"
+      ]
+    },
+    {
+      "id": "handle-pair",
+      "name": "Short cream pull handles",
+      "tier": "critical",
+      "passIds": [
+        "structural-pass",
+        "form-refinement"
+      ],
+      "minimumScore": 0.8,
+      "mustPass": true,
+      "componentRefs": [
+        "handle-upper",
+        "handle-lower"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "handle-zone"
+      ],
+      "failureModes": [
+        "handles run the full door height",
+        "handles flat against the door",
+        "handles on the hinge side"
+      ]
+    },
+    {
+      "id": "four-tone-palette",
+      "name": "Mint cabinet, navy plinth, cream handles, coral badge",
+      "tier": "critical",
+      "passIds": [
+        "material-pass",
+        "surface-pass",
+        "lighting-pass"
+      ],
+      "minimumScore": 0.75,
+      "mustPass": true,
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "handle-upper",
+        "badge"
+      ],
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "failureModes": [
+        "mint drifts to the level palette's own green",
+        "plinth reads black rather than slate navy",
+        "glossy highlights on matte mouldings"
+      ]
+    },
+    {
+      "id": "badge-placement",
+      "name": "Coral badge on the freezer door",
+      "tier": "important",
+      "passIds": [
+        "form-refinement",
+        "surface-pass"
+      ],
+      "minimumScore": 0.65,
+      "mustPass": false,
+      "componentRefs": [
+        "badge"
+      ],
+      "evidenceRefs": [
+        "full-object",
+        "badge-zone"
+      ],
+      "failureModes": [
+        "badge flat rather than domed",
+        "badge centred rather than outboard",
+        "badge missing"
+      ]
+    }
+  ],
+  "sculptPipeline": {
+    "passGateMode": "locked-sequential",
+    "passOrder": [
+      "blockout",
+      "structural-pass",
+      "form-refinement",
+      "material-pass",
+      "surface-pass",
+      "lighting-pass",
+      "interaction-pass",
+      "optimization-pass"
+    ],
+    "currentPass": "form-refinement",
+    "completedPasses": [
+      "blockout",
+      "structural-pass"
+    ],
+    "lastCompletedPass": "structural-pass",
+    "blockedReason": "",
+    "nextRequiredEvidence": [
+      "The crown reads as a continuous roll with no chamfer facet.",
+      "The seam between the doors is a groove with two lit lips, not a scored line.",
+      "Both handles read as round-sectioned capsules standing off the door face.",
+      "The cabinet overhangs the plinth on every side.",
+      "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold.",
+      "attachment contracts for child appendages/connectors",
+      "no floating child roots/joints in the browser screenshot",
+      "browser render screenshot from your agent's browser/screenshot tool",
+      "side-by-side reference/render comparison sheet for AI vision review",
+      "AI vision score at or above the visual acceptance threshold",
+      "all critical semantic feature scores from the shared image pair at or above their thresholds",
+      "self-correction review appended with action=continue before the next pass"
+    ]
+  },
+  "lookDevTargets": {
+    "qualityPriority": "reference-fidelity",
+    "materialPass": {
+      "albedoPaletteRequired": true,
+      "roughnessVariationRequired": true,
+      "normalOrBumpRequired": true,
+      "localOverridesRequired": true,
+      "minimumTextureResolution": 256,
+      "preferredTextureResolution": 1024,
+      "independentMapChannels": [
+        "albedo",
+        "roughness",
+        "height",
+        "normal",
+        "ambient-occlusion"
+      ],
+      "requiredSurfaceFrequencyBands": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "geometryReliefRequiredWhenSilhouetteAffected": true,
+      "referencePbrExtraction": {
+        "requiredWhenSourceImagePresent": false,
+        "ranAnyway": true,
+        "targetThreshold": 0.7,
+        "stopOnLowConfidence": true,
+        "script": "forge/stage1_intake/extract_pbr_evidence.py",
+        "acceptedLimitation": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars."
+      },
+      "mustAvoid": [
+        "single flat albedo per material",
+        "uniform roughness",
+        "albedo texture reused as roughness, height, normal or AO",
+        "single-frequency random noise",
+        "glossy toy-plastic highlights on a matte moulded surface",
+        "local colour described only in prose without material masks",
+        "claiming exact PBR recovery from one image"
+      ]
+    },
+    "lightingPass": {
+      "requiredTerms": [
+        "key light",
+        "fill light",
+        "rim or environment light",
+        "exposure",
+        "tone mapping",
+        "background",
+        "contact shadow"
+      ],
+      "mustAvoid": [
+        "ambient-only lighting",
+        "flat value range",
+        "missing contact shadow",
+        "reference lighting copied without separating material readability"
+      ]
+    },
+    "screenshotReview": [
+      "Compare the albedo palette and the local colour zones.",
+      "Compare roughness and normal response under the key light.",
+      "Compare contact darkening, seam occlusion and crown polish.",
+      "Compare key, fill and rim structure, exposure, tone mapping and background.",
+      "Capture a neutral-light render to verify material readability without reference lighting.",
+      "Capture a grazing-light close-up to expose flat normals and uniform roughness.",
+      "Capture a reference-matched render from the solved camera."
+    ]
+  },
+  "actionReadiness": {
+    "contract": "Every macro and meso component is a named Object3D pivot node with a mesh child, action metadata, sockets where relevant, a collider proxy and destruction metadata. The runtime reads root.userData.sculptRuntime.",
+    "defaultRigType": "action-ready-prop-rig",
+    "rootMotionNode": "shell",
+    "requiredComponentFields": [
+      "id",
+      "parent",
+      "transform",
+      "seams for every contacting part",
+      "actionProfile.animationRole",
+      "actionProfile.pivot",
+      "actionProfile.collider",
+      "actionProfile.destruction"
+    ],
+    "transformChannels": [
+      "translate",
+      "rotate",
+      "scale",
+      "detach",
+      "visibility",
+      "material-state"
+    ],
+    "authoringRules": [
+      "Do not collapse independently movable parts into one mesh.",
+      "Put transforms on component pivot groups, not on raw meshes.",
+      "Animated parts keep their pivot node at the axis of motion so children ride along.",
+      "Represent hinge, socket, detachable and breakable intent even when no animation is implemented yet.",
+      "Use simplified collider proxies for runtime physics instead of visual mesh colliders."
+    ],
+    "runtimeContract": {
+      "rootMotion": "sculptRuntime.nodes['shell'] carries translation, rotation and scale; the plinth, both doors and their trim are its descendants so the cabinet charges as one body.",
+      "doorSwing": "sculptRuntime.nodes['freezer-door'] and ['fridge-door'] rotate about sockets['freezer-door:freezer-door-hinge'] and the fridge equivalent, on the handle-opposite side. Each door's handle and the badge are its children, so a swing carries them.",
+      "collider": "colliders['shell'] is a box proxy matching the trap's CuboidCollider args [0.68, 0.92, 0.48]. That match is the point of the envelope: the visible cabinet and the shape that hits the player are the same box."
+    },
+    "destructionPolicy": {
+      "defaultBreakable": false,
+      "fractureGroupNaming": "cabinet, trim",
+      "debrisStrategy": "Detach the badge and either handle as whole parts; the cabinet is not fractured."
+    }
+  },
+  "assumptions": [
+    "The envelope is the trap collider's, not the reference's. The reference fridge's front face is 1.786 times its width and this model's is 1.19, a vertical fit of 0.667. This is deliberate and is the first entry in risks.",
+    "The crown roll is 0.16 units and the vertical corner radius is 0.16. Neither is measurable from one view.",
+    "Both doors are modelled as full-perimeter bands. The reference only shows their front.",
+    "The badge is authored round at the geometric mean of its two fitted extents rather than as the ellipse the anisotropic fit would otherwise produce.",
+    "The hinges are on the handle-opposite side. The reference shows no hinge hardware at all; the handle position is the only evidence for which side opens.",
+    "One world unit is about 95 cm, making the modelled cabinet about 175 cm tall.",
+    "The hand-authored fridge this replaces carried four separate feet under a red plinth. The reference has a single navy plinth and no feet, so the feet are not rebuilt."
+  ],
+  "coordinateFrame": {
+    "front": "+Z, the door face, which is the direction the charging trap travels",
+    "up": "+Y, with the underside of the plinth at y = 0",
+    "right": "+X, along the cabinet's width",
+    "scaleReference": "cabinet width = 1.34 world units; 332 reference pixels per world unit horizontally and 625 vertically"
+  },
+  "silhouette": {
+    "boundingShape": "rounded cabinet slab 1.34 by 0.82 in plan and 1.84 tall, standing on a plinth inset 0.07 on every side",
+    "aspectRatios": [
+      {
+        "id": "height-to-width",
+        "value": 1.373,
+        "notes": "as built; the reference's own front face measures 1.786 at the solved camera against this model's 1.19, and the difference is the documented call-site fit"
+      },
+      {
+        "id": "width-to-depth",
+        "value": 1.634,
+        "notes": "plan aspect; the reference resolves to 1.29 at the solved camera, so the plan is within 10 percent of the reference and only the height is fitted"
+      },
+      {
+        "id": "freezer-to-fridge-door",
+        "value": 0.583,
+        "notes": "measured directly from the 367 px and 630 px door spans at column 600"
+      }
+    ],
+    "symmetry": "mirror symmetric in plan about both axes; the trim breaks the symmetry on the door face only",
+    "dominantCurves": [
+      "the crown roll",
+      "the four rounded vertical corners",
+      "the rolled lips on both sides of the door groove",
+      "the handle capsules' domed ends"
+    ],
+    "negativeSpaces": [
+      "the groove between the doors",
+      "the shadow band under the cabinet's overhang of the plinth",
+      "the gap between each handle and its door face"
+    ],
+    "landmarks": [
+      "plinth top at y = 0.0848",
+      "door groove at y = 1.0928",
+      "front face top edge at y = 1.68",
+      "crown at y = 1.84"
+    ]
+  },
+  "viewEvidence": [
+    {
+      "id": "full-object",
+      "view": "primary three-quarter view, azimuth 23 and elevation 16 degrees",
+      "imageRegion": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1.0,
+        "height": 1.0,
+        "units": "normalized"
+      },
+      "observations": [
+        "Silhouette box spans x 246-838 and y 121-1302 of a 1086x1448 image: 593 by 1182 pixels.",
+        "The near vertical corner is a 60-count green step at x=393 on every row from y=400 to y=1100, which splits the door face from the shaded left face.",
+        "Four albedos only: cabinet mint, plinth navy, handle cream, badge coral.",
+        "The back, the underside and the interior are not visible."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "crown-zone",
+      "view": "cabinet crown and top face",
+      "imageRegion": {
+        "x": 0.2,
+        "y": 0.06,
+        "width": 0.62,
+        "height": 0.14,
+        "units": "normalized"
+      },
+      "observations": [
+        "Column 600 finds the front face's top edge at y=231 with a dark-then-bright pair, which is a groove lip rather than a silhouette edge.",
+        "The crown reads (193,224,195), the brightest mint in the frame.",
+        "The 106 px between the silhouette top and the door top at that column is mostly the foreshortened top face, so the roll's own radius is not separable from it."
+      ],
+      "confidence": 0.6
+    },
+    {
+      "id": "seam-zone",
+      "view": "groove between the two doors",
+      "imageRegion": {
+        "x": 0.24,
+        "y": 0.38,
+        "width": 0.62,
+        "height": 0.08,
+        "units": "normalized"
+      },
+      "observations": [
+        "Column 600 reads a dark band at y 593-611 with a bright lip immediately below it.",
+        "The groove floor is (9,26,14), the darkest value in the frame.",
+        "The band's centre falls 33 px over x 450-750, matching the door face's own slope, so it is a horizontal groove on that face rather than a tilted line."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "handle-zone",
+      "view": "both handle bars",
+      "imageRegion": {
+        "x": 0.32,
+        "y": 0.2,
+        "width": 0.14,
+        "height": 0.44,
+        "units": "normalized"
+      },
+      "observations": [
+        "Upper bar x 449-480 y 386-577; lower bar x 450-479 y 662-859.",
+        "Both are 29-31 px across and about 195 px long, so each covers under a fifth of its door rather than running its full height.",
+        "Crowns read (240,222,189) against (236,218,185) lower down: smooth, not glossy."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "badge-zone",
+      "view": "coral badge",
+      "imageRegion": {
+        "x": 0.63,
+        "y": 0.15,
+        "width": 0.12,
+        "height": 0.08,
+        "units": "normalized"
+      },
+      "observations": [
+        "The disc spans x 718-769 and y 329-383: 51 by 54 px, which resolves to 0.153 and 0.156 world units at the solved camera, so it is a circle.",
+        "It reads (245,141,122) at its crown and falls off toward its rim.",
+        "It sits on the freezer door's outboard upper corner, diagonally opposite the handle."
+      ],
+      "confidence": 0.8
+    },
+    {
+      "id": "plinth-zone",
+      "view": "base plinth",
+      "imageRegion": {
+        "x": 0.0,
+        "y": 0.85,
+        "width": 1.0,
+        "height": 0.15,
+        "units": "normalized"
+      },
+      "observations": [
+        "Navy spans x 257-816 against the cabinet's 246-838, so the plinth is inset by 11 px on the left face and 22 px on the door face.",
+        "Its front-face height is 53 px at column 600 (y 1228-1281).",
+        "Its two top edges give the camera solve: -39 px over 300 on the door face and -80 px over -120 on the left face."
+      ],
+      "confidence": 0.85
+    },
+    {
+      "id": "side-zone",
+      "view": "shaded left face",
+      "imageRegion": {
+        "x": 0.0,
+        "y": 0.1,
+        "width": 0.26,
+        "height": 0.8,
+        "units": "normalized"
+      },
+      "observations": [
+        "Reads (120,155,127) against the door face's (155,193,161): a pure value shift.",
+        "No door seam, handle or badge appears on it, so both doors are on the +Z face.",
+        "No horizontal feature of any kind crosses it."
+      ],
+      "confidence": 0.8
+    },
+    {
+      "id": "freezer-zone",
+      "view": "upper door",
+      "imageRegion": {
+        "x": 0.24,
+        "y": 0.09,
+        "width": 0.62,
+        "height": 0.32,
+        "units": "normalized"
+      },
+      "observations": [
+        "Runs from the front face's top edge at y=231 down to the groove at y=598.",
+        "Carries the upper handle and the badge; no other feature.",
+        "No vertical step is found anywhere across it, so the door is as wide as the cabinet."
+      ],
+      "confidence": 0.8
+    },
+    {
+      "id": "fridge-zone",
+      "view": "lower door",
+      "imageRegion": {
+        "x": 0.24,
+        "y": 0.42,
+        "width": 0.62,
+        "height": 0.48,
+        "units": "normalized"
+      },
+      "observations": [
+        "Runs from the groove at y=598 down to the plinth top at y=1228.",
+        "Carries the lower handle only.",
+        "Its 630 px make it 1.71 times the freezer door's 367 px."
+      ],
+      "confidence": 0.8
+    }
+  ],
+  "componentTree": [
+    {
+      "id": "shell",
+      "name": "Cabinet shell",
+      "level": "macro",
+      "role": "shell",
+      "importance": 1.0,
+      "confidence": 0.8,
+      "primitive": "extrude",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "One moulded cabinet with no crease: the reference's vertical corners and its crown roll into each other continuously, and no edge scan finds a hard line anywhere on the body. A box with bevels would show four corner facets the reference does not have.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(87, 223, 161, 1.0)",
+        "secondaryAlbedo": "rgba(78, 200, 144, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "rounded-rectangle plan swept vertically from the plinth top to the crown, with the plan easing inward over the top of the sweep so the cabinet rolls over instead of meeting the top face at an edge",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "crown roll inward over the top 0.16 units"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs; one tile per part",
+        "normalStrategy": "welded vertices then smooth vertex normals; the reference has no crease",
+        "profile2D": {
+          "points": [
+            [
+              0.67,
+              0.23
+            ],
+            [
+              0.66455,
+              0.27141
+            ],
+            [
+              0.64856,
+              0.31
+            ],
+            [
+              0.62314,
+              0.34314
+            ],
+            [
+              0.59,
+              0.36856
+            ],
+            [
+              0.55141,
+              0.38455
+            ],
+            [
+              0.51,
+              0.39
+            ],
+            [
+              -0.51,
+              0.39
+            ],
+            [
+              -0.55141,
+              0.38455
+            ],
+            [
+              -0.59,
+              0.36856
+            ],
+            [
+              -0.62314,
+              0.34314
+            ],
+            [
+              -0.64856,
+              0.31
+            ],
+            [
+              -0.66455,
+              0.27141
+            ],
+            [
+              -0.67,
+              0.23
+            ],
+            [
+              -0.67,
+              -0.23
+            ],
+            [
+              -0.66455,
+              -0.27141
+            ],
+            [
+              -0.64856,
+              -0.31
+            ],
+            [
+              -0.62314,
+              -0.34314
+            ],
+            [
+              -0.59,
+              -0.36856
+            ],
+            [
+              -0.55141,
+              -0.38455
+            ],
+            [
+              -0.51,
+              -0.39
+            ],
+            [
+              0.51,
+              -0.39
+            ],
+            [
+              0.55141,
+              -0.38455
+            ],
+            [
+              0.59,
+              -0.36856
+            ],
+            [
+              0.62314,
+              -0.34314
+            ],
+            [
+              0.64856,
+              -0.31
+            ],
+            [
+              0.66455,
+              -0.27141
+            ],
+            [
+              0.67,
+              -0.23
+            ]
+          ],
+          "depth": 1.7552,
+          "axis": "y",
+          "axisOffset": 0.0848,
+          "steps": 72,
+          "profileStops": [
+            [
+              0.0,
+              0.985,
+              0.978
+            ],
+            [
+              0.012,
+              1.0,
+              1.0
+            ],
+            [
+              0.922,
+              0.994,
+              0.9897
+            ],
+            [
+              0.935,
+              0.9764,
+              0.9594
+            ],
+            [
+              0.948,
+              0.9479,
+              0.9105
+            ],
+            [
+              0.961,
+              0.9101,
+              0.8455
+            ],
+            [
+              0.974,
+              0.8648,
+              0.7677
+            ],
+            [
+              0.987,
+              0.8143,
+              0.681
+            ],
+            [
+              1.0,
+              0.7612,
+              0.5897
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": null,
+      "attachment": null,
+      "dimensions": {
+        "width": 1.34,
+        "height": 1.7552,
+        "depth": 0.78,
+        "units": "world",
+        "confidence": 0.6
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "root",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.92,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.9
+        },
+        "transformChannels": {
+          "translate": true,
+          "rotate": true,
+          "scale": true,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "floor-contact",
+            "localPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Underside of the plinth; the trap mounts the prop here."
+          },
+          {
+            "id": "door-face",
+            "localPosition": [
+              0.0,
+              0.92,
+              0.41
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Centre of the door face, which is the direction the trap charges."
+          }
+        ],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.92,
+            0.0
+          ],
+          "scale": [
+            1.34,
+            1.84,
+            0.96
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy matching the trap's CuboidCollider args [0.68, 0.92, 0.48] exactly, which is what the envelope is for."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cabinet",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "shell-mint",
+      "materialLayers": [
+        "shell-mint"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        {
+          "id": "crown-roll",
+          "description": "The plan eases inward over the top 0.16 units on a quarter cosine, so the cabinet's top is a continuous roll. Column 600 shows the flat front face ending at y=231 with no step, which is a roll rather than a chamfer.",
+          "geometry": "profileStops easing the plan inward over the last sixth of the vertical sweep",
+          "evidenceRefs": [
+            "full-object",
+            "crown-zone"
+          ],
+          "confidence": 0.6
+        },
+        {
+          "id": "side-panel",
+          "description": "The shaded left face is the same pigment as the door face at a different orientation: (120,155,127) against (155,193,161), a pure value shift with no hue change.",
+          "geometry": "plan face, not separate geometry",
+          "evidenceRefs": [
+            "full-object",
+            "side-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "corner-round",
+          "description": "The four vertical corners carry a 0.16 radius. This is the one plan number the view cannot measure, because the rounding is exactly what stops the silhouette reaching the box corners that would let it be measured.",
+          "geometry": "rounded-rectangle plan sampled at 24 points",
+          "evidenceRefs": [
+            "full-object"
+          ],
+          "confidence": 0.5
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.8,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS with slight tone drift",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion in the door groove and under the cabinet's bottom edge",
+        "edgeWearPattern": "none - the reference appliance shows no wear",
+        "notes": "Matte plastic throughout. No specular coat anywhere in the reference."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "crown-zone",
+        "side-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "plinth",
+      "name": "Base plinth",
+      "level": "macro",
+      "role": "base",
+      "importance": 0.8,
+      "confidence": 0.8,
+      "primitive": "extrude",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "A flat rigid base slab with rolled top and bottom edges. It has one visible planar side face, which is what makes it a slab rather than part of the cabinet's continuous shell.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(36, 50, 74, 1.0)",
+        "secondaryAlbedo": "rgba(32, 45, 66, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "rounded-rectangle plan inset from the cabinet, swept vertically and eased inward at both ends of the sweep",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "top roll inward",
+          "base tuck inward"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs",
+        "normalStrategy": "welded then smooth vertex normals",
+        "profile2D": {
+          "points": [
+            [
+              0.6,
+              0.228
+            ],
+            [
+              0.59618,
+              0.25699
+            ],
+            [
+              0.58499,
+              0.284
+            ],
+            [
+              0.5672,
+              0.3072
+            ],
+            [
+              0.544,
+              0.32499
+            ],
+            [
+              0.51699,
+              0.33618
+            ],
+            [
+              0.488,
+              0.34
+            ],
+            [
+              -0.488,
+              0.34
+            ],
+            [
+              -0.51699,
+              0.33618
+            ],
+            [
+              -0.544,
+              0.32499
+            ],
+            [
+              -0.5672,
+              0.3072
+            ],
+            [
+              -0.58499,
+              0.284
+            ],
+            [
+              -0.59618,
+              0.25699
+            ],
+            [
+              -0.6,
+              0.228
+            ],
+            [
+              -0.6,
+              -0.228
+            ],
+            [
+              -0.59618,
+              -0.25699
+            ],
+            [
+              -0.58499,
+              -0.284
+            ],
+            [
+              -0.5672,
+              -0.3072
+            ],
+            [
+              -0.544,
+              -0.32499
+            ],
+            [
+              -0.51699,
+              -0.33618
+            ],
+            [
+              -0.488,
+              -0.34
+            ],
+            [
+              0.488,
+              -0.34
+            ],
+            [
+              0.51699,
+              -0.33618
+            ],
+            [
+              0.544,
+              -0.32499
+            ],
+            [
+              0.5672,
+              -0.3072
+            ],
+            [
+              0.58499,
+              -0.284
+            ],
+            [
+              0.59618,
+              -0.25699
+            ],
+            [
+              0.6,
+              -0.228
+            ]
+          ],
+          "depth": 0.1148,
+          "axis": "y",
+          "axisOffset": 0.0,
+          "steps": 16,
+          "profileStops": [
+            [
+              0.0,
+              0.93,
+              0.9
+            ],
+            [
+              0.1,
+              0.985,
+              0.978
+            ],
+            [
+              0.22,
+              1.0,
+              1.0
+            ],
+            [
+              0.86,
+              1.0,
+              1.0
+            ],
+            [
+              0.94,
+              0.985,
+              0.978
+            ],
+            [
+              1.0,
+              0.95,
+              0.93
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": "shell",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.2,
+        "height": 0.0848,
+        "depth": 0.68,
+        "units": "world",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0424,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.8
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0424,
+            0.0
+          ],
+          "scale": [
+            1.2000000000000002,
+            0.0848,
+            0.6799999999999999
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy over the plinth."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cabinet",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "plinth-navy",
+      "materialLayers": [
+        "plinth-navy"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "plinth-shell-seam",
+          "with": "shell",
+          "overlap": 0.03,
+          "notes": "The cabinet's sweep starts at the plinth top, so the two overlap by the plinth's top roll rather than meeting on a plane."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "front-face",
+          "description": "The plinth's own key/shade split runs the same way as the cabinet's: (59,68,86) on the door side against (55,61,73) on the left.",
+          "geometry": "plan face, not separate geometry",
+          "evidenceRefs": [
+            "full-object",
+            "plinth-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "base-tuck",
+          "description": "The plan eases inward at the bottom of the sweep, which is why the reference's lowest silhouette curves in rather than meeting the ground square.",
+          "geometry": "profileStops mirrored at the start of the extrusion",
+          "evidenceRefs": [
+            "full-object",
+            "plinth-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "cabinet-inset",
+          "description": "The plinth is inset 0.07 units on every side. Measured as 11 px on the shaded left face and 22 px on the door face, which are 0.078 and 0.066 world units; one value covers both.",
+          "geometry": "smaller plan than the cabinet's",
+          "evidenceRefs": [
+            "full-object",
+            "plinth-zone"
+          ],
+          "confidence": 0.8
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.82,
+        "microRoughness": 0.06,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "deep occlusion under the cabinet overhang",
+        "edgeWearPattern": "none",
+        "notes": "The darkest part of the appliance and the only one touching the floor."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "plinth-zone"
+      ],
+      "details": [],
+      "fidelityTier": "blockout"
+    },
+    {
+      "id": "freezer-door",
+      "name": "Freezer door",
+      "level": "meso",
+      "role": "door",
+      "importance": 0.9,
+      "confidence": 0.75,
+      "primitive": "extrude",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A moulded door skin that rolls over at both of its horizontal edges. The reference's seam is a groove with two lit lips, not a scored line, so each door has real thickness and its own rolled edge rather than being a decal on the cabinet.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(87, 223, 161, 1.0)",
+        "secondaryAlbedo": "rgba(78, 200, 144, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "rounded-rectangle plan matching the cabinet's, swept vertically over the door's height and eased inward at both ends so each door edge rolls",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "top edge roll",
+          "bottom edge roll"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs",
+        "normalStrategy": "welded then smooth vertex normals",
+        "profile2D": {
+          "points": [
+            [
+              0.67,
+              0.25
+            ],
+            [
+              0.66455,
+              0.29141
+            ],
+            [
+              0.64856,
+              0.33
+            ],
+            [
+              0.62314,
+              0.36314
+            ],
+            [
+              0.59,
+              0.38856
+            ],
+            [
+              0.55141,
+              0.40455
+            ],
+            [
+              0.51,
+              0.41
+            ],
+            [
+              -0.51,
+              0.41
+            ],
+            [
+              -0.55141,
+              0.40455
+            ],
+            [
+              -0.59,
+              0.38856
+            ],
+            [
+              -0.62314,
+              0.36314
+            ],
+            [
+              -0.64856,
+              0.33
+            ],
+            [
+              -0.66455,
+              0.29141
+            ],
+            [
+              -0.67,
+              0.25
+            ],
+            [
+              -0.67,
+              -0.25
+            ],
+            [
+              -0.66455,
+              -0.29141
+            ],
+            [
+              -0.64856,
+              -0.33
+            ],
+            [
+              -0.62314,
+              -0.36314
+            ],
+            [
+              -0.59,
+              -0.38856
+            ],
+            [
+              -0.55141,
+              -0.40455
+            ],
+            [
+              -0.51,
+              -0.41
+            ],
+            [
+              0.51,
+              -0.41
+            ],
+            [
+              0.55141,
+              -0.40455
+            ],
+            [
+              0.59,
+              -0.38856
+            ],
+            [
+              0.62314,
+              -0.36314
+            ],
+            [
+              0.64856,
+              -0.33
+            ],
+            [
+              0.66455,
+              -0.29141
+            ],
+            [
+              0.67,
+              -0.25
+            ]
+          ],
+          "depth": 0.5728,
+          "axis": "y",
+          "axisOffset": 1.1072,
+          "steps": 10,
+          "profileStops": [
+            [
+              0.0,
+              0.965,
+              0.95
+            ],
+            [
+              0.06,
+              1.0,
+              1.0
+            ],
+            [
+              0.94,
+              1.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.965,
+              0.95
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": "shell",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.34,
+        "height": 0.5728,
+        "depth": 0.82,
+        "units": "world",
+        "confidence": 0.75
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "panel",
+        "pivot": {
+          "mode": "socket",
+          "localPosition": [
+            0.67,
+            1.3936,
+            0.41
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.55
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": true,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "freezer-door-hinge",
+            "localPosition": [
+              0.67,
+              1.3936,
+              0.41
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Hinge axis on the handle-opposite side. The reference puts both handles on the left of the door face, so the hinges are on the right; the hinges themselves are never visible."
+          }
+        ],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            1.3936,
+            0.0
+          ],
+          "scale": [
+            1.34,
+            0.5728,
+            0.82
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy over the door band."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cabinet",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "shell-mint",
+      "materialLayers": [
+        "shell-mint"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "freezer-door-shell-seam",
+          "with": "shell",
+          "overlap": 0.02,
+          "notes": "The door band overlaps the cabinet by its own proud depth on every side, so no gap can open behind it."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "door-proud",
+          "description": "The door stands 0.02 units proud of the cabinet's door face and is flush with its sides, which is what makes the seam a groove with two lit lips rather than a painted line.",
+          "geometry": "larger plan than the shell's over the door's height range",
+          "evidenceRefs": [
+            "full-object",
+            "freezer-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "door-under-edge",
+          "description": "Both horizontal edges roll inward, so the 0.0288-unit groove between the doors is bounded by two curved lips. Column 600 reads the groove floor at (9,26,14) and the lip immediately below it at (183,216,186).",
+          "geometry": "profileStops eased inward at both ends of the sweep",
+          "evidenceRefs": [
+            "full-object",
+            "seam-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "door-span",
+          "description": "The freezer door runs from the seam up to y=1.68, where column 600 finds the front face's top edge at y=231. Above that the cabinet rolls over onto the top face.",
+          "geometry": "plan width equal to the cabinet's",
+          "evidenceRefs": [
+            "full-object",
+            "freezer-zone"
+          ],
+          "confidence": 0.8
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.8,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion into the groove",
+        "edgeWearPattern": "none",
+        "notes": "Same pigment and finish as the cabinet it sits on."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "freezer-zone",
+        "seam-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "fridge-door",
+      "name": "Fridge door",
+      "level": "meso",
+      "role": "door",
+      "importance": 0.9,
+      "confidence": 0.75,
+      "primitive": "extrude",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A moulded door skin that rolls over at both of its horizontal edges. The reference's seam is a groove with two lit lips, not a scored line, so each door has real thickness and its own rolled edge rather than being a decal on the cabinet.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(87, 223, 161, 1.0)",
+        "secondaryAlbedo": "rgba(78, 200, 144, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "rounded-rectangle plan matching the cabinet's, swept vertically over the door's height and eased inward at both ends so each door edge rolls",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [
+          "top edge roll",
+          "bottom edge roll"
+        ],
+        "uvStrategy": "ExtrudeGeometry cap and wall UVs",
+        "normalStrategy": "welded then smooth vertex normals",
+        "profile2D": {
+          "points": [
+            [
+              0.67,
+              0.25
+            ],
+            [
+              0.66455,
+              0.29141
+            ],
+            [
+              0.64856,
+              0.33
+            ],
+            [
+              0.62314,
+              0.36314
+            ],
+            [
+              0.59,
+              0.38856
+            ],
+            [
+              0.55141,
+              0.40455
+            ],
+            [
+              0.51,
+              0.41
+            ],
+            [
+              -0.51,
+              0.41
+            ],
+            [
+              -0.55141,
+              0.40455
+            ],
+            [
+              -0.59,
+              0.38856
+            ],
+            [
+              -0.62314,
+              0.36314
+            ],
+            [
+              -0.64856,
+              0.33
+            ],
+            [
+              -0.66455,
+              0.29141
+            ],
+            [
+              -0.67,
+              0.25
+            ],
+            [
+              -0.67,
+              -0.25
+            ],
+            [
+              -0.66455,
+              -0.29141
+            ],
+            [
+              -0.64856,
+              -0.33
+            ],
+            [
+              -0.62314,
+              -0.36314
+            ],
+            [
+              -0.59,
+              -0.38856
+            ],
+            [
+              -0.55141,
+              -0.40455
+            ],
+            [
+              -0.51,
+              -0.41
+            ],
+            [
+              0.51,
+              -0.41
+            ],
+            [
+              0.55141,
+              -0.40455
+            ],
+            [
+              0.59,
+              -0.38856
+            ],
+            [
+              0.62314,
+              -0.36314
+            ],
+            [
+              0.64856,
+              -0.33
+            ],
+            [
+              0.66455,
+              -0.29141
+            ],
+            [
+              0.67,
+              -0.25
+            ]
+          ],
+          "depth": 0.9936,
+          "axis": "y",
+          "axisOffset": 0.0848,
+          "steps": 10,
+          "profileStops": [
+            [
+              0.0,
+              0.965,
+              0.95
+            ],
+            [
+              0.06,
+              1.0,
+              1.0
+            ],
+            [
+              0.94,
+              1.0,
+              1.0
+            ],
+            [
+              1.0,
+              0.965,
+              0.95
+            ]
+          ],
+          "smoothShading": true
+        }
+      },
+      "parent": "shell",
+      "attachment": null,
+      "dimensions": {
+        "width": 1.34,
+        "height": 0.9936,
+        "depth": 0.82,
+        "units": "world",
+        "confidence": 0.75
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "panel",
+        "pivot": {
+          "mode": "socket",
+          "localPosition": [
+            0.67,
+            0.5816,
+            0.41
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.55
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": true,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "fridge-door-hinge",
+            "localPosition": [
+              0.67,
+              0.5816,
+              0.41
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Hinge axis on the handle-opposite side. The reference puts both handles on the left of the door face, so the hinges are on the right; the hinges themselves are never visible."
+          }
+        ],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.5816,
+            0.0
+          ],
+          "scale": [
+            1.34,
+            0.9936,
+            0.82
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy over the door band."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "cabinet",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "shell-mint",
+      "materialLayers": [
+        "shell-mint"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "fridge-door-shell-seam",
+          "with": "shell",
+          "overlap": 0.02,
+          "notes": "The door band overlaps the cabinet by its own proud depth on every side, so no gap can open behind it."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "door-proud",
+          "description": "The door stands 0.02 units proud of the cabinet's door face and is flush with its sides, which is what makes the seam a groove with two lit lips rather than a painted line.",
+          "geometry": "larger plan than the shell's over the door's height range",
+          "evidenceRefs": [
+            "full-object",
+            "fridge-zone"
+          ],
+          "confidence": 0.7
+        },
+        {
+          "id": "door-under-edge",
+          "description": "Both horizontal edges roll inward, so the 0.0288-unit groove between the doors is bounded by two curved lips. Column 600 reads the groove floor at (9,26,14) and the lip immediately below it at (183,216,186).",
+          "geometry": "profileStops eased inward at both ends of the sweep",
+          "evidenceRefs": [
+            "full-object",
+            "seam-zone"
+          ],
+          "confidence": 0.8
+        },
+        {
+          "id": "door-span",
+          "description": "The fridge door runs from the plinth top up to the seam at y=1.0928, which column 600 reads as a dark band at y 593..611.",
+          "geometry": "plan width equal to the cabinet's",
+          "evidenceRefs": [
+            "full-object",
+            "fridge-zone"
+          ],
+          "confidence": 0.8
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.8,
+        "microRoughness": 0.08,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "matte moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "occlusion into the groove",
+        "edgeWearPattern": "none",
+        "notes": "Same pigment and finish as the cabinet it sits on."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "fridge-zone",
+        "seam-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "handle-upper",
+      "name": "Freezer door pull",
+      "level": "meso",
+      "role": "trim",
+      "importance": 0.85,
+      "confidence": 0.8,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A round-sectioned bar domed at both ends. The reference shows no flat cap and no crease on either handle, which is a capsule rather than a cylinder with end discs.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "round bar revolved about its own vertical axis and domed at both ends, standing off the door face",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0466,
+          "segments": 32
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "vertex normals from the revolved profile",
+        "latheProfile": {
+          "points": [
+            [
+              0.0001,
+              1.1264
+            ],
+            [
+              0.01206,
+              1.12799
+            ],
+            [
+              0.0233,
+              1.13264
+            ],
+            [
+              0.03295,
+              1.14005
+            ],
+            [
+              0.04036,
+              1.1497
+            ],
+            [
+              0.04501,
+              1.16094
+            ],
+            [
+              0.0466,
+              1.173
+            ],
+            [
+              0.0466,
+              1.3854
+            ],
+            [
+              0.04501,
+              1.39746
+            ],
+            [
+              0.04036,
+              1.4087
+            ],
+            [
+              0.03295,
+              1.41835
+            ],
+            [
+              0.0233,
+              1.42576
+            ],
+            [
+              0.01206,
+              1.43041
+            ],
+            [
+              0.0,
+              1.432
+            ]
+          ],
+          "segments": 20
+        }
+      },
+      "parent": "freezer-door",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.0932,
+        "height": 0.3056,
+        "depth": 0.0932,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          -0.4547,
+          0.0,
+          0.43
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "grip",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            1.2792,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "handle-upper-grip",
+            "localPosition": [
+              0.0,
+              1.2792,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Grip point; a hand or a magnet effect anchors here."
+          }
+        ],
+        "collider": {
+          "type": "capsule",
+          "offset": [
+            0.0,
+            1.2792,
+            0.0
+          ],
+          "scale": [
+            0.0932,
+            0.3056,
+            0.0932
+          ],
+          "isTrigger": false,
+          "notes": "Capsule proxy over the bar."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "trim",
+          "seamRefs": [],
+          "detachableFragments": [
+            "handle-upper"
+          ],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "trim-cream",
+      "materialLayers": [
+        "trim-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "handle-upper-door-seam",
+          "with": "freezer-door",
+          "overlap": 0.021,
+          "notes": "The bar's inboard flank is buried in the door skin."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "bar-crown",
+          "description": "The bar is 0.0932 across, measured as a 31 px run at rows 400, 480 and 700, and its crown is the brightest value on the door face.",
+          "geometry": "capsule radius from the measured run",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "bar-root",
+          "description": "The bar stands 0.02 units off the door face, so its lower flank keeps a contact shadow instead of merging into the door.",
+          "geometry": "component position, not geometry",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.6
+        },
+        {
+          "id": "bar-length",
+          "description": "The bar is 0.3056 units long, from a 191 px run down the door face. It covers under a fifth of the door, which is what makes this a short pull rather than the full-height bar the hand-authored fridge carried.",
+          "geometry": "capsule length from the measured run",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.85
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.09,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "contact shadow at the door face",
+        "edgeWearPattern": "none",
+        "notes": "Smoother than the cabinet: this is the part a hand touches."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "handle-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "handle-lower",
+      "name": "Fridge door pull",
+      "level": "meso",
+      "role": "trim",
+      "importance": 0.85,
+      "confidence": 0.8,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A round-sectioned bar domed at both ends. The reference shows no flat cap and no crease on either handle, which is a capsule rather than a cylinder with end discs.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 248, 232, 1.0)",
+        "secondaryAlbedo": "rgba(229, 223, 208, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "round bar revolved about its own vertical axis and domed at both ends, standing off the door face",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0466,
+          "segments": 32
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "vertex normals from the revolved profile",
+        "latheProfile": {
+          "points": [
+            [
+              0.0001,
+              0.6752
+            ],
+            [
+              0.01206,
+              0.67679
+            ],
+            [
+              0.0233,
+              0.68144
+            ],
+            [
+              0.03295,
+              0.68885
+            ],
+            [
+              0.04036,
+              0.6985
+            ],
+            [
+              0.04501,
+              0.70974
+            ],
+            [
+              0.0466,
+              0.7218
+            ],
+            [
+              0.0466,
+              0.9438
+            ],
+            [
+              0.04501,
+              0.95586
+            ],
+            [
+              0.04036,
+              0.9671
+            ],
+            [
+              0.03295,
+              0.97675
+            ],
+            [
+              0.0233,
+              0.98416
+            ],
+            [
+              0.01206,
+              0.98881
+            ],
+            [
+              0.0,
+              0.9904
+            ]
+          ],
+          "segments": 20
+        }
+      },
+      "parent": "fridge-door",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.0932,
+        "height": 0.3152,
+        "depth": 0.0932,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          -0.4547,
+          0.0,
+          0.43
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "grip",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.8328,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [
+          {
+            "id": "handle-lower-grip",
+            "localPosition": [
+              0.0,
+              0.8328,
+              0.0
+            ],
+            "localRotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "notes": "Grip point; a hand or a magnet effect anchors here."
+          }
+        ],
+        "collider": {
+          "type": "capsule",
+          "offset": [
+            0.0,
+            0.8328,
+            0.0
+          ],
+          "scale": [
+            0.0932,
+            0.3152,
+            0.0932
+          ],
+          "isTrigger": false,
+          "notes": "Capsule proxy over the bar."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "trim",
+          "seamRefs": [],
+          "detachableFragments": [
+            "handle-lower"
+          ],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "trim-cream",
+      "materialLayers": [
+        "trim-cream"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "handle-lower-door-seam",
+          "with": "fridge-door",
+          "overlap": 0.021,
+          "notes": "The bar's inboard flank is buried in the door skin."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "bar-crown",
+          "description": "The bar is 0.0932 across, measured as a 31 px run at rows 400, 480 and 700, and its crown is the brightest value on the door face.",
+          "geometry": "capsule radius from the measured run",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.85
+        },
+        {
+          "id": "bar-root",
+          "description": "The bar stands 0.02 units off the door face, so its lower flank keeps a contact shadow instead of merging into the door.",
+          "geometry": "component position, not geometry",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.6
+        },
+        {
+          "id": "bar-length",
+          "description": "The bar is 0.3152 units long, from a 197 px run down the door face. It covers under a fifth of the door, which is what makes this a short pull rather than the full-height bar the hand-authored fridge carried.",
+          "geometry": "capsule length from the measured run",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "confidence": 0.85
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.62,
+        "microRoughness": 0.09,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "contact shadow at the door face",
+        "edgeWearPattern": "none",
+        "notes": "Smoother than the cabinet: this is the part a hand touches."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "handle-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    },
+    {
+      "id": "badge",
+      "name": "Coral badge",
+      "level": "micro",
+      "role": "trim",
+      "importance": 0.6,
+      "confidence": 0.75,
+      "primitive": "lathe",
+      "topologyClass": "continuous-sculpt",
+      "topologyRationale": "A domed disc. The reference badge falls off in value from its centre to its rim, which is a dome catching the key at varying angles, not a flat circle of paint.",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(255, 92, 101, 1.0)",
+        "secondaryAlbedo": "rgba(229, 82, 90, 1.0)",
+        "materialClass": "plastic",
+        "materialClassConfidence": 0.9
+      },
+      "geometryDescriptor": {
+        "topologyIntent": "disc revolved about its own axis with a domed face, laid against the freezer door",
+        "edgeTreatment": {
+          "type": "rolled",
+          "bevelRadius": 0.0,
+          "segments": 32
+        },
+        "deformationStack": [],
+        "uvStrategy": "lathe UVs",
+        "normalStrategy": "vertex normals from the revolved profile",
+        "latheProfile": {
+          "points": [
+            [
+              0.0001,
+              0.0
+            ],
+            [
+              0.049536,
+              0.0
+            ],
+            [
+              0.0576,
+              0.006
+            ],
+            [
+              0.0576,
+              0.018
+            ],
+            [
+              0.054144,
+              0.026
+            ],
+            [
+              0.040319999999999995,
+              0.031
+            ],
+            [
+              0.021888,
+              0.033
+            ],
+            [
+              0.0001,
+              0.0335
+            ]
+          ],
+          "segments": 32
+        }
+      },
+      "parent": "freezer-door",
+      "attachment": null,
+      "dimensions": {
+        "width": 0.1152,
+        "height": 0.032,
+        "depth": 0.1152,
+        "units": "world",
+        "confidence": 0.8
+      },
+      "transform": {
+        "position": [
+          0.3854,
+          1.48,
+          0.418
+        ],
+        "rotation": [
+          1.570796,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": true
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "isTrigger": false,
+          "notes": "Box proxy sized to the part bounds."
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "trim",
+          "seamRefs": [],
+          "detachableFragments": [
+            "badge"
+          ],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "body"
+        }
+      },
+      "material": "badge-coral",
+      "materialLayers": [
+        "badge-coral"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [
+        {
+          "id": "badge-door-seam",
+          "with": "freezer-door",
+          "overlap": 0.012,
+          "notes": "The disc's back face is buried in the door skin."
+        }
+      ],
+      "localFeatures": [
+        {
+          "id": "dome-crown",
+          "description": "The disc is 0.1152 across and stands about 0.02 proud, domed so its crown reads (245,141,122) and its rim falls away.",
+          "geometry": "revolved profile with a rounded crown",
+          "evidenceRefs": [
+            "full-object",
+            "badge-zone"
+          ],
+          "confidence": 0.75
+        },
+        {
+          "id": "badge-placement",
+          "description": "The badge sits at x=0.3854, y=1.48: measured at x 718..769, y 329..383, which is the upper outboard corner of the freezer door, away from the handle.",
+          "geometry": "component position, not geometry",
+          "evidenceRefs": [
+            "full-object",
+            "badge-zone"
+          ],
+          "confidence": 0.85
+        }
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.66,
+        "microRoughness": 0.07,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "smooth moulded ABS",
+        "displacementPattern": "none",
+        "occlusionPattern": "thin contact ring at the door",
+        "edgeWearPattern": "none",
+        "notes": "The only accent colour on the appliance."
+      },
+      "evidenceRefs": [
+        "full-object",
+        "badge-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement"
+    }
+  ],
+  "materials": [
+    {
+      "id": "shell-mint",
+      "name": "Cabinet mint",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#57dfa1",
+      "color": "#57dfa1",
+      "albedo": {
+        "dominant": "#57dfa1",
+        "secondary": [
+          "#3fae7b",
+          "#8ff0c0"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#57dfa1",
+          "#3fae7b",
+          "#8ff0c0"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.8,
+        "variation": 0.08,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.34,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "crown-highlight",
+          "target": "shell/crown-roll",
+          "notes": "The crown roll carries the brightest mint in the frame, measured at (193,224,195) against (155,193,161) on the flat door face.",
+          "evidenceRefs": [
+            "full-object",
+            "crown-zone"
+          ],
+          "roughness": 0.7,
+          "mask": "the top roll, above the door panels"
+        },
+        {
+          "id": "side-face-shade",
+          "target": "shell/side-panel",
+          "notes": "The left face reads (120,155,127) against the door face's (155,193,161): one pigment, two orientations, no second albedo.",
+          "evidenceRefs": [
+            "full-object",
+            "side-zone"
+          ],
+          "roughness": 0.84,
+          "mask": "the shaded side face away from the key"
+        },
+        {
+          "id": "seam-occlusion",
+          "target": "freezer-door/door-under-edge",
+          "notes": "The seam between the doors is the darkest mint in the frame at (9,26,14), which is contact occlusion in a 18 px groove, not a painted line.",
+          "evidenceRefs": [
+            "full-object",
+            "seam-zone"
+          ],
+          "roughness": 0.86,
+          "aoBoost": 0.75,
+          "mask": "the groove walls between the two door bands"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\crops\\shell-mint-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.842,
+        "estimatedFidelity": 0.842,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\shell-mint_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\shell-mint_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\shell-mint_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\shell-mint_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\shell-mint_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "One moulded cabinet colour across shell and both doors. The reference shows no second mint anywhere; every apparent tone is orientation."
+    },
+    {
+      "id": "plinth-navy",
+      "name": "Plinth navy",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#24324a",
+      "color": "#24324a",
+      "albedo": {
+        "dominant": "#24324a",
+        "secondary": [
+          "#1a2536",
+          "#33455f"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#24324a",
+          "#1a2536",
+          "#33455f"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.82,
+        "variation": 0.06,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.38,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "plinth-front-lift",
+          "target": "plinth/front-face",
+          "notes": "The plinth's front face reads (59,68,86) against (55,61,73) on its left face, the same key/shade split the cabinet shows.",
+          "evidenceRefs": [
+            "full-object",
+            "plinth-zone"
+          ],
+          "roughness": 0.78,
+          "mask": "the plinth's door-side face"
+        },
+        {
+          "id": "floor-contact",
+          "target": "plinth/base-tuck",
+          "notes": "The plinth's lowest band loses the key entirely where it tucks under.",
+          "evidenceRefs": [
+            "full-object",
+            "plinth-zone"
+          ],
+          "roughness": 0.86,
+          "aoBoost": 0.55,
+          "mask": "the bottom 20 percent of the plinth"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\crops\\plinth-navy-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.815,
+        "estimatedFidelity": 0.815,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\plinth-navy_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\plinth-navy_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\plinth-navy_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\plinth-navy_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\plinth-navy_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Darker moulded base. Inset from the cabinet on every side, which is what puts the cabinet's bottom edge in shadow above it."
+    },
+    {
+      "id": "trim-cream",
+      "name": "Handle cream",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#fff8e8",
+      "color": "#fff8e8",
+      "albedo": {
+        "dominant": "#fff8e8",
+        "secondary": [
+          "#efe4cf",
+          "#fffdf6"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#fff8e8",
+          "#efe4cf",
+          "#fffdf6"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.62,
+        "variation": 0.09,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.24,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "bar-crown-sheen",
+          "target": "handle-upper/bar-crown",
+          "notes": "The handle crowns are the brightest values on the door face at (240,222,189); a handled part is polished smoother than the panel behind it.",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "roughness": 0.52,
+          "mask": "the outward-facing third of each bar"
+        },
+        {
+          "id": "bar-root-shadow",
+          "target": "handle-lower/bar-root",
+          "notes": "Each bar sits in its own contact shadow against the door.",
+          "evidenceRefs": [
+            "full-object",
+            "handle-zone"
+          ],
+          "roughness": 0.68,
+          "aoBoost": 0.5,
+          "mask": "where the bar meets the door face"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\crops\\trim-cream-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.788,
+        "estimatedFidelity": 0.788,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\trim-cream_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\trim-cream_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\trim-cream_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\trim-cream_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\trim-cream_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "Warm cream handles. Smoother than the cabinet: these are the parts a hand touches."
+    },
+    {
+      "id": "badge-coral",
+      "name": "Badge coral",
+      "type": "physical",
+      "shaderModel": "MeshPhysicalMaterial (matte injection-moulded ABS)",
+      "baseColor": "#ff5c65",
+      "color": "#ff5c65",
+      "albedo": {
+        "dominant": "#ff5c65",
+        "secondary": [
+          "#e04a53",
+          "#ff8a90"
+        ],
+        "samplingNotes": "Median-sampled from named regions of the reference, cross-checked against the extract_pbr_evidence palette for the same crop.",
+        "map": null
+      },
+      "colorVariation": {
+        "palette": [
+          "#ff5c65",
+          "#e04a53",
+          "#ff8a90"
+        ],
+        "pattern": "very low amplitude injection-moulding tone drift; the reference shows almost no albedo variance",
+        "amplitude": 0.018,
+        "heightCorrelation": 0.18
+      },
+      "textureResolution": 1024,
+      "textureProjection": {
+        "mode": "uv",
+        "repeat": [
+          1.0,
+          1.0
+        ],
+        "anisotropy": 8,
+        "texelDensityIntent": "One tile per part so the moulding drift never repeats visibly on a small control; detail stays at object scale rather than stretching with component scale."
+      },
+      "surfaceFrequencyBands": [
+        {
+          "id": "macro",
+          "frequency": 3.0,
+          "amplitude": 0.3,
+          "role": "broad tone drift across a moulded panel"
+        },
+        {
+          "id": "meso",
+          "frequency": 14.0,
+          "amplitude": 0.16,
+          "role": "shallow moulding flow and sink-mark relief"
+        },
+        {
+          "id": "micro",
+          "frequency": 64.0,
+          "amplitude": 0.05,
+          "role": "matte-texture highlight breakup visible under grazing light"
+        }
+      ],
+      "roughness": {
+        "base": 0.66,
+        "variation": 0.07,
+        "map": "independent-procedural-field",
+        "localResponse": "cavities and recessed channels trend rougher; crowns and handled edges trend slightly smoother"
+      },
+      "metalness": {
+        "base": 0.0,
+        "variation": 0.0
+      },
+      "clearcoat": {
+        "base": 0.0
+      },
+      "normal": {
+        "pattern": "derived-from-independent-height-field",
+        "strength": 0.18,
+        "scale": 18.0,
+        "space": "tangent"
+      },
+      "bump": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0
+      },
+      "displacement": {
+        "pattern": "none",
+        "amplitude": 0.0,
+        "scale": 1.0,
+        "silhouetteAffects": false
+      },
+      "ambientOcclusion": {
+        "cavityStrength": 0.22,
+        "contactShadowBias": 0.3,
+        "notes": "Darken every part seam, recess and contact ring."
+      },
+      "wear": {
+        "edgeWear": 0.05,
+        "scratches": [],
+        "chips": []
+      },
+      "dirt": {
+        "amount": 0.03,
+        "cavityBias": 0.35,
+        "color": "#3B372F"
+      },
+      "localOverrides": [
+        {
+          "id": "badge-dome-sheen",
+          "target": "badge/dome-crown",
+          "notes": "The badge reads (245,141,122) at its crown and falls off toward its rim, which is a domed disc rather than a printed circle.",
+          "evidenceRefs": [
+            "full-object",
+            "badge-zone"
+          ],
+          "roughness": 0.56,
+          "mask": "the crown of the disc"
+        }
+      ],
+      "envMapIntensity": 0.5,
+      "shaderNotes": [
+        "MeshPhysicalMaterial with clearcoat/transmission/sheen at zero: the reference is matte unpolished plastic with no specular coat.",
+        "Albedo, roughness, height, normal and AO are generated as five independent procedural fields; albedo is never aliased into another channel.",
+        "Deterministic seed: the factory hashes the material id, so the noise fields are stable across reloads."
+      ],
+      "referencePbr": {
+        "version": "1.0",
+        "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\crops\\badge-coral-crop.png",
+        "extractor": "forge/stage1_intake/extract_pbr_evidence.py",
+        "method": "single-image pixel evidence with de-lighting estimate; not photogrammetry",
+        "usable": false,
+        "verdict": "pass",
+        "confidence": 0.762,
+        "estimatedFidelity": 0.762,
+        "targetThreshold": 0.7,
+        "hardLimit": "A single image cannot uniquely recover true albedo/roughness/normal/AO; maps are reference-derived estimates.",
+        "limitationNote": "Extraction passed its own confidence gate, but the maps are NOT bound to the runtime material. These references are flat-paint stylised studio renders with no surface pattern, so the extracted crops carry only baked lighting and crop-boundary contamination; tiling them would paint the reference's shading onto every facet. The runtime instead builds five independent procedural canvas maps (albedo/roughness/height/normal/AO) so the prop stays self-contained with no network-fetched textures. The extracted palettes and roughness estimates were used as evidence for the albedo and roughness scalars.",
+        "maps": {
+          "albedo": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\badge-coral_albedo.png",
+            "channel": "albedo",
+            "source": "reference-pixel-extraction"
+          },
+          "roughness": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\badge-coral_roughness.png",
+            "channel": "roughness",
+            "source": "reference-pixel-extraction"
+          },
+          "height": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\badge-coral_height.png",
+            "channel": "height",
+            "source": "reference-pixel-extraction"
+          },
+          "normal": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\badge-coral_normal.png",
+            "channel": "normal",
+            "source": "reference-pixel-extraction"
+          },
+          "ao": {
+            "path": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\props\\evidence\\fridge\\pbr\\badge-coral_ao.png",
+            "channel": "ao",
+            "source": "reference-pixel-extraction"
+          }
+        }
+      },
+      "notes": "The single accent on the appliance. One disc, domed, on the freezer door."
+    }
+  ],
+  "repetitionSystems": [],
+  "buildPasses": [
+    {
+      "id": "blockout",
+      "goal": "Match the macro silhouette: a rounded cabinet slab on an inset darker plinth, at the envelope the trap collider fixes.",
+      "componentRefs": [
+        "shell",
+        "plinth"
+      ],
+      "acceptance": [
+        "Silhouette reads correctly without materials.",
+        "Quality contract has named all required macro feature groups before code generation.",
+        "Macro proportions match the measured reference bounding box.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "structural-pass",
+      "goal": "Build the cabinet, the plinth, both door bands, both handles and the badge as separate named parts with recorded seams.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "Macro, meso and repeated structures meet qualityContract.minimumSpecDepth.",
+        "Parent-child relations, seams and contact points are explicit.",
+        "Every part that touches another overlaps it by at least 0.02 world units.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "form-refinement",
+      "goal": "Deliver the crown roll, the door groove and the rolled door edges as real profile deformations rather than as painted lines.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "The crown reads as a continuous roll with no chamfer facet.",
+        "The seam between the doors is a groove with two lit lips, not a scored line.",
+        "Both handles read as round-sectioned capsules standing off the door face.",
+        "The cabinet overhangs the plinth on every side.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "material-pass",
+      "goal": "Match the four-layer palette and the matte moulded-ABS response.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "Reference-derived albedo palette records dominant, secondary and accent colours per material.",
+        "Each material defines roughness variation and an independent normal response.",
+        "Local material overrides are tied to evidenceRefs.",
+        "Albedo, roughness, height, normal and AO are generated independently.",
+        "Macro, meso and micro surface frequency bands are present without visible tiling.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "surface-pass",
+      "goal": "Add seam occlusion, contact darkening and crown polish.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "Every material feature group has local overrides or surfaceDetail tied to evidenceRefs.",
+        "A grazing-angle render shows form breaks without plastic-looking uniform highlights.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "lighting-pass",
+      "goal": "Reproduce the reference key/fill/rim structure and prove the form survives relighting.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "lightingFromPhoto names key direction, fill, rim or environment, exposure, tone mapping and contact shadow behaviour.",
+        "Neutral, grazing and reference-matched renders distinguish material errors from lighting errors.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "interaction-pass",
+      "goal": "Expose the runtime rig: named pivots, sockets and collider proxies.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "root.userData.sculptRuntime exposes nodes, meshes, sockets, colliders and destruction groups.",
+        "Every moving node carries its children instead of detaching them.",
+        "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold."
+      ]
+    },
+    {
+      "id": "optimization-pass",
+      "goal": "Protect real-time budget after fidelity is accepted.",
+      "componentRefs": [
+        "shell",
+        "plinth",
+        "freezer-door",
+        "fridge-door",
+        "handle-upper",
+        "handle-lower",
+        "badge"
+      ],
+      "acceptance": [
+        "Triangle count, draw calls and instancing are measured against performanceBudget.",
+        "Segment counts are reduced wherever the silhouette does not change."
+      ]
+    }
+  ],
+  "visualEvidence": [
+    {
+      "timestamp": "2026-07-29T06:50:01.769731+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.93,
+        "componentStructure": 0.7,
+        "formDetail": 0.55,
+        "materialSurface": 0.72,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "cabinet-silhouette",
+          "score": 0.86,
+          "tier": "critical",
+          "notes": "Rounded cabinet slab on an inset darker plinth, at the reference's own proportion once the documented call-site vertical fit is undone by the harness yscale of 1.50. Tier 1 reads silhouette IoU 0.967, aspect delta 0.000, scale delta 0.000 and bilateral symmetry error 0.016. The crown roll now reads as a roll rather than the chamfer the first 40-step build produced. Held below 0.9 because the roll is visibly larger than the reference's and the plinth reads about a third shallower than the 53 px the reference gives it."
+        }
+      ],
+      "referenceScreenshot": "../fridge-reference.png",
+      "renderScreenshot": "renders/fridge/blockout-reference-yscale150.png",
+      "comparisonImage": "renders/fridge/blockout-cmp.png",
+      "cameraView": "solved reference three-quarter, azimuth 23.0 elevation 16.4, 12 degree lens, model stretched by the documented yscale 1.50 so the gate judges form rather than the call-site fit",
+      "notes": "",
+      "aiVisionNotes": "The review render applies yscale 1.50, the swept inverse of the call-site vertical fit. Without it the aspect delta is 0.373 and Tier 1 fails, which is the envelope difference rather than a modelling error; the sweep is recorded in the spec."
+    },
+    {
+      "timestamp": "2026-07-29T07:01:35.479294+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.85,
+      "aiVisionScore": 0.85,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.92,
+        "componentStructure": 0.88,
+        "formDetail": 0.8,
+        "materialSurface": 0.76,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "cabinet-silhouette",
+          "score": 0.88,
+          "tier": "critical",
+          "notes": "Tier 1 reads IoU 0.965, aspect delta 0.011, scale delta 0.011, symmetry 0.016. Crown roll and inset plinth both read correctly. Still held below 0.9 because the roll is larger than the reference's."
+        },
+        {
+          "id": "door-split",
+          "score": 0.85,
+          "tier": "critical",
+          "notes": "The groove is modelled, not painted: two proud bands with rolled lips and real occlusion between them, at the measured y=1.093 with a 0.029 gap. The first band build ran the groove across the shaded side face, which the reference does not have; the bands are now flush in X and proud only in Z, so the groove is on the door face alone."
+        },
+        {
+          "id": "handle-pair",
+          "score": 0.84,
+          "tier": "critical",
+          "notes": "Both pulls are round-sectioned bars domed at both ends, 0.093 across and 0.306 / 0.315 long, standing 0.02 off the door face at x=-0.455. They cover under a fifth of their door, which is the reference's short pull rather than the full-height bar the hand-authored fridge carried. Authored as lathes rather than capsules after the capsule primitive put them on the generator's appendage path and laid them along their attachment segment."
+        },
+        {
+          "id": "badge-placement",
+          "score": 0.8,
+          "tier": "important",
+          "notes": "Domed coral disc, 0.115 across, on the freezer door's outboard upper corner diagonally opposite the pull. It reads as an ellipse in this render only because the review render applies yscale 1.50; the shipped model is unstretched and the disc is round, which is why it was authored round rather than at the fitted extents."
+        }
+      ],
+      "referenceScreenshot": "../fridge-reference.png",
+      "renderScreenshot": "renders/fridge/structural-reference-yscale150.png",
+      "comparisonImage": "renders/fridge/structural-cmp.png",
+      "cameraView": "solved reference three-quarter, azimuth 23.0 elevation 16.4, 12 degree lens, yscale 1.50",
+      "notes": "",
+      "aiVisionNotes": "Measured bounds 1.34 x 1.84 x 0.8866 with min.y 0 and z within -0.41..0.4766, so every part including trim sits inside CuboidCollider args=[0.68, 0.92, 0.48] at the [0, -0.92, 0] mount."
+    }
+  ],
+  "reviewHistory": [
+    {
+      "timestamp": "2026-07-29T06:50:01.769731+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.93,
+        "componentStructure": 0.7,
+        "formDetail": 0.55,
+        "materialSurface": 0.72,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "cabinet-silhouette",
+          "score": 0.86,
+          "tier": "critical",
+          "notes": "Rounded cabinet slab on an inset darker plinth, at the reference's own proportion once the documented call-site vertical fit is undone by the harness yscale of 1.50. Tier 1 reads silhouette IoU 0.967, aspect delta 0.000, scale delta 0.000 and bilateral symmetry error 0.016. The crown roll now reads as a roll rather than the chamfer the first 40-step build produced. Held below 0.9 because the roll is visibly larger than the reference's and the plinth reads about a third shallower than the 53 px the reference gives it."
+        }
+      ],
+      "action": "continue",
+      "summary": "Cabinet slab and inset plinth match the reference silhouette at the swept review scale; Tier 1 passes with IoU 0.967 and aspect delta 0.000.",
+      "matched": [
+        "rounded cabinet slab",
+        "inset darker plinth",
+        "crown rolls onto the top face",
+        "mint and navy albedos"
+      ],
+      "mismatches": [
+        "crown roll larger than the reference's",
+        "plinth reads shallower than its measured 53 px",
+        "doors, handles and badge absent by design at this pass"
+      ],
+      "specFixes": [
+        "reclassified the plinth from continuous-sculpt to assembled-solid after the strict-quality flatness gate",
+        "added attachment records to both doors and both handles"
+      ],
+      "codeFixes": [
+        "raised extrusion steps from 16 to 72 and the crown roll from 0.09 to 0.16 after the first build creased the crown",
+        "added a 0.012 base tuck so the cabinet does not meet the plinth with a raw cut"
+      ],
+      "evidence": [],
+      "mapStrippedRender": "renders/fridge/blockout-reference-clay-yscale150.png",
+      "visualEvidence": {
+        "referenceScreenshot": "../fridge-reference.png",
+        "renderScreenshot": "renders/fridge/blockout-reference-yscale150.png",
+        "comparisonImage": "renders/fridge/blockout-cmp.png",
+        "cameraView": "solved reference three-quarter, azimuth 23.0 elevation 16.4, 12 degree lens, model stretched by the documented yscale 1.50 so the gate judges form rather than the call-site fit",
+        "notes": "",
+        "aiVisionNotes": "The review render applies yscale 1.50, the swept inverse of the call-site vertical fit. Without it the aspect delta is 0.373 and Tier 1 fails, which is the envelope difference rather than a modelling error; the sweep is recorded in the spec."
+      }
+    },
+    {
+      "timestamp": "2026-07-29T07:01:35.479294+00:00",
+      "passId": "structural-pass",
+      "estimatedFidelity": 0.85,
+      "aiVisionScore": 0.85,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.92,
+        "componentStructure": 0.88,
+        "formDetail": 0.8,
+        "materialSurface": 0.76,
+        "lightingCamera": 0.88
+      },
+      "featureReviews": [
+        {
+          "id": "cabinet-silhouette",
+          "score": 0.88,
+          "tier": "critical",
+          "notes": "Tier 1 reads IoU 0.965, aspect delta 0.011, scale delta 0.011, symmetry 0.016. Crown roll and inset plinth both read correctly. Still held below 0.9 because the roll is larger than the reference's."
+        },
+        {
+          "id": "door-split",
+          "score": 0.85,
+          "tier": "critical",
+          "notes": "The groove is modelled, not painted: two proud bands with rolled lips and real occlusion between them, at the measured y=1.093 with a 0.029 gap. The first band build ran the groove across the shaded side face, which the reference does not have; the bands are now flush in X and proud only in Z, so the groove is on the door face alone."
+        },
+        {
+          "id": "handle-pair",
+          "score": 0.84,
+          "tier": "critical",
+          "notes": "Both pulls are round-sectioned bars domed at both ends, 0.093 across and 0.306 / 0.315 long, standing 0.02 off the door face at x=-0.455. They cover under a fifth of their door, which is the reference's short pull rather than the full-height bar the hand-authored fridge carried. Authored as lathes rather than capsules after the capsule primitive put them on the generator's appendage path and laid them along their attachment segment."
+        },
+        {
+          "id": "badge-placement",
+          "score": 0.8,
+          "tier": "important",
+          "notes": "Domed coral disc, 0.115 across, on the freezer door's outboard upper corner diagonally opposite the pull. It reads as an ellipse in this render only because the review render applies yscale 1.50; the shipped model is unstretched and the disc is round, which is why it was authored round rather than at the fitted extents."
+        }
+      ],
+      "action": "continue",
+      "summary": "All seven parts built and hierarchical: cabinet, plinth, two proud door bands with a modelled groove, two lathe pulls and the domed badge. Tier 1 passes at IoU 0.965 and the model measures 1.34 x 1.84 x 0.8866 on y=0, inside the trap collider with trim.",
+      "matched": [
+        "two-door split with a modelled groove",
+        "two short cream pulls on one vertical axis",
+        "coral badge diagonally opposite the upper pull",
+        "inset navy plinth",
+        "unbroken side face"
+      ],
+      "mismatches": [
+        "crown roll larger than the reference's",
+        "groove deeper than the reference's thin dark line",
+        "door bands wrap to the back, which the single view cannot confirm or deny"
+      ],
+      "specFixes": [
+        "doors moved off animationRole hinge and pulls off the capsule primitive and the handle name, all three of which are attachment triggers that put the generator on its appendage path and rebuilt each part as a 0.12-diameter rod laid along its attachment segment"
+      ],
+      "codeFixes": [
+        "door band plan changed from full-perimeter to flush-in-X so the groove stops crossing the side face",
+        "door depth rebudgeted from 0.94 to 0.82 after the pulls measured 0.082 past the collider's 0.48 half-depth"
+      ],
+      "evidence": [],
+      "mapStrippedRender": "renders/fridge/structural-reference-clay-yscale150.png",
+      "visualEvidence": {
+        "referenceScreenshot": "../fridge-reference.png",
+        "renderScreenshot": "renders/fridge/structural-reference-yscale150.png",
+        "comparisonImage": "renders/fridge/structural-cmp.png",
+        "cameraView": "solved reference three-quarter, azimuth 23.0 elevation 16.4, 12 degree lens, yscale 1.50",
+        "notes": "",
+        "aiVisionNotes": "Measured bounds 1.34 x 1.84 x 0.8866 with min.y 0 and z within -0.41..0.4766, so every part including trim sits inside CuboidCollider args=[0.68, 0.92, 0.48] at the [0, -0.92, 0] mount."
+      }
+    }
+  ],
+  "lodPlan": [
+    {
+      "tier": "near",
+      "distance": 0,
+      "strategy": "all seven parts with full profile stops; 256px procedural maps"
+    },
+    {
+      "tier": "mid",
+      "distance": 12,
+      "strategy": "drop the badge and halve the plan sampling from 40 to 20"
+    },
+    {
+      "tier": "far",
+      "distance": 30,
+      "strategy": "cabinet and plinth only; the doors' proud depth is under a pixel by then"
+    }
+  ],
+  "performanceBudget": {
+    "qualityPriority": "balanced",
+    "targetTriangles": 6000,
+    "maxDrawCalls": 8,
+    "textureSize": 256,
+    "fpsTarget": 60,
+    "optimizationPolicy": "Reach accepted visual fidelity first, then cut the plan sampling from 40 sides. The crown roll sets the floor on the vertical step count: below about 12 steps the roll stairsteps visibly on the silhouette."
+  },
+  "lightingFromPhoto": [
+    "Ambient dominance: the reference is a soft studio render. The cabinet's lit door face reads (155,193,161) and its shaded left face (120,155,127), a 22 percent value range a bright neutral hemisphere plus a gentle key reproduces with no hard terminator.",
+    "Key light: a warm-neutral directional source at about 1.2 from high and camera right, which is the side the door face turns toward. It lifts the crown roll to (193,224,195) and both handle crowns to (240,222,189).",
+    "Rim and environment light: weak neutral back light at about 0.3, enough to keep the shaded left face from crushing. No environment map: the reference shows no reflection.",
+    "Exposure and tone mapping: ACES filmic tone mapping with sRGB output at exposure 1.0.",
+    "Contact shadow: the door groove and the cabinet-over-plinth overhang carry the only two real occlusions. The reference floats with no ground contact, so the review render has no ground plane and the silhouette mask stays clean."
+  ],
+  "proceduralStrategy": [
+    "Block out the cabinet slab and the inset plinth first, and confirm the silhouette matches the measured bounding box at the envelope the collider fixes.",
+    "Add both door bands standing proud of the cabinet, leaving the measured groove between them, so the split is geometry rather than a painted line.",
+    "Add both handles as capsules parented to their own door, and the badge to the freezer door, so a door swing carries its trim.",
+    "Create pivot nodes, the floor-contact and door-face sockets and the collider proxy that matches the trap's own before polish.",
+    "Roll the crown and the door edges with profile stops, then weld the extrusion's vertices so the cabinet shades as one surface instead of 40 facets.",
+    "Run reference PBR extraction on all four material crops, record confidence, and decide explicitly whether to bind or only cite the maps.",
+    "Add the groove occlusion, the plinth overhang shadow and the handle crown sheen last."
+  ],
+  "animationAnchors": [
+    "sculptRuntime.nodes['shell'] carries the charge translation the trap drives",
+    "sculptRuntime.nodes['freezer-door'] and ['fridge-door'] swing about their hinge sockets",
+    "sculptRuntime.sockets['shell:door-face'] is the face the charge leads with"
+  ],
+  "destructionAnchors": [
+    "the badge and either handle detach as whole parts",
+    "the cabinet is not fractured"
+  ],
+  "risks": [
+    "THE PROPORTION IS FITTED, NOT MATCHED. The reference's front face is 1.786 times the cabinet width; this model is 1.19, a vertical fit of 0.667. Tier 1 reads that as an aspect error and it is not error: it is the trap collider's envelope. The review render undoes it with the harness's ?yscale=1.5, swept rather than derived because a rounded cabinet's silhouette never reaches its box corners, which takes the measured aspect delta to 0.000 and lets the gate judge form. A reference-accurate fridge needs FRIDGE_HALF_WIDTH and the 0.92 collider half-height in TrapRenderer.tsx changed first, and that also moves the prop past the runner's 2.17-unit jump ceiling.",
+    "The crown roll radius and the vertical corner radius are both inferred; no edge scan can recover either from a single view of a rounded body.",
+    "Each door is modelled as a full-perimeter band. If a later view shows the doors stopping at the cabinet's side, the bands become wrong on the sides even though the front stays right.",
+    "The badge is authored round rather than as the ellipse the anisotropic fit implies. That is a deliberate departure from the fit, and it means the badge is the one part whose proportion follows the reference rather than the envelope.",
+    "Reference PBR maps were extracted and passed their confidence gate but are deliberately not bound to the runtime material; the runtime uses independent procedural canvas maps.",
+    "The reference shows no crease anywhere, so the whole read depends on welded vertices and smooth normals. If the refine-code merge step is dropped, ExtrudeGeometry's non-indexed output makes the cabinet read as 40 flat facets."
+  ],
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Apartment Refrigerator",
+    "index": {
+      "status": "reused",
+      "reason": "present"
+    },
+    "matches": []
+  },
+  "tier1Results": [
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.7512,
+        "aspectRatioDelta": 0.3726,
+        "scaleDelta": 0.0153,
+        "bilateralSymmetryError": 0.0218,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 55.13,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 4.33
+            },
+            {
+              "componentId": null,
+              "deltaE": 11.1
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.33
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.33
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.27
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.27
+            },
+            {
+              "componentId": null,
+              "deltaE": 55.13
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.751 is below threshold 0.85",
+        "aspect-ratio delta 0.373 exceeds threshold 0.05"
+      ],
+      "renderHash": "f1cbf20739091095",
+      "passId": "blockout",
+      "mapStrippedRender": "renders\\fridge\\blockout-reference-clay.png"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.8592,
+        "aspectRatioDelta": 0.1552,
+        "scaleDelta": 0.001,
+        "bilateralSymmetryError": 0.0151,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 55.1,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 4.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.42
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.35
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.35
+            },
+            {
+              "componentId": null,
+              "deltaE": 55.1
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "aspect-ratio delta 0.155 exceeds threshold 0.05",
+        "blockout requires --map-stripped-render evidence"
+      ],
+      "renderHash": "0ee23bcbd964579c",
+      "passId": "blockout"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9674,
+        "aspectRatioDelta": 0.0,
+        "scaleDelta": 0.0,
+        "bilateralSymmetryError": 0.0162,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 55.08,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 4.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.43
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.34
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.18
+            },
+            {
+              "componentId": null,
+              "deltaE": 24.18
+            },
+            {
+              "componentId": null,
+              "deltaE": 55.08
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "645651cb44be3749",
+      "passId": "blockout",
+      "mapStrippedRender": "renders\\fridge\\blockout-reference-clay-yscale150.png"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9635,
+        "aspectRatioDelta": 0.011,
+        "scaleDelta": 0.0109,
+        "bilateralSymmetryError": 0.0163,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 37.0,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 4.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.45
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.55
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.67
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.67
+            },
+            {
+              "componentId": null,
+              "deltaE": 37.0
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "3b7a9ed45c4767e2",
+      "passId": "structural-pass"
+    },
+    {
+      "passed": true,
+      "checks": {
+        "silhouetteIoU": 0.9647,
+        "aspectRatioDelta": 0.011,
+        "scaleDelta": 0.0109,
+        "bilateralSymmetryError": 0.0164,
+        "colorDelta": {
+          "checked": 7,
+          "maxDeltaE": 37.0,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 4.54
+            },
+            {
+              "componentId": null,
+              "deltaE": 10.42
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.54
+            },
+            {
+              "componentId": null,
+              "deltaE": 4.54
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 9.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 37.0
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [],
+      "renderHash": "3b7a9ed45c4767e2",
+      "passId": "structural-pass"
+    }
+  ]
+}

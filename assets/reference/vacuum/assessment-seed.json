@@ -1,0 +1,287 @@
+{
+  "targetName": "Apartment Canister Vacuum",
+  "targetId": "apartment-vacuum",
+  "sourceImage": "C:/Users/Mcgib/Partners HealthCare Dropbox/Jason Gibbons/Portals make it worse/assets/reference/vacuum-reference.png",
+  "authoredBy": "props5",
+  "stage": "stage-1 assessment only. No ObjectSculptSpec exists yet and no pass has been run.",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "cylinder-body canister vacuum with a corrugated hose curling forward to a floor nozzle",
+      "primaryDomain": "object",
+      "formLanguage": [
+        "smooth-organic",
+        "stylized-toy",
+        "rolled-moulded-edge"
+      ],
+      "structureKind": [
+        "revolved-shell",
+        "swept-tube",
+        "stacked-assembly"
+      ],
+      "motionPotential": [
+        "whole-body-chase",
+        "hose-flex",
+        "wheel-spin"
+      ],
+      "materialFamilies": [
+        "matte-plastic-lilac",
+        "matte-plastic-navy",
+        "matte-plastic-cream"
+      ],
+      "notes": "The identity is the two-part read: a fat lilac canister and the navy hose that leaves it, loops down and forward, and ends in a cream floor nozzle. The canister alone is only 0.710 of the silhouette width, so more than a quarter of the prop's footprint is hose and nozzle. The hose is the part that says vacuum rather than kettle, and it is also the part most likely to be lost, because a tube with a parent fails --strict-quality and the generator then swaps it for a straight cylinder between its endpoints. The navy hose is the value anchor and the lilac body carries the hue."
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 3,
+        "componentCount": 3,
+        "hierarchyDepth": 3,
+        "repetitionDensity": 2,
+        "materialLayerCount": 3,
+        "localDetailDensity": 2,
+        "occlusionRisk": 1,
+        "actionReadinessNeed": 2
+      },
+      "estimatedCounts": {
+        "macroComponents": 4,
+        "mesoComponents": 7,
+        "microFeatureGroups": 2,
+        "materialLayers": 6,
+        "repetitionSystems": 1
+      },
+      "reasoning": [
+        "Eleven visible parts across six measured albedos: lilac canister, mint carry handle, yellow top button, navy waist belt, navy hose collar, corrugated navy hose, mint hose cuff, cream floor nozzle, coral wheel, yellow wheel hub cap, coral nub above the wheel.",
+        "Occlusion risk is LOW, which is the opposite of the floor fan: nothing is read through anything else, every part is separately visible from the reference angle.",
+        "One repetition system only, the hose corrugation, and it is a swept rib along a curve rather than a radial array.",
+        "The prop is kinematic and chases the player, so the root moves as a unit; the hose is the only part with an argument for its own deformation channel."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Six albedos on one material response, a swept corrugated tube that the validator treats as an attachment primitive, and a silhouette where a quarter of the footprint is a curve that has to survive generation."
+    },
+    "detailInventory": {
+      "scanMethod": "channel-dominance albedo separation, verified against evidence/masks.png",
+      "targetMinDetails": 10,
+      "note": "Populate before authoring the spec. Every detail must resolve to a component.localFeatures id or a material.localOverrides id, never prose only.",
+      "details": []
+    },
+    "anatomy": {
+      "applies": false,
+      "note": "primaryDomain is object, so the character track does not apply."
+    },
+    "measurementBasis": {
+      "evidenceFile": "assets/reference/vacuum/evidence/part-measurement.json",
+      "script": "assets/reference/vacuum/measure_vacuum.py",
+      "referenceBBox": {
+        "x0": 152,
+        "y0": 160,
+        "x1": 1062,
+        "y1": 1151,
+        "imageSize": [
+          1254,
+          1254
+        ]
+      },
+      "backgroundRgb": [
+        219.0,
+        218.0,
+        218.0
+      ],
+      "silhouette": {
+        "width": 910,
+        "height": 991,
+        "widthToHeight": 0.9183
+      },
+      "envelope": {
+        "callSite": "components/game/TrapRenderer.tsx vacuum",
+        "collider": "CuboidCollider args=[0.5, 0.55, 0.45] with the model at [0, -0.55, 0]",
+        "worldBox": [
+          1.0,
+          1.1,
+          0.9
+        ],
+        "allowedWidthToHeight": 0.9091,
+        "pixelsPerWorldUnit": null,
+        "squash": null,
+        "RETRACTED": "An earlier version of this file put pixelsPerWorldUnit at 901.0 by mapping the silhouette's 991 px height onto the collider's 1.10, and concluded the prop needed essentially no squash. That derivation is INVALID and every world figure taken from it was withdrawn. The silhouette's height is not a height. The canister's underside sits at image y 793 and its wheel bottom at y 791, while the nozzle's underside is at y 1151, and BOTH rest on the floor: the roughly 350 px between them is depth parallax in a three-quarter view, not elevation. Mapping that span onto the collider's Y is the wrong-derivation-plane error, the same class of mistake that cost the toilet a pass.",
+        "scaleAnchor": {
+          "use": "canister width, 646 px",
+          "why": "The camera has yaw and pitch but no roll, so HORIZONTAL image extents are unforeshortened while vertical ones mix elevation and depth. The canister is a vertical-axis solid of revolution, so its image width is its true diameter. Its image height is not its true height: it carries the minor axis of the foreshortened top and bottom caps as well.",
+          "confidence": 0.7
+        },
+        "note": "Fitting this prop is a FOOTPRINT problem in XZ, not an aspect-ratio problem in XY. See solvedCamera and footprint below: the camera is now solved and the footprint is measured, and the reference pose does NOT fit. That is a design ruling, not a measurement gap."
+      },
+      "solvedCamera": {
+        "pitchDegrees": 28.1,
+        "tolerance": 3.0,
+        "method": "Ellipse axis ratio of the yellow top button, which is a circle in a horizontal plane, fitted by second moments. A horizontal circle projects with its major axis at true diameter and its minor axis at diameter times sin(pitch).",
+        "measured": {"semiMajorPx": 85.5, "semiMinorPx": 40.2, "axisRatio": 0.4707},
+        "status": "SINGLE-SOURCED, NOT CONFIRMED. Only the button gives this number. Do not treat 28.1 as solved to the standard the fan's two-disc solve met.",
+        "crossCheckAttempted": "The canister is NOT an independent solve and an earlier note here wrongly implied it was. It yields one equation, 566 = H*cos(pitch) + 646*sin(pitch), in two unknowns, so it can only confirm that the button's pitch implies a plausible canister height - 297 px, H/D = 0.459, a squat body half as tall as wide, which the reference does show. That is a plausibility check, not a second solve.",
+        "contactShadowSolveFAILED": {
+          "pitchDegrees": 10.7,
+          "disagreesWithButtonBy": 17.4,
+          "why": "The shadow route assumes a near-overhead or ambient contact shadow, and this scene violates it. The canister's shadow measures 855 px across against a 646 px canister and returns an axis ratio of 0.1854, far flatter than that base circle could project at any pitch. The key light is raked, so the shadow's ellipse carries the light direction as well as the ground plane's foreshortening and cannot separate them.",
+          "conclusion": "Rejected as a camera solve. Recorded rather than deleted because the failure is diagnostic: it says the reference's key light is low and off to one side, which the lighting pass will need."
+        },
+        "howToActuallyConfirm": "A second solve needs another circle whose plane is known and whose fit does not depend on lighting. The waist belt is a horizontal circle like the button and is the best candidate, but only its front arc is visible, so it needs a conic fit to the arc rather than a moment fit to a blob. The wheel hub cap is a vertical-plane circle and is degenerate on its own, mixing pitch with the wheel's azimuth.",
+        "conversions": {"depthToImageY": 0.4707, "heightToImageY": 0.8823, "widthToImageX": 1.0}
+      },
+      "footprint": {
+        "verdict": "THE REFERENCE POSE DOES NOT FIT THE COLLIDER, AT ANY CAMERA PITCH. This is the prop's governing constraint and it needs a design ruling before any spec is authored.",
+        "pitchIndependentProof": {
+          "claim": "No value of the camera pitch makes the reference pose fit, so the design ruling does not wait on the unconfirmed 28.1 degrees.",
+          "setup": "Clean silhouette width 877 px. The canister is a revolve, so its 646 px diameter is also its depth. The nozzle's underside (y 1135) and the canister's underside (y 793) both rest on the floor, so their 342 px is pure depth and converts as 342 / sin(pitch). Total depth = 646 + 342 / sin(pitch).",
+          "requirement": "The collider allows depth:width of 0.90. Solving 646 + 342/sin(pitch) <= 0.9 * 877 needs sin(pitch) >= 2.387, which is impossible.",
+          "bestCase": "Even at pitch 90 degrees, a camera looking straight down where the 342 px would be depth at 1:1, depth:width is 1.127 against 0.900 allowed - still 25 percent over.",
+          "table": "depth:width by pitch - 10.7deg 2.837, 20deg 1.877, 28.1deg 1.565, 45deg 1.288, 60deg 1.187, 90deg 1.127. Never below 0.900."
+        },
+        "trueExtentsPxAtButtonPitch": {"width": 877, "height": 545, "depth": 1372},
+        "aspect": "At the button's 28.1 degrees, prop width:height:depth = 1.61 : 1 : 2.52 against the collider's 0.909 : 1 : 0.818. These figures move with pitch; the verdict above does not.",
+        "silhouetteCorrection": "Width and depth here use the CLEAN silhouette of 877 x 975, measured off the union of the part masks. The earlier 910 x 991 came from the raw object mask, which includes the contact shadow: the shadow is not background, so it was inflating the bounding box, and the nozzle's true underside is y 1135 rather than the shadow's 1151.",
+        "options": [
+          "Coil the hose tight against the canister and park the nozzle alongside it rather than ahead of it, keeping every part's proportions and abandoning only the reference's POSE. Recommended: the pose is the only thing that does not fit, and a canister vacuum reads from its parts.",
+          "Keep the reference pose and shrink to fit depth, accepting a prop that uses 32 percent of its height budget and reads small against every neighbouring trap.",
+          "Propose a collider change to the user. Do NOT change it unilaterally - the trap colliders are tuned."
+        ]
+      },
+      "parts": [
+        {
+          "part": "lilac canister body",
+          "medianHex": "#bca6da",
+          "areaFractionOfObject": 0.325,
+          "bboxPx": [334, 227, 980, 793],
+          "widthFractionOfSilhouette": 0.71,
+          "heightFractionOfSilhouette": 0.571,
+          "widthPx": 646,
+          "heightPx": 566,
+          "worldSize": null,
+          "worldSizeRetracted": "was [0.717, 0.628] from the invalid 901 px/world. The 646 px width is a true diameter and is the scale anchor; the 566 px height is NOT the canister's height, because it includes the foreshortened cap ellipses."
+        },
+        {
+          "part": "navy belt, hose collar and corrugated hose",
+          "medianHex": "#374c72",
+          "areaFractionOfObject": 0.218,
+          "bboxPx": [167, 227, 984, 939],
+          "widthFractionOfSilhouette": 0.898
+        },
+        {
+          "part": "cream floor nozzle",
+          "medianHex": "#f9e9c4",
+          "areaFractionOfObject": 0.102,
+          "centroidPx": [635.3, 995.1]
+        },
+        {
+          "part": "coral wheel and nub",
+          "medianHex": "#eb8273",
+          "areaFractionOfObject": 0.07,
+          "bboxPx": [504, 338, 1044, 791],
+          "centroidPx": [918.3, 625.2]
+        },
+        {
+          "part": "mint carry handle and hose cuff",
+          "medianHex": "#91c4ae",
+          "areaFractionOfObject": 0.055,
+          "centroidPx": [673.1, 354.7]
+        },
+        {
+          "part": "yellow top button and wheel hub cap",
+          "medianHex": "#fdda9c",
+          "areaFractionOfObject": 0.028,
+          "centroidPx": [730.2, 451.3]
+        }
+      ],
+      "hoseCorrugation": {
+        "tubeDiameterPx": 106.5,
+        "ribPitchPx": 23.5,
+        "ribsPerTubeDiameter": 4.53,
+        "tubeDiameterPerCanisterDiameter": 0.1649,
+        "ribPitchPerCanisterDiameter": 0.0364,
+        "worldValuesRetracted": "tubeDiameterWorld 0.1182 and ribPitchWorld 0.0261 came from the invalid 901 px/world and are withdrawn. The pixel figures and the ratios against the 646 px canister diameter stand, and those ratios are what the spec should author from.",
+        "method": "Luminance sampled along three independently chosen locally-straight runs of the hose, smoothed at rib scale, ripple maxima counted with a 12 px minimum separation. Median pitch came back 24.1, 22.0 and 25.6 px on the three runs. Tube diameter is the perpendicular navy width on the straightest run, which held between 101.5 and 110.0 px.",
+        "confidence": 0.8,
+        "warning": "An earlier pass smoothed at pixel scale instead of rib scale and returned a 5 px pitch that was image noise, with the true ribs showing up only as 21-28 px outliers. Smooth at the scale of the feature being counted."
+      },
+      "derivations": [
+        "Background is the median of the four 40x40 image corners, measured at rgb(219, 218, 218) rather than assumed.",
+        "Albedo separation by channel dominance with an antialiasing guard: a pixel must sit more than 3 in Euclidean colour distance from the plate before it can be claimed, which removes the one-pixel halo that otherwise reads as a false part around every silhouette edge.",
+        "Each pixel is claimed once, most saturated rule first, so no area is double counted.",
+        "Every mask was checked against evidence/masks.png and lands on the part it names."
+      ],
+      "notMeasured": [
+        "Total hose rib count. The pitch is measured and is the number a swept corrugation is actually authored from, but the total depends on the 3D centreline length, which the single view does not give. Derive it as centreline length divided by pitch once the hose curve is authored, rather than counting it off the projection, where the far limb of the loop is foreshortened.",
+        "Whether a second wheel exists on the hidden left side. One coral wheel is visible at image right. A canister vacuum normally has two, but the single reference view cannot show it and inventing one would be a guess. Decide it as a design ruling, not as a measurement.",
+        "Depth of every part. One three-quarter view cannot give it, and the collider's 0.90 is the only constraint that exists.",
+        "The hose centreline in 3D. The reference shows its projection only, so its Z excursion is unconstrained and is what decides whether the prop fits the 0.90 depth."
+      ]
+    }
+  },
+  "unknownsToResolveBeforeImplementation": [
+    {
+      "unknown": "RESOLVED. The reference camera is solved at pitch 28.1 degrees (+/- 3) off the top button's ellipse, cross-checked against the canister. See measurementBasis.solvedCamera. Resolving it turned the depth question from unknown into a measured verdict: the reference pose does not fit the collider, which is now the prop's governing design ruling. Original statement follows.",
+      "originalUnknown": "The reference camera is unsolved, and without it no vertical image measurement converts to a world dimension.",
+      "why": "This is the prop's blocking unknown and it must be closed FIRST. The canister and the nozzle both stand on the floor yet their undersides sit about 350 px apart in image Y, so vertical image extents carry depth as well as elevation. Until the camera is solved, only horizontal extents and same-part ratios are trustworthy. Authoring world dimensions from vertical pixel spans is what produced the retracted numbers recorded in measurementBasis.",
+      "options": [
+        "Solve yaw and pitch from the ground plane: the canister's contact shadow is a projected circle, so its ellipse gives the ground plane's foreshortening directly, and the canister-to-nozzle image displacement then converts into a world XZ offset.",
+        "Solve from the canister itself: image width is the true diameter and image height is height plus the cap ellipse minor axis, so the two together give pitch without needing the shadow.",
+        "Take a design ruling on the plan layout and treat the reference as a style guide for proportion only, recording the deviation."
+      ],
+      "confidence": 0.0
+    },
+    {
+      "unknown": "The hose is a tube, and a tube with a parent fails --strict-quality without an attachment.",
+      "why": "validate_sculpt_spec puts `tube` in ATTACHMENT_PRIMITIVES. When the attachment is missing the generator replaces the geometry with a plain cylinder between the endpoints AND discards its transform, so an authored curve becomes a straight rod. This is the single highest risk in the prop, because the hose curve is a quarter of the silhouette and is what makes it read as a vacuum.",
+      "options": [
+        "Route through refine_props.py edit 4, which honours attachment.geometryFromSpec and is proven on two props already.",
+        "Author the hose as a curve-sweep with a full attachment contract: parentSocket, localStart, localEnd, contact type, embed depth and gap tolerance."
+      ],
+      "confidence": 0.0
+    },
+    {
+      "unknown": "Whether the reference's hose and nozzle sprawl fits the 0.90 collider depth.",
+      "why": "The silhouette fits the collider in X and Y almost exactly, at 1.0 percent over in width, which is a far better starting point than the floor fan had. But the reference is a three-quarter view, so an unknown share of the hose loop and the nozzle's reach is Z rather than X. If the loop is mostly Z it will not fit 0.90 and the hose has to be tucked closer to the body than the reference shows.",
+      "options": [
+        "Author the hose loop mostly in the XY plane so the measured fit carries over and Z stays small.",
+        "Keep the reference's depth and trim the loop radius until the prop fits 0.90, recording the deviation as a fidelity note."
+      ],
+      "confidence": 0.0
+    },
+    {
+      "unknown": "Where the plan width is authored, given the canister is a revolve.",
+      "why": "generate_threejs_factory hangs a component's dimensions on its PIVOT node when the xform omits scale, and children inherit it. The handle, button, belt, hose collar and wheel all attach to the canister, so a non-uniform plan scale on the canister's node would reach every one of them. This is the pivot-scale leak that cost the toilet its raised lid twice.",
+      "options": [
+        "Author any non-circular plan into the lathe profile so the canister's node stays unit-scaled.",
+        "Hang the hose and nozzle off the ROOT rather than off the canister's node."
+      ],
+      "confidence": 0.0
+    }
+  ],
+  "qualityContract": {
+    "qualityBar": "complex",
+    "definitionOfDone": [
+      "The rendered model matches the reference silhouette, primary proportions, visible component hierarchy, material response, and most recognizable local features for the selected fidelity tier.",
+      "The hose reads as a curved corrugated tube from the chase camera in motion, not as a straight rod."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 4,
+      "mesoComponents": 7,
+      "microFeatureGroups": 2,
+      "materialLayers": 6,
+      "repetitionSystems": 1,
+      "reviewViewpoints": 3
+    }
+  },
+  "contrastNotes": [
+    "Body lilac measures 3.34:1 against the palest deck wash, so it anchors on its own and needs no darker outline.",
+    "The navy hose and belt are the darkest values in the prop and carry the read at distance."
+  ]
+}

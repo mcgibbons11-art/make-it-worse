@@ -1,6 +1,5 @@
 "use client";
 
-import { RoundedBox } from "@react-three/drei";
 import { useCallback, type Ref } from "react";
 import {
   DoubleSide,
@@ -14,7 +13,6 @@ import {
 import { PALETTE } from "@/lib/game/constants";
 
 /** The hammer handle is a warmer cream than the level trim, so it is local. */
-const HANDLE_CREAM = "#fff3cf";
 
 // ---------------------------------------------------------------------------
 // Floor fan
@@ -269,89 +267,3 @@ export function ProceduralFloorFan({ bladesRef = null }: ProceduralFloorFanProps
   );
 }
 
-// ---------------------------------------------------------------------------
-// Hammer
-// ---------------------------------------------------------------------------
-// Origin is the butt of the handle so the prop can hang off a swing pivot.
-// THE HEAD EXTENDS ALONG +Y: the handle runs from y=0 up to y=1.72 and the head
-// is centred at y=1.93, giving an overall length of 2.20 along +Y. The striking
-// faces point along +/-X and the head is 0.54 deep in Z.
-
-const HAMMER_HEAD_Y = 1.93;
-/** Half the head's length in X; the striking domes sit just inside this. */
-const HAMMER_HEAD_HALF_LENGTH = 0.51;
-const HAMMER_STRIKE_FACE_X = 0.49;
-
-const HAMMER_GRIP_BAND_COUNT = 4;
-const HAMMER_GRIP_BAND_BASE_Y = 0.26;
-const HAMMER_GRIP_BAND_SPACING = 0.18;
-
-export function ProceduralHammer() {
-  const setGripBands = useCallback((bands: InstancedMesh | null) => {
-    if (!bands) return;
-    const matrix = new Matrix4();
-    for (let index = 0; index < HAMMER_GRIP_BAND_COUNT; index += 1) {
-      // A torus lies in XY, so tip it into XZ to wrap the Y-aligned handle.
-      matrix.makeRotationX(Math.PI / 2);
-      matrix.setPosition(
-        0,
-        HAMMER_GRIP_BAND_BASE_Y + index * HAMMER_GRIP_BAND_SPACING,
-        0,
-      );
-      bands.setMatrixAt(index, matrix);
-    }
-    bands.instanceMatrix.needsUpdate = true;
-  }, []);
-
-  return (
-    <group name="proceduralHammer">
-      <mesh name="hammerEndCap" castShadow position={[0, 0.105, 0]} scale={[1, 0.85, 1]}>
-        <sphereGeometry args={[0.12, 14, 10]} />
-        <meshStandardMaterial color={PALETTE.yellow} roughness={0.76} metalness={0.02} />
-      </mesh>
-      <mesh name="hammerHandle" castShadow position={[0, 0.89, 0]}>
-        <cylinderGeometry args={[0.112, 0.085, 1.66, 14]} />
-        <meshStandardMaterial color={HANDLE_CREAM} roughness={0.84} metalness={0} />
-      </mesh>
-      <instancedMesh
-        name="hammerGripBands"
-        ref={setGripBands}
-        castShadow
-        args={[undefined, undefined, HAMMER_GRIP_BAND_COUNT]}
-      >
-        <torusGeometry args={[0.096, 0.03, 8, 16]} />
-        <meshStandardMaterial color={PALETTE.yellow} roughness={0.72} metalness={0.02} />
-      </instancedMesh>
-      {/* Flared collar that hides the handle-to-head joint. */}
-      <mesh name="hammerFerrule" castShadow position={[0, 1.62, 0]}>
-        <cylinderGeometry args={[0.155, 0.135, 0.17, 14]} />
-        <meshStandardMaterial color={PALETTE.yellow} roughness={0.74} metalness={0.03} />
-      </mesh>
-      <RoundedBox
-        name="hammerHead"
-        castShadow
-        receiveShadow
-        args={[HAMMER_HEAD_HALF_LENGTH * 2, 0.54, 0.54]}
-        radius={0.12}
-        smoothness={3}
-        position={[0, HAMMER_HEAD_Y, 0]}
-      >
-        <meshStandardMaterial color={PALETTE.red} roughness={0.78} metalness={0.04} />
-      </RoundedBox>
-      {/* Squashed spheres crown each face. Kept narrow enough that the widest
-          ring stays buried inside the head's bevel instead of flanging out. */}
-      {[-1, 1].map((side) => (
-        <mesh
-          key={side}
-          name={side < 0 ? "hammerStrikeFaceLeft" : "hammerStrikeFaceRight"}
-          castShadow
-          position={[side * HAMMER_STRIKE_FACE_X, HAMMER_HEAD_Y, 0]}
-          scale={[0.3, 1, 1]}
-        >
-          <sphereGeometry args={[0.2, 16, 10]} />
-          <meshStandardMaterial color={PALETTE.red} roughness={0.72} metalness={0.05} />
-        </mesh>
-      ))}
-    </group>
-  );
-}

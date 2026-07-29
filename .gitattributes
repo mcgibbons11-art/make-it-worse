@@ -1,0 +1,9 @@
+# Keep GitHub snapshot tarballs small enough for the Portals build worker.
+#
+# Portals' GitHub sync downloads a snapshot archive of this repository and
+# fails with SOURCE_ARCHIVE_FAILED when that archive is too large. The asset
+# pipeline's reference images and render evidence under assets/ are 137 MB of
+# the 147 MB archive and are never imported by any built code (verified: no
+# ts/tsx import references assets/). export-ignore leaves them in the
+# repository and its history but out of downloaded archives.
+/assets/ export-ignore

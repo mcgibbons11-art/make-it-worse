@@ -91,7 +91,15 @@ export const WAVE_B_SCHEDULE = {
   /** Lit on contact, paid this long later, wherever the runner has got to. */
   slowFuse: { fuseMs: 1600 },
   /** The wobble is the window an already-stunned runner has to clear it. */
-  pileOn: { wobbleMs: 260, topplesMs: 220 },
+  // 480, not the original 260, and the number is an escape budget rather than
+  // taste. This trap only ever arms against a STUNNED runner, and stun scales
+  // acceleration to a quarter - so at 260ms a runner starting from rest could
+  // cover ~0.25u of a reach that demands up to 1.5u, and the wobble its own
+  // comment called "the window an already-stunned runner has to clear it" was
+  // not one. At 480ms the stunned-then-recovering runner covers ~0.9-1.2u with
+  // any residual knockback on top, which makes the window real without making
+  // the trap polite. The user delegated this call on 2026-07-29.
+  pileOn: { wobbleMs: 480, topplesMs: 220 },
   /** The lid is held open while the pedal is down and slams once it comes up. */
   binPedal: { releaseMs: 200, slamMs: 220 },
   /** Opens away from the runner, hangs, then comes back at their back. */

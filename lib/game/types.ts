@@ -52,7 +52,8 @@ export type TrapType =
   | "clothes_airer"
   | "ice_dispenser"
   | "kettle_boil"
-  | "junk_drift";
+  | "junk_drift"
+  | "charles_murder_baby";
 
 export type GamePhase = "booting" | "intro" | "ready" | "playing" | "failed" | "finished" | "choosing_trap" | "placing_trap" | "publishing" | "sharing" | "paused" | "fatal_error";
 export type AttemptOutcome = "started" | "completed" | "fell" | "timeout" | "reset" | "quit";

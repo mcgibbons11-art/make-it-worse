@@ -64,6 +64,7 @@ export type AvatarFaceId =
   | "brows"
   | "moustache"
   | "beard"
+  | "goatee"
   | "freckles"
   | "warpaint"
   | "mask";
@@ -124,7 +125,9 @@ export type AvatarBackpackId =
   | "jetpack"
   | "shell"
   | "satchel"
-  | "scuba";
+  | "scuba"
+  | "cape"
+  | "wings";
 
 export type AvatarHeldId =
   | "none"
@@ -164,14 +167,19 @@ export const AVATAR_FACES: readonly WardrobeOption<AvatarFaceId>[] = [
   { id: "plain", label: "Neutral" },
   { id: "grin", label: "Grin" },
   { id: "focused", label: "Focused" },
-  { id: "shades", label: "Shades" },
+  // Kept in the encoded ID table so old shared avatars still decode. It is
+  // intentionally absent from AVATAR_SELECTABLE_FACES: eyewear owns glasses.
+  { id: "shades", label: "Legacy shades" },
   { id: "brows", label: "Big brows" },
   { id: "moustache", label: "Moustache" },
   { id: "beard", label: "Beard" },
+  { id: "goatee", label: "Goatee" },
   { id: "freckles", label: "Freckles" },
   { id: "warpaint", label: "War paint" },
   { id: "mask", label: "Face mask" },
 ];
+
+export const AVATAR_SELECTABLE_FACES = AVATAR_FACES.filter((entry) => entry.id !== "shades");
 
 export const AVATAR_EYEWEAR: readonly WardrobeOption<AvatarEyewearId>[] = [
   { id: "none", label: "None" },
@@ -205,6 +213,9 @@ export const AVATAR_OUTERWEAR: readonly WardrobeOption<AvatarOuterwearId>[] = [
   { id: "wings", label: "Wings" },
   { id: "scarf", label: "Scarf" },
 ];
+export const AVATAR_SELECTABLE_OUTERWEAR = AVATAR_OUTERWEAR.filter(
+  (entry) => entry.id !== "cape" && entry.id !== "wings",
+);
 
 export const AVATAR_LEGWEAR: readonly WardrobeOption<AvatarLegwearId>[] = [
   { id: "none", label: "None" },
@@ -235,7 +246,12 @@ export const AVATAR_BACKPACKS: readonly WardrobeOption<AvatarBackpackId>[] = [
   { id: "shell", label: "Shell" },
   { id: "satchel", label: "Satchel" },
   { id: "scuba", label: "Air tanks" },
+  { id: "cape", label: "Cape" },
+  { id: "wings", label: "Wings" },
 ];
+export const AVATAR_SELECTABLE_BACKPACKS = AVATAR_BACKPACKS.filter(
+  (entry) => !["shell", "satchel", "scuba"].includes(entry.id),
+);
 
 export const AVATAR_HELD: readonly WardrobeOption<AvatarHeldId>[] = [
   { id: "none", label: "Empty hand" },
@@ -273,7 +289,7 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     id: "face",
     label: "Face",
     note: "Brows, whiskers and paint, with their own colour.",
-    options: AVATAR_FACES,
+    options: AVATAR_SELECTABLE_FACES,
     colorKey: "face",
     sockets: ["Head mass__pivot"],
   },
@@ -297,7 +313,7 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     id: "outerwear",
     label: "Outer layer",
     note: "Goes over the top. Every hem stops above the hip so a swinging thigh never cuts through it.",
-    options: AVATAR_OUTERWEAR,
+    options: AVATAR_SELECTABLE_OUTERWEAR,
     colorKey: "outerwear",
     sockets: ["Torso__pivot", "Neck__pivot"],
   },
@@ -321,7 +337,7 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     id: "backpack",
     label: "Back",
     note: "Faces the chase camera, so it is held to the same floor-contrast bar as your body.",
-    options: AVATAR_BACKPACKS,
+    options: AVATAR_SELECTABLE_BACKPACKS,
     colorKey: "backpack",
     sockets: ["Torso__pivot"],
   },

@@ -243,6 +243,8 @@ const HAZARD_PEAK: Record<TrapType, number> = {
   clothes_airer: 0.045,
   // Soft rubbish shifting. Barely above the dust bunny.
   junk_drift: 0.035,
+  // A toy blade/rattle and an angry crawl impact.
+  charles_murder_baby: 0.06,
 };
 
 /**
@@ -1407,6 +1409,10 @@ class AudioManagerClass {
         // the lunge under it is the only part of it with any weight.
         this.noiseBurst(d(0.3), { filter: "highpass", frequency: 2200, gain: g(0.028) });
         this.noiseBurst(d(0.18), { filter: "lowpass", frequency: 420, q: 0.5, gain: g(0.03), delayMs: 220 });
+        return;
+      case "charles_murder_baby":
+        this.tone(620, d(0.1), { to: 310, wave: "square", gain: g(0.045) });
+        this.noiseBurst(d(0.16), { filter: "bandpass", frequency: 1450, q: 2, gain: g(0.035), delayMs: 70 });
         return;
     }
     // Exhaustive by construction. Sixteen traps were added to TrapType without

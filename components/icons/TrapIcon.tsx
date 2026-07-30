@@ -113,6 +113,8 @@ function Glyph({ type }: { type: TrapType }) {
       return <><path d="M14 30h32l-3 24H17z" fill="#6e7487" {...common}/><path d="M46 34c8 2 8 12 0 14" fill="none" strokeWidth={5} stroke="#6e7487" strokeLinecap="round"/><path d="M18 30c0-8 28-8 28 0" fill="none" {...common}/><rect x="26" y="20" width="12" height="6" rx="3" fill="#ff5964" {...common}/><path d="M24 16c-4-5 4-8 0-13M40 16c-4-5 4-8 0-13" fill="none" strokeWidth={4} stroke="#73dff2" strokeLinecap="round"/></>;
     case "junk_drift":
       return <><path d="M4 52c2-10 10-8 12-16s12-6 14 2 10-2 14 4 12 2 16 10z" fill="#b9a7ff" {...common}/><rect x="18" y="30" width="11" height="9" rx="2" fill="#ff9b4a" transform="rotate(-18 23 34)" {...common}/><path d="M36 34l9-3 2 8-9 2z" fill="#fff3cf" {...common}/><circle cx="52" cy="44" r="4" fill="#ffd84d" {...common}/><path d="M4 58h56" {...common}/></>;
+    case "charles_murder_baby":
+      return <><circle cx="29" cy="24" r="15" fill="#f3bd91" {...common}/><path d="M17 38c5-8 20-8 27 0l-3 15H18z" fill="#f3ad22" {...common}/><path d="M20 46h20l-2 10H22z" fill="#fff3cf" {...common}/><ellipse cx="24" cy="23" rx="2.5" ry="4" fill="#171a2b"/><ellipse cx="34" cy="23" rx="2.5" ry="4" fill="#171a2b"/><path d="M20 17l7 3M38 17l-7 3M24 32c3-3 7-3 10 0" fill="none" {...common}/><path d="M44 40l11-20 5 24z" fill="#c9d1da" {...common}/><circle cx="55" cy="45" r="5" fill="#ff5964" {...common}/></>;
     default:
       // Same invariant TrapRenderer's dispatch carries: a roster entry with no
       // glyph draws an empty box on the choice screen rather than failing, so

@@ -6,6 +6,7 @@ import type { Group } from "three";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type { TrapPlacementInput, TrapType, Vec3Tuple } from "@/lib/game/types";
 import { AssetModel } from "../AssetModel";
+import { CharlesModel } from "../traps/CharlesTrap";
 import {
   AnkleWeightCuff,
   BallMachine,
@@ -315,6 +316,8 @@ function PreviewProp({ type }: { type: TrapType }) {
           <JunkDrift />
         </group>
       );
+    case "charles_murder_baby":
+      return <CharlesModel />;
     default:
       // The same invariant TrapRenderer's dispatch and TrapIcon's glyph switch
       // carry: a roster entry with no preview has to be a compile error rather

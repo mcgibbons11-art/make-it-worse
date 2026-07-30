@@ -71,7 +71,8 @@ import {
   StoveRingTrap,
   SwingDoorTrap,
 } from "./traps/TrapsWaveB";
-interface TrapProps {
+import { CharlesTrap } from "./traps/CharlesTrap";
+export interface TrapProps {
   trap: TrapInstance;
   player: React.RefObject<RapierRigidBody | null>;
   soapUntilRef: React.MutableRefObject<number>;
@@ -798,6 +799,8 @@ export function TrapRenderer(props: TrapProps) {
       return <Toilet {...props} />;
     case "giant_beach_ball":
       return <Ball {...props} />;
+    case "charles_murder_baby":
+      return <CharlesTrap {...props} />;
     case "toaster_launcher":
       return <ToasterLauncherTrap {...props} />;
     case "ceiling_fan":

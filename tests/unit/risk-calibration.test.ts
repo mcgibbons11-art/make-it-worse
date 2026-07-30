@@ -147,6 +147,7 @@ const MEASURED: Record<TrapType, { impulse: number; gate: number | null }> = {
   ice_dispenser: { impulse: 19, gate: null },
   kettle_boil: { impulse: 9, gate: 1500 },
   junk_drift: { impulse: 5, gate: 1200 },
+  charles_murder_baby: { impulse: 13, gate: 1000 },
 };
 
 /** GameScene.tsx derives both of these from the reported impulse. */

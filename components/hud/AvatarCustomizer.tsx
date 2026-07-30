@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { resolveAvatar } from "@/lib/game/avatar";
 import { WardrobePanel } from "@/components/hud/wardrobe/WardrobePanel";
 import { useGameStore } from "@/stores/game-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -57,11 +56,7 @@ export function AvatarCustomizer({
   if (!open)
     return phase === "intro" || alwaysVisible ? (
       <button className={launcherClassName} onClick={() => setManualOpen(true)}>
-        <span
-          className="avatar-launcher-chip"
-          style={{ background: resolveAvatar(avatar, seed).bodyColor }}
-        />
-        {launcherLabel ?? (avatar ? "Edit your runner" : "Make your runner")}
+        {launcherLabel ?? (avatar ? "🧍 Edit your runner" : "🧍 Make your runner")}
       </button>
     ) : null;
 

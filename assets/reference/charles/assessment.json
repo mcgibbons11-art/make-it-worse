@@ -1,0 +1,311 @@
+{
+  "targetName": "Charles the Murder Baby",
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\charles\\charles-concept-sheet.png",
+  "preSpecAssessment": {
+    "objectClass": {
+      "primaryType": "stylized crawling baby trap character",
+      "primaryDomain": "hybrid",
+      "formLanguage": ["rounded low-poly", "oversized head", "toy-like", "chunky limbs"],
+      "structureKind": ["articulated character hierarchy", "handheld prop attachment"],
+      "motionPotential": ["alternating crawl", "head bob", "weapon-hand lunge"],
+      "materialFamilies": ["matte skin", "woven yellow cloth", "cream diaper", "painted toy metal"],
+      "notes": "Three-view concept sheet directly shows front, side, and rear-three-quarter structure. Charles must remain funny and non-graphic: the triangular handheld object reads as an absurd toy blade/rattle, never gore."
+    },
+    "complexity": {
+      "tier": "complex",
+      "scores": {
+        "silhouetteComplexity": 0.78,
+        "componentCount": 0.82,
+        "hierarchyDepth": 0.76,
+        "repetitionDensity": 0.35,
+        "materialLayerCount": 0.62,
+        "localDetailDensity": 0.68,
+        "occlusionRisk": 0.72,
+        "actionReadinessNeed": 0.9
+      },
+      "estimatedCounts": {
+        "macroComponents": 5,
+        "mesoComponents": 14,
+        "microFeatureGroups": 8,
+        "materialLayers": 4,
+        "repetitionSystems": 2
+      },
+      "reasoning": [
+        "The oversized head, bent four-limb crawling pose, diaper/onesie layering, and separate handheld toy create a deep animated hierarchy.",
+        "Facial expression and diaper tabs are small but identity-defining; the three views reduce silhouette uncertainty.",
+        "Occlusion is highest at the face, wrist grip, shoulder joins, and diaper-to-leg transitions."
+      ]
+    },
+    "specDepthDecision": {
+      "requiredDepth": "complex",
+      "minimumComponentLevels": [
+        "macro",
+        "meso",
+        "micro"
+      ],
+      "needsRepetitionSystems": true,
+      "needsMaterialLocalOverrides": true,
+      "needsMultipleReviewViews": true,
+      "needsActionReadyHierarchy": true,
+      "rationale": "Choose simple/moderate/complex/ultra-complex from observed structure, not from a hardcoded domain."
+    },
+    "unknownsToResolveBeforeImplementation": [
+      "The exact underside of the torso is hidden; infer a continuous yellow onesie between chest and diaper.",
+      "The toy blade grip is partially occluded; embed the coral ring handle into a closed right hand with visible overlap.",
+      "The rear view is three-quarter rather than orthographic; keep the diaper centered and symmetric."
+    ],
+    "detailInventory": {
+      "scanMethod": "component-zones",
+      "targetMinDetails": 14,
+      "note": "Enumerate every identity-defining small detail before authoring the spec. Each detail must map to a component.localFeatures entry or material.localOverrides entry, never prose only. Use forge/stage1_intake/build_detail_inventory.py to scan zones.",
+      "details": [
+        {"id":"head-shape","kind":"silhouette","description":"Oversized bald round head with full cheeks and tapered chin.","scale":"macro","affects":"recognition and childlike proportions","mapsTo":{"type":"component.localFeatures","ref":"head.proportions"},"evidenceRef":"front","confidence":0.98},
+        {"id":"hair-curl","kind":"geometry","description":"Single dark brown curl rising from the crown.","scale":"micro","affects":"character identity","mapsTo":{"type":"component.localFeatures","ref":"head.hairCurl"},"evidenceRef":"front","confidence":0.96},
+        {"id":"angry-brows","kind":"geometry","description":"Two thick navy brows angle sharply downward toward center.","scale":"micro","affects":"angry expression","mapsTo":{"type":"component.localFeatures","ref":"face.eyebrows"},"evidenceRef":"front","confidence":0.99},
+        {"id":"oval-eyes","kind":"geometry","description":"Large vertically oval near-black eyes under brows.","scale":"micro","affects":"facial read","mapsTo":{"type":"component.localFeatures","ref":"face.eyes"},"evidenceRef":"front","confidence":0.99},
+        {"id":"nose-mouth","kind":"geometry","description":"Small round nose and low curved frown remain separated.","scale":"micro","affects":"facial read","mapsTo":{"type":"component.localFeatures","ref":"face.noseMouth"},"evidenceRef":"front","confidence":0.97},
+        {"id":"ear-forms","kind":"geometry","description":"Small rounded ears project on both sides of the head.","scale":"meso","affects":"head silhouette","mapsTo":{"type":"component.localFeatures","ref":"head.ears"},"evidenceRef":"side","confidence":0.96},
+        {"id":"onesie-body","kind":"material-zone","description":"Golden-yellow long-sleeve onesie covers torso and arms.","scale":"macro","affects":"primary color block","mapsTo":{"type":"material.localOverrides","ref":"onesie.yellowCloth"},"evidenceRef":"front","confidence":0.99},
+        {"id":"diaper-volume","kind":"geometry","description":"Cream diaper wraps hips with a thick rounded front and rear volume.","scale":"meso","affects":"crawling-baby silhouette","mapsTo":{"type":"component.localFeatures","ref":"pelvis.diaper"},"evidenceRef":"rear","confidence":0.99},
+        {"id":"diaper-tabs","kind":"geometry","description":"Raised rectangular yellow-white fastening tabs sit at both hips.","scale":"micro","affects":"diaper recognition","mapsTo":{"type":"component.localFeatures","ref":"pelvis.diaperTabs"},"evidenceRef":"side","confidence":0.94},
+        {"id":"crawl-pose","kind":"pose","description":"One palm plants forward while knees bend under the body and weapon hand lifts.","scale":"macro","affects":"action silhouette","mapsTo":{"type":"component.localFeatures","ref":"root.crawlPose"},"evidenceRef":"side","confidence":0.97},
+        {"id":"chunky-hands","kind":"geometry","description":"Hands use rounded palms and short separated fingers.","scale":"meso","affects":"toy-like anatomy and grip","mapsTo":{"type":"component.localFeatures","ref":"arms.hands"},"evidenceRef":"front","confidence":0.92},
+        {"id":"bare-feet","kind":"geometry","description":"Bare feet have rounded toes and upturned soles in the rear view.","scale":"meso","affects":"rear silhouette","mapsTo":{"type":"component.localFeatures","ref":"legs.feet"},"evidenceRef":"rear","confidence":0.93},
+        {"id":"toy-blade","kind":"geometry","description":"Silver triangular toy blade/rattle has a blunt point and three round rivets.","scale":"meso","affects":"trap identity","mapsTo":{"type":"component.localFeatures","ref":"weapon.blade"},"evidenceRef":"front","confidence":0.99},
+        {"id":"ring-handle","kind":"geometry","description":"Yellow guard and coral circular handle attach the toy blade to the right fist.","scale":"meso","affects":"weapon silhouette and attachment","mapsTo":{"type":"component.localFeatures","ref":"weapon.handle"},"evidenceRef":"side","confidence":0.97}
+      ]
+    },
+    "anatomy": {
+      "applies": true,
+      "styleHeads": 2.35,
+      "proportions": {
+        "headUnit": 1.0,
+        "torso": 0.72,
+        "legs": 0.68,
+        "shoulderWidth": 0.78,
+        "hipWidth": 0.82
+      },
+      "pose": {
+        "type": "asymmetric quadrupedal crawl",
+        "jointAngles": {"leftShoulder":35,"rightShoulder":-22,"leftElbow":55,"rightElbow":82,"leftHip":48,"rightHip":62,"leftKnee":96,"rightKnee":88}
+      },
+      "faceLandmarks": {
+        "eyeLine": 0.46,
+        "eyeSpacing": 0.34,
+        "noseBase": 0.58,
+        "mouthLine": 0.69,
+        "hairline": 0.12
+      },
+      "features": ["round cheeks","angry brows","oval eyes","button nose","deep frown","single crown curl"],
+      "confidence": 0.94,
+      "note": "Only meaningful when objectClass.primaryDomain is character or hybrid. Set applies=true and fill from forge/stage1_intake/extract_landmarks.py. See grimoire/character/reconstruction.md and grimoire/character/likeness_maximization.md."
+    },
+    "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\charles\\charles-concept-sheet.png"
+  },
+  "qualityContract": {
+    "qualityBar": "complex",
+    "definitionOfDone": [
+      "The rendered model matches the reference silhouette, primary proportions, visible component hierarchy, material response, and most recognizable local features for the selected fidelity tier."
+    ],
+    "minimumSpecDepth": {
+      "macroComponents": 3,
+      "mesoComponents": 8,
+      "microFeatureGroups": 5,
+      "materialLayers": 3,
+      "repetitionSystems": 1,
+      "reviewViewpoints": 4
+    },
+    "featureGroups": [
+      {
+        "id": "overall-silhouette",
+        "name": "Overall silhouette and proportions",
+        "required": true,
+        "qualityCriteria": [
+          "Bounding shape, dominant curves, negative spaces, and scale relationships are explicitly described."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model reads as a generic placeholder instead of the reference object",
+          "major proportions are guessed without evidence"
+        ]
+      },
+      {
+        "id": "primary-structure",
+        "name": "Primary structure and hierarchy",
+        "required": true,
+        "qualityCriteria": [
+          "Major parts, joints, seams, contact points, and parent-child relationships are named before code generation."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "large visible parts are merged into one mesh",
+          "component hierarchy is too shallow for the observed complexity"
+        ]
+      },
+      {
+        "id": "attachment-joint-correctness",
+        "name": "Attachment and joint correctness",
+        "required": true,
+        "qualityCriteria": [
+          "Every visible child appendage, branch, limb, handle, connector, tube, cable, horn, wing, leg, or hinged part has an attachment contract with parent socket, localStart/localEnd, contact type, embed/overlap, and gap tolerance."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "child part root floats away from the parent",
+          "branch/limb/tube is centered in space instead of pivoting from its root",
+          "parent-child transform mixes world and local coordinates"
+        ]
+      },
+      {
+        "id": "surface-material-response",
+        "name": "Surface material response",
+        "required": true,
+        "qualityCriteria": [
+          "Albedo zones, roughness, normal/bump/displacement intent, cavity dirt, edge wear, and local overrides are specified where visible.",
+          "Important materials define independent albedo, roughness, height/normal, and AO responses instead of reusing one texture for unrelated PBR channels.",
+          "Surface response is decomposed into macro, meso, and micro frequency bands with scale and amplitude tied to object scale."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "surface looks like flat plastic",
+          "local material variation is missing or not tied to image evidence"
+        ]
+      },
+      {
+        "id": "reference-lookdev",
+        "name": "Reference color, material, and lighting response",
+        "required": true,
+        "qualityCriteria": [
+          "Material-pass names the reference-derived albedo palette, roughness variation, tactile normal/bump/displacement response, and local masks.",
+          "When a source image is available, run reference PBR extraction and require confidence >= 0.7 before treating maps as implementation-ready.",
+          "Lighting-pass names key/fill/rim or environment light, exposure, tone mapping, background, and contact shadow behavior.",
+          "Neutral, grazing-angle, and reference-matched renders prove that surface relief survives relighting and is not painted into albedo."
+        ],
+        "evidenceRefs": [
+          "full-object"
+        ],
+        "failureModes": [
+          "model has acceptable shape but reads as flat shaded or plastic",
+          "colors are a generic average instead of reference-observed local color zones",
+          "lighting is evenly ambient and cannot reproduce the source value range"
+        ]
+      }
+    ],
+    "visualDeltaChecks": [
+      "silhouette and negative-space delta",
+      "component hierarchy depth delta",
+      "repetition density and distribution delta",
+      "material albedo/roughness/normal response delta",
+      "local feature placement and scale delta"
+    ],
+    "antiShallowSpecRules": [
+      "Do not proceed to code if qualityContract.qualityBar is unassessed.",
+      "Do not proceed to code if the spec only contains a root component for a moderate or complex object.",
+      "Do not proceed to code if required featureGroups are not represented by componentTree, materials, or repetitionSystems.",
+      "Do not proceed to code if visible local features are described only in prose and not attached to components/materials/evidenceRefs.",
+      "Do not proceed past structural-pass if attached child parts lack attachment.parentSocket, localStart, localEnd, embedDepth/overlap, and gapTolerance.",
+      "Do not pass material look-dev when albedo is reused as roughness, height, normal, or AO.",
+      "Do not pass material look-dev without macro, meso, and micro surface frequency bands for close-up materials.",
+      "Do not pass reference-fidelity material look-dev from a source image without usable referencePbr maps or an explicit documented limitation.",
+      "Do not patch a spec with extracted PBR maps when extraction confidence is below the target threshold unless the user explicitly accepts lower fidelity.",
+      "Do not place adjacent separate-geometry parts below 0.02 world-unit seam overlap (source: grimoire/build/geometry_patterns.md).",
+      "Do not satisfy raised or recessed relief, fasteners, or grip structure with a map alone when the feature affects form; use geometry or displacement (source: grimoire/build/geometry_patterns.md)."
+    ]
+  },
+  "authoringInstruction": "Fill observed object class, complexity reasoning, featureGroups, visualDeltaChecks, and unknowns before generating or implementing ObjectSculptSpec.",
+  "localSpecSearch": {
+    "collection": "core_3d",
+    "query": "Charles the Murder Baby stylized low-poly crawling baby character yellow onesie diaper toy blade",
+    "index": {
+      "status": "hit",
+      "reason": "current",
+      "fingerprint": "ac4f0bc9028e34083dbb5d5531ae3df7699c8e7641d5f8e6d42e7492ea1be1d0"
+    },
+    "matches": [
+      {
+        "record_id": "core.topology-intent",
+        "file_path": "grimoire/glossary/3d_vocabulary.md",
+        "heading": "Geometry And Topology",
+        "key_path": null,
+        "score": 5.143858634031,
+        "snippets": [
+          "Topology intent classifies a surface as hard-surface blockout, subdivision-ready, low-poly prop, organic deformed mesh, or alpha-card cluster."
+        ],
+        "source_refs": [
+          {
+            "path": "grimoire/glossary/3d_vocabulary.md",
+            "heading": "Geometry And Topology",
+            "key_path": null
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "grimoire/glossary/3d_vocabulary.md"
+          },
+          {
+            "kind": "notebooklm-research",
+            "ref": "notebooklm:4b03c2f9-8393-411f-b5b4-039ab9532843",
+            "note": "Validated generic schema vocabulary; numeric claims remain backed by local source_refs."
+          }
+        ]
+      },
+      {
+        "record_id": "core.shader-mapping-extrudegeometry-custom-bladesilhouette-profiles",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.rendering_shader_mapping[7]",
+        "score": 3.297052693896,
+        "snippets": [
+          "... bất kỳ bộ phận nào được định nghĩa bằng đường viền 2D độc nhất, đẩy vào chiều sâu 3D với cạnh vát. Recognition cues: Blade shape that doesn't match a simple primitive — distinctive curved hook (Karambit), curved clip point (Bowie), or ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.rendering_shader_mapping[7]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      },
+      {
+        "record_id": "core.pbr-hand-painted-vs-pbr-texture",
+        "file_path": "docs/raw/img2threejs-skill-dataset.json",
+        "heading": null,
+        "key_path": "categories.material_pbr[12]",
+        "score": 3.003363423427,
+        "snippets": [
+          "Distinguishes textures with lighting baked directly into color (static, stylized) from textures that respond dynamically to scene lighting via separate PBR channels. Phân biệt kết cấu có ánh sáng được nướng trực tiếp vào màu (tĩnh, cách điệu) ..."
+        ],
+        "source_refs": [
+          {
+            "path": "docs/raw/img2threejs-skill-dataset.json",
+            "heading": null,
+            "key_path": "categories.material_pbr[12]"
+          }
+        ],
+        "evidence_refs": [
+          {
+            "kind": "source",
+            "ref": "docs/raw/img2threejs-skill-dataset.json",
+            "note": "img2threejs NotebookLM research distillation"
+          }
+        ]
+      }
+    ]
+  }
+}

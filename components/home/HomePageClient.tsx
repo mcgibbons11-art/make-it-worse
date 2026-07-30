@@ -76,7 +76,7 @@ export default function HomePageClient() {
             <AvatarCustomizer
               alwaysVisible
               launcherClassName="button secondary"
-              launcherLabel="Build your runner"
+              launcherLabel="🧍 Build your runner"
             />
             {trending[0] && (
               <Link

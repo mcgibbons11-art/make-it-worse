@@ -32,6 +32,8 @@ export function RunnerStage({
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const pivot = useRef<THREE.Group | null>(null);
+  const camera = useRef<THREE.PerspectiveCamera | null>(null);
+  const frameRunner = useRef<(() => void) | null>(null);
   const dragging = useRef(false);
   const lastPointerX = useRef(0);
 
@@ -68,11 +70,24 @@ export function RunnerStage({
     scene.add(turntable);
     pivot.current = turntable;
 
-    // The model stands 1.86u tall about a centred origin, so this frames it
-    // with roughly a tenth of a body height of air above and below.
     const lens = new THREE.PerspectiveCamera(32, 0.75, 0.1, 20);
-    lens.position.set(0, 0.12, 3.6);
-    lens.lookAt(0, -0.06, 0);
+    camera.current = lens;
+    const frameContents = () => {
+      if (!turntable.children.length) return;
+      const bounds = new THREE.Box3().setFromObject(turntable);
+      if (bounds.isEmpty()) return;
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const verticalFov = THREE.MathUtils.degToRad(lens.fov);
+      const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * Math.max(0.2, lens.aspect));
+      const distance = Math.max(
+        size.y / (2 * Math.tan(verticalFov / 2)),
+        size.x / (2 * Math.tan(horizontalFov / 2)),
+      ) * 1.06 + size.z / 2;
+      lens.position.set(center.x, center.y, center.z + distance);
+      lens.lookAt(center);
+    };
+    frameRunner.current = frameContents;
 
     const fit = () => {
       const width = element.clientWidth || 240;
@@ -80,6 +95,7 @@ export function RunnerStage({
       engine.setSize(width, height, false);
       lens.aspect = width / height;
       lens.updateProjectionMatrix();
+      frameContents();
     };
     fit();
     const watcher = new ResizeObserver(fit);
@@ -96,6 +112,8 @@ export function RunnerStage({
       cancelAnimationFrame(frame);
       watcher.disconnect();
       pivot.current = null;
+      camera.current = null;
+      frameRunner.current = null;
       engine.dispose();
     };
   }, []);
@@ -105,6 +123,7 @@ export function RunnerStage({
     if (!turntable) return;
     const model = dressRunner(avatar, avatarSeed);
     turntable.add(model);
+    frameRunner.current?.();
     return () => {
       turntable.remove(model);
     };
@@ -127,6 +146,7 @@ export function RunnerStage({
         if (!dragging.current || !pivot.current) return;
         pivot.current.rotation.y += (event.clientX - lastPointerX.current) * 0.012;
         lastPointerX.current = event.clientX;
+        frameRunner.current?.();
       }}
       onPointerUp={(event) => {
         dragging.current = false;

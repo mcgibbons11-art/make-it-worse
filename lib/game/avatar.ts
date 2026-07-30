@@ -350,7 +350,7 @@ export function resolveAvatar(
   const garmentColors = garmentHexes(full.colors);
   const sculptTints: Record<string, string> = {
     "torso-purple": bodyColor,
-    "strap-coral": packColor,
+    "strap-coral": full.backpack === "none" ? packColor : garmentColors.backpack,
   };
   // Choosing footwear replaces the shoe rather than adding to it, so the
   // sculpt's own sneaker upper takes the chosen colour and the garment reads as
@@ -749,6 +749,12 @@ export const WARDROBE_CODE_LENGTH = CODE_FIELDS.length;
 export const WARDROBE_CODE_PATTERN = /^[0-9A-Za-z_-]{1,32}$/;
 
 function fieldOptions(field: CodeField): readonly string[] {
+  if (field.kind === "item" && field.slot === "face")
+    return AVATAR_FACES.map((entry) => entry.id);
+  if (field.kind === "item" && field.slot === "outerwear")
+    return AVATAR_OUTERWEAR.map((entry) => entry.id);
+  if (field.kind === "item" && field.slot === "backpack")
+    return AVATAR_BACKPACKS.map((entry) => entry.id);
   if (field.kind === "item")
     return SLOT_BY_ID.get(field.slot)!.options.map((entry) => entry.id);
   return AVATAR_COLORS.map((entry) => entry.id);

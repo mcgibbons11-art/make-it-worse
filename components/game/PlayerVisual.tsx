@@ -117,6 +117,23 @@ export function dressRunner(
   // visible made caps, crowns, and helmets intersect it or render behind it.
   const stockHair = clone.getObjectByName("Hair cap__pivot");
   if (stockHair) stockHair.visible = look.headwear === "hair";
+  // The sculpt's shoulder caps are the sleeves of its baked-in purple shirt,
+  // not anatomy. Real tops author their own sleeves; leaving these underneath
+  // made Top: None look like a shirt and made sleeveless tops grow T-shirt
+  // cuffs. The torso itself stays as the runner's body-coloured base surface.
+  clone.getObjectByName("Shoulder cap left__pivot")?.removeFromParent();
+  clone.getObjectByName("Shoulder cap right__pivot")?.removeFromParent();
+  const showPackStraps = look.backpack !== "none";
+  const leftPackStrap = clone.getObjectByName("Backpack strap left__pivot");
+  const rightPackStrap = clone.getObjectByName("Backpack strap right__pivot");
+  if (leftPackStrap) leftPackStrap.visible = showPackStraps;
+  if (rightPackStrap) rightPackStrap.visible = showPackStraps;
+  // The original sculpt's dark outsole blocks read as unrelated black pads
+  // under bare feet. Wardrobe footwear authors complete soles of its own.
+  const leftStockSole = clone.getObjectByName("Sole left");
+  const rightStockSole = clone.getObjectByName("Sole right");
+  if (leftStockSole) leftStockSole.visible = false;
+  if (rightStockSole) rightStockSole.visible = false;
   // The ghost must never land on the player's own colour - the two share
   // createdByAvatarSeed - and must read as "the ghost" on every replay, so it
   // takes one fixed hue rather than a second seed-derived pick.

@@ -22,6 +22,15 @@ fix whichever is wrong.
   worker — never remove that `.gitattributes` line, never put runtime files
   under `assets/`.
 
+### New 3D asset rule
+
+Every new 3D asset must begin with a concrete reference image under
+`assets/reference/` and go through the img2threejs intake, spec, staged build,
+and visual-review workflow before it is wired into runtime. The reference may
+be supplied by the user or generated with ChatGPT, but hand-authored runtime
+primitives are not a substitute for the pipeline. Record an honest skipped or
+failed gate instead of silently bypassing it.
+
 ## Verification gate
 
 Run after any change: `npx tsc --noEmit`, `npx vitest run`, `npx next lint`.

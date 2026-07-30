@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AVATAR_COLORS,
   DEFAULT_AVATAR,
-  PACK_COLORS,
   WARDROBE_SLOTS,
   colorRejection,
   deckContrast,
@@ -126,18 +125,7 @@ export function WardrobePanel({
 
 
   const chooseBody = useCallback((body: AvatarColorId) => {
-    // A pack that read fine against the old body can be invisible on the new
-    // one, so the pack moves to the first colour that still clears the bar
-    // rather than silently becoming an unreadable saved combination. No garment
-    // needs the same treatment: every other slot is judged against the floor,
-    // which the body does not change.
-    setDraft((current) => {
-      const keep = !colorRejection("pack", current.pack, body);
-      const fallback = PACK_COLORS.find(
-        (entry) => !colorRejection("pack", entry.id, body),
-      )!;
-      return { ...current, body, pack: keep ? current.pack : fallback.id };
-    });
+    setDraft((current) => ({ ...current, body }));
   }, []);
 
   const slot = WARDROBE_SLOTS.find((entry) => entry.id === openSlot)!;
@@ -214,23 +202,6 @@ export function WardrobePanel({
             <p className="avatar-note">
               The floor is a pale wash of each platform&apos;s colour. Anything
               under {ratioLabel(3)} against it disappears while you are running.
-            </p>
-          </fieldset>
-
-          <fieldset className="avatar-group">
-            <legend>Pack</legend>
-            <ColorRow
-              name="avatar-pack"
-              offered={PACK_COLORS}
-              chosen={draft.pack}
-              against="your body colour"
-              body={draft.body}
-              slot="pack"
-              onPick={(pack) => setDraft((current) => ({ ...current, pack }))}
-            />
-            <p className="avatar-note">
-              The pack sits inside your own outline from behind, so it is judged
-              against your body rather than the floor.
             </p>
           </fieldset>
 

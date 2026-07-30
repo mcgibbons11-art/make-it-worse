@@ -29,8 +29,6 @@ import {
   challengeStatLine,
   depthPill,
 } from "@/lib/game/share-copy";
-import { TrackEditor } from "./TrackEditor";
-import "./track-editor.css";
 import {
   ConfirmDialog,
   ControlsPanel,
@@ -86,6 +84,15 @@ const AvatarApartment = lazy(() =>
     default: module.AvatarApartment,
   })),
 );
+const RoomBuilder = lazy(() =>
+  import("@/components/game/RoomBuilder").then((module) => ({
+    default: module.RoomBuilder,
+  })),
+);
+const MENU_ICON_BASE = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/menu-icons/`;
+function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "leaderboard" | "runner" | "settings" }) {
+  return <img className="portals-menu-icon" src={`${MENU_ICON_BASE}${name}.png`} alt="" aria-hidden="true" />;
+}
 // Seconds left when the timer turns warm and the countdown pill appears. The
 // screen-reader warning fires on this same value, so the spoken "Ten seconds
 // left" and the first visible digit are the same moment by construction.
@@ -208,6 +215,7 @@ export function PortalsApp() {
   const [boardOpen, setBoardOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitResult | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [apartmentOpen, setApartmentOpen] = useState(false);
   // The name the game hands you rides on every trap you add and into every
@@ -270,43 +278,6 @@ export function PortalsApp() {
       setNotice(copied ? done : "Select and copy: " + text);
     }
   }, []);
-  /**
-   * A link to a course somebody built, without making them play it first.
-   *
-   * The codec encodes a ChallengeDTO rather than a bare track, so this mints a
-   * real trap-free chain at depth 0 and encodes that. Payload version 2 already
-   * carries the track, so a custom course rides the existing format: no new
-   * fields, no version bump. The recipient opens a clean course and plays it,
-   * which is the front half of the loop rather than a way around it.
-   *
-   * Deliberately NOT behind guard(). guard exists to stop an action discarding
-   * a run in progress, and this one cannot: it never calls open(), so the run
-   * on screen is untouched. Putting a "leave this run?" dialog in front of
-   * copying a link would be a false alarm.
-   */
-  const shareCustomTrack = useCallback(
-    async (segmentIds: readonly string[]) => {
-      let draft;
-      try {
-        draft = await repository.createRootChain(segmentIds);
-      } catch {
-        setNotice("This course could not be saved, so there is no link yet.");
-        return;
-      }
-      let text: string;
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set(CHALLENGE_LINK_PARAM, encodeChallengeLink(draft));
-        text = buildShareCopy(draft, url.toString());
-      } catch {
-        // encodeChallengeLink refuses to emit a link it could not decode back.
-        setNotice("This course could not be turned into a link.");
-        return;
-      }
-      await copyText(text, "Link to your course copied.");
-    },
-    [copyText, repository],
-  );
   const copyChallengeMessage = useCallback(async () => {
     // Without the encoded level this was a bare sentence with no link at all,
     // so there was nothing for the recipient to open. This edition has no
@@ -435,14 +406,13 @@ export function PortalsApp() {
       cancelled = true;
     };
   }, [open, repository]);
-  const fresh = async () => open(await repository.createRootChain());
-  const playCustomTrack = useCallback(
-    async (segmentIds: readonly string[]) => {
-      setEditorOpen(false);
-      open(await repository.createRootChain(segmentIds));
-    },
-    [open, repository],
-  );
+  const fresh = () => {
+    applyRun(EMPTY_RUN);
+    setViews([]);
+    setBoardOpen(false);
+    setRandomRoomSeed(Date.now() ^ Math.floor(Math.random() * 0x7fffffff));
+    setEditorOpen(true);
+  };
   const trending = async () => {
     const items = await repository.listTrending(1);
     open(items[0]!);
@@ -811,7 +781,7 @@ export function PortalsApp() {
             {status.showsClock && <b> · {format(elapsed)}</b>}
           </p>
           <button className="button primary huge" onClick={resume}>
-            {status.resumeLabel}
+            ▶️ {status.resumeLabel}
           </button>
         </div>
       )}
@@ -819,14 +789,14 @@ export function PortalsApp() {
         <button
           className="button danger mega"
           onClick={() =>
-            guard(() => void fresh(), {
+            guard(fresh, {
               title: "Leave this run?",
               body: "A clean level replaces the one you are on. This run does not come back.",
               confirmLabel: "Play a clean level",
             })
           }
         >
-          Play a clean level
+          ▶️ Play a clean level
         </button>
         {/* One way in. Four controls at near-equal weight gave a first-time
             player no "start here", and three of the four named a concept the
@@ -844,7 +814,7 @@ export function PortalsApp() {
             })
           }
         >
-          Play one somebody already ruined
+          💥 Play one somebody already ruined
         </button>
         <button
           className="button secondary"
@@ -853,16 +823,7 @@ export function PortalsApp() {
             setWardrobeOpen(true);
           }}
         >
-          <span
-            className="avatar-launcher-chip"
-            style={{
-              background: resolveAvatar(
-                settings.avatar,
-                challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1,
-              ).bodyColor,
-            }}
-          />
-          Build your runner
+          <MenuIcon name="runner" /> Build your runner
         </button>
         <button
           className="button secondary"
@@ -871,7 +832,7 @@ export function PortalsApp() {
             setApartmentOpen(true);
           }}
         >
-          Visit your apartment
+          <MenuIcon name="apartment" /> Visit your apartment
         </button>
         <button
           className="button secondary"
@@ -883,7 +844,7 @@ export function PortalsApp() {
             if (!boardOpen) void loadBoard(challenge?.depth ?? 0);
           }}
         >
-          {boardOpen ? "Hide leaderboard" : "Global leaderboard"}
+          <MenuIcon name="leaderboard" /> {boardOpen ? "Hide leaderboard" : "Global leaderboard"}
         </button>
         <button
           className="button secondary"
@@ -893,6 +854,7 @@ export function PortalsApp() {
             guard(
               () => {
                 quitToTitle();
+                setRandomRoomSeed(null);
                 setEditorOpen(true);
               },
               {
@@ -903,13 +865,13 @@ export function PortalsApp() {
             )
           }
         >
-          Build your game
+          <MenuIcon name="build" /> Build your game
         </button>
         <button className="button secondary" onClick={() => openView("settings")}>
-          Settings
+          <MenuIcon name="settings" /> Settings
         </button>
         <button className="button secondary" onClick={() => openView("controls")}>
-          How to play
+          <MenuIcon name="controls" /> How to play
         </button>
         {status && (
           <button
@@ -922,17 +884,10 @@ export function PortalsApp() {
               })
             }
           >
-            Abandon this run
+            🚪 Abandon this run
           </button>
         )}
       </div>
-      {editorOpen && (
-        <TrackEditor
-          onPlay={(segmentIds) => void playCustomTrack(segmentIds)}
-          onShare={(segmentIds) => void shareCustomTrack(segmentIds)}
-          onCancel={() => setEditorOpen(false)}
-        />
-      )}
       {boardOpen && (
         <LeaderboardPanel
           depth={boardDepth}
@@ -1043,6 +998,22 @@ export function PortalsApp() {
     soundedPlacement.current = placementValid;
     AudioManager.placement(placementValid);
   }, [placementValid]);
+  if (editorOpen)
+    return (
+      <Suspense fallback={<div className="canvas-loading"><span />Opening the room builder…</div>}>
+        <RoomBuilder
+          key={randomRoomSeed ?? "custom"}
+          avatar={settings.avatar ?? null}
+          avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+          {...(randomRoomSeed === null ? {} : { randomSeed: randomRoomSeed })}
+          initialMode={randomRoomSeed === null ? "build" : "test"}
+          onClose={() => {
+            setEditorOpen(false);
+            setRandomRoomSeed(null);
+          }}
+        />
+      </Suspense>
+    );
   if (apartmentOpen)
     return (
       <Suspense fallback={<div className="canvas-loading"><span />Building your apartment…</div>}>

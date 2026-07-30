@@ -11,7 +11,7 @@ import type { ChallengeDTO, TrapInstance, TrapPlacementInput, TrapType } from "@
 // One placement per entry in TRAP_TYPES. The sandbox exists to reach a trap
 // without playing to it, so a roster entry with no placement here is a trap QA
 // cannot open at all: `?trap=<type>` would serve an empty course.
-// The whole 54-entry roster, one placement each, solved against
+// The whole 55-entry roster, one placement each, solved against
 // validatePlacement rather than written by hand.
 //
 // At 38 the eight authored zones were genuinely full and the note here said the
@@ -26,7 +26,7 @@ import type { ChallengeDTO, TrapInstance, TrapPlacementInput, TrapType } from "@
 // fewest legal homes and placing the small ones first strands it, and each was
 // given the legal point with the most clearance rather than the first that
 // passed, so the sandbox reads as a gallery rather than a heap.
-const placements: TrapPlacementInput[] = [
+export const placements: TrapPlacementInput[] = [
   { type: "ceiling_fan", zoneId: "runway_front", offsetX: -1.5, offsetZ: 0, rotationQuarterTurns: 0 },
   { type: "swinging_hammer", zoneId: "finish", offsetX: 2.75, offsetZ: 1.5, rotationQuarterTurns: 0 },
   { type: "rotating_toilet", zoneId: "convergence", offsetX: -1.5, offsetZ: -0.25, rotationQuarterTurns: 0 },
@@ -81,6 +81,7 @@ const placements: TrapPlacementInput[] = [
   { type: "motion_sensor", zoneId: "stone-a", offsetX: 1, offsetZ: -0.5, rotationQuarterTurns: 0 },
   { type: "dust_bunny", zoneId: "bridge", offsetX: 1, offsetZ: 2.5, rotationQuarterTurns: 0 },
   { type: "ankle_weight", zoneId: "runway", offsetX: 1.75, offsetZ: 2.25, rotationQuarterTurns: 0 },
+  { type: "charles_murder_baby", zoneId: "runway_back", offsetX: -1.25, offsetZ: -0.25, rotationQuarterTurns: 0 },
 ];
 
 /**

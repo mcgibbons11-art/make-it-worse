@@ -108,6 +108,25 @@ export function AvatarApartment({
     camera.lookAt(runner.position.x, 0.3, runner.position.z);
     const target = new THREE.Vector3();
     const wantedCamera = new THREE.Vector3();
+    let orbitYaw = 0;
+    let orbiting = false;
+    let orbitPointerX = 0;
+    const orbitDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      orbiting = true;
+      orbitPointerX = event.clientX;
+    };
+    const orbitMove = (event: PointerEvent) => {
+      if (!orbiting) return;
+      orbitYaw -= (event.clientX - orbitPointerX) * 0.006;
+      orbitPointerX = event.clientX;
+    };
+    const orbitUp = () => {
+      orbiting = false;
+    };
+    element.addEventListener("pointerdown", orbitDown);
+    window.addEventListener("pointermove", orbitMove);
+    window.addEventListener("pointerup", orbitUp);
 
     const fit = () => {
       const width = element.clientWidth || window.innerWidth;
@@ -150,7 +169,11 @@ export function AvatarApartment({
         setRoom(nextRoom);
       }
       target.set(runner.position.x, 0.45, runner.position.z);
-      wantedCamera.set(runner.position.x, 6.4, runner.position.z + 7.3);
+      wantedCamera.set(
+        runner.position.x + Math.sin(orbitYaw) * 7.3,
+        6.4,
+        runner.position.z + Math.cos(orbitYaw) * 7.3,
+      );
       camera.position.lerp(wantedCamera, 1 - Math.exp(-delta * 4));
       camera.lookAt(target);
       renderer.render(scene, camera);
@@ -160,6 +183,9 @@ export function AvatarApartment({
     return () => {
       cancelAnimationFrame(frame);
       watcher.disconnect();
+      element.removeEventListener("pointerdown", orbitDown);
+      window.removeEventListener("pointermove", orbitMove);
+      window.removeEventListener("pointerup", orbitUp);
       renderer.dispose();
     };
   }, [avatar, avatarSeed]);
@@ -176,7 +202,7 @@ export function AvatarApartment({
         <div>
           <span className="eyebrow">YOUR APARTMENT</span>
           <strong>{room}</strong>
-          <small>WASD or arrow keys to run between rooms</small>
+          <small>WASD to run · hold left click and drag to orbit</small>
         </div>
         <button className="button secondary" onClick={onClose}>Back to menu</button>
       </header>

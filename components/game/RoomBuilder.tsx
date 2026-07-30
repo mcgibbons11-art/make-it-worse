@@ -123,23 +123,6 @@ function platformSpec(asset: BuilderAsset): PlatformSpec | null {
   }
 }
 
-function snapEndpointToPlatform(item: RoomItem, items: readonly RoomItem[]): RoomItem {
-  const platforms = items.flatMap((candidate) => {
-    const spec = platformSpec(candidate.asset);
-    return spec ? [{ item: candidate, spec }] : [];
-  });
-  if (platforms.length === 0) return item;
-  const support = platforms.reduce((best, candidate) => {
-    const halfWidth = Math.max(0, candidate.spec.width / 2 - 0.35);
-    const halfDepth = Math.max(0, candidate.spec.depth / 2 - 0.35);
-    const x = THREE.MathUtils.clamp(item.x, candidate.item.x - halfWidth, candidate.item.x + halfWidth);
-    const z = THREE.MathUtils.clamp(item.z, candidate.item.z - halfDepth, candidate.item.z + halfDepth);
-    const distance = Math.hypot(item.x - x, item.z - z);
-    return distance < best.distance ? { item: candidate.item, x, z, distance } : best;
-  }, { item: platforms[0]!.item, x: platforms[0]!.item.x, z: platforms[0]!.item.z, distance: Number.POSITIVE_INFINITY });
-  return { ...item, x: snap(support.x), y: support.item.y, z: snap(support.z) };
-}
-
 function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
   const items = source.filter((item, index) =>
     !isRequiredEndpoint(item.asset) || source.findIndex((candidate) => candidate.asset === item.asset) === index,
@@ -160,7 +143,7 @@ function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
     const support = platforms.at(-1)!;
     items.push({ uid: nextUid++, asset: "finish", x: support.x, y: support.y, z: support.z, rotation: 0, color: defaultColor("finish") });
   }
-  return items.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, items) : item);
+  return items;
 }
 
 const GRAVITY = 9.81 * PLAYER.gravityScale;
@@ -423,7 +406,7 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
   const [browseOpen, setBrowseOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [published, setPublished] = useState<PublishedMap[]>(loadPublished);
-  const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "Free camera mode. Place game pieces anywhere, including vertically.");
+  const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "");
   const [testSerial, setTestSerial] = useState(1);
   const [testStartedAt, setTestStartedAt] = useState(() => performance.now());
   const runtime = useMemo(() => runtimeMap(items, avatarSeed), [items, avatarSeed]);
@@ -440,21 +423,14 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
   const remove = () => {
     if (!selected || isRequiredEndpoint(selected.asset)) return;
     const next = items.filter((item) => item.uid !== selected.uid);
-    if (platformSpec(selected.asset) && !next.some((item) => platformSpec(item.asset))) {
-      setNotice("Keep at least one block so the required spawn and finish markers stay on land.");
-      return;
-    }
-    save(next.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, next) : item));
+    save(next);
     setSelectedUid(null);
   };
   const duplicate = () => { if (!selected || isRequiredEndpoint(selected.asset)) return; const copy = { ...selected, uid: nextUid(), x: selected.x + 0.75, z: selected.z + 0.75 }; save([...items, copy]); setSelectedUid(copy.uid); };
   const moveItem = (uid: number, x: number, z: number) => {
     const moving = items.find((item) => item.uid === uid);
     if (!moving) return;
-    const moved = items.map((item) => item.uid === uid ? { ...item, x, z } : item);
-    save(isRequiredEndpoint(moving.asset)
-      ? moved.map((item) => item.uid === uid ? snapEndpointToPlatform(item, moved) : item)
-      : moved.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, moved) : item));
+    save(items.map((item) => item.uid === uid ? { ...item, x, z } : item));
   };
   const publish = () => {
     if (!items.some((item) => item.asset === "spawn") || !items.some((item) => item.asset === "finish")) { setNotice("Add a spawn point and game end gate before publishing."); return; }
@@ -484,10 +460,10 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
       onAssetsReady={() => undefined}
     />}
     {!cleanPlay && <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" title="Free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>}
-    {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Actual game assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
-    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button><button onClick={publish}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
+    {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
+    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button><button onClick={publish}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
     {!cleanPlay && <p className="room-builder-notice" role="status">{notice}</p>}
-    {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>Place:</b> Pick a game block or trap from the left tray.</p><p><b>Move:</b> Left-drag a placed piece. The required spawn and finish markers snap onto blocks.</p><p><b>Look:</b> Right-drag to turn the camera. Use the mouse wheel to zoom.</p><p><b>Travel:</b> WASD pans the build camera. Q and E move it vertically.</p><p><b>Edit:</b> Select a piece to color, rotate, lift, lower, copy, or remove it. Spawn and finish cannot be copied or removed.</p><p><b>Jump check:</b> A block turns red when the runner cannot reach it from the connected course.</p><p><b>Play it:</b> Choose Test map to run the room with the finished game controls and physics.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>Got it</button></section></div>}
+    {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>Place:</b> Pick a game block or trap from the left tray.</p><p><b>Move:</b> Left-drag any placed piece. Spawn and finish can go anywhere and can be moved vertically with Lift/Lower.</p><p><b>Look:</b> Right-drag to turn the camera. Use the mouse wheel to zoom.</p><p><b>Travel:</b> WASD pans the build camera. Q and E move it vertically.</p><p><b>Edit:</b> Select a piece to color, rotate, lift, lower, copy, or remove it. Spawn and finish remain mandatory, so they cannot be copied or removed.</p><p><b>Jump check:</b> A block turns red when the runner cannot reach it from the connected course.</p><p><b>Play it:</b> Choose Test map to run the room with the finished game controls and physics.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>Got it</button></section></div>}
     {!cleanPlay && browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">COMMUNITY MAPS</div><h2>Browse maps</h2>{published.length === 0 ? <p>No maps have been published in this build yet.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><button onClick={() => { save(ensureRequiredEndpoints(map.items)); setMode("test"); setBrowseOpen(false); setNotice(`Testing “${map.name}”.`); }}>Play</button></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
   </main>;
 }

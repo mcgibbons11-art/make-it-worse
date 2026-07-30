@@ -976,26 +976,6 @@ export function PortalsApp() {
           />
         </Overlay>
       )}
-      {wardrobeOpen && (
-        <Suspense
-          fallback={
-            <div className="canvas-loading">
-              <span />
-              Opening the wardrobe…
-            </div>
-          }
-        >
-          <WardrobePanel
-            avatar={settings.avatar ?? null}
-            avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
-            onSave={(config) => {
-              settings.setAvatar(config);
-              setWardrobeOpen(false);
-            }}
-            onClose={() => setWardrobeOpen(false)}
-          />
-        </Suspense>
-      )}
     </>
   );
   // Without the track this resolved a composed course's zone id against the
@@ -1051,6 +1031,18 @@ export function PortalsApp() {
           onClose={() => setApartmentOpen(false)}
         />
       </Suspense>
+    );
+  if (wardrobeOpen)
+    return (
+      <WardrobePanel
+        avatar={settings.avatar ?? null}
+        avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+        onSave={(config) => {
+          settings.setAvatar(config);
+          setWardrobeOpen(false);
+        }}
+        onClose={() => setWardrobeOpen(false)}
+      />
     );
   if (showStartSplash && !challenge)
     return (

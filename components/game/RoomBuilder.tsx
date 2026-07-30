@@ -13,7 +13,7 @@ import { createSeededRandom } from "@/lib/game/seed";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { TRAP_CATALOG, TRAP_TYPES } from "@/lib/game/trap-catalog";
 import type { AvatarConfig } from "@/lib/game/avatar";
-import type { ChallengeDTO, TrapInstance, TrapType } from "@/lib/game/types";
+import type { ChallengeDTO, DecodedGhostSample, HazardContact, TrapInstance, TrapType } from "@/lib/game/types";
 import type { BuiltTrack } from "@/lib/game/track";
 
 export type BuilderPieceKind = "platform" | "wide-platform" | "beam" | "step" | "ramp" | "spawn" | "finish";
@@ -90,18 +90,20 @@ function loadPublished(): PublishedMap[] {
 /** A clean level now uses the same primitives and traps exposed to builders. */
 export function generateRandomRoom(seed: number): RoomItem[] {
   const random = createSeededRandom(seed);
+  const courseColors = [PALETTE.yellow, PALETTE.blue, PALETTE.purple, PALETTE.orange, PALETTE.green, PALETTE.cream] as const;
+  const randomCourseColor = () => courseColors[Math.floor(random() * courseColors.length)]!;
   let uid = 1;
   const add = (asset: BuilderAsset, x: number, y: number, z: number, rotation = 0, color = defaultColor(asset)) => ({
     uid: uid++, asset, x: snap(x), y: snap(y), z: snap(z), rotation, color,
   });
-  const items: RoomItem[] = [add("spawn", 0, 0, 2), add("platform", 0, 0, 2)];
+  const items: RoomItem[] = [add("spawn", 0, 0, 2), add("platform", 0, 0, 2, 0, randomCourseColor())];
   let z = -1;
   let y = 0;
   for (let index = 0; index < 7; index += 1) {
     z -= 3 + random() * 2;
     y = Math.max(0, y + (random() > 0.58 ? (random() > 0.5 ? 0.5 : -0.5) : 0));
     const asset: BuilderPieceKind = random() > 0.82 ? "beam" : random() > 0.64 ? "wide-platform" : "platform";
-    items.push(add(asset, (random() - 0.5) * 5, y, z, random() > 0.75 ? Math.PI / 2 : 0));
+    items.push(add(asset, (random() - 0.5) * 5, y, z, random() > 0.75 ? Math.PI / 2 : 0, randomCourseColor()));
     if (random() > 0.38) {
       const type = TRAP_TYPES[Math.floor(random() * TRAP_TYPES.length)]!;
       items.push(add(`trap:${type}`, items.at(-1)!.x, y + 0.08, z));
@@ -214,6 +216,7 @@ function BuilderItemView({ item, mode, selected, warning, onSelect, onMove }: {
 }) {
   const dragPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), -item.y), [item.y]);
   const point = useMemo(() => new THREE.Vector3(), []);
+  const activePointer = useRef<number | null>(null);
   const dragRadius = isTrapAsset(item.asset)
     ? Math.max(0.7, TRAP_CATALOG[trapTypeOf(item.asset)].placementRadius)
     : item.asset === "finish" ? 1.15 : 0.78;
@@ -222,15 +225,27 @@ function BuilderItemView({ item, mode, selected, warning, onSelect, onMove }: {
     event.stopPropagation();
     AudioManager.click();
     onSelect(item.uid);
+    activePointer.current = event.pointerId;
     (event.nativeEvent.target as Element).setPointerCapture(event.pointerId);
   };
   const move = (event: ThreeEvent<PointerEvent>) => {
-    if (mode !== "build" || !(event.nativeEvent.target as Element).hasPointerCapture(event.pointerId)) return;
+    // Pointer capture belongs to the canvas, not to this mesh. Checking the
+    // canvas made every object crossed during a drag believe it was active,
+    // so stacked pieces toggled selection and moved together. Only the item
+    // that received the original down owns this pointer id.
+    if (mode !== "build" || activePointer.current !== event.pointerId) return;
     event.stopPropagation();
     if (event.ray.intersectPlane(dragPlane, point)) onMove(item.uid, snap(point.x), snap(point.z));
   };
+  const end = (event: ThreeEvent<PointerEvent>) => {
+    if (activePointer.current !== event.pointerId) return;
+    event.stopPropagation();
+    activePointer.current = null;
+    const target = event.nativeEvent.target as Element;
+    if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+  };
   return (
-    <group position={[item.x, item.y, item.z]} rotation={[0, item.rotation, 0]} onPointerDown={down} onPointerMove={move}>
+    <group position={[item.x, item.y, item.z]} rotation={[0, item.rotation, 0]} onPointerDown={down} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
       {!platformSpec(item.asset) && mode === "build" && (
         <mesh name="builder-drag-handle" position={[0, 0.8, 0]}>
           <cylinderGeometry args={[dragRadius, dragRadius, 1.7, 16]} />
@@ -353,7 +368,9 @@ function BuilderScene({ items, mode, avatar, avatarSeed, selectedUid, onSelect, 
   </>;
 }
 
-function runtimeMap(items: readonly RoomItem[], avatarSeed: number): { track: BuiltTrack; challenge: ChallengeDTO } {
+export interface RoomBuilderRuntime { track: BuiltTrack; challenge: ChallengeDTO }
+
+export function runtimeMap(items: readonly RoomItem[], avatarSeed: number, identity = 1): RoomBuilderRuntime {
   const spawnMarker = items.find((item) => item.asset === "spawn");
   const finishMarker = items.find((item) => item.asset === "finish");
   const pieces = items.flatMap((item) => {
@@ -366,30 +383,68 @@ function runtimeMap(items: readonly RoomItem[], avatarSeed: number): { track: Bu
       ...(spec.rotationX ? { rotationX: spec.rotationX } : {}),
     }] : [];
   });
+  const platforms = items.flatMap((item) => {
+    const spec = platformSpec(item.asset);
+    if (!spec) return [];
+    const quarterTurn = Math.abs(Math.sin(item.rotation)) > 0.5;
+    const width = quarterTurn ? spec.depth : spec.width;
+    const depth = quarterTurn ? spec.width : spec.depth;
+    const inset = Math.min(0.28, width / 5, depth / 5);
+    return [{ item, width, depth, inset }];
+  });
+  const zones = platforms.map(({ item, width, depth, inset }) => ({
+    id: `builder-zone-${item.uid}`,
+    label: `${assetLabel(item.asset)} ${item.uid}`,
+    minX: item.x - width / 2 + inset,
+    maxX: item.x + width / 2 - inset,
+    minZ: item.z - depth / 2 + inset,
+    maxZ: item.z + depth / 2 - inset,
+    groundY: item.y + 0.05,
+    maxOccupants: 4,
+    allowedTypes: TRAP_TYPES,
+  }));
   const spawn = [spawnMarker?.x ?? 0, (spawnMarker?.y ?? 0) + 1.25, spawnMarker?.z ?? 0] as const;
   const exit = [finishMarker?.x ?? 0, (finishMarker?.y ?? 0) + 1.5, finishMarker?.z ?? -10] as const;
   const traps: TrapInstance[] = items.flatMap((item) => {
     if (!isTrapAsset(item.asset)) return [];
     const type = trapTypeOf(item.asset);
+    const support = platforms.reduce<{ uid: number; distance: number } | null>((best, candidate) => {
+      const distance = Math.hypot(item.x - candidate.item.x, item.z - candidate.item.z);
+      return !best || distance < best.distance ? { uid: candidate.item.uid, distance } : best;
+    }, null);
     return [{
       id: `builder-trap-${item.uid}`, type, ownerUserId: null, ownerName: "Map builder", ownerAvatarSeed: avatarSeed,
-      depthAdded: 1, zoneId: `builder-piece-${item.uid}`, position: [item.x, item.y + 0.05, item.z] as const,
+      depthAdded: 1, zoneId: `builder-zone-${support?.uid ?? platforms[0]?.item.uid ?? 0}`, position: [item.x, item.y + 0.05, item.z] as const,
       rotationY: item.rotation, seed: item.uid * 7919, params: { ...TRAP_CATALOG[type].defaultParams },
     }];
   });
-  const track: BuiltTrack = { pieces, zones: [], spawn, exit, length: Math.max(1, Math.hypot(exit[0] - spawn[0], exit[2] - spawn[2])) };
+  const track: BuiltTrack = { pieces, zones, spawn, exit, length: Math.max(1, Math.hypot(exit[0] - spawn[0], exit[2] - spawn[2])) };
+  const runtimeSlug = `clean-${Math.abs(identity).toString(36).padStart(6, "0").slice(0, 12)}`;
   return { track, challenge: {
-    id: "builder-test", slug: "builder-test", chainId: "builder-test", chainSlug: "builder-test", parentSlug: null,
-    depth: traps.length, baseSeed: 1, levelVersion: 1, createdByName: "Map builder", createdByAvatarSeed: avatarSeed,
+    id: runtimeSlug, slug: runtimeSlug, chainId: runtimeSlug, chainSlug: runtimeSlug, parentSlug: null,
+    depth: traps.length, baseSeed: identity, levelVersion: 1, createdByName: "Map builder", createdByAvatarSeed: avatarSeed,
     addedTrap: traps.at(-1) ?? null, traps, ghostTrace: null,
     stats: { attempts: 0, completions: 0, survivalRate: null, bestTimeMs: null, recentAttempts: 0, shareCount: 0 },
     createdAt: new Date(0).toISOString(), isDemo: true,
   } };
 }
 
-interface RoomBuilderProps { avatar: AvatarConfig | null; avatarSeed: number; onClose(): void; randomSeed?: number; initialMode?: "build" | "test"; cleanPlay?: boolean }
+interface RoomBuilderProps {
+  avatar: AvatarConfig | null;
+  avatarSeed: number;
+  onClose(): void;
+  randomSeed?: number;
+  initialMode?: "build" | "test";
+  cleanPlay?: boolean;
+  onCleanReady?(runtime: RoomBuilderRuntime): Promise<void> | void;
+  onCleanFinish?(): void;
+  onCleanFail?(outcome: "fell" | "timeout" | "reset"): void;
+  onCleanSample?(sample: DecodedGhostSample): void;
+  onCleanProgress?(value: number): void;
+  onCleanHazard?(contact: HazardContact): void;
+}
 
-export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMode = "build", cleanPlay = false }: RoomBuilderProps) {
+export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard }: RoomBuilderProps) {
   const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed), [randomSeed]);
   const [items, setItems] = useState<RoomItem[]>(() => ensureRequiredEndpoints(generated ?? loadItems()));
   const [mode, setMode] = useState<"build" | "test">(initialMode);
@@ -401,7 +456,21 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
   const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "");
   const [testSerial, setTestSerial] = useState(1);
   const [testStartedAt, setTestStartedAt] = useState(() => performance.now());
-  const runtime = useMemo(() => runtimeMap(items, avatarSeed), [items, avatarSeed]);
+  const runtime = useMemo(() => runtimeMap(items, avatarSeed, randomSeed ?? 1), [items, avatarSeed, randomSeed]);
+  const preparedSlug = useRef<string | null>(null);
+  const [cleanReady, setCleanReady] = useState(!cleanPlay);
+  const [cleanError, setCleanError] = useState("");
+  useEffect(() => {
+    if (!cleanPlay || !onCleanReady || preparedSlug.current === runtime.challenge.slug) return;
+    preparedSlug.current = runtime.challenge.slug;
+    setCleanReady(false);
+    setCleanError("");
+    void Promise.resolve(onCleanReady(runtime)).then(() => {
+      setCleanReady(true);
+    }).catch(() => {
+      setCleanError("The clean run could not be started. Return to the menu and try again.");
+    });
+  }, [cleanPlay, onCleanReady, runtime]);
   const selected = items.find((item) => item.uid === selectedUid) ?? null;
   const nextUid = () => Math.max(0, ...items.map((item) => item.uid)) + 1;
   const save = (next: RoomItem[]) => { setItems(next); if (!generated) window.localStorage.setItem(STORE_KEY, JSON.stringify(next)); };
@@ -437,20 +506,21 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
     </Canvas> : <GameCanvas
       challenge={runtime.challenge}
       trackOverride={runtime.track}
-      phase="playing"
+      phase={cleanReady ? "playing" : "intro"}
       attemptSerial={testSerial}
       startedAt={testStartedAt}
       placement={null}
       ghostEnabled={false}
-      recordSample={() => undefined}
-      onProgress={() => undefined}
-      onFinish={() => setNotice("Map cleared exactly as a finished run would be.")}
-      onFail={(outcome) => { setNotice(outcome === "fell" ? "You fell. Restarting at the builder spawn point." : "Test restarted."); setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); }}
-      onHazard={(contact) => setNotice(`${TRAP_CATALOG[contact.trapType].displayName} hit the runner.`)}
+      recordSample={(sample) => cleanPlay ? onCleanSample?.(sample) : undefined}
+      onProgress={(value) => cleanPlay ? onCleanProgress?.(value) : undefined}
+      onFinish={() => cleanPlay ? onCleanFinish?.() : setNotice("Map cleared exactly as a finished run would be.")}
+      onFail={(outcome) => { if (cleanPlay) { onCleanFail?.(outcome); return; } setNotice(outcome === "fell" ? "You fell. Restarting at the builder spawn point." : "Test restarted."); setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); }}
+      onHazard={(contact) => { if (cleanPlay) onCleanHazard?.(contact); else setNotice(`${TRAP_CATALOG[contact.trapType].displayName} hit the runner.`); }}
       onSelectZone={() => undefined}
       onMovePlacement={() => undefined}
       onAssetsReady={() => undefined}
     />}
+    {cleanPlay && !cleanReady && <div className="canvas-loading"><span />{cleanError || "Starting clean run…"}</div>}
     {!cleanPlay && <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" title="Free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>}
     {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
     {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button><button onClick={publish}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}

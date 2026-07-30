@@ -6,11 +6,12 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 - [ ] Make Build Your Runner reliable in the user's actual playtest session; the editor and garment preview must both render and respond.
 - [ ] Fix builder drag-and-drop for traps and non-block items so they move exactly like blocks.
+- [x] Keep a dragged builder object exclusive so crossing stacked/overlapping objects never selects or moves them too.
 - [ ] Keep every trap on its authored base colors; never expose trap color customization.
 - [ ] Keep the builder asset tray wide enough that it never needs horizontal scrolling.
 - [ ] Keep the builder's maximum vertical jump warning 20% below the previous estimate.
-- [ ] Restore the full completion → reward → choose trap → place trap → publish/share sequence after Play a clean level.
-- [ ] Give randomized clean levels varied game colors instead of making the whole room yellow.
+- [x] Restore the full completion → reward → choose trap → place trap → publish/share sequence after Play a clean level.
+- [x] Give randomized clean levels varied game colors instead of making the whole room yellow.
 - [ ] Replace “Play one somebody already ruined” with a trending-map browser.
 
 ## Traps and movement
@@ -47,6 +48,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Completed recently
 
+- [x] Standardize custom-builder trap icon holders to yellow and remove the oversized Floor Fan overlay.
 - [x] Add a one-button opening splash and clouds to the main menu.
 - [x] Remove the desktop keyboard footer, no-traps message, Portals Edition label, and builder instruction tooltip.
 - [x] Add global recorded button/select click audio.

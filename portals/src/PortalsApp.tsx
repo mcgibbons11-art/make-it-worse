@@ -21,7 +21,7 @@ import { recordRunEnd, recordTrapPlaced } from "@/lib/game/coaching";
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
 import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
-import { CLASSIC_TRACK, buildTrack } from "@/lib/game/track";
+import { CLASSIC_TRACK, buildTrack, type BuiltTrack } from "@/lib/game/track";
 import { placementFromWorld, validatePlacement } from "@/lib/game/placement";
 import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
@@ -67,6 +67,7 @@ import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
 import { resolveAvatar } from "@/lib/game/avatar";
 import { WardrobePanel } from "@/components/hud/wardrobe/WardrobePanel";
+import { AvatarApartment } from "@/components/hud/wardrobe/AvatarApartment";
 import {
   connect,
   fetchClearTimes,
@@ -78,11 +79,6 @@ import {
   type SubmitResult,
 } from "./leaderboard";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
-const AvatarApartment = lazy(() =>
-  import("@/components/hud/wardrobe/AvatarApartment").then((module) => ({
-    default: module.AvatarApartment,
-  })),
-);
 const RoomBuilder = lazy(() =>
   import("@/components/game/RoomBuilder").then((module) => ({
     default: module.RoomBuilder,
@@ -106,6 +102,28 @@ class RunnerEditorBoundary extends Component<
 
   render() {
     return this.state.failed ? this.props.safeFallback : this.props.children;
+  }
+}
+class ToolBoundary extends Component<
+  { children: ReactNode; label: string; onClose(): void },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[${this.props.label}] tool failed`, error, info.componentStack);
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <main className="avatar-wardrobe-backdrop modal-backdrop">
+        <section className="panel result-panel" role="alert">
+          <h1>{this.props.label} needs a reload</h1>
+          <p>The tool could not initialize, but the main menu is still available.</p>
+          <button className="button primary" onClick={this.props.onClose}>Back to menu</button>
+        </section>
+      </main>
+    );
   }
 }
 function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "leaderboard" | "runner" | "settings" }) {
@@ -265,6 +283,7 @@ export function PortalsApp() {
   const [submitStatus, setSubmitStatus] = useState<SubmitResult | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
+  const [runtimeTrack, setRuntimeTrack] = useState<BuiltTrack | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [apartmentOpen, setApartmentOpen] = useState(false);
   const [showStartSplash, setShowStartSplash] = useState(true);
@@ -413,6 +432,7 @@ export function PortalsApp() {
     // Models are decoded once per session, not per challenge. Clearing this on
     // every open re-closed a gate that only ever opens on first mount.
     setChallenge(next);
+    setRuntimeTrack(null);
     setPhase("intro");
     setResult(null);
     setPlacement(null);
@@ -470,6 +490,7 @@ export function PortalsApp() {
   }, [open, repository]);
   const fresh = () => {
     applyRun(EMPTY_RUN);
+    setRuntimeTrack(null);
     setViews([]);
     setBoardOpen(false);
     setRandomRoomSeed(Date.now() ^ Math.floor(Math.random() * 0x7fffffff));
@@ -520,6 +541,28 @@ export function PortalsApp() {
     progress.current = 0;
     setPhase("playing");
   }, [challenge, repository]);
+  const prepareCleanRun = useCallback(async (runtime: { challenge: ChallengeDTO; track: BuiltTrack }) => {
+    setRuntimeTrack(runtime.track);
+    const stored = await (repository.importChallenge?.(runtime.challenge, runtime.track) ?? runtime.challenge);
+    const started = await repository.startAttempt({
+      challengeSlug: stored.slug,
+      clientSessionId: crypto.randomUUID(),
+      deviceClass: matchMedia("(max-width:700px)").matches ? "mobile" : "desktop",
+      buildVersion: "portals-1",
+      idempotencyKey: crypto.randomUUID(),
+    });
+    setChallenge(stored);
+    setAttemptId(started.attemptId);
+    setAttemptSerial((value) => value + 1);
+    setStartedAt(performance.now());
+    setElapsed(0);
+    setSubmitStatus(null);
+    samples.current = [];
+    lastHazard.current = null;
+    finishing.current = false;
+    progress.current = 0;
+    setPhase("playing");
+  }, [repository]);
   const complete = useCallback(async () => {
     if (finishing.current || !attemptId || !challenge) return;
     finishing.current = true;
@@ -632,11 +675,11 @@ export function PortalsApp() {
   // buttons that each say "try one of the others" when there is no other.
   const placeableOffers = useMemo(() => {
     if (!challenge || !offered) return [];
-    const track = challengeTrack(challenge);
+    const track = runtimeTrack ?? challengeTrack(challenge);
     return offered.filter((type) =>
       firstLegalPlacement(track, type, challenge.traps),
     );
-  }, [challenge, offered]);
+  }, [challenge, offered, runtimeTrack]);
   const endChain = () => {
     setOffered(null);
     setPhase("finished");
@@ -647,7 +690,7 @@ export function PortalsApp() {
     // Hand-rolling a centre-only scan here meant this client could not reach
     // the positions the offer had already been checked against.
     const placement = firstLegalPlacement(
-      challengeTrack(challenge),
+      runtimeTrack ?? challengeTrack(challenge),
       type,
       challenge.traps,
     );
@@ -733,6 +776,7 @@ export function PortalsApp() {
   }, [phase]);
   const quitToTitle = useCallback(() => {
     applyRun(EMPTY_RUN);
+    setRuntimeTrack(null);
     setViews([]);
     // The board is loaded at the run's depth, so leaving it open would put
     // "FASTEST CLEARS · DISASTER 3" on a title screen with no run behind it.
@@ -1012,7 +1056,7 @@ export function PortalsApp() {
       ? validatePlacement(
           placement,
           challenge.traps,
-          buildTrack(challenge.track ?? CLASSIC_TRACK),
+          runtimeTrack ?? buildTrack(challenge.track ?? CLASSIC_TRACK),
         )
       : null;
   // A player dragging the trap is watching the trap, not the panel, so only the
@@ -1037,6 +1081,26 @@ export function PortalsApp() {
           {...(randomRoomSeed === null ? {} : { randomSeed: randomRoomSeed })}
           initialMode={randomRoomSeed === null ? "build" : "test"}
           cleanPlay={randomRoomSeed !== null}
+          onCleanReady={prepareCleanRun}
+          onCleanSample={(sample) => {
+            if (samples.current.length < 900) samples.current.push(sample);
+          }}
+          onCleanProgress={(value) => {
+            progress.current = value;
+          }}
+          onCleanHazard={(contact) => {
+            lastHazard.current = contact;
+          }}
+          onCleanFinish={() => {
+            setEditorOpen(false);
+            setRandomRoomSeed(null);
+            void complete();
+          }}
+          onCleanFail={(outcome) => {
+            setEditorOpen(false);
+            setRandomRoomSeed(null);
+            void fail(outcome);
+          }}
           onClose={() => {
             setEditorOpen(false);
             setRandomRoomSeed(null);
@@ -1047,11 +1111,13 @@ export function PortalsApp() {
   if (apartmentOpen)
     return (
       <Suspense fallback={<div className="canvas-loading"><span />Building your apartment…</div>}>
-        <AvatarApartment
-          avatar={settings.avatar ?? null}
-          avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
-          onClose={() => setApartmentOpen(false)}
-        />
+        <ToolBoundary label="Your apartment" onClose={() => setApartmentOpen(false)}>
+          <AvatarApartment
+            avatar={settings.avatar ?? null}
+            avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+            onClose={() => setApartmentOpen(false)}
+          />
+        </ToolBoundary>
       </Suspense>
     );
   if (wardrobeOpen)
@@ -1114,6 +1180,7 @@ export function PortalsApp() {
       >
         <GameCanvas
           challenge={challenge}
+          {...(runtimeTrack ? { trackOverride: runtimeTrack } : {})}
           phase={phase}
           attemptSerial={attemptSerial}
           startedAt={startedAt}
@@ -1143,7 +1210,7 @@ export function PortalsApp() {
                 worldX,
                 worldZ,
                 placement.rotationQuarterTurns,
-                buildTrack(challenge.track ?? CLASSIC_TRACK),
+                runtimeTrack ?? buildTrack(challenge.track ?? CLASSIC_TRACK),
               ),
             );
           }}

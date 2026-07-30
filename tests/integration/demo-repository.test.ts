@@ -3,7 +3,40 @@ import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { MemoryDatabase } from "@/lib/repository/demo-db";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
 import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
+import { generateRandomRoom, runtimeMap } from "@/components/game/RoomBuilder";
 describe("demo repository viral loop", () => {
+  it("completes and extends a generated clean-room track", async () => {
+    const repository = new DemoRepository(new MemoryDatabase());
+    const runtime = runtimeMap(generateRandomRoom(98765), 44, 98765);
+    const challenge = await repository.importChallenge(runtime.challenge, runtime.track);
+    const started = await repository.startAttempt({
+      challengeSlug: challenge.slug,
+      clientSessionId: crypto.randomUUID(),
+      deviceClass: "desktop",
+      buildVersion: "test",
+      idempotencyKey: crypto.randomUUID(),
+    });
+    const finished = await repository.finishAttempt({
+      attemptId: started.attemptId,
+      outcome: "completed",
+      durationMs: 12000,
+      maxProgress: 1,
+      deathTrapInstanceId: null,
+      ghostTrace: encodeGhostTrace([{ x: 0, y: 1.25, z: 2, yaw: 0, flags: 1 }]),
+      idempotencyKey: crypto.randomUUID(),
+    });
+    expect(finished.offeredTraps).toHaveLength(3);
+    const type = finished.offeredTraps![0];
+    const placement = firstLegalPlacement(runtime.track, type, challenge.traps);
+    expect(placement).not.toBeNull();
+    const child = await repository.publishChild({
+      parentSlug: challenge.slug,
+      attemptId: started.attemptId,
+      placement: placement!,
+      idempotencyKey: crypto.randomUUID(),
+    });
+    expect(child.challenge.depth).toBe(challenge.depth + 1);
+  });
   it("persists every concurrent write, not only the one that saved last", async () => {
     // Each repository call reads the whole state, mutates its own copy, and
     // writes it back, so four of them running at once are four read-modify-write

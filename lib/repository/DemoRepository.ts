@@ -2,7 +2,7 @@ import { generatedName } from "@/lib/auth/names";
 import { sanitizeDisplayName } from "@/lib/auth/profanity";
 import { estimatedWorsePercent, smoothedSurvival } from "@/lib/game/difficulty";
 import { validatePlacement } from "@/lib/game/placement";
-import { CLASSIC_TRACK, buildTrack, composeFreshTrack } from "@/lib/game/track";
+import { CLASSIC_TRACK, buildTrack, composeFreshTrack, type BuiltTrack } from "@/lib/game/track";
 import { challengeSchema, ghostTraceSchema } from "@/lib/game/schemas";
 import { hashString, seededId } from "@/lib/game/seed";
 import { challengeTrack, chooseTraps, firstLegalPlacement } from "@/lib/game/trap-choice";
@@ -99,6 +99,8 @@ const baseStats = () => ({
 });
 
 export class DemoRepository implements GameRepository {
+  /** Geometry authored directly in the room builder has no segment recipe. */
+  private runtimeTracks = new Map<string, BuiltTrack>();
   readonly mode = "demo" as const;
   private queue: Promise<void> = Promise.resolve();
   constructor(
@@ -338,7 +340,7 @@ export class DemoRepository implements GameRepository {
           challenge.id,
           challenge.baseSeed,
           challenge.traps,
-          challengeTrack(challenge),
+          this.runtimeTracks.get(challenge.slug) ?? challengeTrack(challenge),
         );
         const completions = challenge.stats.completions + 1;
         challenge.stats = {
@@ -392,7 +394,7 @@ export class DemoRepository implements GameRepository {
       const valid = validatePlacement(
         input.placement,
         parent.traps,
-        buildTrack(parent.track ?? CLASSIC_TRACK),
+        this.runtimeTracks.get(parent.slug) ?? buildTrack(parent.track ?? CLASSIC_TRACK),
       );
       if (!valid.valid) throw new Error(`INVALID_PLACEMENT:${valid.reason}`);
       const seed = hashString(
@@ -427,6 +429,8 @@ export class DemoRepository implements GameRepository {
         createdAt: new Date().toISOString(),
       };
       state.challenges[child.slug] = child;
+      const runtimeTrack = this.runtimeTracks.get(parent.slug);
+      if (runtimeTrack) this.runtimeTracks.set(child.slug, runtimeTrack);
       attempt.childSlug = child.slug;
       return {
         challenge: child,
@@ -478,7 +482,8 @@ export class DemoRepository implements GameRepository {
       if (!share.openedBy.includes(guest.id)) share.openedBy.push(guest.id);
     });
   }
-  async importChallenge(challenge: ChallengeDTO): Promise<ChallengeDTO> {
+  async importChallenge(challenge: ChallengeDTO, runtimeTrack?: BuiltTrack): Promise<ChallengeDTO> {
+    if (runtimeTrack) this.runtimeTracks.set(challenge.slug, runtimeTrack);
     return this.transact((state) => {
       // Seed first. The Portals edition imports a link without ever reading a
       // challenge, so on a first visit the store is empty and a payload whose

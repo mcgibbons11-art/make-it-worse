@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateRandomRoom, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
+import { generateRandomRoom, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
 import { TRAP_TYPES } from "@/lib/game/trap-catalog";
 
 const item = (uid: number, asset: RoomItem["asset"], x: number, y: number, z: number): RoomItem => ({
@@ -13,6 +13,9 @@ describe("unrestricted custom map builder", () => {
     expect(room.some((entry) => entry.asset === "finish")).toBe(true);
     expect(room.some((entry) => entry.asset.startsWith("trap:"))).toBe(true);
     expect(room.every((entry) => /^#[0-9a-f]{6}$/i.test(entry.color))).toBe(true);
+    const platformColors = new Set(room.filter((entry) => !entry.asset.startsWith("trap:") && !["spawn", "finish"].includes(entry.asset)).map((entry) => entry.color));
+    expect(platformColors.size).toBeGreaterThan(1);
+    expect(runtimeMap(room, 17, 1234).track.zones.length).toBeGreaterThan(1);
   });
 
   it("marks a platform beyond the real jump envelope and clears it when bridged", () => {

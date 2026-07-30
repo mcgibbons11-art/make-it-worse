@@ -61,4 +61,10 @@ describe("keyboard survives a mouse-started run", () => {
       ).toBe(true);
     }
   });
+
+  it("mounts the touch pad in the Portals run, not only the Next shell", () => {
+    const source = read("portals/src/PortalsApp.tsx");
+    expect(source).toContain('runPanel === "playing" && <MobileControls />');
+    expect(source).toContain("touchControls={touchControls}");
+  });
 });

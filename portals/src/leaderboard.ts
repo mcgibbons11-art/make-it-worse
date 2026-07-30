@@ -193,7 +193,14 @@ export async function fetchClearTimes(
   if (!sdk) return { status: "unavailable" };
   try {
     await ready(sdk);
-    const board = await sdk.getLeaderboard({ mode: depthMode(depth), limit });
+    // The host contract accepts integer limits from 1 through 100. Keep this
+    // adapter safe for future callers rather than handing an invalid request to
+    // the optional SDK and turning the whole panel into an error state.
+    const safeLimit = Math.min(100, Math.max(1, Math.trunc(limit)));
+    const board = await sdk.getLeaderboard({
+      mode: depthMode(depth),
+      limit: safeLimit,
+    });
     return {
       status: "ok",
       entries: board.entries.map((entry) => ({

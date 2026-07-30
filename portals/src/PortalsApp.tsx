@@ -10,6 +10,10 @@ import {
 import { TrapIcon } from "@/components/icons/TrapIcon";
 import { CoachHint, DeathNote, RunProgressNote, TrapDetailsRow } from "@/components/hud/Coach";
 import { FirstRunTour } from "@/components/hud/Onboarding";
+import {
+  MobileControls,
+  useTouchControlsAvailable,
+} from "@/components/hud/MobileControls";
 import { recordRunEnd, recordTrapPlaced } from "@/lib/game/coaching";
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
 import { DemoRepository } from "@/lib/repository/DemoRepository";
@@ -60,7 +64,6 @@ import { isInterfaceTarget } from "@/lib/game/input";
 import { useSettingsStore } from "@/stores/settings-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
-import { WardrobePanel } from "@/components/hud/wardrobe/WardrobePanel";
 import { resolveAvatar } from "@/lib/game/avatar";
 import {
   connect,
@@ -73,6 +76,11 @@ import {
   type SubmitResult,
 } from "./leaderboard";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
+const WardrobePanel = lazy(() =>
+  import("@/components/hud/wardrobe/WardrobePanel").then((module) => ({
+    default: module.WardrobePanel,
+  })),
+);
 // Seconds left when the timer turns warm and the countdown pill appears. The
 // screen-reader warning fires on this same value, so the spoken "Ten seconds
 // left" and the first visible digit are the same moment by construction.
@@ -164,6 +172,7 @@ function LeaderboardPanel({
   );
 }
 export function PortalsApp() {
+  const touchControls = useTouchControlsAvailable();
   const repository = useMemo(() => new DemoRepository(), []);
   const settings = useSettingsStore();
   const [assetsReady, setAssetsReady] = useState(false);
@@ -1139,15 +1148,24 @@ export function PortalsApp() {
         </Overlay>
       )}
       {wardrobeOpen && (
-        <WardrobePanel
-          avatar={settings.avatar ?? null}
-          avatarSeed={challenge.createdByAvatarSeed}
-          onSave={(config) => {
-            settings.setAvatar(config);
-            setWardrobeOpen(false);
-          }}
-          onClose={() => setWardrobeOpen(false)}
-        />
+        <Suspense
+          fallback={
+            <div className="canvas-loading">
+              <span />
+              Opening the wardrobeâ€¦
+            </div>
+          }
+        >
+          <WardrobePanel
+            avatar={settings.avatar ?? null}
+            avatarSeed={challenge.createdByAvatarSeed}
+            onSave={(config) => {
+              settings.setAvatar(config);
+              setWardrobeOpen(false);
+            }}
+            onClose={() => setWardrobeOpen(false)}
+          />
+        </Suspense>
       )}
       {runPanel === "playing" && (
         // The attempt is hard-capped at ATTEMPT_LIMIT_MS by PlayerController and
@@ -1194,6 +1212,7 @@ export function PortalsApp() {
           </div>
         </header>
       )}
+      {runPanel === "playing" && <MobileControls />}
       <a
         className="text-button portals-credits in-game"
         href="./assets/models/LICENSES.md"
@@ -1208,7 +1227,11 @@ export function PortalsApp() {
           on a first run; CoachHint holds its tongue until the player has shown
           they need it. Suppressed behind a modal, where a menu already has the
           player's attention and a second card on top is just noise. */}
-      <FirstRunTour phase={phase} suppressed={view !== null} />
+      <FirstRunTour
+        phase={phase}
+        suppressed={view !== null}
+        touchControls={touchControls}
+      />
       {view === null && <CoachHint phase={phase} />}
       {runPanel === "failed" && (
         <Overlay

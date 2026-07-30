@@ -86,7 +86,7 @@ export function Overlay({
   readonly className?: string | undefined;
   readonly panelClassName?: string | undefined;
   readonly decoration?: ReactNode;
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
 }) {
   const panel = useFocusTrap();
   return (

@@ -97,7 +97,8 @@ pnpm --filter @make-it-worse/portals build
 ```
 
 The output is `portals/dist/`. Its `index.html` and asset URLs are relative so
-the game can run under Portals' versioned path.
+the game can run under Portals' versioned path. The title shell is kept separate
+from the Three/Rapier game payload so the menu can paint before the course loads.
 
 The GitHub import at `https://portals.to/my-games` serves the game folder as
 static files without running a build (verified 2026-07-29: pointing it at
@@ -125,8 +126,9 @@ visible fallback.
 SDK](https://portals.to/documentation/advanced-tooling/portals-sdk) to the
 game's fastest-clear board. Three properties of that SDK shape the design:
 
-- Portals injects `./_portals/sdk.js` into every processed preview and
-  published bundle, so the runtime is absent under `pnpm --filter
+- Portals hosts the managed `./_portals/sdk.js` resource in every processed
+  preview and published bundle. `portals/index.html` loads that managed path
+  before the application module; the runtime is absent under `pnpm --filter
   @make-it-worse/portals dev`. Never vendor or commit that file. Every call
   feature-detects `window.Portals` and returns an `unavailable` status the
   interface renders as an explanation.
@@ -142,6 +144,11 @@ Submitting requires sign-in, so `Portals.identity.requestLogin()` is wired to a
 button rather than an effect, as the SDK requires. Scores are client-reported
 and carry no entitlement, matching the SDK's guidance and the same
 client-authoritative caveat that applies to attempt completion.
+
+For a bounded frame-time sample against a focused local or hosted game URL, run
+`pnpm measure:portals -- <url> [width] [height]`. Headless SwiftShader results are
+diagnostic only; acceptance measurements must come from a foreground, GPU-backed
+browser at the target resolution.
 
 ## Repository hygiene
 

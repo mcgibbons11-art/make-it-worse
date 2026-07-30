@@ -18,6 +18,8 @@ import {
   type ShellView,
 } from "@/portals/src/menu/shell-state";
 import { Overlay, focusableWithin } from "@/portals/src/menu/ShellPanels";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const ALL_PHASES: readonly GamePhase[] = [
   "booting", "intro", "ready", "playing", "failed", "finished",
@@ -26,6 +28,14 @@ const ALL_PHASES: readonly GamePhase[] = [
 ];
 
 describe("what has to be confirmed before it is thrown away", () => {
+  it("loads the managed Portals SDK before the game module", () => {
+    const html = readFileSync(resolve(process.cwd(), "portals/index.html"), "utf8");
+    const sdk = html.indexOf('<script vite-ignore src="./_portals/sdk.js"></script>');
+    const game = html.indexOf('<script type="module" src="/src/main.tsx"></script>');
+    expect(sdk).toBeGreaterThan(-1);
+    expect(game).toBeGreaterThan(sdk);
+  });
+
   it("guards a live attempt", () => {
     expect(discardsRun("playing")).toBe(true);
     expect(discardsRun("paused")).toBe(true);
@@ -166,15 +176,16 @@ describe("the dialog wrapper", () => {
   let root: Root;
 
   const dialog = (...labels: readonly string[]) =>
-    createElement(Overlay, {
-      labelledBy: "trap-title",
-      children: [
+    createElement(
+      Overlay,
+      { labelledBy: "trap-title" },
+      [
         createElement("h2", { id: "trap-title", key: "title" }, "Paused"),
         ...labels.map((label) =>
           createElement("button", { key: label }, label),
         ),
       ],
-    });
+    );
 
   const press = async (init: KeyboardEventInit) => {
     await act(async () => {
@@ -267,14 +278,15 @@ describe("the dialog wrapper", () => {
   it("counts only the stops a keyboard can actually reach", async () => {
     await act(async () => {
       root.render(
-        createElement(Overlay, {
-          labelledBy: "trap-title",
-          children: [
+        createElement(
+          Overlay,
+          { labelledBy: "trap-title" },
+          [
             createElement("h2", { id: "trap-title", key: "title" }, "Reward"),
             createElement("button", { disabled: true, key: "blocked" }, "No room"),
             createElement("button", { key: "finish" }, "Finish the chain"),
           ],
-        }),
+        ),
       );
     });
     const panel = host.querySelector<HTMLElement>("[role='dialog']")!;

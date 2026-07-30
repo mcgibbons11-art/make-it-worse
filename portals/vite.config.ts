@@ -36,5 +36,24 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Keep the largest engine payloads stable and independently cacheable.
+        // Leave the R3F adapters to Rollup: forcing interdependent adapters into
+        // separate chunks creates a cycle that Vite must preload with the shell.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("@dimforge/rapier")) return "rapier";
+          if (id.includes("/three/")) return "three";
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/scheduler/")
+          )
+            return "react";
+          return undefined;
+        },
+      },
+    },
   },
 });

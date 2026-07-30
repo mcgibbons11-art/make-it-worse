@@ -5,6 +5,39 @@ complete pick-up-from-here document: current state, every open task with exact f
 paths and acceptance criteria, and the standing rules that keep you from breaking
 things that were tuned on purpose. Read the whole thing before touching anything.
 
+## Codex update — 2026-07-29
+
+The later sections preserve the original handoff for provenance, but several of
+their status claims are now stale. This is the current boundary:
+
+- Retry-after-failure is verified, not an open bug. The focused Chromium test
+  completes the `failed -> playing` transition without a page reload.
+- Touch controls now mount in both editions when `ontouchstart` is present. The
+  Portals shell includes movement, jump, grab, touch-specific onboarding, and the
+  existing drag-camera path without changing movement constants or physics.
+- The Portals SDK loader is explicitly present as `./_portals/sdk.js` before the
+  application module. Its absent-host, signed-in, sign-in-required, rejection,
+  score-mapping, and leaderboard-limit paths have unit coverage.
+- The Portals title shell is split from the game engines. Its production HTML
+  preloads only the React chunk; Three, Rapier, Tone, the wardrobe, and
+  `GameCanvas` load after their corresponding dynamic boundaries.
+- `pnpm measure:portals -- <url> [width] [height]` is a bounded rAF sampler. Its
+  headless SwiftShader numbers are intentionally not accepted as a hardware
+  performance result; the final 1080p measurement still needs a focused,
+  GPU-backed browser tab.
+- The apartment already has authored architecture, four furnishing variants,
+  detail/practical-light contracts, refinement provenance, and extensive geometry
+  tests. Do not fabricate formal pipeline review entries; further work is optional
+  visual polish, not an objectively closable acceptance item.
+- The remaining 37 Pixabay files are still absent (`CREDITS.json`: 30 filed,
+  37 planned). They require real manual downloads and attribution; automation or
+  invented provenance remains forbidden.
+- Portals dashboard folder/sync, mobile-preview, hosted SDK score round-trip, and
+  featured-image checks still require the user's authenticated Portals browser.
+
+Local gate at this update: lint and TypeScript clean; 55 test files, 711 passed and
+1 skipped; Next and Portals production builds clean; focused retry E2E passed.
+
 ---
 
 ## 1. What this project is

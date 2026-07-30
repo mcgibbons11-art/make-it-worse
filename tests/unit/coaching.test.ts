@@ -617,6 +617,18 @@ describe("what the teaching layer renders before any browser is involved", () =>
       );
   });
 
+  it("replaces keyboard keycaps with touch directions on touch hosts", () => {
+    const html = renderToStaticMarkup(
+      createElement(FirstRunTour, {
+        phase: "intro",
+        touchControls: true,
+      }),
+    );
+    expect(html).toContain("Drag the left pad to move");
+    expect(html).toContain("Drag anywhere else to turn the camera");
+    expect(html).not.toContain("<kbd");
+  });
+
   it("ticks the controls off against the run rather than describing them", () => {
     const html = renderToStaticMarkup(
       createElement(FirstRunTour, { phase: "playing" }),

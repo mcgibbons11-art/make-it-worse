@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "node scripts/run-e2e.mjs",
     "test:e2e:ui": "playwright test --ui",
+    "measure:portals": "node scripts/measure-portals-frame-time.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {

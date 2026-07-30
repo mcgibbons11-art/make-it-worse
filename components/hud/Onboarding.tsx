@@ -251,9 +251,11 @@ function Tick({ done }: { done: boolean }) {
 export function FirstRunTour({
   phase,
   suppressed = false,
+  touchControls = false,
 }: {
   phase: GamePhase;
   suppressed?: boolean;
+  touchControls?: boolean;
 }) {
   const memory = useCoachMemory();
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
@@ -303,13 +305,20 @@ export function FirstRunTour({
             checklist changes - it still ticks itself off from real input - but
             a player who has met the keys once arrives recognising it instead of
             having to stop and study it. */}
-        <p className="onboard-note">
-          <kbd className="onboard-key">W</kbd>
-          <kbd className="onboard-key">A</kbd>
-          <kbd className="onboard-key">S</kbd>
-          <kbd className="onboard-key">D</kbd> to move,{" "}
-          <kbd className="onboard-key">Space</kbd> to jump. Reach the green door.
-        </p>
+        {touchControls ? (
+          <p className="onboard-note">
+            Drag the left pad to move and tap JUMP. Drag anywhere else to turn the
+            camera. Reach the green door.
+          </p>
+        ) : (
+          <p className="onboard-note">
+            <kbd className="onboard-key">W</kbd>
+            <kbd className="onboard-key">A</kbd>
+            <kbd className="onboard-key">S</kbd>
+            <kbd className="onboard-key">D</kbd> to move,{" "}
+            <kbd className="onboard-key">Space</kbd> to jump. Reach the green door.
+          </p>
+        )}
         <div className="onboard-actions">
           <button className="onboard-chip" onClick={() => setIntroDismissed(true)}>
             Got it
@@ -329,11 +338,11 @@ export function FirstRunTour({
       <ul className="onboard-steps" aria-live="polite">
         <li className={moved ? "onboard-step is-done" : "onboard-step"}>
           <Tick done={moved} />
-          Move with W A S D or the arrow keys
+          {touchControls ? "Drag the left pad to move" : "Move with W A S D or the arrow keys"}
         </li>
         <li className={jumped ? "onboard-step is-done" : "onboard-step"}>
           <Tick done={jumped} />
-          Jump with Space
+          {touchControls ? "Tap JUMP" : "Jump with Space"}
         </li>
         <li className="onboard-step">
           <Tick done={false} />

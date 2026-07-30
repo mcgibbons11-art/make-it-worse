@@ -8,9 +8,9 @@ The repository contains two deployment targets:
 - The Next.js application at the repository root supports the complete
   Supabase-backed, cross-device challenge loop.
 - `portals/` is a static Vite edition for Portals. It carries no Supabase or
-  API dependency, so challenge chains stay in that browser only and it must not
-  be described as cross-device multiplayer. Its one cross-player feature is the
-  global leaderboard, which the Portals host provides through the Portals SDK.
+  API dependency, so challenge chains stay in that browser unless a complete
+  code is shared. Portals supplies the global leaderboard and a bounded
+  same-session map relay through its SDK; neither is a global UGC database.
 
 ```mermaid
 flowchart LR
@@ -84,6 +84,15 @@ verify the following with anon and authenticated roles:
 - `get_public_challenge` returns only active, published payloads;
 - completed attempts reject implausible durations and malformed ghost frames;
 - share tokens contain only lowercase hexadecimal characters.
+- direct custom-map table access fails, private maps never browse publicly,
+  unlisted maps load only by exact id, and old immutable versions still load;
+- publishing a stale custom-map version returns a conflict, three distinct
+  reports quarantine it, and only a moderator can restore or reject it.
+
+Migration `0021_custom_map_publishing.sql` powers `/maps` and `/api/maps/**`.
+Do not describe that browser as global until this migration is applied to the
+configured project. With Supabase unset, the page deliberately renders an
+unavailable explanation instead of relabeling local IndexedDB maps.
 
 The repository does not currently integrate a CAPTCHA widget. If CAPTCHA is
 enabled for anonymous sign-in in Supabase, add a client challenge flow and pass

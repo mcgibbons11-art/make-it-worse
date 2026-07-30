@@ -8,6 +8,8 @@
 - Copy map code provides the same payload without relying on a host preserving query parameters.
 - Trending accepts either a full link or a raw code. A recipient imports the authored geometry before the game opens.
 - Authored geometry is persisted with the local challenge, inherited by child rounds, and restored after a repository/browser reload.
+- The Next/Supabase edition has a real community-map API and browser. Publishing creates a stable owned map plus an immutable version; exact-version links load the stored self-contained code into the same local child-chain engine used by Portals.
+- The builder publish form collects title, description, and public/unlisted/private visibility. The community browser provides search, Trending/New sorting, pagination, creator/version attribution, likes, shares, reports, owner management, rollback, and moderator controls.
 
 ## Portals SDK boundary
 
@@ -40,6 +42,8 @@ The raw code remains visible/copyable when a map exceeds the session message cei
 
 ## Global backend path
 
+The backend path is implemented by `supabase/migrations/0021_custom_map_publishing.sql`, `/api/maps/**`, and the `/maps` browser in the Next edition. It becomes operational when the repository is connected to a Supabase project and all migrations are applied. With Supabase variables blank, `/maps` explicitly says the global backend is not connected and never presents IndexedDB data as global.
+
 The preferred backend model is immutable versions under a stable map identity:
 
 - `maps`: id, owner player id, current version id, title, description, visibility, moderation status, created/updated timestamps.
@@ -49,11 +53,15 @@ The preferred backend model is immutable versions under a stable map identity:
 
 Publishing validates the payload server-side, creates an immutable version, and atomically points the map at it. Updating never mutates a version already used by a shared link or child chain.
 
+The database independently base64url-decodes the version-5 envelope, verifies its slug and bounded piece/trap counts, computes its SHA-256 hash itself, rejects stale optimistic updates, and keeps all tables behind SECURITY DEFINER RPCs. Direct table access is revoked. Old versions remain loadable, measurable, and reportable by exact link after later publishes or rollbacks.
+
 Trending should rank eligible maps with a time-decayed score, for example:
 
 `recent unique starts + 3×clears + 5×likes + 4×shares - 8×reports`
 
 Apply Wilson/Bayesian smoothing, author diversity, a minimum-impression gate, and a freshness decay so one old map cannot permanently own the page. Exclude private, rejected, quarantined, invalid, and incompatible-schema versions before ranking.
+
+That ranking is now implemented with unique per-player/version events, a five-impression confidence gate, smoothed clear quality, seven-day exponential decay, report penalties, and a maximum of two results per creator in public browse results. Three unique open reports automatically quarantine a map until a moderator restores or rejects it.
 
 ## Release test matrix
 
@@ -68,4 +76,6 @@ Apply Wilson/Bayesian smoothing, author diversity, a minimum-impression gate, an
 - Verify unlisted/private maps never appear in Trending, and reported/quarantined maps disappear.
 - Load-test browse pagination and trending recomputation, then test rollback to the previous map version.
 
-Current verification: unit tests cover malformed/oversized messages, late-join state, broadcast announcements, request/response, and cleanup. A two-browser SDK-host simulation covers publish to session state and late-join import into Trending. The final real-host check still requires uploading this bundle to a processed Portals preview and opening two players in one session.
+Current verification: unit tests cover malformed/oversized messages, late-join state, broadcast announcements, request/response, API validation, pagination cursors, immutable-version RPC routing, ranking weights/decay, visibility/security SQL, browse/play UI, owner rollback, and reporting. An end-to-end repository test covers two different player databases, browser restart, two complete child rounds, old-link immutability, corruption, and the payload ceiling. Browser production smoke covers builder publishing, all visibility choices, copied authored-room links, reload into the 3D game, and the honest no-backend fallback. A two-browser SDK-host simulation covers publish to session state and late-join import into Trending.
+
+Two release gates require external state that is not present in this workspace: apply migration 0021 to an approved Supabase project and exercise the API against that real database; upload the static bundle to a processed Portals preview and open two players in one real session. Portals cannot use the Supabase browser itself unless Portals approves that network path, so the static edition continues to use session relay plus self-contained codes.

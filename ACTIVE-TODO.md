@@ -31,7 +31,10 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Builder and sharing
 
+- [ ] Finish and prove the full custom-built-game sharing and discovery path: draft → publish → durable versioned link/code → same-session or cross-session delivery → Trending/search browse → exact-version play → child rounds → reporting/moderation. This remains open until the processed Portals and provisioned Supabase checks below both pass with different real players.
 - [ ] Connect published custom maps to a real shared backend and cross-player browser.
+  - [x] Implement the Supabase schema, secured RPCs, Next API, builder publisher, and community browser.
+  - [ ] Apply migration 0021 to an approved Supabase project, configure the deployment, and verify with two real accounts/devices.
 - [x] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
   - [x] Add self-contained authored-room links and raw challenge codes, plus import from either form.
   - [x] Persist authored geometry across reloads and every child round in the local repository.
@@ -40,14 +43,16 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [x] Browser-test publish → local trending → link recipient and raw-code recipient.
   - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
   - [ ] Test same-room delivery inside a processed Portals multiplayer session.
+  - [ ] Run the publish/browse/report/rollback matrix against the provisioned Supabase database rather than mocked RPCs.
 - [ ] Define and implement the full custom-built-game sharing path.
   - [x] Document the Portals SDK boundary, same-session message path, required global backend, data model, ranking approach, and release test matrix in `CUSTOM-GAME-SHARING.md`.
   - [x] Ship immutable self-contained map links/codes, recipient import, local persistence, child-round inheritance, and local Trending registration.
-  - [ ] Add stable map ownership plus immutable version records, publish/update history, titles/descriptions, visibility, and rollback.
-  - [ ] Implement the approved shared storage/API for cross-player publishing and loading; never label per-device data global.
-  - [ ] Build the global browse experience: pagination, search/filtering, creator attribution, version compatibility, and recipient loading/failure recovery.
-  - [ ] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
-  - [ ] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
+  - [x] Add stable map ownership plus immutable version records, publish/update history, titles/descriptions, visibility, and rollback.
+  - [x] Implement shared Supabase storage/API code for cross-player publishing and loading; never label per-device data global.
+  - [ ] Obtain/confirm the approved shared project, apply the migration, and activate that API in production.
+  - [x] Build the global browse experience: pagination, search/filtering, creator attribution, version compatibility, and recipient loading/failure recovery.
+  - [x] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
+  - [x] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
   - [x] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
   - [ ] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, same-room late join, child rounds, and backend rollback end to end.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
@@ -63,7 +68,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 - [x] Replace the synthesized menu score with the supplied `menu music.mp3` track.
 - [x] Cut, normalize, resample, and integrate all 37 supplied sound effects; keep long beds loop-safe and one-shots bounded.
-- [ ] Continue using img2threejs for every new 3D asset, with generated reference images where useful.
+- [x] Codify and enforce img2threejs as the permanent intake/build/review rule for every new 3D asset, with generated reference images where useful.
 
 ## Menu presentation
 

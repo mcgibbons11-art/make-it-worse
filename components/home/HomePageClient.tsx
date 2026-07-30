@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -8,13 +9,22 @@ import type { ChallengeDTO } from "@/lib/game/types";
 import { TrapIcon } from "@/components/icons/TrapIcon";
 import { SettingsPanel } from "@/components/hud/SettingsPanel";
 import { AvatarCustomizer } from "@/components/hud/AvatarCustomizer";
+import { encodeChallengeLink, CHALLENGE_LINK_PARAM } from "@/lib/game/challenge-link";
+import { useSettingsStore } from "@/stores/settings-store";
+import type { CustomMapDetail } from "@/lib/game/community-maps";
+import type { GuestProfile } from "@/lib/game/types";
+const RoomBuilder = dynamic(() => import("@/components/game/RoomBuilder").then((module) => module.RoomBuilder), { ssr: false });
 export default function HomePageClient() {
   const router = useRouter();
   const repository = useMemo(() => createRepository(), []);
+  const settingsStore = useSettingsStore();
   const [trending, setTrending] = useState<ChallengeDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState(false);
   const [error, setError] = useState("");
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderProfile, setBuilderProfile] = useState<GuestProfile | null>(null);
+  const [publishedMap, setPublishedMap] = useState<CustomMapDetail | null>(null);
   useEffect(() => {
     void repository
       .listTrending(6)
@@ -45,6 +55,40 @@ export default function HomePageClient() {
       setLoading(false);
     }
   };
+  const openBuilder = async () => {
+    setError("");
+    try {
+      setBuilderProfile(await repository.ensureGuest());
+      setBuilderOpen(true);
+    } catch {
+      setError("The builder could not load your runner. Try again.");
+    }
+  };
+  if (builderOpen && builderProfile)
+    return <RoomBuilder
+      avatar={settingsStore.avatar}
+      avatarSeed={builderProfile.avatarSeed}
+      creatorName={builderProfile.displayName}
+      onClose={() => setBuilderOpen(false)}
+      onShare={async (runtime, format) => {
+        const code = encodeChallengeLink(runtime.challenge, settingsStore.avatar, runtime.track);
+        const target = format === "code" ? code : (() => { const url = new URL(`/c/${runtime.challenge.slug}`, window.location.origin); url.searchParams.set(CHALLENGE_LINK_PARAM, code); return url.toString(); })();
+        try { await navigator.clipboard.writeText(target); } catch { window.prompt("Copy this map", target); }
+      }}
+      onPublish={async (runtime, details) => {
+        const code = encodeChallengeLink(runtime.challenge, settingsStore.avatar, runtime.track);
+        await repository.importChallenge?.(runtime.challenge, runtime.track);
+        if (!repository.publishCustomMap)
+          return `Published “${details.title}” to this device. Configure the shared backend to make it global.`;
+        const result = await repository.publishCustomMap({
+          ...(publishedMap ? { mapId: publishedMap.id, expectedCurrentVersionId: publishedMap.currentVersion.id } : {}),
+          ...details,
+          code,
+        });
+        setPublishedMap(result);
+        return `Published “${details.title}” globally as version ${result.currentVersion.number}.`;
+      }}
+    />;
   return (
     <main className="home-shell">
       <div className="home-sky">
@@ -78,6 +122,8 @@ export default function HomePageClient() {
               launcherClassName="button secondary"
               launcherLabel="🧍 Build your runner"
             />
+            <button className="button secondary" onClick={() => void openBuilder()} disabled={loading}>🧱 Build your game</button>
+            <Link className="button secondary" href="/maps">🔥 Browse community maps</Link>
             {trending[0] && (
               <Link
                 className="button secondary"

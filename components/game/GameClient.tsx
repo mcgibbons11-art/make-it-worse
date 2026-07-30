@@ -6,8 +6,10 @@ import { createRepository } from "@/lib/repository/createRepository";
 import {
   CHALLENGE_LINK_PARAM,
   decodeChallengeLink,
+  decodeChallengeRuntimeTrack,
   encodeChallengeLink,
 } from "@/lib/game/challenge-link";
+import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
 import { buildShareCopy } from "@/lib/game/share-copy";
 import { getInput, isInterfaceTarget } from "@/lib/game/input";
@@ -28,6 +30,7 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
+import type { BuiltTrack } from "@/lib/game/track";
 import {
   COUNTDOWN_FROM,
   COUNTDOWN_URGENT_FROM,
@@ -127,7 +130,15 @@ function phaseAnnouncement(game: {
 export default function GameClient({ slug }: { slug: string }) {
   const router = useRouter();
   const search = useSearchParams();
-  const repository = useMemo(() => createRepository(), []);
+  const primaryRepository = useMemo(() => createRepository(), []);
+  const sharedPayload = search.get(CHALLENGE_LINK_PARAM);
+  // A self-contained room is deliberately played in the local chain engine.
+  // The global repository owns discovery/metrics, while DemoRepository owns
+  // the recipient's child rounds and authored geometry exactly as Portals does.
+  const repository = useMemo(
+    () => sharedPayload ? new DemoRepository() : primaryRepository,
+    [primaryRepository, sharedPayload],
+  );
   const game = useGameStore();
   const settings = useSettingsStore();
   const [assetsReady, setAssetsReady] = useState(false);
@@ -148,6 +159,7 @@ export default function GameClient({ slug }: { slug: string }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [shareUrl, setShareUrl] = useState("");
+  const [runtimeTrack, setRuntimeTrack] = useState<BuiltTrack | null>(null);
   const shareKey = useRef(crypto.randomUUID());
   useEffect(() => {
     AudioManager.setMuted(settings.muted);
@@ -212,21 +224,30 @@ export default function GameClient({ slug }: { slug: string }) {
   }, [set]);
   useEffect(() => {
     let cancelled = false;
-    const payload = search.get(CHALLENGE_LINK_PARAM);
+    const payload = sharedPayload;
     const load = async () => {
       const profile = await repository.ensureGuest();
       let challenge: ChallengeDTO;
-      try {
+      let authoredTrack: BuiltTrack | null = null;
+      if (payload && repository.importChallenge) {
+        const decoded = decodeChallengeLink(payload);
+        if (decoded.slug !== slug) throw new Error("CHALLENGE_LINK_INVALID");
+        authoredTrack = decodeChallengeRuntimeTrack(payload);
+        challenge = await repository.importChallenge(decoded, authoredTrack ?? undefined);
+      } else try {
         challenge = await repository.getChallenge(slug);
+        authoredTrack = await repository.getChallengeRuntimeTrack?.(challenge.slug) ?? null;
       } catch (error) {
         // A shared link carries the whole level, so a challenge this browser
         // has never stored is the normal case rather than a failure.
         if (!payload || !repository.importChallenge) throw error;
         const decoded = decodeChallengeLink(payload);
         if (decoded.slug !== slug) throw new Error("CHALLENGE_LINK_INVALID");
-        challenge = await repository.importChallenge(decoded);
+        authoredTrack = decodeChallengeRuntimeTrack(payload);
+        challenge = await repository.importChallenge(decoded, authoredTrack ?? undefined);
       }
       if (cancelled) return;
+      setRuntimeTrack(authoredTrack);
       set({ profile, challenge, phase: "intro", error: null });
       const token = search.get("s");
       if (token)
@@ -234,6 +255,10 @@ export default function GameClient({ slug }: { slug: string }) {
           shareToken: token,
           challengeSlug: slug,
         });
+      const mapId = search.get("map");
+      const versionId = search.get("version");
+      if (mapId && versionId)
+        void primaryRepository.recordCustomMapEvent?.(mapId, versionId, "impression").catch(() => false);
     };
     void load().catch((error: unknown) => {
       if (cancelled) return;
@@ -251,7 +276,7 @@ export default function GameClient({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [repository, search, set, slug]);
+  }, [primaryRepository, repository, search, set, sharedPayload, slug]);
   useEffect(() => {
     if (game.phase !== "playing" || game.startedAt === null) return;
     const timer = window.setInterval(
@@ -323,6 +348,10 @@ export default function GameClient({ slug }: { slug: string }) {
         failureMessage: "",
         error: null,
       });
+      const mapId = search.get("map");
+      const versionId = search.get("version");
+      if (mapId && versionId)
+        void primaryRepository.recordCustomMapEvent?.(mapId, versionId, "start").catch(() => false);
     } catch (error) {
       // Called as void startAttempt() from a click and from Enter, so a
       // rejection here was an unhandled rejection and a dead button.
@@ -335,7 +364,7 @@ export default function GameClient({ slug }: { slug: string }) {
     } finally {
       starting.current = false;
     }
-  }, [game.attemptSerial, game.challenge, repository, search, set]);
+  }, [game.attemptSerial, game.challenge, primaryRepository, repository, search, set]);
   const finishAttempt = useCallback(async () => {
     if (finalizing.current || !game.attemptId || !game.challenge) return;
     finalizing.current = true;
@@ -368,6 +397,10 @@ export default function GameClient({ slug }: { slug: string }) {
       });
       AudioManager.finish();
       navigator.vibrate?.([45, 40, 70]);
+      const mapId = search.get("map");
+      const versionId = search.get("version");
+      if (mapId && versionId)
+        void primaryRepository.recordCustomMapEvent?.(mapId, versionId, "clear").catch(() => false);
     } catch (error) {
       // Leaving the phase at "playing" froze the runner: the controller had
       // already set finalized, so movement, the exit check, the kill plane and
@@ -388,7 +421,9 @@ export default function GameClient({ slug }: { slug: string }) {
     game.elapsedMs,
     game.startedAt,
     recorder,
+    primaryRepository,
     repository,
+    search,
     set,
   ]);
   const failAttempt = useCallback(
@@ -456,7 +491,10 @@ export default function GameClient({ slug }: { slug: string }) {
   // searched against the fixed classic list picked a zone that did not exist in
   // it, placing the trap at the wrong coordinates and producing a link the
   // recipient could not decode.
-  const track = useMemo(() => challengeTrack(game.challenge), [game.challenge]);
+  const track = useMemo(
+    () => runtimeTrack ?? challengeTrack(game.challenge),
+    [game.challenge, runtimeTrack],
+  );
   const selectTrap = useCallback(
     (type: TrapType) => {
       if (!game.challenge) return;
@@ -491,11 +529,11 @@ export default function GameClient({ slug }: { slug: string }) {
           CHALLENGE_LINK_PARAM,
           // The runner travels with the level: the recipient plays as the
           // sender's figure, so a link without it arrives as a stranger.
-          encodeChallengeLink(challenge, settings.avatar),
+          encodeChallengeLink(challenge, settings.avatar, runtimeTrack),
         );
       return url.toString();
     },
-    [repository.mode, settings.avatar],
+    [repository.mode, runtimeTrack, settings.avatar],
   );
   const confirmPlacement = useCallback(async () => {
     if (!game.challenge || !game.attemptId || !game.placement) return;
@@ -542,9 +580,13 @@ export default function GameClient({ slug }: { slug: string }) {
         game.publishResult.challenge,
       );
       setShareUrl(absolute);
+      const mapId = search.get("map");
+      const versionId = search.get("version");
+      if (mapId && versionId)
+        void primaryRepository.recordCustomMapEvent?.(mapId, versionId, "share").catch(() => false);
       return absolute;
     },
-    [absoluteShareUrl, game.publishResult, repository, shareUrl],
+    [absoluteShareUrl, game.publishResult, primaryRepository, repository, search, shareUrl],
   );
   const send = useCallback(async () => {
     if (!game.publishResult) return;

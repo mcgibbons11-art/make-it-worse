@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_TRAPS } from "@/lib/game/constants";
-import { validatePlacement } from "@/lib/game/placement";
+import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
 import {
   CLASSIC_TRACK,
   DEFAULT_CUSTOM_TRACK,
@@ -69,8 +69,8 @@ describe("trap availability", () => {
   it("suggests a placement that belongs to the course it was given", () => {
     for (const [name, segments] of NAMED_TRACKS) {
       const track = buildTrack(segments);
-      const ids = new Set(track.zones.map((zone) => zone.id));
-      // Every one of these courses has zones, so a course that can hold nothing
+      const ids = new Set(placementSurfaces(track).map((surface) => surface.id));
+      // Every one of these courses has blocks, so a course that can hold nothing
       // means the search is looking somewhere other than the course it was
       // handed and every id it finds is being rejected on the way back.
       expect(getAvailableTrapTypes(track, []).length, name).toBeGreaterThan(0);
@@ -106,15 +106,12 @@ describe("trap availability", () => {
     expect(getAvailableTrapTypes(custom, saturated)).toEqual([]);
     expect(getAvailableTrapTypes(classic, saturated).length).toBeGreaterThan(2);
 
-    // A course whose zones only accept the small traps must not be offered a
-    // refrigerator because the classic course has somewhere to put one.
+    // Authored pad allow-lists are legacy compatibility data. New placements
+    // use real blocks and geometric validation, so a wide start block remains
+    // available even when the retired pads in the middle accepted only small
+    // traps.
     const restricted = buildTrack(["start", "stones", "gap"]);
-    expect(getAvailableTrapTypes(restricted, [])).toEqual([
-      "floor_fan",
-      "soap_slick",
-      "spring_pad",
-      "giant_beach_ball",
-    ]);
+    expect(getAvailableTrapTypes(restricted, [])).toEqual([...TRAP_TYPES]);
   });
 
   it("ends a full chain with no offer instead of three dead cards", () => {

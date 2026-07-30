@@ -1,12 +1,15 @@
 import { GRID_SIZE, MAX_TRAPS } from "./constants";
-import { validatePlacement } from "./placement";
+import {
+  placementSurfaces,
+  validatePlacement,
+  type PlacementSurface,
+} from "./placement";
 import { createSeededRandom, hashString } from "./seed";
 import { CLASSIC_TRACK, buildTrack } from "./track";
 import type { BuiltTrack } from "./track";
 import { TRAP_CATALOG, TRAP_TYPES, type TrapCategory } from "./trap-catalog";
 import type {
   ChallengeDTO,
-  PlacementZone,
   TrapInstance,
   TrapPlacementInput,
   TrapType,
@@ -29,8 +32,15 @@ export function challengeTrack(
   return buildTrack(challenge?.track ?? CLASSIC_TRACK);
 }
 
-/** Grid positions inside a zone, centre first, then outward. */
-function offsetLattice(zone: PlacementZone): readonly (readonly [number, number])[] {
+const LATTICE_CACHE = new Map<string, readonly (readonly [number, number])[]>();
+
+/** Grid positions inside a block surface, centre first, then outward. */
+function offsetLattice(surface: PlacementSurface): readonly (readonly [number, number])[] {
+  const width = surface.maxX - surface.minX;
+  const depth = surface.maxZ - surface.minZ;
+  const cacheKey = `${width.toFixed(4)}:${depth.toFixed(4)}`;
+  const cached = LATTICE_CACHE.get(cacheKey);
+  if (cached) return cached;
   const steps = (half: number): number[] => {
     const out = [0];
     for (let step = 1; step * GRID_SIZE <= half; step += 1)
@@ -38,10 +48,14 @@ function offsetLattice(zone: PlacementZone): readonly (readonly [number, number]
     return out;
   };
   const lattice: [number, number][] = [];
-  for (const offsetX of steps((zone.maxX - zone.minX) / 2))
-    for (const offsetZ of steps((zone.maxZ - zone.minZ) / 2))
+  for (const offsetX of steps(width / 2))
+    for (const offsetZ of steps(depth / 2))
       lattice.push([offsetX, offsetZ]);
-  return lattice.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
+  const ordered = lattice.sort(
+    (a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]),
+  );
+  LATTICE_CACHE.set(cacheKey, ordered);
+  return ordered;
 }
 
 /**
@@ -54,26 +68,43 @@ function offsetLattice(zone: PlacementZone): readonly (readonly [number, number]
  * game kept offering traps it could not place and the choice panel became a
  * dead end. Everything that needs to know "does this fit" calls this.
  *
- * Untouched zones come first so a chain spreads down the course before it
- * starts stacking, which is also the order the old centre-only search
- * produced. The offsets are what make a maxOccupants=2 zone reachable: two
- * traps at one centre are zero apart and always overlap.
+ * Untouched blocks come first so a chain spreads down the course before it
+ * starts filling the open space on an earlier one. The visible block surfaces
+ * are deliberately the only search space: authored placement pads remain
+ * readable for old links, but choosing a new trap must not silently put it on
+ * a retired pad that the player cannot see or grab.
  */
 export function firstLegalPlacement(
   track: BuiltTrack,
   type: TrapType,
   existing: readonly TrapInstance[],
 ): TrapPlacementInput | null {
-  const usable = track.zones.filter((zone) => zone.allowedTypes.includes(type));
+  const usable = placementSurfaces(track);
   for (const emptyOnly of [true, false]) {
-    for (const zone of usable) {
-      const occupants = existing.filter((trap) => trap.zoneId === zone.id).length;
-      if (occupants >= zone.maxOccupants) continue;
-      if (emptyOnly !== (occupants === 0)) continue;
-      for (const [offsetX, offsetZ] of offsetLattice(zone)) {
+    const candidates = usable.flatMap((surface) => {
+      const occupants = existing.filter(
+        (trap) =>
+          trap.position[0] >= surface.minX &&
+          trap.position[0] <= surface.maxX &&
+          trap.position[2] >= surface.minZ &&
+          trap.position[2] <= surface.maxZ,
+      ).length;
+      return emptyOnly === (occupants === 0)
+        ? [{ surface, offsets: offsetLattice(surface) }]
+        : [];
+    });
+    const widestLattice = Math.max(0, ...candidates.map(({ offsets }) => offsets.length));
+    // Try every untouched block's centre before walking toward any edge. This
+    // prevents the spawn block from winning with a technically legal corner
+    // placement while an open, centered runway sits immediately after it.
+    for (let offsetIndex = 0; offsetIndex < widestLattice; offsetIndex += 1) {
+      for (const { surface, offsets } of candidates) {
+        const offset = offsets[offsetIndex];
+        if (!offset) continue;
+        const [offsetX, offsetZ] = offset;
         const candidate: TrapPlacementInput = {
           type,
-          zoneId: zone.id,
+          zoneId: surface.id,
           offsetX,
           offsetZ,
           rotationQuarterTurns: DEFAULT_ROTATION_QUARTER_TURNS,

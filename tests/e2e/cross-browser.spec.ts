@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { cleanKeyboardCourseUrl } from "./fixtures/shared-course";
 
 test("desktop browser WebGL gameplay can clear the clean course", async ({
   page,
@@ -10,8 +11,11 @@ test("desktop browser WebGL gameplay can clear the clean course", async ({
     if (message.type() === "error") runtimeErrors.push(message.text());
   });
 
-  await page.goto("/");
-  await page.getByRole("button", { name: /start a fresh chain/i }).click();
+  // Random clean rooms may bend or branch, so holding W is not a valid driver
+  // for them. This self-contained clean room is deterministic but still runs
+  // through the production link importer, composed geometry, controller,
+  // Rapier simulation, jump edges, and finish sensor in every browser.
+  await page.goto(cleanKeyboardCourseUrl());
   const start = page.getByRole("button", { name: /beat it/i });
   await expect(start).toBeEnabled({ timeout: 60_000 });
   await start.click();

@@ -408,7 +408,7 @@ export function PortalsApp() {
   }, [copyText, settings.avatar]);
   const registerBuiltRoom = useCallback(async (
     runtime: { challenge: ChallengeDTO; track: BuiltTrack },
-    name: string,
+    details: { title: string },
   ): Promise<string | void> => {
     await repository.importChallenge?.(runtime.challenge, runtime.track);
     const session = await mapSessionReady.current;
@@ -417,11 +417,11 @@ export function PortalsApp() {
       challenge: runtime.challenge,
       track: runtime.track,
       avatar: settings.avatar,
-      title: name,
+      title: details.title,
     });
     return outcome === "sent"
-      ? `Published “${name}” to this device and everyone in this Portals session.`
-      : `Published “${name}” locally. Its code is too large for the Portals session relay.`;
+      ? `Published “${details.title}” to this device and everyone in this Portals session.`
+      : `Published “${details.title}” locally. Its code is too large for the Portals session relay.`;
   }, [repository, settings.avatar]);
   useEffect(() => {
     AudioManager.setMuted(settings.muted);
@@ -1264,7 +1264,7 @@ export function PortalsApp() {
             setRandomRoomSeed(null);
             void fail(outcome);
           }}
-          onPublish={(runtime, name) => registerBuiltRoom(runtime, name)}
+          onPublish={(runtime, details) => registerBuiltRoom(runtime, details)}
           onShare={(runtime, format) => copyBuiltRoom(runtime, format)}
           onClose={() => {
             setEditorOpen(false);

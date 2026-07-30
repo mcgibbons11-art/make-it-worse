@@ -169,14 +169,14 @@ export class DemoRepository implements GameRepository {
       "rotating_toilet",
     ];
     types.forEach((type, index) => {
-      // firstLegalPlacement takes the first zone that fits, so three traps in a
-      // row would all land at the top of the course. Rotating the zone list
+      // firstLegalPlacement takes the first block that fits, so three traps in a
+      // row would all land at the top of the course. Rotating the block list
       // starts each search a quarter, half and three-quarters of the way along,
-      // which spreads them without duplicating the search itself. The zones are
+      // which spreads them without duplicating the search itself. The blocks are
       // the real track's, so the validation below agrees with it.
-      const from = Math.floor((built.zones.length * (index + 1)) / 4);
+      const from = Math.floor((built.pieces.length * (index + 1)) / 4);
       const placement = firstLegalPlacement(
-        { ...built, zones: [...built.zones.slice(from), ...built.zones.slice(0, from)] },
+        { ...built, pieces: [...built.pieces.slice(from), ...built.pieces.slice(0, from)] },
         type,
         traps,
       );

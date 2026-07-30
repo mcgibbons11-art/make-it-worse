@@ -177,15 +177,19 @@ export function PlacementZones({
               {refusal ?? `${traps.length} placed · drop it anywhere on the floor`}
             </span>
           </Html>
-          {process.env.NEXT_PUBLIC_E2E_TEST_MODE === "1" && (
-            <Html position={[0, 0.04, 0]} center style={{ pointerEvents: "none" }}>
-              <span
-                data-testid="selected-zone-anchor"
-                style={{ display: "block", width: 2, height: 2, opacity: 0 }}
-              />
-            </Html>
-          )}
         </group>
+      )}
+      {held && process.env.NEXT_PUBLIC_E2E_TEST_MODE === "1" && (
+        <Html
+          position={[held[0], held[1] + 0.095, held[2]]}
+          center
+          style={{ pointerEvents: "none" }}
+        >
+          <span
+            data-testid="selected-zone-anchor"
+            style={{ display: "block", width: 2, height: 2, opacity: 0 }}
+          />
+        </Html>
       )}
     </>
   );

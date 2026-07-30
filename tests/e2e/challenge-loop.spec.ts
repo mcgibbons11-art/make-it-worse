@@ -170,7 +170,10 @@ test("complete viral loop publishes exactly one additional trap", async ({
   const startY = zoneAnchor!.y + zoneAnchor!.height / 2;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(startX + 10, startY, { steps: 5 });
+  // Ten CSS pixels is less than half of a 0.25u placement cell at this camera
+  // distance, so snapping correctly left the stored offset unchanged. Move a
+  // full visible cell while the centered runway still leaves ample clearance.
+  await page.mouse.move(startX + 40, startY, { steps: 8 });
   await page.mouse.up();
   await expect
     .poll(() =>

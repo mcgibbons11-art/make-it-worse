@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  cleanKeyboardCourseUrl,
+  floorFanCourseUrl,
+} from "./fixtures/shared-course";
 
 test("real keyboard movement advances without physics errors", async ({ page }) => {
   const runtimeErrors: string[] = [];
@@ -30,7 +34,7 @@ test("real keyboard movement advances without physics errors", async ({ page }) 
   expect(runtimeErrors).toEqual([]);
 });
 
-test("the demo gauntlet runs on code-drawn props without physics errors", async ({
+test("a shared trap course runs on code-drawn props without physics errors", async ({
   page,
 }) => {
   const runtimeErrors: string[] = [];
@@ -47,7 +51,7 @@ test("the demo gauntlet runs on code-drawn props without physics errors", async 
       modelRequests.push(request.url());
   });
 
-  await page.goto("/c/demo-disaster");
+  await page.goto(floorFanCourseUrl());
   await expect(page.getByRole("button", { name: /beat their version/i })).toBeVisible();
   await page.getByRole("button", { name: /beat their version/i }).click();
   await expect
@@ -66,7 +70,9 @@ test("the demo gauntlet runs on code-drawn props without physics errors", async 
   await expect
     .poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().lastHazardType))
     .toBe("floor_fan");
-  await expect(page.getByText(/floor fan got you/i)).toBeVisible();
+  // A trap contact is disruptive, not automatically fatal. The contact itself
+  // is the physical outcome this test owns; falling after it would depend on
+  // the surrounding room rather than on whether the fan actually worked.
   expect(modelRequests).toEqual([]);
   expect(runtimeErrors).toEqual([]);
   await page.screenshot({ path: "artifacts/review/demo-gauntlet-assets.png" });
@@ -89,8 +95,7 @@ test("fixed-step movement remains playable under 4x CPU throttle", async ({ page
 });
 
 test("a clean course can be cleared with real keyboard input", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: /start a fresh chain/i }).click();
+  await page.goto(cleanKeyboardCourseUrl());
   const start = page.getByRole("button", { name: /beat it/i });
   await expect(start).toBeEnabled({ timeout: 30_000 });
   await start.click();

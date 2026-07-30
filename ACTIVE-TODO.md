@@ -40,7 +40,16 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [x] Browser-test publish → local trending → link recipient and raw-code recipient.
   - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
   - [ ] Test same-room delivery inside a processed Portals multiplayer session.
-- [ ] Define and implement the full custom-built-game sharing path: map ownership and versions, publish/update flow, Portals SDK boundaries, required backend/storage, trending and browse ranking, recipient loading, moderation, payload/size limits, and end-to-end playtesting.
+- [ ] Define and implement the full custom-built-game sharing path.
+  - [x] Document the Portals SDK boundary, same-session message path, required global backend, data model, ranking approach, and release test matrix in `CUSTOM-GAME-SHARING.md`.
+  - [x] Ship immutable self-contained map links/codes, recipient import, local persistence, child-round inheritance, and local Trending registration.
+  - [ ] Add stable map ownership plus immutable version records, publish/update history, titles/descriptions, visibility, and rollback.
+  - [ ] Implement the approved shared storage/API for cross-player publishing and loading; never label per-device data global.
+  - [ ] Build the global browse experience: pagination, search/filtering, creator attribution, version compatibility, and recipient loading/failure recovery.
+  - [ ] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
+  - [ ] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
+  - [ ] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
+  - [ ] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, same-room late join, child rounds, and backend rollback end to end.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [ ] Continue builder usability testing for vertical layouts, jump warnings, Test mode, colors, and all runtime assets.
 
@@ -58,7 +67,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Menu presentation
 
-- [ ] Redesign the main-menu clouds to be fluffy, puffy, layered, and gently animated like the supplied start-screen reference.
+- [x] Redesign the main-menu clouds to be fluffy, puffy, layered, and gently animated like the supplied start-screen reference.
 - [x] Restore and broadly audit every main-menu emoji/icon for missing assets, broken paths, and text-encoding corruption.
 
 ## Completed recently

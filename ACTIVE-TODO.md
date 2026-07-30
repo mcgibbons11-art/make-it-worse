@@ -54,7 +54,8 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [x] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
   - [x] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
   - [x] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
-  - [ ] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, same-room late join, child rounds, and backend rollback end to end.
+  - [x] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, and two child rounds locally end to end.
+  - [ ] Test same-room late join in a processed Portals session and execute `pnpm verify:custom-maps` against the real backend to prove reporting, moderation, visibility, immutable versions, stale-write rejection, and rollback.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [x] Test builder vertical layouts, rotated jump footprints, conservative jump warnings, real-game Test mode, platform colors, trap base colors, overlap-safe dragging, and all 55 runtime trap assets.
 

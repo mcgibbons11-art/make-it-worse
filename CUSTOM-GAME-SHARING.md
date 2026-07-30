@@ -79,3 +79,17 @@ That ranking is now implemented with unique per-player/version events, a five-im
 Current verification: unit tests cover malformed/oversized messages, late-join state, broadcast announcements, request/response, API validation, pagination cursors, immutable-version RPC routing, ranking weights/decay, visibility/security SQL, browse/play UI, owner rollback, and reporting. An end-to-end repository test covers two different player databases, browser restart, two complete child rounds, old-link immutability, corruption, and the payload ceiling. Browser production smoke covers builder publishing, all visibility choices, copied authored-room links, reload into the 3D game, and the honest no-backend fallback. A two-browser SDK-host simulation covers publish to session state and late-join import into Trending.
 
 Two release gates require external state that is not present in this workspace: apply migration 0021 to an approved Supabase project and exercise the API against that real database; upload the static bundle to a processed Portals preview and open two players in one real session. Portals cannot use the Supabase browser itself unless Portals approves that network path, so the static edition continues to use session relay plus self-contained codes.
+
+### Real Supabase release command
+
+Once the deployment and two test users exist, make the second user a moderator in `public.profiles`, provide short-lived ordinary user access tokens, and run:
+
+```powershell
+$env:CUSTOM_MAP_TEST_BASE_URL='https://your-deployment.example'
+$env:CUSTOM_MAP_TEST_OWNER_TOKEN='<owner access token>'
+$env:CUSTOM_MAP_TEST_PLAYER_TOKEN='<different player access token>'
+$env:CUSTOM_MAP_TEST_MODERATOR_TOKEN='<player/moderator access token>'
+pnpm verify:custom-maps
+```
+
+The command never accepts or needs the service-role key. It creates one uniquely named test map, verifies publish replay, Trending search, exact recipient loading, unique events, reporting, a second immutable version, stale-write conflict, old-version loading, rollback, unlisted/private access, moderator quarantine/restore, and owner-only browsing. It leaves the synthetic map private so it cannot pollute Trending while preserving the audit trail.

@@ -58,6 +58,10 @@ pnpm --filter @make-it-worse/portals build
 pnpm verify:portals
 ```
 
+`pnpm verify:custom-maps` is the real deployed-backend matrix. It intentionally
+requires two different ordinary Supabase user tokens and a moderator token; see
+`CUSTOM-GAME-SHARING.md` for the environment variables and exact coverage.
+
 ## Supabase production setup
 
 1. Create a Supabase project and enable anonymous sign-ins.

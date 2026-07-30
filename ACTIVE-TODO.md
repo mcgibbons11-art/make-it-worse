@@ -41,6 +41,10 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [ ] Cut, normalize, resample, and integrate the remaining supplied sound effects.
 - [ ] Continue using img2threejs for every new 3D asset, with generated reference images where useful.
 
+## Menu presentation
+
+- [ ] Redesign the main-menu clouds to be fluffy, puffy, layered, and gently animated like the supplied start-screen reference.
+
 ## Completed recently
 
 - [x] Add a one-button opening splash and clouds to the main menu.

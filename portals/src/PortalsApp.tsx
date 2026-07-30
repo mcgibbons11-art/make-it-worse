@@ -1,4 +1,5 @@
 import {
+  Component,
   lazy,
   Suspense,
   useCallback,
@@ -6,6 +7,8 @@ import {
   useMemo,
   useRef,
   useState,
+  type ErrorInfo,
+  type ReactNode,
 } from "react";
 import { TrapIcon } from "@/components/icons/TrapIcon";
 import { CoachHint, DeathNote, RunProgressNote, TrapDetailsRow } from "@/components/hud/Coach";
@@ -86,6 +89,36 @@ const RoomBuilder = lazy(() =>
   })),
 );
 const MENU_ICON_BASE = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/menu-icons/`;
+
+class RunnerEditorBoundary extends Component<
+  { children: ReactNode; onRetry(): void; onClose(): void },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[runner-editor] render failed", error, info.componentStack);
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <main className="avatar-wardrobe-backdrop modal-backdrop">
+        <section className="panel result-panel" role="alert">
+          <div className="impact-stamp">PREVIEW RESET</div>
+          <h1>Restart the runner builder</h1>
+          <p>The editor hit a graphics error. Your saved runner is untouched.</p>
+          <button className="button primary" onClick={this.props.onRetry}>Reload runner builder</button>
+          <button className="text-button" onClick={this.props.onClose}>Back to menu</button>
+        </section>
+      </main>
+    );
+  }
+}
 function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "leaderboard" | "runner" | "settings" }) {
   return <img className="portals-menu-icon" src={`${MENU_ICON_BASE}${name}.png`} alt="" aria-hidden="true" />;
 }
@@ -244,6 +277,7 @@ export function PortalsApp() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
+  const [wardrobeSerial, setWardrobeSerial] = useState(0);
   const [apartmentOpen, setApartmentOpen] = useState(false);
   const [showStartSplash, setShowStartSplash] = useState(true);
   // The name the game hands you rides on every trap you add and into every
@@ -1034,15 +1068,21 @@ export function PortalsApp() {
     );
   if (wardrobeOpen)
     return (
-      <WardrobePanel
-        avatar={settings.avatar ?? null}
-        avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
-        onSave={(config) => {
-          settings.setAvatar(config);
-          setWardrobeOpen(false);
-        }}
+      <RunnerEditorBoundary
+        key={wardrobeSerial}
+        onRetry={() => setWardrobeSerial((value) => value + 1)}
         onClose={() => setWardrobeOpen(false)}
-      />
+      >
+        <WardrobePanel
+          avatar={settings.avatar ?? null}
+          avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+          onSave={(config) => {
+            settings.setAvatar(config);
+            setWardrobeOpen(false);
+          }}
+          onClose={() => setWardrobeOpen(false)}
+        />
+      </RunnerEditorBoundary>
     );
   if (showStartSplash && !challenge)
     return (

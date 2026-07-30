@@ -133,7 +133,7 @@ export function WardrobePanel({
   const colorKey = slot.colorKey;
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop avatar-wardrobe-backdrop">
       <section
         className="panel avatar-panel"
         // The panel's implicit grid row is auto-sized, so it grows to the full

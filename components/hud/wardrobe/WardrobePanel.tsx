@@ -142,11 +142,14 @@ function ColorRow({
 export function WardrobePanel({
   avatar,
   avatarSeed = 1,
+  previewEnabled = true,
   onSave,
   onClose,
 }: {
   avatar: AvatarConfig | null;
   avatarSeed?: number;
+  /** Graphics-safe fallback used by embedded hosts that reject preview setup. */
+  previewEnabled?: boolean;
   onSave: (config: AvatarConfig) => void;
   onClose: () => void;
 }) {
@@ -161,17 +164,19 @@ export function WardrobePanel({
     // Portals may have just unmounted the gameplay canvas. Give its WebGL
     // context a beat to return to the browser before asking for the preview's
     // context; embedded Chromium is much stricter about simultaneous contexts.
-    const previewTimer = window.setTimeout(() => setPreviewReady(true), 180);
+    const previewTimer = previewEnabled
+      ? window.setTimeout(() => setPreviewReady(true), 180)
+      : null;
     firstControl.current?.focus();
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", key);
     return () => {
-      window.clearTimeout(previewTimer);
+      if (previewTimer !== null) window.clearTimeout(previewTimer);
       window.removeEventListener("keydown", key);
     };
-  }, [onClose]);
+  }, [onClose, previewEnabled]);
 
 
   const chooseBody = useCallback((body: AvatarColorId) => {
@@ -200,13 +205,21 @@ export function WardrobePanel({
         {/* Stood on the exact deck colour that hides runners best, so the
             measured ratio below it is something you can also just look at. */}
         <div className="avatar-stage" style={{ background: bodyReading.worstDeck }}>
-          <RunnerPreviewBoundary>
-            {previewReady ? (
-              <RunnerStage avatar={draft} avatarSeed={avatarSeed} />
-            ) : (
-              <div className="avatar-preview-loading" role="status">Loading runner preview…</div>
-            )}
-          </RunnerPreviewBoundary>
+          {previewEnabled ? (
+            <RunnerPreviewBoundary>
+              {previewReady ? (
+                <RunnerStage avatar={draft} avatarSeed={avatarSeed} />
+              ) : (
+                <div className="avatar-preview-loading" role="status">Loading runner preview…</div>
+              )}
+            </RunnerPreviewBoundary>
+          ) : (
+            <div className="avatar-preview-safe" role="status">
+              <span aria-hidden="true">🏃</span>
+              <b>Graphics-safe runner editor</b>
+              <small>The 3D preview is unavailable here, but every outfit control still works.</small>
+            </div>
+          )}
           <small className="avatar-turn-hint">Drag the runner to turn them</small>
           <p className="avatar-reading">
             {ratioLabel(bodyReading.min)} against the palest floor

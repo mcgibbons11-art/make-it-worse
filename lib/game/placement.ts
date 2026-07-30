@@ -8,6 +8,31 @@ import type { PlacementZone, TrapInstance, TrapPlacementInput, PlacementValidati
 export const snapToGrid = (value:number):number => Math.round(value / GRID_SIZE) * GRID_SIZE;
 
 /**
+ * Offset retained when the player grabs the preview close to its centre.
+ *
+ * Using the trap's full gameplay radius as a pickup radius made large traps
+ * effectively cover an entire platform: clicking the middle still counted as
+ * grabbing the trap at the edge, so it refused to move under the cursor. The
+ * small bounded handle preserves natural drag pickup without stealing ordinary
+ * click-to-place gestures from the rest of the floor.
+ */
+export function placementGrabOffset(
+  held: readonly [number, number, number] | null,
+  pointerX: number,
+  pointerZ: number,
+  footprintRadius: number,
+): readonly [number, number] {
+  if (!held) return [0, 0];
+  const dx = held[0] - pointerX;
+  const dz = held[2] - pointerZ;
+  const handleRadius = Math.min(
+    0.45,
+    Math.max(0.25, Math.max(0, footprintRadius) * 0.35),
+  );
+  return Math.hypot(dx, dz) <= handleRadius ? [dx, dz] : [0, 0];
+}
+
+/**
  * Anywhere a trap may stand.
  *
  * Placement used to be limited to eight hand-drawn boxes, and all other ground

@@ -5,7 +5,7 @@
 // are the ones that were actually broken: what quitting to the menu leaves
 // behind, and whether a dialog holds the keyboard.
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { GamePhase } from "@/lib/game/types";
@@ -19,6 +19,7 @@ import {
 } from "@/portals/src/menu/shell-state";
 import {
   ControlsPanel,
+  MapCodePanel,
   Overlay,
   focusableWithin,
 } from "@/portals/src/menu/ShellPanels";
@@ -104,7 +105,7 @@ describe("what Escape does", () => {
   const base = { view: null as ShellView | null, editorOpen: false, phase: "playing" as GamePhase, hasOffer: false };
 
   it("closes the topmost shell surface before anything else", () => {
-    for (const view of ["menu", "settings", "controls", "confirm"] as const)
+    for (const view of ["menu", "settings", "controls", "trending", "map-code", "confirm"] as const)
       expect(escapeAction({ ...base, view })).toBe("close-view");
   });
 
@@ -187,6 +188,45 @@ describe("the controls reference", () => {
     const listed = CONTROLS.flatMap((row) => row.keys).join(" ");
     for (const key of ["W", "A", "S", "D", "Space", "E", "R", "M", "Esc"])
       expect(listed, key).toContain(key);
+  });
+});
+
+describe("map-code redemption", () => {
+  it("uses an in-game paste form instead of a blocked native prompt", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "portals/src/PortalsApp.tsx"),
+      "utf8",
+    );
+    expect(source).not.toContain("window.prompt");
+    expect(source).toContain('view === "map-code"');
+    expect(source).toContain("importSharedGame(mapCodeDraft)");
+  });
+
+  it("submits the pasted code and provides a real back action", async () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const submit = vi.fn();
+    const back = vi.fn();
+    await act(async () => {
+      root.render(
+        createElement(MapCodePanel, {
+          value: "MIW-MAP-v1.example",
+          notice: "",
+          onChange: () => undefined,
+          onSubmit: submit,
+          onBack: back,
+        }),
+      );
+    });
+    await act(async () => {
+      host.querySelector("form")?.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true }),
+      );
+      (host.querySelector("button[type='button']") as HTMLButtonElement).click();
+    });
+    expect(submit).toHaveBeenCalledOnce();
+    expect(back).toHaveBeenCalledOnce();
+    await act(async () => root.unmount());
   });
 });
 

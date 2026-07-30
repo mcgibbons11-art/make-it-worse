@@ -85,6 +85,74 @@ export interface BuiltTrack {
   length: number;
 }
 
+/**
+ * Resolve an authored spawn onto the nearest safe point on real geometry.
+ *
+ * Builder endpoints remain freely placeable, but a stale save or shared code
+ * can put the marker a few pixels beyond a deck. Passing that coordinate
+ * straight to Rapier means the attempt is over before the player receives
+ * input. We preserve the authored point whenever it is supported, clamp small
+ * misses into a player-sized interior, and only fall back to another piece
+ * when there is no support under it at all.
+ */
+export function safeSpawnForTrack(track: BuiltTrack): Vec3Tuple {
+  if (track.pieces.length === 0) return track.spawn;
+  const [wantedX, wantedY, wantedZ] = track.spawn;
+  const inset = PLAYER.capsuleRadius + 0.12;
+  const standingOffset = Math.max(
+    1.25,
+    PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius + 0.12,
+  );
+  let best:
+    | {
+        point: Vec3Tuple;
+        horizontalDistance: number;
+        verticalDistance: number;
+        top: number;
+      }
+    | null = null;
+  for (const piece of track.pieces) {
+    const halfX = piece.size[0] / 2;
+    const halfZ = piece.size[2] / 2;
+    const safeHalfX = Math.max(0, halfX - inset);
+    const safeHalfZ = Math.max(0, halfZ - inset);
+    const x = Math.min(
+      piece.center[0] + safeHalfX,
+      Math.max(piece.center[0] - safeHalfX, wantedX),
+    );
+    const z = Math.min(
+      piece.center[2] + safeHalfZ,
+      Math.max(piece.center[2] - safeHalfZ, wantedZ),
+    );
+    const top = piece.center[1] + piece.size[1] / 2;
+    const point = [x, top + standingOffset, z] as const;
+    const candidate = {
+      point,
+      horizontalDistance: Math.hypot(wantedX - x, wantedZ - z),
+      verticalDistance: Math.abs(wantedY - point[1]),
+      top,
+    };
+    if (
+      !best ||
+      candidate.horizontalDistance < best.horizontalDistance - 1e-6 ||
+      (Math.abs(candidate.horizontalDistance - best.horizontalDistance) <= 1e-6 &&
+        (candidate.verticalDistance < best.verticalDistance - 1e-6 ||
+          (Math.abs(candidate.verticalDistance - best.verticalDistance) <= 1e-6 &&
+            candidate.top > best.top)))
+    ) {
+      best = candidate;
+    }
+  }
+  return best?.point ?? track.spawn;
+}
+
+/** The same track with its runtime spawn made safe; returns the input if unchanged. */
+export function withSafeSpawn(track: BuiltTrack): BuiltTrack {
+  const spawn = safeSpawnForTrack(track);
+  if (spawn.every((value, index) => value === track.spawn[index])) return track;
+  return { ...track, spawn };
+}
+
 /** Yaw whose forward (+Z) axis points from this room's spawn to its end gate. */
 export function trackFacingYaw(
   track: Pick<BuiltTrack, "spawn" | "exit">,

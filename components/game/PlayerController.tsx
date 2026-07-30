@@ -196,8 +196,10 @@ export const PlayerController = forwardRef<
       }
     };
     const up = (event: KeyboardEvent) => {
-      if (isInterfaceTarget(event.target)) return;
       const key = map[event.code];
+      // A release can only clear movement. It must be accepted even when a
+      // result/menu button has taken focus since keydown; ignoring that keyup
+      // is how W survived the old run and walked the next runner off spawn.
       if (key && key !== "x" && key !== "z")
         setKey(
           key as "forward" | "backward" | "left" | "right" | "jump" | "grab",
@@ -274,18 +276,10 @@ export const PlayerController = forwardRef<
         yaw: spawnYaw,
         stunned: false,
       };
-      // Drop a jump queued during the attempt that just ended, and keep the keys
-      // the player is physically holding.
-      //
-      // This used to call resetInput, which clears both. The window listeners
-      // never stop across a restart, so the held state was accurate and throwing
-      // it away left a player who restarts with W down motionless until the
-      // operating system's key repeat fired - half a second of a fresh attempt
-      // in which the runner ignores the key being held, which reads as the game
-      // being stuck rather than as the input having been cleared.
-      while (consumeJumpPress()) {
-        // Discarded on purpose: the press belongs to the previous attempt.
-      }
+      // Nothing from the previous attempt is valid input for this one. In
+      // particular, keyup can land on a newly focused result button and the old
+      // held direction would otherwise survive indefinitely.
+      resetInput();
       heldBody.current = null;
       return;
     }

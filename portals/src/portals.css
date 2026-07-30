@@ -396,6 +396,25 @@
   display: grid;
   gap: 12px;
 }
+.portals-code-field {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 12px;
+  text-align: left;
+  font-weight: 900;
+}
+.portals-code-field textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  padding: 14px;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: 700 0.82rem/1.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
 .leaderboard {
   margin: 18px 0;
   padding: 16px;

@@ -33,6 +33,7 @@ import {
 import {
   ConfirmDialog,
   ControlsPanel,
+  MapCodePanel,
   Overlay,
   SettingsMenu,
 } from "./menu/ShellPanels";
@@ -60,7 +61,7 @@ import type {
   TrapPlacementInput,
   TrapType,
 } from "@/lib/game/types";
-import { isInterfaceTarget } from "@/lib/game/input";
+import { isInterfaceTarget, resetInput } from "@/lib/game/input";
 import { useSettingsStore } from "@/stores/settings-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
@@ -315,6 +316,7 @@ export function PortalsApp() {
   const [guest, setGuest] = useState<GuestProfile | null>(null);
   const [trendingItems, setTrendingItems] = useState<TrendingMapItem[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
+  const [mapCodeDraft, setMapCodeDraft] = useState("");
   const [activePublishedVersionId, setActivePublishedVersionId] = useState<string | null>(null);
   // Shell surfaces stack: only the top one renders, so only one dialog is ever
   // mounted and only one focus trap is ever armed. Closing is a pop, which is
@@ -657,9 +659,13 @@ export function PortalsApp() {
       setNotice("That game could not be opened. Try another one.");
     }
   };
-  const importSharedGame = async () => {
-    const pasted = window.prompt("Paste a MAKE IT WORSE map code")?.trim();
-    if (!pasted) return;
+  const importSharedGame = async (rawCode: string) => {
+    const pasted = rawCode.trim();
+    if (!pasted) {
+      setNotice("Paste the complete map code first.");
+      return;
+    }
+    setNotice("");
     try {
       const urlText = pasted.split(/\s+/).find((part) => /^https?:\/\//i.test(part));
       let payload = pasted;
@@ -1060,10 +1066,15 @@ export function PortalsApp() {
   // interface, so leaving focus there swallowed WASD and Space for the rest of
   // the run.
   useEffect(() => {
+    // A key released while a result button owns focus never used to reach the
+    // movement listener, so its held bit survived into the next attempt. Clear
+    // the shared keyboard/touch snapshot at every run boundary. Starting from
+    // rest is preferable to silently walking off the spawn pad.
+    resetInput();
     if (phase !== "playing") return;
     if (document.activeElement instanceof HTMLElement)
       document.activeElement.blur();
-  }, [phase]);
+  }, [attemptSerial, phase]);
   // How the menu describes the run it is covering. Null on a cold start, which
   // is the only difference between the title screen and the in-run menu: the
   // same body renders in both, so neither can drift from the other.
@@ -1112,7 +1123,11 @@ export function PortalsApp() {
           className="button secondary"
           onClick={() =>
             guard(
-              () => void importSharedGame(),
+              () => {
+                setMapCodeDraft("");
+                setNotice("");
+                openView("map-code");
+              },
               {
                 title: "Leave this run?",
                 body: "Loading a map code replaces the run you are on. This run does not come back.",
@@ -1247,6 +1262,23 @@ export function PortalsApp() {
           </div>
           <p className="portals-notice" role="status" aria-live="polite">{notice}</p>
           <button className="button secondary" onClick={closeView}>Back</button>
+        </Overlay>
+      )}
+      {view === "map-code" && (
+        <Overlay
+          labelledBy="portals-map-code-title"
+          panelClassName="portals-map-code"
+        >
+          <MapCodePanel
+            value={mapCodeDraft}
+            notice={notice}
+            onChange={setMapCodeDraft}
+            onSubmit={() => void importSharedGame(mapCodeDraft)}
+            onBack={() => {
+              setNotice("");
+              closeView();
+            }}
+          />
         </Overlay>
       )}
       {view === "confirm" && pending && (

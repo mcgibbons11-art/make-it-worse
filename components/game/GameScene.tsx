@@ -12,7 +12,13 @@ import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
 import { GRID_SIZE } from "@/lib/game/constants";
 import { isInterfaceTarget, resetCameraYaw } from "@/lib/game/input";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
-import { CLASSIC_TRACK, buildTrack, trackFacingYaw, type BuiltTrack } from "@/lib/game/track";
+import {
+  CLASSIC_TRACK,
+  buildTrack,
+  trackFacingYaw,
+  withSafeSpawn,
+  type BuiltTrack,
+} from "@/lib/game/track";
 import { snapToGrid } from "@/lib/game/placement";
 import { PlayerVisual } from "./PlayerVisual";
 import { Lighting } from "./Lighting";
@@ -83,7 +89,7 @@ export function GameScene({
   const trapBodies = qaTrapBodiesRef ?? internalTrapBodies;
   const effects = useRef<EffectsHandle>(null);
   const track = useMemo(
-    () => trackOverride ?? buildTrack(challenge.track ?? CLASSIC_TRACK),
+    () => withSafeSpawn(trackOverride ?? buildTrack(challenge.track ?? CLASSIC_TRACK)),
     [challenge.track, trackOverride],
   );
   const spawnYaw = useMemo(() => trackFacingYaw(track), [track]);

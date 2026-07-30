@@ -4,6 +4,10 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
+- [x] Replace the blocked native prompt behind Use map code with an in-game paste panel that works inside the Portals iframe.
+- [x] Clear held keyboard/touch input at every run boundary so a new attempt can never inherit motion from the previous one.
+- [x] Resolve every runtime spawn onto safe supporting geometry so imported/authored maps cannot drop the runner straight into the void.
+- [x] Fix trap-placement picking so the cursor targets platform top faces and a click near a large trap does not pin it to a platform edge.
 - [x] Make Build Your Runner reliable in the user's actual playtest session; the editor and garment preview must both render and respond.
   - [x] Contain the graphics-safe preview so it cannot cover or block the wardrobe controls.
   - [x] Restore and verify the real dressed 3D character viewer with left-drag rotation in the Portals build.

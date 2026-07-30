@@ -3,7 +3,11 @@
 import { Html } from "@react-three/drei";
 import { useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
-import { placementSurfaces, type PlacementSurface } from "@/lib/game/placement";
+import {
+  placementGrabOffset,
+  placementSurfaces,
+  type PlacementSurface,
+} from "@/lib/game/placement";
 import type { BuiltTrack } from "@/lib/game/track";
 import type { TrapInstance } from "@/lib/game/types";
 
@@ -72,9 +76,13 @@ function SurfacePatch({
   const depth = surface.maxZ - surface.minZ;
   const x = (surface.minX + surface.maxX) / 2;
   const z = (surface.minZ + surface.maxZ) / 2;
+  // The visible deck wash tops out at groundY + 0.075. The interaction plane
+  // used to sit underneath it at +0.055, so the mouse struck the platform's
+  // top/side seam before it struck the placeable surface. Lift the patch clear
+  // of the artwork so the whole top face is one uninterrupted target.
   return (
     <group
-      position={[x, surface.groundY + 0.055, z]}
+      position={[x, surface.groundY + 0.105, z]}
       onPointerDown={(event) => {
         event.stopPropagation();
         onSelect(surface.id);
@@ -87,18 +95,16 @@ function SurfacePatch({
         // moved nothing - so the trap teleported on mousedown and every drag
         // began in a refused state. That is the first thing a player feels.
         //
-        // So a press that lands ON the trap records the gap between the cursor
-        // and the trap's base and preserves it for the whole drag, which is what
-        // "picking something up" means. A press on empty floor still places the
-        // trap there, because that gesture is a click-to-place and moving to
-        // the click is exactly what it asks for.
-        if (held) {
-          const dx = held[0] - event.point.x;
-          const dz = held[2] - event.point.z;
-          grabRef.current = Math.hypot(dx, dz) <= grabRadius ? [dx, dz] : [0, 0];
-        } else {
-          grabRef.current = [0, 0];
-        }
+        // So a press very near the trap's centre records the gap between the
+        // cursor and its base. The pickup handle is deliberately much smaller
+        // than a large trap's hazard radius, leaving the rest of the platform
+        // available for direct click-to-place.
+        grabRef.current = placementGrabOffset(
+          held,
+          event.point.x,
+          event.point.z,
+          grabRadius,
+        );
         onMove(surface.id, event.point.x + grabRef.current[0], event.point.z + grabRef.current[1]);
       }}
       onPointerMove={(event) => {

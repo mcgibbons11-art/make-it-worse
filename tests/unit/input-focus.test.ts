@@ -67,4 +67,25 @@ describe("keyboard survives a mouse-started run", () => {
     expect(source).toContain('runPanel === "playing" && <MobileControls />');
     expect(source).toContain("touchControls={touchControls}");
   });
+
+  it("never lets a focused result button swallow movement key releases", () => {
+    const source = read("components/game/PlayerController.tsx");
+    const releaseHandler = source.slice(
+      source.indexOf("const up = (event: KeyboardEvent)"),
+      source.indexOf('window.addEventListener("keydown", down)'),
+    );
+    expect(releaseHandler).not.toContain("isInterfaceTarget");
+    expect(releaseHandler).toContain("setKey(");
+  });
+
+  it("clears the shared movement snapshot at every new attempt in both shells", () => {
+    for (const filePath of [
+      "portals/src/PortalsApp.tsx",
+      "components/game/GameClient.tsx",
+    ]) {
+      const source = read(filePath);
+      expect(source, filePath).toContain("resetInput();");
+      expect(source, filePath).toMatch(/attemptSerial[^\]]*phase|phase[^\]]*attemptSerial/);
+    }
+  });
 });

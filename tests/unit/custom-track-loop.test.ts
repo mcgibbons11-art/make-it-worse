@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { buildTrack, isPlayableTrack } from "@/lib/game/track";
-import { validatePlacement, placementFromWorld } from "@/lib/game/placement";
+import {
+  placementFromWorld,
+  placementGrabOffset,
+  validatePlacement,
+} from "@/lib/game/placement";
 import {
   decodeChallengeLink,
   decodeChallengeRuntimeTrack,
@@ -14,6 +18,13 @@ import { firstLegalPlacement } from "@/lib/game/trap-choice";
 const SEGS = ["start","runway","stones","bridge","islands","convergence","ramp","finish"];
 
 describe("custom track loop", () => {
+  it("lets a floor click reposition a large trap instead of treating its whole hazard radius as a grab handle", () => {
+    expect(placementGrabOffset([1.5, 0, 0], 0, 0, 1.8)).toEqual([0, 0]);
+    const grabbed = placementGrabOffset([1.5, 0, 0], 1.3, 0, 1.8);
+    expect(grabbed[0]).toBeCloseTo(0.2);
+    expect(grabbed[1]).toBe(0);
+  });
+
   it("selects, validates, drags and shares on a composed course", () => {
     const track = buildTrack(SEGS);
     expect(isPlayableTrack(SEGS)).toBe(true);

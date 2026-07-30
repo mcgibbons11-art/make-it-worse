@@ -12,7 +12,7 @@ import {
 import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
 import { buildShareCopy } from "@/lib/game/share-copy";
-import { getInput, isInterfaceTarget } from "@/lib/game/input";
+import { getInput, isInterfaceTarget, resetInput } from "@/lib/game/input";
 import { generateShareCard } from "@/lib/game/share-card";
 import { RollingClipRecorder } from "@/lib/clip/RollingClipRecorder";
 import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
@@ -208,10 +208,14 @@ export default function GameClient({ slug }: { slug: string }) {
   // The Portals shell already carries this exact effect, added when the same
   // symptom appeared on resuming from pause. This edition never got it.
   useEffect(() => {
+    // Buttons and text fields can own keyup after a run ends. Clear the shared
+    // movement snapshot whenever the phase/attempt changes so that held motion
+    // from the old run cannot launch the next runner off its spawn platform.
+    resetInput();
     if (game.phase !== "playing") return;
     if (document.activeElement instanceof HTMLElement)
       document.activeElement.blur();
-  }, [game.phase]);
+  }, [game.attemptSerial, game.phase]);
   useEffect(() => {
     const visibility = () => {
       if (document.hidden && useGameStore.getState().phase === "playing") {

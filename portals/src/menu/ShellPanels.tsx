@@ -106,6 +106,67 @@ export function Overlay({
   );
 }
 
+/**
+ * Portals embeds games in a restricted frame where native prompt dialogs may
+ * be suppressed. Map codes therefore use an ordinary in-game form: it is
+ * focus trapped, pasteable, keyboard submit works, and errors stay beside the
+ * code instead of disappearing under the title screen.
+ */
+export function MapCodePanel({
+  value,
+  notice,
+  onChange,
+  onSubmit,
+  onBack,
+}: {
+  readonly value: string;
+  readonly notice: string;
+  readonly onChange: (value: string) => void;
+  readonly onSubmit: () => void;
+  readonly onBack: () => void;
+}) {
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit();
+      }}
+    >
+      <div className="eyebrow">PLAY A SHARED ROOM</div>
+      <h2 id="portals-map-code-title">Use map code</h2>
+      <p className="portals-lede">
+        Paste the complete code your friend copied. It contains the exact room,
+        traps, and runner they shared.
+      </p>
+      <label className="portals-code-field" htmlFor="portals-map-code-input">
+        Map code
+        <textarea
+          id="portals-map-code-input"
+          value={value}
+          rows={7}
+          maxLength={12_000}
+          spellCheck={false}
+          autoCapitalize="none"
+          autoCorrect="off"
+          placeholder="Paste the complete MAKE IT WORSE code here"
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </label>
+      <p className="portals-notice" role="status" aria-live="polite">
+        {notice}
+      </p>
+      <div className="portals-buttons">
+        <button className="button primary" type="submit" disabled={!value.trim()}>
+          Load this map
+        </button>
+        <button className="button secondary" type="button" onClick={onBack}>
+          Back
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function Toggle({
   id,
   label,

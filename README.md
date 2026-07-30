@@ -55,6 +55,7 @@ pnpm test
 pnpm test:e2e
 pnpm build
 pnpm --filter @make-it-worse/portals build
+pnpm verify:portals
 ```
 
 ## Supabase production setup
@@ -108,6 +109,10 @@ module script no browser executes, so the preview rendered blank). The built
 
 - game folder: `portals/dist`
 - entry file: `index.html`
+
+Choose the **Static** `portals/dist` directory in the source picker. Do not
+choose the Vite project or any `assets/reference/**/preview` directory. The
+reference pipeline is export-ignored and is not a deployable game bundle.
 
 Portals sync is manual. After changing game code: rebuild
 (`pnpm --filter @make-it-worse/portals build`), commit `portals/dist`, push,

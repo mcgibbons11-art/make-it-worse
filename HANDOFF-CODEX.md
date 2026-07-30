@@ -32,6 +32,12 @@ their status claims are now stale. This is the current boundary:
 - The remaining 37 Pixabay files are still absent (`CREDITS.json`: 30 filed,
   37 planned). They require real manual downloads and attribution; automation or
   invented provenance remains forbidden.
+- The four wearable references called out later (`jersey`, `poncho`, `hightop`,
+  and `sandal`) are already implemented in the wardrobe catalog and generated
+  model factory. The second-runner ghost is also already recorded, encoded,
+  stored, rendered, and exposed in settings. Those backlog bullets are stale.
+- The tracked `t01-title.jpeg` has been refreshed as the upload-ready featured
+  image. Uploading it is still an authenticated Portals dashboard action.
 - Portals dashboard folder/sync, mobile-preview, hosted SDK score round-trip, and
   featured-image checks still require the user's authenticated Portals browser.
 

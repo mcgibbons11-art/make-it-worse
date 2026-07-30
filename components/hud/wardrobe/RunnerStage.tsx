@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { dressRunner } from "@/components/game/PlayerVisual";
 import { TONE_EXPOSURE } from "@/components/game/render/tone";
@@ -36,6 +36,8 @@ export function RunnerStage({
   const frameRunner = useRef<(() => void) | null>(null);
   const dragging = useRef(false);
   const lastPointerX = useRef(0);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const element = canvas.current;
@@ -44,11 +46,15 @@ export function RunnerStage({
     try {
       engine = new THREE.WebGLRenderer({ canvas: element, antialias: true, alpha: true });
     } catch {
-      // No WebGL context: the stage stays empty rather than taking the picker
-      // down with it. Every control beside it still works, and a browser that
-      // cannot make a context cannot run the game the runner is for either.
+      setPreviewFailed(true);
       return;
     }
+    setPreviewFailed(false);
+    const contextLost = (event: Event) => {
+      event.preventDefault();
+      setPreviewFailed(true);
+    };
+    element.addEventListener("webglcontextlost", contextLost);
     engine.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     engine.toneMapping = THREE.ACESFilmicToneMapping;
     engine.toneMappingExposure = TONE_EXPOSURE;
@@ -114,47 +120,63 @@ export function RunnerStage({
       pivot.current = null;
       camera.current = null;
       frameRunner.current = null;
+      element.removeEventListener("webglcontextlost", contextLost);
       engine.dispose();
     };
-  }, []);
+  }, [retryKey]);
 
   useEffect(() => {
     const turntable = pivot.current;
     if (!turntable) return;
-    const model = dressRunner(avatar, avatarSeed);
+    let model: THREE.Group;
+    try {
+      model = dressRunner(avatar, avatarSeed);
+    } catch {
+      setPreviewFailed(true);
+      return;
+    }
     turntable.add(model);
     frameRunner.current?.();
     return () => {
       turntable.remove(model);
     };
-  }, [avatar, avatarSeed]);
+  }, [avatar, avatarSeed, retryKey]);
 
   return (
-    <canvas
-      ref={canvas}
-      className="avatar-figure"
-      width={300}
-      height={400}
-      aria-label="Runner preview. Drag left or right to rotate."
-      onPointerDown={(event) => {
-        if (event.pointerType === "mouse" && event.button !== 0) return;
-        dragging.current = true;
-        lastPointerX.current = event.clientX;
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        if (!dragging.current || !pivot.current) return;
-        pivot.current.rotation.y += (event.clientX - lastPointerX.current) * 0.012;
-        lastPointerX.current = event.clientX;
-        frameRunner.current?.();
-      }}
-      onPointerUp={(event) => {
-        dragging.current = false;
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }}
-      onPointerCancel={() => {
-        dragging.current = false;
-      }}
-    />
+    <div className="avatar-figure-shell">
+      <canvas
+        ref={canvas}
+        className="avatar-figure"
+        width={300}
+        height={400}
+        aria-label="Runner preview. Drag left or right to rotate."
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          dragging.current = true;
+          lastPointerX.current = event.clientX;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (!dragging.current || !pivot.current) return;
+          pivot.current.rotation.y += (event.clientX - lastPointerX.current) * 0.012;
+          lastPointerX.current = event.clientX;
+          frameRunner.current?.();
+        }}
+        onPointerUp={(event) => {
+          dragging.current = false;
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }}
+        onPointerCancel={() => {
+          dragging.current = false;
+        }}
+      />
+      {previewFailed && (
+        <div className="avatar-preview-fallback" role="status">
+          <span aria-hidden="true">🏃</span>
+          <b>Runner preview needs a restart.</b>
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)}>Retry preview</button>
+        </div>
+      )}
+    </div>
   );
 }

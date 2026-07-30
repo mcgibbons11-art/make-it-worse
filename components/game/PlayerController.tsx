@@ -91,6 +91,8 @@ function surfaceUnder(
 }
 export interface PlayerControllerProps {
   active: boolean;
+  /** Free-roam spaces share movement but do not have a timer or finish gate. */
+  freeRoam?: boolean;
   attemptSerial: number;
   /** Composed course. Omitted means the original fixed level. */
   track?: BuiltTrack;
@@ -115,6 +117,7 @@ export const PlayerController = forwardRef<
 >(function PlayerController(
   {
     active,
+    freeRoam = false,
     attemptSerial,
     track,
     visualVisible,
@@ -526,7 +529,7 @@ export const PlayerController = forwardRef<
       });
       lastSample.current = now;
     }
-    if (
+    if (!freeRoam &&
       Math.hypot(position.x - exit[0], position.z - exit[2]) < 1.25 &&
       Math.abs(position.y - exit[1]) < 2
     ) {
@@ -537,7 +540,7 @@ export const PlayerController = forwardRef<
       rigidBody.setEnabledRotations(true, true, true, true);
       rigidBody.applyTorqueImpulse({ x: 2.8, y: 0.8, z: -3.2 }, true);
       onFail("fell");
-    } else if (now - startedAt >= ATTEMPT_LIMIT_MS) {
+    } else if (!freeRoam && now - startedAt >= ATTEMPT_LIMIT_MS) {
       finalized.current = true;
       onFail("timeout");
     }

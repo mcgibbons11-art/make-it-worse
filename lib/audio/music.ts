@@ -1,5 +1,9 @@
 import type { GamePhase } from "@/lib/game/types";
 
+const MENU_TRACK_URL = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}audio/menu-music.mp3`;
+/** The recording is full-band, while the generated score's layers peak near 0.02. */
+const MENU_TRACK_TRIM = 0.07;
+
 /**
  * The score, generated rather than recorded.
  *
@@ -186,6 +190,10 @@ export class MusicEngine {
   private stepIndex = 0;
   private nextStepTime = 0;
   private volume = 1;
+  private menuBuffer: AudioBuffer | null = null;
+  private menuSource: AudioBufferSourceNode | null = null;
+  private menuLoading: Promise<void> | null = null;
+  private menuGain: GainNode;
 
   constructor(
     private readonly context: AudioContext,
@@ -202,6 +210,9 @@ export class MusicEngine {
     this.level.gain.value = 0;
     this.bus.connect(this.transition).connect(this.ducker).connect(this.level);
     this.level.connect(destination);
+    this.menuGain = context.createGain();
+    this.menuGain.gain.value = MENU_TRACK_TRIM;
+    this.menuGain.connect(this.bus);
     // A dotted-eighth feedback delay under the bells. It is the only thing in
     // the graph doing the job a room would do.
     this.delay = context.createDelay(1);
@@ -259,6 +270,7 @@ export class MusicEngine {
     this.timer = null;
     this.scene = "silent";
     this.pending = null;
+    this.stopMenuTrack();
     this.level.gain.setTargetAtTime(0, this.context.currentTime, 0.06);
   }
 
@@ -270,6 +282,9 @@ export class MusicEngine {
     const now = this.context.currentTime;
     if (this.pending !== null && this.pending !== this.scene) this.switch(now);
     if (this.scene === "silent") return;
+    // The supplied recording replaces the old generated menu arrangement.
+    // Other states keep the reactive score and its pressure changes.
+    if (this.scene === "menu" && this.menuSource) return;
     const scene = SCENES[this.scene];
     const stepSeconds = 60 / scene.bpm / 4;
     this.delay.delayTime.value = Math.min(1, stepSeconds * 3);
@@ -290,6 +305,7 @@ export class MusicEngine {
   private switch(now: number): void {
     const next = this.pending ?? "silent";
     this.pending = null;
+    if (this.scene === "menu" && next !== "menu") this.stopMenuTrack();
     this.scene = next;
     if (next === "silent") {
       this.stop();
@@ -305,6 +321,49 @@ export class MusicEngine {
     dip.linearRampToValueAtTime(0, now + SWITCH_DIP_SECONDS);
     dip.linearRampToValueAtTime(1, now + SWITCH_DIP_SECONDS + SWITCH_RISE_SECONDS);
     this.level.gain.setTargetAtTime(this.volume, now, 0.05);
+    if (next === "menu") void this.startMenuTrack();
+  }
+
+  private async startMenuTrack(): Promise<void> {
+    // The deterministic audio-graph tests run without a browser or a served
+    // public directory; there the generated menu remains the offline fallback.
+    if (typeof window === "undefined") return;
+    if (this.menuSource) return;
+    if (!this.menuBuffer) {
+      if (!this.menuLoading) {
+        this.menuLoading = (async () => {
+          try {
+            const response = await fetch(MENU_TRACK_URL);
+            if (!response.ok) throw new Error(`menu music returned ${response.status}`);
+            this.menuBuffer = await this.context.decodeAudioData(await response.arrayBuffer());
+          } catch (error) {
+            console.warn("[audio] supplied menu music unavailable", error);
+          } finally {
+            this.menuLoading = null;
+          }
+        })();
+      }
+      await this.menuLoading;
+    }
+    if (this.scene !== "menu" || !this.menuBuffer || this.menuSource) return;
+    const source = this.context.createBufferSource();
+    source.buffer = this.menuBuffer;
+    source.loop = true;
+    source.connect(this.menuGain);
+    source.start();
+    this.menuSource = source;
+  }
+
+  private stopMenuTrack(): void {
+    const source = this.menuSource;
+    this.menuSource = null;
+    if (!source) return;
+    try {
+      source.stop();
+    } catch {
+      // Already ended while the audio context was being interrupted.
+    }
+    source.disconnect();
   }
 
   private step(

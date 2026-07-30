@@ -1,6 +1,5 @@
 "use client";
-import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode, type RefObject } from "react";
-import * as THREE from "three";
+import { useEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
 import type { RapierRigidBody } from "@react-three/rapier";
 import type {
   ChallengeDTO,
@@ -48,22 +47,6 @@ interface Props {
   trackOverride?: BuiltTrack;
 }
 
-function RuntimeTrapColor({ color, children }: { color: unknown; children: ReactNode }) {
-  const group = useRef<THREE.Group>(null);
-  useLayoutEffect(() => {
-    if (typeof color !== "string") return;
-    group.current?.traverse((node) => {
-      if (!(node instanceof THREE.Mesh)) return;
-      const source = Array.isArray(node.material) ? node.material : [node.material];
-      const next = source.map((entry) => {
-        if (!(entry instanceof THREE.MeshStandardMaterial)) return entry;
-        const clone = entry.clone(); clone.color.set(color); return clone;
-      });
-      node.material = Array.isArray(node.material) ? next : next[0]!;
-    });
-  }, [color]);
-  return <group ref={group}>{children}</group>;
-}
 export function GameScene({
   challenge,
   phase,
@@ -193,8 +176,8 @@ export function GameScene({
       <LevelGeometry pieces={track.pieces} />
       <ExitDoor showLabel={phase === "playing"} position={track.exit} />
       {challenge.traps.map((trap) => (
-        <RuntimeTrapColor key={`${attemptSerial}-${trap.id}`} color={trap.params.builderColor}>
           <TrapRenderer
+            key={`${attemptSerial}-${trap.id}`}
             trap={trap}
             player={player}
             soapUntilRef={soapUntilRef}
@@ -231,7 +214,6 @@ export function GameScene({
             onHazard(hazard);
             }}
           />
-        </RuntimeTrapColor>
       ))}
       {attemptSerial > 0 ? (
         <>

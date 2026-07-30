@@ -417,7 +417,7 @@ interface RoomBuilderProps {
   onCleanSample?(sample: DecodedGhostSample): void;
   onCleanProgress?(value: number): void;
   onCleanHazard?(contact: HazardContact): void;
-  onPublish?(runtime: RoomBuilderRuntime, name: string): Promise<void> | void;
+  onPublish?(runtime: RoomBuilderRuntime, name: string): Promise<string | void> | string | void;
   onShare?(runtime: RoomBuilderRuntime, format: "link" | "code"): Promise<void> | void;
 }
 
@@ -494,8 +494,8 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     const next = [map, ...published];
     setPublished(next);
     window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(next));
-    await onPublish?.(runtime, name);
-    setNotice(`Published “${name}” to this device's trending browser.`);
+    const sharedNotice = await onPublish?.(runtime, name);
+    setNotice(sharedNotice ?? `Published “${name}” to this device's trending browser.`);
   };
   const trapMatches = TRAP_TYPES.filter((type) => TRAP_CATALOG[type].displayName.toLowerCase().includes(query.toLowerCase()));
   return <main className="room-builder">

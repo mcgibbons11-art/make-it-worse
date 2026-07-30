@@ -79,6 +79,10 @@ import {
   type PortalsPlayer,
   type SubmitResult,
 } from "./leaderboard";
+import {
+  connectMapSession,
+  type MapSessionResult,
+} from "./map-session";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
 const RoomBuilder = lazy(() =>
   import("@/components/game/RoomBuilder").then((module) => ({
@@ -128,7 +132,13 @@ class ToolBoundary extends Component<
   }
 }
 function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "leaderboard" | "runner" | "settings" }) {
-  return <img className="portals-menu-icon" src={`${MENU_ICON_BASE}${name}.png`} alt="" aria-hidden="true" />;
+  return (
+    <span
+      className="portals-menu-icon"
+      style={{ backgroundImage: `url(${MENU_ICON_BASE}${name}.png)` }}
+      aria-hidden="true"
+    />
+  );
 }
 // Seconds left when the timer turns warm and the countdown pill appears. The
 // screen-reader warning fires on this same value, so the spoken "Ten seconds
@@ -310,6 +320,7 @@ export function PortalsApp() {
   const lastHazard = useRef<HazardContact | null>(null);
   const finishing = useRef(false);
   const starting = useRef(false);
+  const mapSessionReady = useRef<Promise<MapSessionResult> | null>(null);
   const progress = useRef(0);
   // fail() shows its panel on a delay so the death reads before the card lands.
   // Restarting out of the pause menu starts a new attempt inside that window,
@@ -397,9 +408,21 @@ export function PortalsApp() {
   }, [copyText, settings.avatar]);
   const registerBuiltRoom = useCallback(async (
     runtime: { challenge: ChallengeDTO; track: BuiltTrack },
-  ) => {
+    name: string,
+  ): Promise<string | void> => {
     await repository.importChallenge?.(runtime.challenge, runtime.track);
-  }, [repository]);
+    const session = await mapSessionReady.current;
+    if (session?.status !== "ok") return;
+    const outcome = session.connection.announce({
+      challenge: runtime.challenge,
+      track: runtime.track,
+      avatar: settings.avatar,
+      title: name,
+    });
+    return outcome === "sent"
+      ? `Published “${name}” to this device and everyone in this Portals session.`
+      : `Published “${name}” locally. Its code is too large for the Portals session relay.`;
+  }, [repository, settings.avatar]);
   useEffect(() => {
     AudioManager.setMuted(settings.muted);
     AudioManager.setVolume(settings.volume);
@@ -438,6 +461,27 @@ export function PortalsApp() {
     });
     return onPlayerChange(setPlayer);
   }, []);
+  useEffect(() => {
+    let active = true;
+    let close: () => void = () => undefined;
+    const connecting = connectMapSession(async ({ announcement, challenge: shared, track }) => {
+      const stored = await (repository.importChallenge?.(shared, track ?? undefined) ?? shared);
+      if (!active) return;
+      setTrendingItems((current) => [stored, ...current.filter((item) => item.slug !== stored.slug)].slice(0, 12));
+      setNotice(`“${announcement.title}” was shared in this Portals session. It is now in Trending games.`);
+    });
+    mapSessionReady.current = connecting;
+    void connecting.then((result) => {
+      if (result.status !== "ok") return;
+      if (!active) result.connection.close();
+      else close = () => result.connection.close();
+    });
+    return () => {
+      active = false;
+      mapSessionReady.current = null;
+      close();
+    };
+  }, [repository]);
   const loadBoard = useCallback(async (depth: number) => {
     setBoardDepth(depth);
     setBoardLoading(true);
@@ -1106,8 +1150,9 @@ export function PortalsApp() {
           <div className="eyebrow">BROWSE GAMES</div>
           <h2 id="portals-trending-title">Trending disasters</h2>
           <p className="portals-lede">
-            Published rooms on this device appear here. Portals-hosted global
-            publishing needs platform storage that the current SDK does not expose.
+            Rooms published on this device or shared by players in this Portals
+            session appear here. Global publishing still needs platform storage
+            that the current SDK does not expose.
           </p>
           <button className="button secondary" onClick={() => void importSharedGame()}>
             📥 Import map link or code
@@ -1219,7 +1264,7 @@ export function PortalsApp() {
             setRandomRoomSeed(null);
             void fail(outcome);
           }}
-          onPublish={(runtime) => registerBuiltRoom(runtime)}
+          onPublish={(runtime, name) => registerBuiltRoom(runtime, name)}
           onShare={(runtime, format) => copyBuiltRoom(runtime, format)}
           onClose={() => {
             setEditorOpen(false);

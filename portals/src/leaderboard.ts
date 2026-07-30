@@ -31,7 +31,36 @@ interface PortalsLeaderboardEntry {
   score: number;
 }
 
-interface PortalsSdk {
+export interface PortalsNetPlayer {
+  id: string;
+  playerId: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+export interface PortalsNetSession {
+  self: PortalsNetPlayer;
+  players: PortalsNetPlayer[];
+  state: Record<string, unknown>;
+}
+
+export interface PortalsNet {
+  join(options?: { channel?: string }): Promise<PortalsNetSession>;
+  leave(): void;
+  send(data: unknown): void;
+  setState(key: string, value: unknown): void;
+  getState(key?: string): unknown;
+  players(): PortalsNetPlayer[];
+  self(): PortalsNetPlayer;
+  on(event: "message", handler: (data: unknown, fromId: string) => void): void;
+  on(event: "state", handler: (key: string, value: unknown) => void): void;
+  on(event: "status", handler: (status: string) => void): void;
+  off(event: "message", handler: (data: unknown, fromId: string) => void): void;
+  off(event: "state", handler: (key: string, value: unknown) => void): void;
+  off(event: "status", handler: (status: string) => void): void;
+}
+
+export interface PortalsSdk {
   readonly version: string;
   ready(): Promise<PortalsSession>;
   getPlayer(): Promise<PortalsPlayer>;
@@ -46,6 +75,7 @@ interface PortalsSdk {
     mode?: string;
     limit?: number;
   }): Promise<{ mode: string; entries: PortalsLeaderboardEntry[] }>;
+  readonly net?: PortalsNet;
   quit(): void;
 }
 

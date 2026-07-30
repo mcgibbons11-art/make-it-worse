@@ -26,13 +26,15 @@ Consequences:
 
 ## Same-session Portals path
 
-When the processed build exposes `Portals.net`, use a small session protocol rather than sending arbitrary game state every frame:
+The static build now feature-detects `Portals.net` and uses a small session protocol rather than sending arbitrary game state every frame:
 
 - `map-announcement`: map id, version id, author, title, compact challenge code, published timestamp.
 - `map-request`: version id requested by a late joiner.
 - `map-response`: compact code when it fits in the documented 8 KB message ceiling.
 - Shared state holds the latest announcement so a late joiner in the same session can discover it.
 - Reject unknown message versions, oversized payloads, invalid map schemas, and codes whose decoded geometry exceeds the builder bounds.
+- Publishing writes the announcement to shared state and broadcasts it. Receiving players validate and import it into their local Trending browser without automatically replacing their active run.
+- The feature is inert outside a processed Portals host, so localhost and downloaded bundles retain the same self-contained link/code behavior.
 
 The raw code remains visible/copyable when a map exceeds the session message ceiling or the multiplayer transport is unavailable.
 
@@ -65,3 +67,5 @@ Apply Wilson/Bayesian smoothing, author diversity, a minimum-impression gate, an
 - Join a Portals room before and after publish; verify both existing players and late joiners receive the announcement.
 - Verify unlisted/private maps never appear in Trending, and reported/quarantined maps disappear.
 - Load-test browse pagination and trending recomputation, then test rollback to the previous map version.
+
+Current verification: unit tests cover malformed/oversized messages, late-join state, broadcast announcements, request/response, and cleanup. A two-browser SDK-host simulation covers publish to session state and late-join import into Trending. The final real-host check still requires uploading this bundle to a processed Portals preview and opening two players in one session.

@@ -18,6 +18,7 @@ export function CharlesModel() {
 
 export function CharlesTrap({ trap, player, trapBodies, onHazard, onMechanic }: TrapProps) {
   const body = useRef<RapierRigidBody>(null);
+  const rigRoot = useRef<THREE.Group>(null);
   const rig = useMemo(() => createCharlesModel(), []);
   const lastHit = useRef(-Infinity);
   const homeX = trap.position[0];
@@ -39,12 +40,21 @@ export function CharlesTrap({ trap, player, trapBodies, onHazard, onMechanic }: 
     const runner = player.current;
     if (!rigid || !runner) return;
     const crawl = state.clock.elapsedTime * 9;
-    rig.leftShoulder.rotation.z = -0.22 + Math.sin(crawl) * 0.18;
-    rig.rightShoulder.rotation.z = 0.42 - Math.sin(crawl) * 0.14;
-    rig.leftHip.rotation.z = -0.35 - Math.sin(crawl) * 0.16;
-    rig.rightHip.rotation.z = 0.35 + Math.sin(crawl) * 0.16;
-    rig.head.rotation.x = -0.12 + Math.abs(Math.sin(crawl)) * 0.045;
-    rig.weaponHand.rotation.z = Math.sin(crawl * 0.5) * 0.12;
+    const visual = rigRoot.current;
+    if (visual) {
+      const leftShoulder = visual.getObjectByName("left-shoulder-pivot");
+      const rightShoulder = visual.getObjectByName("right-shoulder-pivot");
+      const leftHip = visual.getObjectByName("left-hip-pivot");
+      const rightHip = visual.getObjectByName("right-hip-pivot");
+      const head = visual.getObjectByName("head-pivot");
+      const weaponHand = visual.getObjectByName("weapon-hand-pivot");
+      if (leftShoulder) leftShoulder.rotation.z = -0.22 + Math.sin(crawl) * 0.18;
+      if (rightShoulder) rightShoulder.rotation.z = 0.42 - Math.sin(crawl) * 0.14;
+      if (leftHip) leftHip.rotation.z = -0.35 - Math.sin(crawl) * 0.16;
+      if (rightHip) rightHip.rotation.z = 0.35 + Math.sin(crawl) * 0.16;
+      if (head) head.rotation.x = -0.12 + Math.abs(Math.sin(crawl)) * 0.045;
+      if (weaponHand) weaponHand.rotation.z = Math.sin(crawl * 0.5) * 0.12;
+    }
     const here = rigid.translation();
     const target = runner.translation();
     const fromHome = Math.hypot(target.x - homeX, target.z - homeZ);
@@ -89,7 +99,7 @@ export function CharlesTrap({ trap, player, trapBodies, onHazard, onMechanic }: 
       }}
     >
       <CuboidCollider args={[0.33, 0.3, 0.34]} position={[0, 0.3, 0]} />
-      <primitive object={rig.root} rotation={[0, Math.PI, 0]} />
+      <primitive ref={rigRoot} object={rig.root} rotation={[0, Math.PI, 0]} />
     </RigidBody>
   );
 }

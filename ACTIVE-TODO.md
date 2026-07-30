@@ -32,10 +32,10 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Builder and sharing
 
 - [ ] Connect published custom maps to a real shared backend and cross-player browser.
-- [ ] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
+- [x] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
   - [x] Add self-contained authored-room links and raw challenge codes, plus import from either form.
   - [x] Persist authored geometry across reloads and every child round in the local repository.
-  - [ ] Add Portals.net same-session announcement/state exchange after the host multiplayer API is available in the processed build.
+  - [x] Add a bounded/versioned Portals.net announcement/request/response exchange with late-join shared state and an unavailable-host fallback.
 - [ ] Design and test the entire share-game system end to end: create/share/import, same-room Portals delivery, different-session challenge codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
   - [x] Browser-test publish → local trending → link recipient and raw-code recipient.
   - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
@@ -48,7 +48,7 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [ ] Build the global browse experience: pagination, search/filtering, creator attribution, version compatibility, and recipient loading/failure recovery.
   - [ ] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
   - [ ] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
-  - [ ] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
+  - [x] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
   - [ ] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, same-room late join, child rounds, and backend rollback end to end.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [x] Test builder vertical layouts, rotated jump footprints, conservative jump warnings, real-game Test mode, platform colors, trap base colors, overlap-safe dragging, and all 55 runtime trap assets.

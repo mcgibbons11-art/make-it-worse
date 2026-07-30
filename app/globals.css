@@ -413,3 +413,21 @@
 .community-metrics,.community-card-actions,.community-moderation{display:flex;gap:8px;flex-wrap:wrap}.community-metrics span{font-weight:900}.community-card-actions button,.community-moderation button,.community-versions button{border:2px solid var(--ink);border-radius:10px;padding:7px 9px;background:#fff;color:var(--ink);font:inherit;font-weight:850;cursor:pointer}.community-card-actions .primary{background:var(--yellow)}
 .community-empty{position:relative;z-index:1;width:min(680px,calc(100% - 32px));margin:60px auto;padding:24px;text-align:center}.community-more{display:block;margin:28px auto}.community-dialog{display:grid;gap:12px;width:min(560px,calc(100% - 28px));max-height:min(86vh,760px);overflow:auto}.community-dialog label{display:grid;gap:5px;font-weight:900}.community-dialog>div{display:flex;gap:10px;justify-content:flex-end}.community-versions{display:grid!important;gap:7px}.community-versions button{text-align:left}.community-versions button:disabled{background:var(--yellow);opacity:1}
 @media(max-width:700px){.community-heading{align-items:stretch;flex-direction:column}.community-search{grid-template-columns:1fr}.community-grid{grid-template-columns:1fr}}
+
+/* Apartment editor: grouped catalog with the active item always reachable. */
+.avatar-apartment-decor{width:min(430px,calc(100vw - 36px));overflow-x:hidden}
+.avatar-apartment-decor-heading,.avatar-apartment-catalog-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.avatar-apartment-decor-heading button,.avatar-apartment-groups button{border:2px solid var(--ink);border-radius:10px;background:#fffdf4;color:var(--ink);padding:6px 9px;font-weight:900;cursor:pointer}
+.avatar-apartment-decor-heading button:disabled,.avatar-apartment-decor-grid button:disabled,.avatar-apartment-selection button:disabled{opacity:.42;cursor:not-allowed}
+.avatar-apartment-save-error{padding:8px 10px;border:2px solid #a92a3f;border-radius:10px;background:#ffe0e5;color:#8f2034!important}
+.avatar-apartment-selection-sticky{position:sticky;top:-16px;z-index:3;box-shadow:0 4px 0 var(--ink)}
+.avatar-apartment-selection-sticky>small{color:#586073}
+.avatar-apartment-selection-sticky>div{grid-template-columns:repeat(2,1fr)}
+.avatar-apartment-groups{display:flex;flex-wrap:wrap;gap:6px;padding:2px 2px 5px}
+.avatar-apartment-groups button{flex:0 0 auto;font-size:.72rem;padding:6px 8px}
+.avatar-apartment-groups button.active{background:var(--yellow)}
+.avatar-apartment-decor-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.avatar-apartment-colors{border:2px solid var(--ink);border-radius:14px;background:#eafaff;overflow:hidden}
+.avatar-apartment-colors summary{padding:11px 12px;font-weight:950;cursor:pointer}
+.avatar-apartment-colors .avatar-apartment-selection{border:0;border-top:2px solid var(--ink);border-radius:0}
+@media(max-width:760px){.avatar-apartment-decor{width:min(330px,calc(100vw - 20px))}.avatar-apartment-decor-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.avatar-apartment-selection-sticky{top:-12px}}

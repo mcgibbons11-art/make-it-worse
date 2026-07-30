@@ -74,7 +74,7 @@ function Cloud({ position, scale = 1 }: { position: [number, number, number]; sc
   );
 }
 
-export function Lighting() {
+export function Lighting({ interior = false }: { interior?: boolean }) {
   const sun = useRef<DirectionalLight>(null);
   const sky = useRef<Mesh>(null);
   const sunTarget = useMemo(() => new Object3D(), []);
@@ -107,13 +107,13 @@ export function Lighting() {
         <shaderMaterial side={1} depthWrite={false} vertexShader={SKY_VERTEX} fragmentShader={SKY_FRAGMENT} />
       </mesh>
       <fogExp2 attach="fog" args={[fogColor, FOG_DENSITY]} />
-      <hemisphereLight intensity={0.95} color="#eaf8ff" groundColor="#7466b2" />
+      <hemisphereLight intensity={interior ? 1.12 : 0.95} color={interior ? "#fff4df" : "#eaf8ff"} groundColor={interior ? "#b89b7a" : "#7466b2"} />
       {/* Intensity tracks the elevation: a horizontal deck receives
           intensity * sin(elevation), so dropping the sun from 61 to 50 degrees
           costs it a factor of 0.766/0.875. 2.1 / 0.875 * 0.766 undoes exactly
           that, keeping deck luminance and the lit-to-shadow ratio where they
           were while the shadows themselves get longer. */}
-      <directionalLight ref={sun} castShadow position={[...SUN_OFFSET]} intensity={2.4} color="#fff0c5" shadow-mapSize={[2048, 2048]} shadow-bias={-0.00018} shadow-normalBias={0.03} shadow-camera-left={-12.2} shadow-camera-right={16.8} shadow-camera-top={14.7} shadow-camera-bottom={-9.4} />
+      <directionalLight ref={sun} castShadow position={[...SUN_OFFSET]} intensity={interior ? 1.65 : 2.4} color="#fff0c5" shadow-mapSize={[2048, 2048]} shadow-bias={-0.00018} shadow-normalBias={0.03} shadow-camera-left={-12.2} shadow-camera-right={16.8} shadow-camera-top={14.7} shadow-camera-bottom={-9.4} />
       <primitive object={sunTarget} />
       <directionalLight position={[10, 8, 28]} intensity={0.6} color="#99c9ff" />
       <mesh position={[-20, 17, 52]}>
@@ -122,17 +122,21 @@ export function Lighting() {
       </mesh>
       <pointLight position={[-8, 8, 18]} color="#ffb8ad" intensity={5} distance={32} decay={2} />
       <pointLight position={[8, 7, 35]} color="#a9c8ff" intensity={5} distance={30} decay={2} />
-      <group>
-        {motes.map((mote, index) => (
-          <mesh key={index} position={[mote.x, mote.y, mote.z]}>
-            <sphereGeometry args={[mote.size, 6, 5]} />
-            <meshBasicMaterial color={index % 2 ? "#fff8d5" : "#dff6ff"} transparent opacity={0.78} />
-          </mesh>
-        ))}
-      </group>
-      <Cloud position={[-13, 8, 10]} scale={1.5} />
-      <Cloud position={[12, 10, 25]} scale={1.1} />
-      <Cloud position={[-16, 7, 38]} scale={0.9} />
+      {!interior && (
+        <>
+          <group>
+            {motes.map((mote, index) => (
+              <mesh key={index} position={[mote.x, mote.y, mote.z]}>
+                <sphereGeometry args={[mote.size, 6, 5]} />
+                <meshBasicMaterial color={index % 2 ? "#fff8d5" : "#dff6ff"} transparent opacity={0.78} />
+              </mesh>
+            ))}
+          </group>
+          <Cloud position={[-13, 8, 10]} scale={1.5} />
+          <Cloud position={[12, 10, 25]} scale={1.1} />
+          <Cloud position={[-16, 7, 38]} scale={0.9} />
+        </>
+      )}
     </>
   );
 }

@@ -25,6 +25,10 @@ export function CameraRig({
   editorTarget,
   lookEnabled = false,
   lookButton = 0,
+  chaseDistance = 7.4,
+  chaseHeight = 4.3,
+  chaseLookAhead = 4.1,
+  chaseTargetHeight = 0.9,
   shakeUntilRef,
 }: {
   player: React.RefObject<RapierRigidBody | null>;
@@ -33,6 +37,11 @@ export function CameraRig({
   lookEnabled?: boolean;
   /** Pointer button used to turn: left normally, right while an editor owns left-drag. */
   lookButton?: 0 | 2;
+  /** Optional framing overrides for larger free-roam spaces. */
+  chaseDistance?: number;
+  chaseHeight?: number;
+  chaseLookAhead?: number;
+  chaseTargetHeight?: number;
   shakeUntilRef: React.MutableRefObject<number>;
 }) {
   const look = useRef(new Vector3(0, 1, 4));
@@ -133,16 +142,16 @@ export function CameraRig({
       const lateral = -velocity.x * cosYaw + velocity.z * sinYaw;
       const lead = Math.max(-1.3, Math.min(1.3, lateral * 0.12));
       desired.current.set(
-        position.x - 7.4 * sinYaw + lead * cosYaw,
-        Math.max(4.3, position.y + 4.2),
-        position.z - 7.4 * cosYaw - lead * sinYaw,
+        position.x - chaseDistance * sinYaw + lead * cosYaw,
+        Math.max(chaseHeight, position.y + chaseHeight - 0.1),
+        position.z - chaseDistance * cosYaw - lead * sinYaw,
       );
       smoothed.current.lerp(desired.current, 1 - Math.exp(-8 * delta));
       camera.position.copy(smoothed.current);
       target.current.set(
-        position.x + velocity.x * 0.08 + 4.1 * sinYaw,
-        position.y + 0.9,
-        position.z + 4.1 * cosYaw,
+        position.x + velocity.x * 0.08 + chaseLookAhead * sinYaw,
+        position.y + chaseTargetHeight,
+        position.z + chaseLookAhead * cosYaw,
       );
       look.current.lerp(target.current, 1 - Math.exp(-10 * delta));
       if (settings.cameraShake && !settings.reducedMotion && performance.now() < shakeUntilRef.current) {

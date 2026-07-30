@@ -61,12 +61,12 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Apartment
 
-- [ ] Rebuild the apartment completely from scratch as a believable permanent player home; do not line up preassembled corner-room chunks to fake a floor plan.
-  - [ ] Inventory and dismantle the existing apartment/corner-room assets into modular floors, wall runs, corners, doors, windows, trim, fixtures, and individual furniture/decor pieces.
-  - [ ] Design and assemble a coherent room-by-room apartment from those modular pieces with believable circulation, scale, sightlines, wall continuity, and distinct room purposes.
-  - [ ] Make every furniture and decor object individually selectable, movable, rotatable, and placeable by the player rather than baking furnishings into room chunks.
-  - [ ] Persist the complete apartment shell choices and exact furniture/decor layout across reloads so it functions as the player's permanent home.
-  - [ ] Complete five independent design-review rounds against rendered builds, address every material finding, and retain the review evidence before marking the remake complete.
+- [x] Rebuild the apartment completely from scratch as a believable permanent player home; do not line up preassembled corner-room chunks to fake a floor plan.
+  - [x] Inventory and dismantle the existing apartment/corner-room assets into modular floors, wall runs, corners, doors, windows, trim, fixtures, and individual furniture/decor pieces.
+  - [x] Design and assemble a coherent room-by-room apartment from those modular pieces with believable circulation, scale, sightlines, wall continuity, and distinct room purposes.
+  - [x] Make every furniture and decor object individually selectable, movable, rotatable, and placeable by the player rather than baking furnishings into room chunks.
+  - [x] Persist the complete apartment shell choices and exact furniture/decor layout across reloads so it functions as the player's permanent home.
+  - [x] Complete five independent design-review rounds against rendered builds, address every material finding, and retain the review evidence before marking the remake complete.
 - [x] Replace apartment movement/camera with the same controller, physics, and camera settings used by the main game and builder Test mode.
 - [x] Expand the apartment to six times the original floor area and turn the asset set into connected rooms the runner can explore.
 - [x] Add richer decorating with drag/drop floor placement, moving, organizing, color customization, and local persistence.

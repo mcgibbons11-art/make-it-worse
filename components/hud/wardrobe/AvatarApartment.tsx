@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import {
   CuboidCollider,
   Physics,
@@ -12,67 +12,83 @@ import * as THREE from "three";
 import { CameraRig } from "@/components/game/CameraRig";
 import { Lighting } from "@/components/game/Lighting";
 import { PlayerController } from "@/components/game/PlayerController";
+import { AssetModel, type ModelName } from "@/components/game/AssetModel";
 import { createMAKEITWORSEApartmentRoomModel } from "@/components/game/models/createApartmentModel";
 import { TONE_EXPOSURE } from "@/components/game/render/tone";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import {
   DEFAULT_APARTMENT_DECOR,
+  DEFAULT_APARTMENT_STYLE,
+  APARTMENT_DECOR_TYPES,
+  apartmentAnchorKind,
   loadApartmentDecor,
+  loadApartmentStyle,
   saveApartmentDecor,
+  saveApartmentStyle,
   type ApartmentDecorItem,
   type ApartmentDecorType,
+  type ApartmentStyle,
 } from "@/lib/game/apartment-decor";
 import { resetCameraYaw, resetInput, setKey } from "@/lib/game/input";
-import type { BuiltTrack } from "@/lib/game/track";
+import { trackFacingYaw, type BuiltTrack } from "@/lib/game/track";
 import type { AvatarConfig } from "@/lib/game/avatar";
 import type { ApartmentVariant } from "@/components/game/environment/apartmentFurnishing";
 
-const ROOM_SIZE = 4.31;
-const ROOM_HALF = ROOM_SIZE / 2;
-const APARTMENT_WIDTH = ROOM_SIZE * 6;
-const APARTMENT_DEPTH = ROOM_SIZE * 4;
-const WALL_HEIGHT = 2.8;
+const APARTMENT_WIDTH = 25.8;
+const APARTMENT_DEPTH = 17.2;
+const WALL_HEIGHT = 2.65;
+const WALL_THICKNESS = 0.18;
 const POSITION_STEP = 0.1;
+const MAX_APARTMENT_ITEMS = 80;
 
 type ApartmentMode = "explore" | "decorate";
 
-interface RoomSpec {
-  variant: ApartmentVariant;
-  label: string;
+interface WallSpec {
+  id: string;
+  axis: "x" | "z";
   x: number;
   z: number;
-  turn: number;
+  length: number;
 }
 
-const NORTH_ROOMS: readonly ApartmentVariant[] = [
-  "living", "kitchen", "bedroom", "study", "living", "kitchen",
-];
-const SOUTH_ROOMS: readonly ApartmentVariant[] = [
-  "study", "bedroom", "kitchen", "living", "study", "bedroom",
+const WALLS: readonly WallSpec[] = [
+  { id: "outer-north", axis: "x", x: 0, z: -8.6, length: 25.8 },
+  { id: "outer-south", axis: "x", x: 0, z: 8.6, length: 25.8 },
+  { id: "outer-west", axis: "z", x: -12.9, z: 0, length: 17.2 },
+  { id: "outer-east", axis: "z", x: 12.9, z: 0, length: 17.2 },
+  { id: "west-hall-n2", axis: "z", x: -1.5, z: -2.25, length: 4.5 },
+  { id: "west-hall-s", axis: "z", x: -1.5, z: 1.5, length: 3 },
+  { id: "east-hall-n1", axis: "z", x: 1.5, z: -7.05, length: 3.1 },
+  { id: "east-hall-n2", axis: "z", x: 1.5, z: -2.75, length: 3.5 },
+  { id: "east-hall-mid", axis: "z", x: 1.5, z: 1.5, length: 3 },
+  { id: "west-room-split", axis: "x", x: -7.2, z: 0, length: 11.4 },
+  { id: "east-bedroom-split", axis: "x", x: 7.2, z: -2, length: 11.4 },
+  { id: "east-study-split", axis: "x", x: 7.2, z: 3, length: 11.4 },
+  { id: "foyer-west-a", axis: "z", x: -4, z: 3.7, length: 1.4 },
+  { id: "foyer-west-b", axis: "z", x: -4, z: 7.1, length: 3 },
+  { id: "foyer-east-a", axis: "z", x: 4, z: 3.7, length: 1.4 },
+  { id: "foyer-east-b", axis: "z", x: 4, z: 7.1, length: 3 },
+  { id: "foyer-shoulder-west", axis: "x", x: -2.75, z: 3, length: 2.5 },
+  { id: "foyer-shoulder-east", axis: "x", x: 2.75, z: 3, length: 2.5 },
+  { id: "bath-utility-a", axis: "z", x: 8.2, z: 4.05, length: 2.1 },
+  { id: "bath-utility-b", axis: "z", x: 8.2, z: 7.4, length: 2.4 },
 ];
 
-const ROOM_LABELS: Readonly<Record<ApartmentVariant, string>> = {
-  living: "Living room",
-  kitchen: "Kitchen",
-  bedroom: "Bedroom",
-  study: "Studio",
-};
+interface DoorSpec {
+  id: string;
+  axis: "x" | "z";
+  x: number;
+  z: number;
+  hinge: -1 | 1;
+}
 
-const ROOMS: readonly RoomSpec[] = [
-  ...NORTH_ROOMS.map((variant, index) => ({
-    variant,
-    label: `North ${ROOM_LABELS[variant]}`,
-    x: (index - 2.5) * ROOM_SIZE,
-    z: -APARTMENT_DEPTH / 2 + ROOM_HALF,
-    turn: 0,
-  })),
-  ...SOUTH_ROOMS.map((variant, index) => ({
-    variant,
-    label: `South ${ROOM_LABELS[variant]}`,
-    x: (index - 2.5) * ROOM_SIZE,
-    z: APARTMENT_DEPTH / 2 - ROOM_HALF,
-    turn: Math.PI,
-  })),
+const DOORS: readonly DoorSpec[] = [
+  { id: "living-door", axis: "z", x: -1.5, z: -5, hinge: -1 },
+  { id: "bedroom-door", axis: "z", x: 1.5, z: -5, hinge: 1 },
+  { id: "study-door", axis: "z", x: 1.5, z: -0.5, hinge: 1 },
+  { id: "kitchen-door", axis: "z", x: -4, z: 5.1, hinge: -1 },
+  { id: "bath-door", axis: "z", x: 4, z: 5.1, hinge: 1 },
+  { id: "utility-door", axis: "z", x: 8.2, z: 5.7, hinge: 1 },
 ];
 
 const APARTMENT_TRACK: BuiltTrack = {
@@ -84,7 +100,7 @@ const APARTMENT_TRACK: BuiltTrack = {
   }],
   zones: [],
   spawn: [0, 0.94, 0],
-  exit: [0, 0, 1000],
+  exit: [0, 0, -1000],
   length: APARTMENT_DEPTH,
 };
 
@@ -106,22 +122,18 @@ function apartmentSource(variant: ApartmentVariant): THREE.Group {
   return source;
 }
 
-/** Clone only render children; the generated root's runtime index intentionally contains object cycles. */
-function cloneApartmentSource(variant: ApartmentVariant): THREE.Group {
-  const clone = new THREE.Group();
-  const source = apartmentSource(variant);
-  for (const child of source.children) clone.add(child.clone(true));
-  return clone;
-}
-
 interface DecorDefinition {
   label: string;
   emoji: string;
-  variant: ApartmentVariant;
+  variant?: ApartmentVariant;
+  model?: ModelName;
   nodeIds: readonly string[];
   prefixes?: readonly string[];
   size: readonly [number, number, number];
   solid: boolean;
+  elevation?: number;
+  scale?: readonly [number, number, number];
+  tintable?: boolean;
 }
 
 const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
@@ -133,40 +145,131 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     label: "Side table", emoji: "🪑", variant: "living", nodeIds: ["table-shell", "table-back-panel"], prefixes: ["table-leg-"],
     size: [0.75, 1, 1.1], solid: true,
   },
+  "dining-table": {
+    label: "Dining table", emoji: "🍽️", variant: "living", nodeIds: ["table-shell", "table-back-panel"], prefixes: ["table-leg-"],
+    size: [1.8, 0.85, 1.25], scale: [2.25, 0.95, 1.12], solid: true,
+  },
+  "dining-chair": {
+    label: "Dining chair", emoji: "🪑", variant: "study", nodeIds: [], prefixes: ["desk-chair-", "chair-leg-"],
+    size: [0.8, 1.05, 0.8], solid: true,
+  },
   rug: {
     label: "Rug", emoji: "🟧", variant: "living", nodeIds: ["rug-border", "rug-field"],
     size: [2.7, 0.05, 1.85], solid: false,
   },
   plant: {
     label: "Plant", emoji: "🪴", variant: "living", nodeIds: ["sill-pot", "sill-plant"],
-    size: [0.45, 0.65, 0.45], solid: true,
+    size: [1.05, 1.35, 1.05], scale: [3, 3, 3], solid: true,
   },
-  kitchen: {
-    label: "Kitchen set", emoji: "🍳", variant: "kitchen", nodeIds: [], prefixes: ["kitchen-"],
-    size: [3, 2.35, 0.85], solid: true,
+  "kitchen-counter": {
+    label: "Kitchen counter", emoji: "🍳", variant: "kitchen",
+    nodeIds: ["kitchen-base-run", "kitchen-worktop", "kitchen-sink-rim", "kitchen-sink-pan", "kitchen-door-gap-cluster"],
+    prefixes: ["kitchen-pot", "kitchen-kettle", "kitchen-board", "kitchen-mug-"],
+    size: [2.4, 1.15, 0.8], solid: true,
+  },
+  "wall-cabinet": {
+    label: "Wall cabinet", emoji: "🗄️", variant: "kitchen",
+    nodeIds: ["kitchen-wall-unit", "kitchen-under-light"],
+    size: [2.2, 0.75, 0.5], elevation: 1.45, solid: true,
+  },
+  "bathroom-vanity": {
+    label: "Sink vanity", emoji: "🚰", variant: "kitchen",
+    nodeIds: ["kitchen-base-run", "kitchen-worktop", "kitchen-sink-rim", "kitchen-sink-pan", "kitchen-door-gap-cluster"],
+    size: [1.55, 1.05, 0.8], scale: [0.68, 1, 0.8], solid: true,
+  },
+  refrigerator: {
+    label: "Refrigerator", emoji: "🧊", model: "refrigerator", nodeIds: [],
+    size: [1.4, 1.9, 1], solid: true, tintable: false,
+  },
+  toaster: {
+    label: "Toaster", emoji: "🍞", model: "toaster", nodeIds: [],
+    size: [0.65, 0.5, 0.5], elevation: 0.94, solid: true, tintable: false,
   },
   bed: {
     label: "Bed", emoji: "🛏️", variant: "bedroom", nodeIds: ["bedroom-throw"], prefixes: ["bed-"],
     size: [2, 1.25, 1.85], solid: true,
   },
+  "bedside-table": {
+    label: "Bedside table", emoji: "🗄️", variant: "bedroom", nodeIds: ["bedside-table", "bedroom-book"],
+    size: [0.7, 0.65, 0.7], solid: true,
+  },
+  "bedside-lamp": {
+    label: "Bedside lamp", emoji: "💡", variant: "bedroom", nodeIds: [], prefixes: ["bedside-lamp-"],
+    size: [0.45, 0.55, 0.45], elevation: 0.58, solid: false,
+  },
   wardrobe: {
     label: "Wardrobe", emoji: "🚪", variant: "bedroom", nodeIds: ["bedroom-wardrobe"], prefixes: ["wardrobe-"],
-    size: [0.8, 2.3, 0.8], solid: true,
+    size: [1, 2.35, 1], scale: [1.25, 1.08, 1.25], solid: true,
   },
-  desk: {
-    label: "Desk & chair", emoji: "🖥️", variant: "study", nodeIds: [], prefixes: ["desk-", "chair-", "study-"],
-    size: [1.8, 1.3, 1.6], solid: true,
+  "writing-desk": {
+    label: "Writing desk", emoji: "🖥️", variant: "study", nodeIds: [], prefixes: ["desk-top", "desk-leg-", "study-"],
+    size: [1.9, 1.25, 1.35], scale: [1.25, 1.12, 1.25], solid: true,
+  },
+  "desk-chair": {
+    label: "Desk chair", emoji: "🪑", variant: "study", nodeIds: [], prefixes: ["desk-chair-", "chair-leg-"],
+    size: [1, 1.2, 1], scale: [1.2, 1.15, 1.2], solid: true,
   },
   bookcase: {
     label: "Bookcase", emoji: "📚", variant: "study", nodeIds: [], prefixes: ["bookcase-", "book-"],
     size: [1.6, 2, 0.6], solid: true,
   },
+  "wall-art": {
+    label: "Wall art", emoji: "🖼️", variant: "living", nodeIds: ["art-frame", "art-field"],
+    size: [1.4, 0.9, 0.12], elevation: 1.35, solid: false,
+  },
+  curtains: {
+    label: "Curtains", emoji: "🪟", variant: "living", nodeIds: ["curtain-left", "curtain-right"],
+    size: [2.6, 2.15, 0.24], elevation: 0.42, solid: false,
+  },
+  radiator: {
+    label: "Radiator", emoji: "♨️", variant: "living", nodeIds: ["radiator-body", "radiator-fin-cluster"],
+    size: [1.6, 0.72, 0.3], elevation: 0.12, solid: false,
+  },
+  "wall-shelf": {
+    label: "Wall shelf", emoji: "🪵", variant: "living", nodeIds: ["wall-shelf"], prefixes: ["shelf-book-", "shelf-mug"],
+    size: [1.6, 0.6, 0.35], elevation: 1.35, solid: false,
+  },
+  toilet: {
+    label: "Toilet", emoji: "🚽", model: "toilet", nodeIds: [],
+    size: [1, 1, 1], solid: true, tintable: false,
+  },
+  vacuum: {
+    label: "Vacuum", emoji: "🧹", model: "vacuum", nodeIds: [],
+    size: [1, 0.75, 1], solid: true, tintable: false,
+  },
+  "floor-fan": {
+    label: "Floor fan", emoji: "💨", model: "fan", nodeIds: [],
+    size: [1, 1.35, 0.85], solid: true, tintable: false,
+  },
+  "robot-mop": {
+    label: "Robot mop", emoji: "🧼", model: "mop", nodeIds: [],
+    size: [0.8, 0.25, 0.8], solid: true, tintable: false,
+  },
 };
+
+const DECOR_GROUPS = [
+  { id: "all", label: "✨ All", types: APARTMENT_DECOR_TYPES },
+  { id: "living", label: "🛋️ Living", types: ["sofa", "side-table", "dining-table", "dining-chair", "rug", "plant"] },
+  { id: "kitchen", label: "🍳 Kitchen", types: ["kitchen-counter", "wall-cabinet", "refrigerator", "toaster", "bathroom-vanity"] },
+  { id: "bedroom", label: "🛏️ Bedroom", types: ["bed", "bedside-table", "bedside-lamp", "wardrobe"] },
+  { id: "study", label: "📚 Study", types: ["writing-desk", "desk-chair", "bookcase"] },
+  { id: "wall", label: "🖼️ Wall", types: ["wall-art", "curtains", "radiator", "wall-shelf"] },
+  { id: "utility", label: "🧹 Utility", types: ["toilet", "vacuum", "floor-fan", "robot-mop"] },
+] as const satisfies readonly { id: string; label: string; types: readonly ApartmentDecorType[] }[];
+
+const SURFACE_SUPPORT_TYPES = new Set<ApartmentDecorType>([
+  "side-table",
+  "kitchen-counter",
+  "bathroom-vanity",
+  "bedside-table",
+  "writing-desk",
+]);
 
 function decorPrototype(type: ApartmentDecorType): THREE.Group {
   const cached = decorPrototypes.get(type);
   if (cached) return cached;
   const definition = DECOR[type];
+  if (!definition.variant) return new THREE.Group();
   const source = apartmentSource(definition.variant);
   const runtime = source.userData.sculptRuntime as { nodes?: Record<string, THREE.Object3D> } | undefined;
   const nodes = runtime?.nodes ?? {};
@@ -195,6 +298,7 @@ function decorPrototype(type: ApartmentDecorType): THREE.Group {
       child.position.z -= center.z;
     }
   }
+  if (definition.scale) prototype.scale.set(...definition.scale);
   prototype.updateMatrixWorld(true);
   decorPrototypes.set(type, prototype);
   return prototype;
@@ -205,6 +309,7 @@ function makeDecorVisual(type: ApartmentDecorType, color: string): THREE.Group {
   const tint = new THREE.Color(color);
   visual.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
+    if (type === "curtains") child.scale.z *= 1.45;
     const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
     const materials = sourceMaterials.map((source) => {
       const material = source.clone();
@@ -219,10 +324,12 @@ function makeDecorVisual(type: ApartmentDecorType, color: string): THREE.Group {
 }
 
 function roomAt(x: number, z: number): string {
-  if (Math.abs(z) < ROOM_SIZE) return "Central gallery";
-  const row = z < 0 ? 0 : 1;
-  const column = Math.max(0, Math.min(5, Math.floor((x + APARTMENT_WIDTH / 2) / ROOM_SIZE)));
-  return ROOMS[row * 6 + column]?.label ?? "Central gallery";
+  if (z >= 3 && Math.abs(x) < 4) return "Foyer";
+  if (Math.abs(x) <= 1.5) return "Hallway";
+  if (x < -1.5) return z < 0 ? "Living & dining room" : "Kitchen";
+  if (z < -2) return "Bedroom";
+  if (z < 3) return "Study";
+  return x < 8.2 ? "Bathroom" : "Utility room";
 }
 
 function clampX(value: number): number {
@@ -237,18 +344,116 @@ function snap(value: number): number {
   return Math.round(value / POSITION_STEP) * POSITION_STEP;
 }
 
+function distanceToWall(wall: WallSpec, x: number, z: number): number {
+  if (wall.axis === "x") {
+    const nearestX = THREE.MathUtils.clamp(x, wall.x - wall.length / 2, wall.x + wall.length / 2);
+    return Math.hypot(x - nearestX, z - wall.z);
+  }
+  const nearestZ = THREE.MathUtils.clamp(z, wall.z - wall.length / 2, wall.z + wall.length / 2);
+  return Math.hypot(x - wall.x, z - nearestZ);
+}
+
+function snapWallItem(item: ApartmentDecorItem, x = item.x, z = item.z): ApartmentDecorItem {
+  let nearest = WALLS[0]!;
+  let nearestDistance = Infinity;
+  for (const wall of WALLS) {
+    const distance = distanceToWall(wall, x, z);
+    if (distance < nearestDistance) {
+      nearest = wall;
+      nearestDistance = distance;
+    }
+  }
+  const offset = WALL_THICKNESS / 2 + 0.13;
+  if (nearest.axis === "x") {
+    const side = Math.sign(z - nearest.z) || Math.sign(-nearest.z) || 1;
+    return {
+      ...item,
+      x: snap(THREE.MathUtils.clamp(x, nearest.x - nearest.length / 2 + 0.3, nearest.x + nearest.length / 2 - 0.3)),
+      z: snap(nearest.z + side * offset),
+      rotation: side > 0 ? 0 : Math.PI,
+      anchorKind: "wall",
+    };
+  }
+  const side = Math.sign(x - nearest.x) || Math.sign(-nearest.x) || 1;
+  return {
+    ...item,
+    x: snap(nearest.x + side * offset),
+    z: snap(THREE.MathUtils.clamp(z, nearest.z - nearest.length / 2 + 0.3, nearest.z + nearest.length / 2 - 0.3)),
+    rotation: side > 0 ? Math.PI / 2 : -Math.PI / 2,
+    anchorKind: "wall",
+  };
+}
+
+function normalizeApartmentAnchors(items: readonly ApartmentDecorItem[]): ApartmentDecorItem[] {
+  const wallSnapped = items.map((item) => item.anchorKind === "wall" ? snapWallItem(item) : { ...item });
+  const byId = new Map(wallSnapped.map((item) => [item.uid, item]));
+  return wallSnapped.map((item) => {
+    if (item.anchorKind !== "surface" || !item.parentUid) return item;
+    const parent = byId.get(item.parentUid);
+    if (parent) return { ...item, x: parent.x, z: parent.z };
+    const withoutParent = { ...item };
+    delete withoutParent.parentUid;
+    return withoutParent;
+  });
+}
+
+function nearestSurfaceSupport(
+  items: readonly ApartmentDecorItem[],
+  x: number,
+  z: number,
+): ApartmentDecorItem | null {
+  let nearest: ApartmentDecorItem | null = null;
+  let nearestDistance = Infinity;
+  for (const item of items) {
+    if (!SURFACE_SUPPORT_TYPES.has(item.type)) continue;
+    const distance = Math.hypot(item.x - x, item.z - z);
+    if (distance < nearestDistance) {
+      nearest = item;
+      nearestDistance = distance;
+    }
+  }
+  return nearestDistance <= 4 ? nearest : null;
+}
+
+function validFloorPlacement(
+  item: ApartmentDecorItem,
+  x: number,
+  z: number,
+  items: readonly ApartmentDecorItem[],
+  runner: { x: number; z: number },
+): boolean {
+  const definition = DECOR[item.type];
+  if (item.anchorKind !== "floor" || !definition.solid) return true;
+  const radius = Math.max(definition.size[0], definition.size[2]) * 0.42;
+  if (WALLS.some((wall) => distanceToWall(wall, x, z) < radius + WALL_THICKNESS / 2)) return false;
+  if (Math.hypot(x - runner.x, z - runner.z) < radius + 0.72) return false;
+  return !items.some((other) => {
+    if (other.uid === item.uid || other.anchorKind !== "floor") return false;
+    const otherDefinition = DECOR[other.type];
+    if (!otherDefinition.solid) return false;
+    const otherRadius = Math.max(otherDefinition.size[0], otherDefinition.size[2]) * 0.42;
+    return Math.hypot(x - other.x, z - other.z) < radius + otherRadius;
+  });
+}
+
 function DecorItemView({
   item,
   mode,
   selected,
+  invalid,
   onSelect,
+  onMoveStart,
   onMove,
+  onMoveEnd,
 }: {
   item: ApartmentDecorItem;
   mode: ApartmentMode;
   selected: boolean;
+  invalid: boolean;
   onSelect(uid: string): void;
+  onMoveStart(uid: string): void;
   onMove(uid: string, x: number, z: number): void;
+  onMoveEnd(uid: string): void;
 }) {
   type PointerCaptureTarget = EventTarget & {
     setPointerCapture(pointerId: number): void;
@@ -256,25 +461,35 @@ function DecorItemView({
     releasePointerCapture(pointerId: number): void;
   };
   const definition = DECOR[item.type];
-  const visual = useMemo(() => makeDecorVisual(item.type, item.color), [item.color, item.type]);
+  const visual = useMemo(
+    () => definition.model ? null : makeDecorVisual(item.type, item.color),
+    [definition.model, item.color, item.type],
+  );
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const point = useMemo(() => new THREE.Vector3(), []);
   const activePointer = useRef<number | null>(null);
   const capturedTarget = useRef<PointerCaptureTarget | null>(null);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => () => {
-    visual.traverse((child) => {
+    visual?.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const materials = Array.isArray(child.material) ? child.material : [child.material];
       materials.forEach((material) => material.dispose());
     });
   }, [visual]);
 
+  const elevation = definition.elevation ?? 0;
+  const visualNode = definition.model
+    ? <AssetModel model={definition.model} />
+    : <primitive object={visual!} />;
+
   const down = (event: ThreeEvent<PointerEvent>) => {
     if (mode !== "decorate" || event.button !== 0) return;
     event.stopPropagation();
     AudioManager.click();
     onSelect(item.uid);
+    onMoveStart(item.uid);
     activePointer.current = event.pointerId;
     const target = event.target as PointerCaptureTarget | null;
     target?.setPointerCapture(event.pointerId);
@@ -294,6 +509,7 @@ function DecorItemView({
     const target = capturedTarget.current;
     capturedTarget.current = null;
     if (target?.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+    onMoveEnd(item.uid);
   };
 
   if (mode === "explore") {
@@ -302,10 +518,10 @@ function DecorItemView({
         {definition.solid && (
           <CuboidCollider
             args={[definition.size[0] / 2, definition.size[1] / 2, definition.size[2] / 2]}
-            position={[0, definition.size[1] / 2, 0]}
+            position={[0, elevation + definition.size[1] / 2, 0]}
           />
         )}
-        <primitive object={visual} />
+        <group position={[0, elevation, 0]}>{visualNode}</group>
       </RigidBody>
     );
   }
@@ -319,60 +535,310 @@ function DecorItemView({
       onPointerMove={move}
       onPointerUp={end}
       onPointerCancel={end}
+      onPointerEnter={() => mode === "decorate" && setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
     >
-      <primitive object={visual} />
-      <mesh position={[0, definition.size[1] / 2, 0]}>
+      <group position={[0, elevation, 0]}>{visualNode}</group>
+      <mesh position={[0, elevation + definition.size[1] / 2, 0]}>
         <boxGeometry args={definition.size} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      {selected && (
+      {(selected || hovered || invalid) && (
         <mesh position={[0, 0.055, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[radius, radius + 0.08, 40]} />
-          <meshBasicMaterial color="#57dfa1" depthTest={false} />
+          <meshBasicMaterial color={invalid ? "#ff4f64" : hovered && !selected ? "#79aee8" : "#57dfa1"} depthTest={false} />
         </mesh>
       )}
     </group>
   );
 }
 
+function WallRun({
+  wall,
+  style,
+  player,
+}: {
+  wall: WallSpec;
+  style: ApartmentStyle;
+  player: React.RefObject<RapierRigidBody | null>;
+}) {
+  const wallMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const baseMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const capMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const size = wall.axis === "x"
+    ? [wall.length, WALL_HEIGHT, WALL_THICKNESS] as const
+    : [WALL_THICKNESS, WALL_HEIGHT, wall.length] as const;
+  const baseRail = wall.axis === "x"
+    ? [wall.length, 0.1, WALL_THICKNESS + 0.035] as const
+    : [WALL_THICKNESS + 0.035, 0.1, wall.length] as const;
+  const topRail = wall.axis === "x"
+    ? [wall.length, 0.045, WALL_THICKNESS + 0.018] as const
+    : [WALL_THICKNESS + 0.018, 0.045, wall.length] as const;
+  const capColor = useMemo(
+    () => new THREE.Color(style.wallColor).lerp(new THREE.Color(style.trimColor), 0.12),
+    [style.trimColor, style.wallColor],
+  );
+  const baseColor = useMemo(
+    () => new THREE.Color(style.wallColor).lerp(new THREE.Color(style.trimColor), 0.72),
+    [style.trimColor, style.wallColor],
+  );
+
+  useFrame(({ camera }, delta) => {
+    const body = player.current;
+    if (!body) return;
+    const position = body.translation();
+    const cameraX = camera.position.x;
+    const cameraZ = camera.position.z;
+    const toPlayerX = position.x - cameraX;
+    const toPlayerZ = position.z - cameraZ;
+    const distance = Math.hypot(toPlayerX, toPlayerZ);
+    if (distance < 0.01) return;
+    const directionX = toPlayerX / distance;
+    const directionZ = toPlayerZ / distance;
+    const toWallX = wall.x - cameraX;
+    const toWallZ = wall.z - cameraZ;
+    const projection = toWallX * directionX + toWallZ * directionZ;
+    const perpendicular = Math.abs(toWallX * directionZ - toWallZ * directionX);
+    const obstructs = projection > -0.2
+      && projection < distance + 1.2
+      && perpendicular < wall.length / 2 + 3.2;
+    const targetOpacity = obstructs ? 0.07 : 1;
+    const blend = 1 - Math.exp(-12 * delta);
+    for (const material of [wallMaterial.current, baseMaterial.current, capMaterial.current]) {
+      if (!material) continue;
+      material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, blend);
+      material.transparent = material.opacity < 0.995;
+      material.depthWrite = material.opacity >= 0.995;
+    }
+  });
+
+  return (
+    <group position={[wall.x, 0, wall.z]}>
+      <mesh position={[0, WALL_HEIGHT / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={size} />
+        <meshStandardMaterial ref={wallMaterial} color={style.wallColor} roughness={0.92} />
+      </mesh>
+      <mesh position={[0, 0.075, 0]} castShadow>
+        <boxGeometry args={baseRail} />
+        <meshStandardMaterial ref={baseMaterial} color={baseColor} roughness={0.7} />
+      </mesh>
+      <mesh position={[0, WALL_HEIGHT - 0.025, 0]} castShadow>
+        <boxGeometry args={topRail} />
+        <meshStandardMaterial ref={capMaterial} color={capColor} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function Doorway({ door, style }: { door: DoorSpec; style: ApartmentStyle }) {
+  const width = 1.2;
+  const height = 2.28;
+  const turn = door.axis === "x" ? Math.PI / 2 : 0;
+  const frameColor = useMemo(
+    () => new THREE.Color(style.wallColor).lerp(new THREE.Color(style.trimColor), 0.38),
+    [style.trimColor, style.wallColor],
+  );
+  return (
+    <group position={[door.x, 0, door.z]} rotation={[0, turn, 0]}>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[0, height / 2, side * width / 2]} castShadow>
+          <boxGeometry args={[0.28, height, 0.13]} />
+          <meshStandardMaterial color={frameColor} roughness={0.68} />
+        </mesh>
+      ))}
+      <mesh position={[0, height, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.16, width + 0.13]} />
+        <meshStandardMaterial color={frameColor} roughness={0.68} />
+      </mesh>
+    </group>
+  );
+}
+
+function WindowUnit({
+  axis,
+  x,
+  z,
+  style,
+}: {
+  axis: "x" | "z";
+  x: number;
+  z: number;
+  style: ApartmentStyle;
+}) {
+  const turn = axis === "x" ? 0 : Math.PI / 2;
+  const frameColor = useMemo(
+    () => new THREE.Color(style.wallColor).lerp(new THREE.Color(style.trimColor), 0.55),
+    [style.trimColor, style.wallColor],
+  );
+  return (
+    <group position={[x, 1.75, z]} rotation={[0, turn, 0]}>
+      <mesh>
+        <boxGeometry args={[2.2, 1.35, 0.08]} />
+        <meshStandardMaterial color="#9ddfff" roughness={0.18} metalness={0.04} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={`v-${side}`} position={[side * 1.13, 0, 0.055]}>
+          <boxGeometry args={[0.13, 1.55, 0.12]} />
+          <meshStandardMaterial color={frameColor} roughness={0.68} />
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={`h-${side}`} position={[0, side * 0.74, 0.055]}>
+          <boxGeometry args={[2.38, 0.13, 0.12]} />
+          <meshStandardMaterial color={frameColor} roughness={0.68} />
+        </mesh>
+      ))}
+      <mesh position={[0, 0, 0.06]}>
+        <boxGeometry args={[0.09, 1.35, 0.1]} />
+        <meshStandardMaterial color={frameColor} roughness={0.68} />
+      </mesh>
+      <mesh position={[0, 0, 0.06]}>
+        <boxGeometry args={[2.2, 0.09, 0.1]} />
+        <meshStandardMaterial color={frameColor} roughness={0.68} />
+      </mesh>
+    </group>
+  );
+}
+
+const FLOOR_ZONES = [
+  { id: "living", center: [-7.2, -4.3], size: [11.2, 8.4], tint: 0x8a5b38, blend: 0.12, pattern: "wood" },
+  { id: "kitchen", center: [-8.45, 4.3], size: [8.7, 8.4], tint: 0xf2d5a0, blend: 0.34, pattern: "tile" },
+  { id: "hall", center: [0, 0], size: [2.8, 6], tint: 0xb8854f, blend: 0.1, pattern: "wood" },
+  { id: "foyer", center: [0, 5.8], size: [7.8, 5.5], tint: 0xc18e54, blend: 0.1, pattern: "wood" },
+  { id: "bedroom", center: [7.2, -5.3], size: [11.2, 6.4], tint: 0xa86c62, blend: 0.11, pattern: "wood" },
+  { id: "study", center: [7.2, 0.5], size: [11.2, 4.8], tint: 0x745a43, blend: 0.14, pattern: "wood" },
+  { id: "bathroom", center: [6.1, 5.8], size: [4, 5.5], tint: 0xb9e8ee, blend: 0.72, pattern: "tile" },
+  { id: "utility", center: [10.5, 5.8], size: [4.4, 5.5], tint: 0x9ba1ad, blend: 0.58, pattern: "tile" },
+] as const;
+
+function FloorPattern({ zone }: { zone: (typeof FLOOR_ZONES)[number] }) {
+  const seamColor = zone.pattern === "wood" ? "#8e633f" : "#fff8e8";
+  const lines = zone.pattern === "wood"
+    ? Array.from({ length: Math.floor(zone.size[0] / 0.72) }, (_, index) => ({
+        key: `wood-${index}`,
+        x: -zone.size[0] / 2 + (index + 1) * 0.72,
+        z: 0,
+        width: 0.018,
+        depth: zone.size[1],
+      }))
+    : [
+        ...Array.from({ length: Math.floor(zone.size[0] / 1.05) }, (_, index) => ({
+          key: `tile-x-${index}`,
+          x: -zone.size[0] / 2 + (index + 1) * 1.05,
+          z: 0,
+          width: 0.024,
+          depth: zone.size[1],
+        })),
+        ...Array.from({ length: Math.floor(zone.size[1] / 1.05) }, (_, index) => ({
+          key: `tile-z-${index}`,
+          x: 0,
+          z: -zone.size[1] / 2 + (index + 1) * 1.05,
+          width: zone.size[0],
+          depth: 0.024,
+        })),
+      ];
+  return (
+    <group position={[zone.center[0], 0.024, zone.center[1]]}>
+      {lines.map((line) => (
+        <mesh key={line.key} position={[line.x, 0, line.z]} raycast={() => null}>
+          <boxGeometry args={[line.width, 0.009, line.depth]} />
+          <meshBasicMaterial color={seamColor} transparent opacity={zone.pattern === "wood" ? 0.34 : 0.58} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function ApartmentWorld({
   decor,
+  style,
   mode,
   selectedUid,
+  invalidUid,
   onSelect,
+  onMoveStart,
   onMove,
+  onMoveEnd,
+  player,
 }: {
   decor: readonly ApartmentDecorItem[];
+  style: ApartmentStyle;
   mode: ApartmentMode;
   selectedUid: string | null;
+  invalidUid: string | null;
   onSelect(uid: string | null): void;
+  onMoveStart(uid: string): void;
   onMove(uid: string, x: number, z: number): void;
+  onMoveEnd(uid: string): void;
+  player: React.RefObject<RapierRigidBody | null>;
 }) {
-  const apartment = useMemo(() => {
-    const root = new THREE.Group();
-    for (const spec of ROOMS) {
-      const room = cloneApartmentSource(spec.variant);
-      room.position.set(spec.x, 0, spec.z);
-      room.rotation.y = spec.turn;
-      root.add(room);
-    }
-    return root;
-  }, []);
-
   return (
     <>
       <color attach="background" args={["#bfeaff"]} />
       <mesh position={[0, -0.12, 0]} receiveShadow onPointerDown={() => mode === "decorate" && onSelect(null)}>
         <boxGeometry args={[APARTMENT_WIDTH, 0.24, APARTMENT_DEPTH]} />
-        <meshStandardMaterial color="#f3e3ce" roughness={0.94} />
+        <meshStandardMaterial color={style.floorColor} roughness={0.9} />
       </mesh>
-      <primitive object={apartment} />
+      {FLOOR_ZONES.map((zone) => {
+        const color = new THREE.Color(style.floorColor).lerp(new THREE.Color(zone.tint), zone.blend);
+        return (
+          <group key={zone.id}>
+            <mesh position={[zone.center[0], 0.006, zone.center[1]]} receiveShadow>
+              <boxGeometry args={[zone.size[0], 0.025, zone.size[1]]} />
+              <meshStandardMaterial color={color} roughness={0.86} />
+            </mesh>
+            <FloorPattern zone={zone} />
+          </group>
+        );
+      })}
+      {WALLS.map((wall) => <WallRun key={wall.id} wall={wall} style={style} player={player} />)}
+      {DOORS.map((door) => <Doorway key={door.id} door={door} style={style} />)}
+      <WindowUnit axis="x" x={-8.6} z={-8.49} style={style} />
+      <WindowUnit axis="x" x={0} z={-8.49} style={style} />
+      <WindowUnit axis="x" x={7.4} z={-8.49} style={style} />
+      <WindowUnit axis="z" x={-12.79} z={4.4} style={style} />
+      <WindowUnit axis="z" x={12.79} z={0.4} style={style} />
+      <group position={[0, 0, 8.48]}>
+        <mesh position={[0, 1.25, 0]} castShadow>
+          <boxGeometry args={[1.5, 2.45, 0.11]} />
+          <meshStandardMaterial color="#d97835" roughness={0.68} />
+        </mesh>
+        {[0.68, 1.55].map((y) => (
+          <mesh key={y} position={[0, y, -0.065]}>
+            <boxGeometry args={[1.12, 0.56, 0.045]} />
+            <meshStandardMaterial color="#f0a25f" roughness={0.76} />
+          </mesh>
+        ))}
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[side * 0.82, 1.25, 0]}>
+            <boxGeometry args={[0.14, 2.65, 0.17]} />
+            <meshStandardMaterial color={style.wallColor} roughness={0.76} />
+          </mesh>
+        ))}
+        <mesh position={[0, 2.53, 0]}>
+          <boxGeometry args={[1.78, 0.14, 0.17]} />
+          <meshStandardMaterial color={style.wallColor} roughness={0.76} />
+        </mesh>
+        <mesh position={[0.5, 1.22, -0.14]}>
+          <sphereGeometry args={[0.075, 12, 8]} />
+          <meshStandardMaterial color="#ffd84d" metalness={0.3} roughness={0.34} />
+        </mesh>
+      </group>
+      <pointLight position={[-7.5, 2.35, -3.8]} color="#ffd8a8" intensity={0.72} distance={8} decay={2} />
+      <pointLight position={[-8.2, 2.35, 4.8]} color="#ffe6b8" intensity={0.68} distance={7} decay={2} />
+      <pointLight position={[7.2, 2.35, -5.2]} color="#ffd0b6" intensity={0.68} distance={7} decay={2} />
+      <pointLight position={[7.2, 2.35, 0.5]} color="#cfe9ff" intensity={0.58} distance={7} decay={2} />
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[APARTMENT_WIDTH / 2, 0.1, APARTMENT_DEPTH / 2]} position={[0, -0.1, 0]} friction={0.9} />
-        <CuboidCollider args={[0.12, WALL_HEIGHT / 2, APARTMENT_DEPTH / 2]} position={[-APARTMENT_WIDTH / 2, WALL_HEIGHT / 2, 0]} />
-        <CuboidCollider args={[0.12, WALL_HEIGHT / 2, APARTMENT_DEPTH / 2]} position={[APARTMENT_WIDTH / 2, WALL_HEIGHT / 2, 0]} />
-        <CuboidCollider args={[APARTMENT_WIDTH / 2, WALL_HEIGHT / 2, 0.12]} position={[0, WALL_HEIGHT / 2, -APARTMENT_DEPTH / 2]} />
-        <CuboidCollider args={[APARTMENT_WIDTH / 2, WALL_HEIGHT / 2, 0.12]} position={[0, WALL_HEIGHT / 2, APARTMENT_DEPTH / 2]} />
+        {WALLS.map((wall) => (
+          <CuboidCollider
+            key={wall.id}
+            args={wall.axis === "x"
+              ? [wall.length / 2, WALL_HEIGHT / 2, WALL_THICKNESS / 2]
+              : [WALL_THICKNESS / 2, WALL_HEIGHT / 2, wall.length / 2]}
+            position={[wall.x, WALL_HEIGHT / 2, wall.z]}
+          />
+        ))}
       </RigidBody>
       {decor.map((item) => (
         <DecorItemView
@@ -380,8 +846,11 @@ function ApartmentWorld({
           item={item}
           mode={mode}
           selected={selectedUid === item.uid}
+          invalid={invalidUid === item.uid}
           onSelect={onSelect}
+          onMoveStart={onMoveStart}
           onMove={onMove}
+          onMoveEnd={onMoveEnd}
         />
       ))}
     </>
@@ -394,9 +863,13 @@ function ApartmentRunner({
   attemptSerial,
   mode,
   decor,
+  style,
   selectedUid,
+  invalidUid,
   onSelect,
+  onMoveDecorStart,
   onMoveDecor,
+  onMoveDecorEnd,
   onMoveRunner,
   onFall,
 }: {
@@ -405,9 +878,13 @@ function ApartmentRunner({
   attemptSerial: number;
   mode: ApartmentMode;
   decor: readonly ApartmentDecorItem[];
+  style: ApartmentStyle;
   selectedUid: string | null;
+  invalidUid: string | null;
   onSelect(uid: string | null): void;
+  onMoveDecorStart(uid: string): void;
   onMoveDecor(uid: string, x: number, z: number): void;
+  onMoveDecorEnd(uid: string): void;
   onMoveRunner(x: number, z: number): void;
   onFall(): void;
 }) {
@@ -420,8 +897,19 @@ function ApartmentRunner({
 
   return (
     <>
-      <Lighting />
-      <ApartmentWorld decor={decor} mode={mode} selectedUid={selectedUid} onSelect={onSelect} onMove={onMoveDecor} />
+      <Lighting interior />
+      <ApartmentWorld
+        decor={decor}
+        style={style}
+        mode={mode}
+        selectedUid={selectedUid}
+        invalidUid={invalidUid}
+        onSelect={onSelect}
+        onMoveStart={onMoveDecorStart}
+        onMove={onMoveDecor}
+        onMoveEnd={onMoveDecorEnd}
+        player={player}
+      />
       <PlayerController
         ref={player}
         active={mode === "explore"}
@@ -447,6 +935,10 @@ function ApartmentRunner({
         editorTarget={null}
         lookEnabled
         lookButton={mode === "decorate" ? 2 : 0}
+        chaseDistance={mode === "decorate" ? 10.6 : 8.2}
+        chaseHeight={mode === "decorate" ? 9.8 : 7.2}
+        chaseLookAhead={mode === "decorate" ? 1.2 : 2.2}
+        chaseTargetHeight={mode === "decorate" ? 0 : 0.25}
         shakeUntilRef={shakeUntilRef}
       />
     </>
@@ -463,33 +955,74 @@ export function AvatarApartment({
   avatarSeed: number;
   onClose(): void;
 }) {
-  const [room, setRoom] = useState("Central gallery");
+  const [room, setRoom] = useState("Hallway");
   const [mode, setMode] = useState<ApartmentMode>("explore");
   const [attemptSerial, setAttemptSerial] = useState(1);
   const [runnerPosition, setRunnerPosition] = useState({ x: 0, z: 0 });
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [invalidUid, setInvalidUid] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [catalogGroup, setCatalogGroup] = useState<(typeof DECOR_GROUPS)[number]["id"]>("all");
+  const [undoDecor, setUndoDecor] = useState<ApartmentDecorItem[] | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [decor, setDecor] = useState<ApartmentDecorItem[]>(() => (
-    typeof window === "undefined" ? DEFAULT_APARTMENT_DECOR.map((item) => ({ ...item })) : loadApartmentDecor(window.localStorage)
+    normalizeApartmentAnchors(typeof window === "undefined"
+      ? DEFAULT_APARTMENT_DECOR.map((item) => ({ ...item }))
+      : loadApartmentDecor(window.localStorage))
+  ));
+  const [style, setStyle] = useState<ApartmentStyle>(() => (
+    typeof window === "undefined" ? { ...DEFAULT_APARTMENT_STYLE } : loadApartmentStyle(window.localStorage)
   ));
   const idSerial = useRef(0);
+  const guideButtonRef = useRef<HTMLButtonElement>(null);
+
+  const persistNow = useCallback(() => {
+    try {
+      saveApartmentDecor(window.localStorage, decor);
+      saveApartmentStyle(window.localStorage, style);
+      setSaveError(null);
+      return true;
+    } catch {
+      setSaveError("Couldn’t save on this device");
+      return false;
+    }
+  }, [decor, style]);
+
+  const closeGuide = useCallback(() => {
+    setGuideOpen(false);
+    window.setTimeout(() => guideButtonRef.current?.focus(), 0);
+  }, []);
+
+  const closeApartment = useCallback(() => {
+    persistNow();
+    onClose();
+  }, [onClose, persistNow]);
 
   useEffect(() => {
-    resetCameraYaw();
+    resetCameraYaw(trackFacingYaw(APARTMENT_TRACK));
     const down = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      if (guideOpen) closeGuide();
+      else closeApartment();
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [onClose]);
+  }, [closeApartment, closeGuide, guideOpen]);
 
   useEffect(() => {
     if (mode === "decorate") resetInput();
   }, [mode]);
 
   useEffect(() => {
-    saveApartmentDecor(window.localStorage, decor);
-  }, [decor]);
+    const timer = window.setTimeout(persistNow, 180);
+    return () => window.clearTimeout(timer);
+  }, [persistNow]);
+
+  useEffect(() => {
+    const flush = () => { persistNow(); };
+    window.addEventListener("beforeunload", flush);
+    return () => window.removeEventListener("beforeunload", flush);
+  }, [persistNow]);
 
   const onMoveRunner = useCallback((x: number, z: number) => {
     const next = roomAt(x, z);
@@ -500,35 +1033,155 @@ export function AvatarApartment({
   }, []);
 
   const updateItem = useCallback((uid: string, update: Partial<ApartmentDecorItem>) => {
-    setDecor((current) => current.map((item) => item.uid === uid ? { ...item, ...update } : item));
+    setDecor((current) => {
+      const original = current.find((item) => item.uid === uid);
+      if (!original) return current;
+      const next = { ...original, ...update };
+      const dx = next.x - original.x;
+      const dz = next.z - original.z;
+      return current.map((item) => {
+        if (item.uid === uid) return next;
+        return item.parentUid === uid && (dx !== 0 || dz !== 0)
+          ? { ...item, x: item.x + dx, z: item.z + dz }
+          : item;
+      });
+    });
   }, []);
 
+  const rememberUndo = useCallback(() => {
+    setUndoDecor(decor.map((item) => ({ ...item })));
+  }, [decor]);
+
+  const moveDecor = useCallback((uid: string, x: number, z: number) => {
+    setDecor((current) => {
+      const item = current.find((candidate) => candidate.uid === uid);
+      if (!item) return current;
+      if (item.anchorKind === "wall") {
+        setInvalidUid(null);
+        const snapped = snapWallItem(item, x, z);
+        return current.map((candidate) => candidate.uid === uid ? snapped : candidate);
+      }
+      if (item.anchorKind === "surface") {
+        const support = nearestSurfaceSupport(current.filter((candidate) => candidate.uid !== uid), x, z);
+        if (!support) {
+          setInvalidUid(uid);
+          return current;
+        }
+        setInvalidUid(null);
+        return current.map((candidate) => candidate.uid === uid
+          ? { ...candidate, x: support.x, z: support.z, parentUid: support.uid }
+          : candidate);
+      }
+      if (!validFloorPlacement(item, x, z, current, runnerPosition)) {
+        setInvalidUid(uid);
+        return current;
+      }
+      setInvalidUid(null);
+      const dx = x - item.x;
+      const dz = z - item.z;
+      return current.map((candidate) => {
+        if (candidate.uid === uid) return { ...candidate, x, z };
+        return candidate.parentUid === uid
+          ? { ...candidate, x: candidate.x + dx, z: candidate.z + dz }
+          : candidate;
+      });
+    });
+  }, [runnerPosition]);
+
   const addItem = (type: ApartmentDecorType) => {
+    if (decor.length >= MAX_APARTMENT_ITEMS) return;
     let uid: string;
     do {
       idSerial.current += 1;
       uid = `user-${type}-${idSerial.current}`;
     } while (decor.some((item) => item.uid === uid));
-    const offset = ((decor.length + idSerial.current) % 5 - 2) * 0.45;
-    const item: ApartmentDecorItem = {
+    const anchorKind = apartmentAnchorKind(type);
+    const offset = ((decor.length + idSerial.current) % 5 - 2) * 0.5;
+    let item: ApartmentDecorItem = {
       uid,
       type,
-      x: clampX(snap(runnerPosition.x + 2.4)),
+      x: clampX(snap(runnerPosition.x + 2.6)),
       z: clampZ(snap(runnerPosition.z + offset)),
       rotation: 0,
       color: "#68b78a",
+      anchorKind,
     };
+    if (anchorKind === "wall") item = snapWallItem(item);
+    if (anchorKind === "surface") {
+      const support = nearestSurfaceSupport(decor, item.x, item.z);
+      if (support) item = { ...item, x: support.x, z: support.z, parentUid: support.uid };
+    }
+    if (anchorKind === "floor" && DECOR[type].solid) {
+      const candidates = Array.from({ length: 18 }, (_, index) => {
+        const angle = index * Math.PI * 0.62;
+        const radius = 2.4 + Math.floor(index / 6) * 1.25;
+        return { x: clampX(snap(runnerPosition.x + Math.cos(angle) * radius)), z: clampZ(snap(runnerPosition.z + Math.sin(angle) * radius)) };
+      });
+      const open = candidates.find((candidate) => validFloorPlacement(item, candidate.x, candidate.z, decor, runnerPosition));
+      if (open) item = { ...item, ...open };
+    }
+    rememberUndo();
     setDecor((current) => [...current, item]);
     setSelectedUid(item.uid);
+    setInvalidUid(null);
   };
 
   const selected = decor.find((item) => item.uid === selectedUid) ?? null;
+  const activeGroup = DECOR_GROUPS.find((group) => group.id === catalogGroup) ?? DECOR_GROUPS[0];
   const press = (key: "forward" | "backward" | "left" | "right", active: boolean) => setKey(key, active);
+
+  const editSelected = (update: Partial<ApartmentDecorItem>) => {
+    if (!selected) return;
+    rememberUndo();
+    updateItem(selected.uid, update);
+  };
+
+  const removeSelected = () => {
+    if (!selected) return;
+    rememberUndo();
+    setDecor((current) => current.filter((item) => item.uid !== selected.uid && item.parentUid !== selected.uid));
+    setSelectedUid(null);
+  };
+
+  const duplicateSelected = () => {
+    if (!selected || decor.length >= MAX_APARTMENT_ITEMS) return;
+    let uid: string;
+    do {
+      idSerial.current += 1;
+      uid = `user-${selected.type}-${idSerial.current}`;
+    } while (decor.some((item) => item.uid === uid));
+    let duplicate: ApartmentDecorItem = {
+      ...selected,
+      uid,
+      x: clampX(snap(selected.x + 0.8)),
+      z: clampZ(snap(selected.z + 0.8)),
+    };
+    if (duplicate.anchorKind === "wall") duplicate = snapWallItem(duplicate);
+    rememberUndo();
+    setDecor((current) => [...current, duplicate]);
+    setSelectedUid(uid);
+  };
+
+  const restoreStarter = () => {
+    if (!window.confirm("Restore the starter apartment? Your current furniture layout will be replaced.")) return;
+    rememberUndo();
+    setDecor(normalizeApartmentAnchors(DEFAULT_APARTMENT_DECOR));
+    setStyle({ ...DEFAULT_APARTMENT_STYLE });
+    setSelectedUid(null);
+  };
+
+  const undoLastEdit = () => {
+    if (!undoDecor) return;
+    setDecor(undoDecor.map((item) => ({ ...item })));
+    setUndoDecor(null);
+    setSelectedUid(null);
+    setInvalidUid(null);
+  };
 
   return (
     <main className={`avatar-apartment ${mode === "decorate" ? "is-decorating" : ""}`}>
       <Canvas
-        aria-label="Your six-times-larger customizable apartment"
+        aria-label="Your modular permanent apartment"
         shadows="percentage"
         dpr={[1, 1.5]}
         camera={{ fov: 52, near: 0.1, far: 220, position: [0, 4, -5] }}
@@ -547,9 +1200,16 @@ export function AvatarApartment({
               attemptSerial={attemptSerial}
               mode={mode}
               decor={decor}
+              style={style}
               selectedUid={selectedUid}
+              invalidUid={invalidUid}
               onSelect={setSelectedUid}
-              onMoveDecor={(uid, x, z) => updateItem(uid, { x, z })}
+              onMoveDecorStart={() => {
+                rememberUndo();
+                setInvalidUid(null);
+              }}
+              onMoveDecor={moveDecor}
+              onMoveDecorEnd={() => setInvalidUid(null)}
               onMoveRunner={onMoveRunner}
               onFall={() => setAttemptSerial((serial) => serial + 1)}
             />
@@ -563,46 +1223,67 @@ export function AvatarApartment({
           <strong>{mode === "explore" ? room : "Decorate mode"}</strong>
         </div>
         <nav aria-label="Apartment actions">
-          <button className="button secondary apartment-guide-button" onClick={() => setGuideOpen(true)} aria-label="Apartment controls">?</button>
+          <button ref={guideButtonRef} className="button secondary apartment-guide-button" onClick={() => setGuideOpen(true)} aria-label="Apartment controls">?</button>
           <button className={`button ${mode === "explore" ? "primary" : "secondary"}`} onClick={() => setMode("explore")}>🏃 Explore</button>
           <button className={`button ${mode === "decorate" ? "primary" : "secondary"}`} onClick={() => setMode("decorate")}>🛋️ Decorate</button>
-          <button className="button secondary" onClick={onClose}>↩️ Back to menu</button>
+          <button className="button secondary" onClick={closeApartment}>↩️ Back to menu</button>
         </nav>
       </header>
 
       {mode === "decorate" && (
         <aside className="avatar-apartment-decor" aria-label="Apartment furniture">
-          <div>
-            <span className="eyebrow">ADD FURNITURE</span>
-            <small>Added beside your runner</small>
+          <div className="avatar-apartment-decor-heading">
+            <span className="eyebrow">🛋️ DECORATE</span>
+            <button onClick={undoLastEdit} disabled={!undoDecor}>↶ Undo</button>
           </div>
-          <div className="avatar-apartment-decor-grid">
-            {(Object.entries(DECOR) as [ApartmentDecorType, DecorDefinition][]).map(([type, definition]) => (
-              <button key={type} onClick={() => addItem(type)}>
-                <span>{definition.emoji}</span>{definition.label}
-              </button>
+          {saveError && <small className="avatar-apartment-save-error">⚠️ {saveError}</small>}
+          {selected && (
+            <section className="avatar-apartment-selection avatar-apartment-selection-sticky">
+              <strong>{DECOR[selected.type].emoji} {DECOR[selected.type].label}</strong>
+              <small>{selected.anchorKind === "wall" ? "Snaps to walls" : selected.anchorKind === "surface" ? "Attached to furniture" : "Floor item"}</small>
+              {DECOR[selected.type].tintable !== false && (
+                <label>Color <input type="color" value={selected.color} onChange={(event) => editSelected({ color: event.target.value })} /></label>
+              )}
+              <div>
+                <button disabled={selected.anchorKind === "wall"} onClick={() => editSelected({ rotation: selected.rotation - Math.PI / 12 })}>↶ 15°</button>
+                <button disabled={selected.anchorKind === "wall"} onClick={() => editSelected({ rotation: selected.rotation + Math.PI / 12 })}>↷ 15°</button>
+                <button onClick={duplicateSelected} disabled={decor.length >= MAX_APARTMENT_ITEMS}>📄 Duplicate</button>
+                <button className="danger" onClick={removeSelected}>🗑️ Remove</button>
+              </div>
+            </section>
+          )}
+          <div className="avatar-apartment-catalog-heading">
+            <span className="eyebrow">ADD FURNITURE</span>
+            <small>{decor.length}/{MAX_APARTMENT_ITEMS}</small>
+          </div>
+          <div className="avatar-apartment-groups" aria-label="Furniture groups">
+            {DECOR_GROUPS.map((group) => (
+              <button
+                key={group.id}
+                className={group.id === activeGroup.id ? "active" : ""}
+                onClick={() => setCatalogGroup(group.id)}
+              >{group.label}</button>
             ))}
           </div>
-          <section className="avatar-apartment-selection">
-            {selected ? (
-              <>
-                <strong>{DECOR[selected.type].emoji} {DECOR[selected.type].label}</strong>
-                <label>Color <input type="color" value={selected.color} onChange={(event) => updateItem(selected.uid, { color: event.target.value })} /></label>
-                <div>
-                  <button onClick={() => updateItem(selected.uid, { rotation: selected.rotation - Math.PI / 4 })}>↶ Turn</button>
-                  <button onClick={() => updateItem(selected.uid, { rotation: selected.rotation + Math.PI / 4 })}>↷ Turn</button>
-                  <button className="danger" onClick={() => {
-                    setDecor((current) => current.filter((item) => item.uid !== selected.uid));
-                    setSelectedUid(null);
-                  }}>🗑️ Remove</button>
-                </div>
-              </>
-            ) : <small>Left-drag a piece to move it. Right-drag to turn the camera.</small>}
-          </section>
-          <button className="avatar-apartment-reset" onClick={() => {
-            setDecor(DEFAULT_APARTMENT_DECOR.map((item) => ({ ...item })));
-            setSelectedUid(null);
-          }}>↺ Restore starter layout</button>
+          <div className="avatar-apartment-decor-grid">
+            {activeGroup.types.map((type) => {
+              const definition = DECOR[type];
+              return (
+              <button key={type} onClick={() => addItem(type)} disabled={decor.length >= MAX_APARTMENT_ITEMS}>
+                <span>{definition.emoji}</span>{definition.label}
+              </button>
+              );
+            })}
+          </div>
+          <details className="avatar-apartment-colors">
+            <summary>🎨 Apartment colors</summary>
+            <section className="avatar-apartment-selection">
+              <label>Walls <input type="color" value={style.wallColor} onChange={(event) => setStyle((current) => ({ ...current, wallColor: event.target.value }))} /></label>
+              <label>Trim <input type="color" value={style.trimColor} onChange={(event) => setStyle((current) => ({ ...current, trimColor: event.target.value }))} /></label>
+              <label>Floors <input type="color" value={style.floorColor} onChange={(event) => setStyle((current) => ({ ...current, floorColor: event.target.value }))} /></label>
+            </section>
+          </details>
+          <button className="avatar-apartment-reset" onClick={restoreStarter}>↺ Restore starter layout</button>
         </aside>
       )}
 
@@ -631,9 +1312,10 @@ export function AvatarApartment({
             <span className="eyebrow">APARTMENT CONTROLS</span>
             <h2>Make the place yours</h2>
             <p><b>Explore:</b> Run with the finished game controls. Hold left click and drag for a full 360° camera turn.</p>
-            <p><b>Decorate:</b> Add furniture beside the runner, then left-drag it anywhere on the floor. Right-drag turns the camera while moving pieces.</p>
-            <p><b>Organize:</b> Select a piece to recolor, rotate, or remove it. Your layout saves automatically on this device.</p>
-            <button className="button primary" onClick={() => setGuideOpen(false)}>Got it</button>
+            <p><b>Decorate:</b> Left-drag floor items. Wall decor snaps to the nearest wall, and lamps or the toaster attach to supporting furniture. Right-drag turns the camera.</p>
+            <p><b>Organize:</b> Select any piece to recolor, turn, duplicate, or remove it. Invalid floor drops show red and keep the last clear position.</p>
+            <p><b>Permanent home:</b> Furniture positions and apartment colors save automatically on this device.</p>
+            <button className="button primary" onClick={closeGuide}>Got it</button>
           </section>
         </div>
       )}

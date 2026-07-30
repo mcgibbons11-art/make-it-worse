@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
 import {
   AVATAR_COLORS,
   DEFAULT_AVATAR,
@@ -23,6 +31,40 @@ import { WARDROBE_ITEM_COUNT } from "@/lib/game/wardrobe";
 import { RunnerStage } from "./RunnerStage";
 
 const ratioLabel = (ratio: number) => `${ratio.toFixed(1)}:1`;
+
+/** A failed preview must never take the usable wardrobe down with it. */
+class RunnerPreviewBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean; attempt: number }
+> {
+  state = { failed: false, attempt: 0 };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[runner-preview] graphics failed", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="avatar-preview-fallback" role="status">
+          <span aria-hidden="true">🏃</span>
+          <b>The runner preview needs another try.</b>
+          <button
+            type="button"
+            onClick={() => this.setState((state) => ({ failed: false, attempt: state.attempt + 1 }))}
+          >
+            Retry preview
+          </button>
+        </div>
+      );
+    }
+    return <div key={this.state.attempt} className="avatar-preview-boundary">{this.props.children}</div>;
+  }
+}
 
 /**
  * One row of colour swatches.
@@ -112,15 +154,23 @@ export function WardrobePanel({
     avatar ? normalizeAvatar(avatar) : DEFAULT_AVATAR,
   );
   const [openSlot, setOpenSlot] = useState<WardrobeSlotId>("headwear");
+  const [previewReady, setPreviewReady] = useState(false);
   const firstControl = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Portals may have just unmounted the gameplay canvas. Give its WebGL
+    // context a beat to return to the browser before asking for the preview's
+    // context; embedded Chromium is much stricter about simultaneous contexts.
+    const previewTimer = window.setTimeout(() => setPreviewReady(true), 180);
     firstControl.current?.focus();
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
+    return () => {
+      window.clearTimeout(previewTimer);
+      window.removeEventListener("keydown", key);
+    };
   }, [onClose]);
 
 
@@ -150,7 +200,13 @@ export function WardrobePanel({
         {/* Stood on the exact deck colour that hides runners best, so the
             measured ratio below it is something you can also just look at. */}
         <div className="avatar-stage" style={{ background: bodyReading.worstDeck }}>
-          <RunnerStage avatar={draft} avatarSeed={avatarSeed} />
+          <RunnerPreviewBoundary>
+            {previewReady ? (
+              <RunnerStage avatar={draft} avatarSeed={avatarSeed} />
+            ) : (
+              <div className="avatar-preview-loading" role="status">Loading runner preview…</div>
+            )}
+          </RunnerPreviewBoundary>
           <small className="avatar-turn-hint">Drag the runner to turn them</small>
           <p className="avatar-reading">
             {ratioLabel(bodyReading.min)} against the palest floor

@@ -63,6 +63,7 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
 import { resolveAvatar } from "@/lib/game/avatar";
+import { WardrobePanel } from "@/components/hud/wardrobe/WardrobePanel";
 import {
   connect,
   fetchClearTimes,
@@ -74,11 +75,6 @@ import {
   type SubmitResult,
 } from "./leaderboard";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
-const WardrobePanel = lazy(() =>
-  import("@/components/hud/wardrobe/WardrobePanel").then((module) => ({
-    default: module.WardrobePanel,
-  })),
-);
 const AvatarApartment = lazy(() =>
   import("@/components/hud/wardrobe/AvatarApartment").then((module) => ({
     default: module.AvatarApartment,
@@ -1038,6 +1034,7 @@ export function PortalsApp() {
           avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
           {...(randomRoomSeed === null ? {} : { randomSeed: randomRoomSeed })}
           initialMode={randomRoomSeed === null ? "build" : "test"}
+          cleanPlay={randomRoomSeed !== null}
           onClose={() => {
             setEditorOpen(false);
             setRandomRoomSeed(null);

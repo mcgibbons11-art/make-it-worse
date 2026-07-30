@@ -509,13 +509,12 @@ export const PlayerController = forwardRef<
       const visual = rigidBody.rotation();
       void visual;
     }
-    const progress = Math.min(
-      1,
-      Math.max(
-        0,
-        (position.z - spawn[2]) / (exit[2] - spawn[2]),
-      ),
-    );
+    const courseX = exit[0] - spawn[0];
+    const courseZ = exit[2] - spawn[2];
+    const courseLengthSq = courseX * courseX + courseZ * courseZ;
+    const progress = Math.min(1, Math.max(0, courseLengthSq > 0
+      ? ((position.x - spawn[0]) * courseX + (position.z - spawn[2]) * courseZ) / courseLengthSq
+      : 0));
     onProgress(progress);
     if (now - lastSample.current >= 1000 / 15) {
       recordSample({
@@ -528,10 +527,8 @@ export const PlayerController = forwardRef<
       lastSample.current = now;
     }
     if (
-      position.z >= exit[2] - 0.45 &&
-      Math.abs(position.x) < 1.15 &&
-      position.y >= 0.1 &&
-      position.y < 3.2
+      Math.hypot(position.x - exit[0], position.z - exit[2]) < 1.25 &&
+      Math.abs(position.y - exit[1]) < 2
     ) {
       finalized.current = true;
       onFinish();

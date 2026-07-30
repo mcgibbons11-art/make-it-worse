@@ -19,17 +19,6 @@ export const PLACEMENT_CAMERA_OFFSET = [4.2, 5.8, -4.8] as const;
 
 /** Radians of yaw per pixel dragged. A full turn is roughly a screen width. */
 const LOOK_SENSITIVITY = 0.006;
-/**
- * How far round the runner the view may be swung, each way.
- *
- * Deliberately not a full circle. The course runs along +Z and every trap
- * telegraph is drawn flat on the deck, so a camera swung behind the runner
- * looks back down the course at markings the player has already passed, and
- * the exit leaves the screen. A bit over a quarter turn each way is enough to
- * see round a corner or check what is beside you without ever losing the thing
- * you are running at.
- */
-const LOOK_LIMIT = Math.PI * 0.55;
 
 export function CameraRig({
   player,
@@ -81,7 +70,9 @@ export function CameraRig({
       // Dragging right looks right. Yaw grows toward +X, which is screen-left,
       // so a rightward drag has to shrink it.
       const next = getCameraYaw() - dx * LOOK_SENSITIVITY;
-      setCameraYaw(Math.max(-LOOK_LIMIT, Math.min(LOOK_LIMIT, next)));
+      // Wrap instead of clamp: held dragging can orbit through any number of
+      // complete turns without hitting an invisible stop at either side.
+      setCameraYaw(Math.atan2(Math.sin(next), Math.cos(next)));
     };
     const up = () => {
       dragging = false;

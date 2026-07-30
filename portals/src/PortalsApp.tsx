@@ -765,7 +765,6 @@ export function PortalsApp() {
   const status = challenge ? runStatus(phase) : null;
   const menuBody = (
     <>
-      <div className="eyebrow">PORTALS EDITION</div>
       <h1 className="portals-title" id="portals-menu-title">
         <span>MAKE IT</span>
         <strong>WORSE</strong>

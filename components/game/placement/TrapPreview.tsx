@@ -98,7 +98,7 @@ function across(span: number, count: number, index: number): number {
   return -span / 2 + (index / (count - 1)) * span;
 }
 
-function PreviewProp({ type }: { type: TrapType }) {
+export function TrapPreviewProp({ type }: { type: TrapType }) {
   switch (type) {
     // Case 2: the trap is the sculpted prop.
     case "swinging_hammer":
@@ -363,7 +363,7 @@ export function TrapPreview({
       position={position}
       rotation={[0, placement.rotationQuarterTurns * (Math.PI / 2), 0]}
     >
-      <PreviewProp type={placement.type} />
+      <TrapPreviewProp type={placement.type} />
       <pointLight color={color} intensity={3.2} distance={4.5} position={[0, 1.2, 0]} />
       <mesh position={[0, 1.15, 0]}>
         <cylinderGeometry args={[radius * 0.52, radius * 0.86, 2.3, 24, 1, true]} />

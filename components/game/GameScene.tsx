@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode, type RefObject } from "react";
+import * as THREE from "three";
 import type { RapierRigidBody } from "@react-three/rapier";
 import type {
   ChallengeDTO,
@@ -12,7 +13,7 @@ import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
 import { GRID_SIZE } from "@/lib/game/constants";
 import { isInterfaceTarget, resetCameraYaw } from "@/lib/game/input";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
-import { CLASSIC_TRACK, buildTrack } from "@/lib/game/track";
+import { CLASSIC_TRACK, buildTrack, type BuiltTrack } from "@/lib/game/track";
 import { snapToGrid } from "@/lib/game/placement";
 import { PlayerVisual } from "./PlayerVisual";
 import { Lighting } from "./Lighting";
@@ -44,6 +45,24 @@ interface Props {
   onHazard(contact: HazardContact): void;
   onSelectZone(zoneId: string): void;
   onMovePlacement(zoneId: string, worldX: number, worldZ: number): void;
+  trackOverride?: BuiltTrack;
+}
+
+function RuntimeTrapColor({ color, children }: { color: unknown; children: ReactNode }) {
+  const group = useRef<THREE.Group>(null);
+  useLayoutEffect(() => {
+    if (typeof color !== "string") return;
+    group.current?.traverse((node) => {
+      if (!(node instanceof THREE.Mesh)) return;
+      const source = Array.isArray(node.material) ? node.material : [node.material];
+      const next = source.map((entry) => {
+        if (!(entry instanceof THREE.MeshStandardMaterial)) return entry;
+        const clone = entry.clone(); clone.color.set(color); return clone;
+      });
+      node.material = Array.isArray(node.material) ? next : next[0]!;
+    });
+  }, [color]);
+  return <group ref={group}>{children}</group>;
 }
 export function GameScene({
   challenge,
@@ -63,6 +82,7 @@ export function GameScene({
   onHazard,
   onSelectZone,
   onMovePlacement,
+  trackOverride,
 }: Props) {
   const internalPlayer = useRef<RapierRigidBody>(null);
   const player = qaPlayerRef ?? internalPlayer;
@@ -80,8 +100,8 @@ export function GameScene({
   const trapBodies = qaTrapBodiesRef ?? internalTrapBodies;
   const effects = useRef<EffectsHandle>(null);
   const track = useMemo(
-    () => buildTrack(challenge.track ?? CLASSIC_TRACK),
-    [challenge.track],
+    () => trackOverride ?? buildTrack(challenge.track ?? CLASSIC_TRACK),
+    [challenge.track, trackOverride],
   );
   const validation = useMemo(
     () =>
@@ -173,17 +193,17 @@ export function GameScene({
       <LevelGeometry pieces={track.pieces} />
       <ExitDoor showLabel={phase === "playing"} position={track.exit} />
       {challenge.traps.map((trap) => (
-        <TrapRenderer
-          key={`${attemptSerial}-${trap.id}`}
-          trap={trap}
-          player={player}
-          soapUntilRef={soapUntilRef}
-          stunUntilRef={stunUntilRef}
-          grabbables={grabbables}
-          trapBodies={trapBodies}
-          startedAt={startedAt}
-          onMechanic={onMechanic}
-          onHazard={(hazard) => {
+        <RuntimeTrapColor key={`${attemptSerial}-${trap.id}`} color={trap.params.builderColor}>
+          <TrapRenderer
+            trap={trap}
+            player={player}
+            soapUntilRef={soapUntilRef}
+            stunUntilRef={stunUntilRef}
+            grabbables={grabbables}
+            trapBodies={trapBodies}
+            startedAt={startedAt}
+            onMechanic={onMechanic}
+            onHazard={(hazard) => {
             // Decorative only, and first so the burst lands on the frame the
             // hit registers rather than after the knockback has moved the
             // runner. It carries the same impulse the stun and knockback use,
@@ -209,8 +229,9 @@ export function GameScene({
               }
             }
             onHazard(hazard);
-          }}
-        />
+            }}
+          />
+        </RuntimeTrapColor>
       ))}
       {attemptSerial > 0 ? (
         <>

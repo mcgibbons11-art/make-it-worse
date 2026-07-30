@@ -15,6 +15,7 @@ import { AssetReadinessGate } from "./AssetModel";
 import { ACESFilmicToneMapping } from "three";
 import { TONE_EXPOSURE } from "./render/tone";
 import type { TrapMechanicEvent } from "./TrapRenderer";
+import type { BuiltTrack } from "@/lib/game/track";
 interface Props {
   challenge: ChallengeDTO;
   phase: GamePhase;
@@ -34,6 +35,8 @@ interface Props {
   onSelectZone(zoneId: string): void;
   onMovePlacement(zoneId: string, worldX: number, worldZ: number): void;
   onAssetsReady(): void;
+  /** Direct authored geometry used by the custom-map Test mode. */
+  trackOverride?: BuiltTrack;
 }
 export default function GameCanvas(props: Props) {
   return (

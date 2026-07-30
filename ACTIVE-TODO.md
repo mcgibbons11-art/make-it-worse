@@ -56,8 +56,8 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Apartment
 
 - [x] Replace apartment movement/camera with the same controller, physics, and camera settings used by the main game and builder Test mode.
-- [ ] Expand the apartment substantially and turn the asset set into connected rooms the runner can explore.
-- [ ] Add richer decorating with drag/drop floor placement, moving, organizing, and color customization.
+- [x] Expand the apartment to six times the original floor area and turn the asset set into connected rooms the runner can explore.
+- [x] Add richer decorating with drag/drop floor placement, moving, organizing, color customization, and local persistence.
 
 ## Audio and assets
 

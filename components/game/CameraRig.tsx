@@ -24,12 +24,15 @@ export function CameraRig({
   player,
   editorTarget,
   lookEnabled = false,
+  lookButton = 0,
   shakeUntilRef,
 }: {
   player: React.RefObject<RapierRigidBody | null>;
   editorTarget: Vec3Tuple | null;
   /** Whether a left-drag turns the view. Off while a trap is being placed. */
   lookEnabled?: boolean;
+  /** Pointer button used to turn: left normally, right while an editor owns left-drag. */
+  lookButton?: 0 | 2;
   shakeUntilRef: React.MutableRefObject<number>;
 }) {
   const look = useRef(new Vector3(0, 1, 4));
@@ -59,7 +62,7 @@ export function CameraRig({
     let dragging = false;
     let lastX = 0;
     const down = (event: PointerEvent) => {
-      if (event.button !== 0) return;
+      if (event.button !== lookButton) return;
       dragging = true;
       lastX = event.clientX;
     };
@@ -87,7 +90,7 @@ export function CameraRig({
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
-  }, [lookEnabled, gl]);
+  }, [lookButton, lookEnabled, gl]);
 
   useFrame(({ camera }, delta) => {
     if (!seeded.current) {

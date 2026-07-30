@@ -104,6 +104,28 @@ const trackSchema = z
   .min(1)
   .max(MAX_TRACK_SEGMENTS);
 
+const runtimeNumber = z.number().finite().min(-2_048).max(2_048);
+const runtimePieceSchema = z.tuple([
+  runtimeNumber, runtimeNumber, runtimeNumber,
+  z.number().finite().min(0.02).max(2_048),
+  z.number().finite().min(0.02).max(2_048),
+  z.number().finite().min(0.02).max(2_048),
+  z.string().regex(/^#[0-9a-f]{6}$/i),
+  z.number().finite().min(-Math.PI * 2).max(Math.PI * 2),
+]);
+const runtimeZoneSchema = z.tuple([
+  runtimeNumber, runtimeNumber, runtimeNumber, runtimeNumber, runtimeNumber,
+  z.number().int().min(1).max(32),
+  z.string().regex(/^[0-9a-f]{1,32}$/),
+]);
+const runtimeTrackSchema = z.tuple([
+  z.array(runtimePieceSchema).min(1).max(96),
+  z.array(runtimeZoneSchema).min(1).max(96),
+  z.tuple([runtimeNumber, runtimeNumber, runtimeNumber]),
+  z.tuple([runtimeNumber, runtimeNumber, runtimeNumber]),
+  z.number().finite().min(1).max(4_096),
+]);
+
 const payloadSchema = z.union([
   z.tuple([z.literal(1), ...basePayload]),
   z.tuple([z.literal(2), ...basePayload, trackSchema]),
@@ -114,6 +136,13 @@ const payloadSchema = z.union([
     trackSchema,
     statsTuple,
     avatarTuple,
+  ]),
+  z.tuple([
+    z.literal(5),
+    ...basePayload,
+    runtimeTrackSchema,
+    statsTuple,
+    avatarTuple.nullable(),
   ]),
 ]);
 
@@ -135,6 +164,61 @@ function fromBase64Url(payload: string): string {
   );
 }
 
+function allowedMask(types: readonly (typeof TRAP_TYPES)[number][]): string {
+  let mask = BigInt(0);
+  for (const type of types) {
+    const index = TRAP_TYPES.indexOf(type);
+    if (index >= 0) mask |= BigInt(1) << BigInt(index);
+  }
+  return mask.toString(16);
+}
+
+function runtimeTuple(track: BuiltTrack): z.infer<typeof runtimeTrackSchema> {
+  return [
+    track.pieces.map((piece) => [
+      piece.center[0], piece.center[1], piece.center[2],
+      piece.size[0], piece.size[1], piece.size[2],
+      piece.color,
+      piece.rotationX ?? 0,
+    ]),
+    track.zones.map((zone) => [
+      zone.minX, zone.maxX, zone.minZ, zone.maxZ, zone.groundY,
+      zone.maxOccupants,
+      allowedMask(zone.allowedTypes),
+    ]),
+    [...track.spawn],
+    [...track.exit],
+    track.length,
+  ];
+}
+
+function trackFromRuntimeTuple(tuple: z.infer<typeof runtimeTrackSchema>): BuiltTrack {
+  const [pieces, zones, spawn, exit, length] = tuple;
+  return {
+    pieces: pieces.map((piece, index) => ({
+      id: `shared-piece-${index}`,
+      center: [piece[0], piece[1], piece[2]],
+      size: [piece[3], piece[4], piece[5]],
+      color: piece[6],
+      ...(piece[7] ? { rotationX: piece[7] } : {}),
+    })),
+    zones: zones.map((zone, index) => {
+      const mask = BigInt(`0x${zone[6]}`);
+      return {
+        id: `shared-zone-${index}`,
+        label: `Shared surface ${index + 1}`,
+        minX: zone[0], maxX: zone[1], minZ: zone[2], maxZ: zone[3],
+        groundY: zone[4], maxOccupants: zone[5],
+        allowedTypes: TRAP_TYPES.filter((_, typeIndex) =>
+          (mask & (BigInt(1) << BigInt(typeIndex))) !== BigInt(0)),
+      };
+    }),
+    spawn,
+    exit,
+    length,
+  };
+}
+
 /**
  * `avatar` is the sender's runner. It is a separate argument rather than a
  * field on ChallengeDTO because the DTO is the stored shape and the avatar is a
@@ -144,6 +228,7 @@ function fromBase64Url(payload: string): string {
 export function encodeChallengeLink(
   challenge: ChallengeDTO,
   avatar?: AvatarConfig | null,
+  runtimeTrack?: BuiltTrack | null,
 ): string {
   const names: string[] = [];
   const nameIndex = (name: string): number => {
@@ -156,7 +241,7 @@ export function encodeChallengeLink(
   };
   const creatorIndex = nameIndex(challenge.createdByName);
   const segments = challenge.track ?? CLASSIC_TRACK;
-  const track = buildTrack(segments);
+  const track = runtimeTrack ?? buildTrack(segments);
   // Keep authored zones first so every older tuple index keeps its meaning;
   // real platform surfaces are appended for new free-placement links.
   const pieceSurfaces = placementSurfaces(track);
@@ -212,17 +297,33 @@ export function encodeChallengeLink(
       challenge.stats.bestTimeMs,
     ],
   ];
+  if (avatar) {
+    const unreadable =
+      colorRejection("body", avatar.body, avatar.body) ??
+      colorRejection("pack", avatar.pack, avatar.body);
+    if (unreadable)
+      throw new Error(
+        `CHALLENGE_LINK_UNENCODABLE: this runner ${unreadable.reason} at ${unreadable.ratio.toFixed(2)}:1`,
+      );
+  }
+  if (runtimeTrack) {
+    const encoded = toBase64Url(
+      JSON.stringify([
+        5,
+        ...body,
+        runtimeTuple(runtimeTrack),
+        tail[1],
+        avatar ? avatarToTuple(avatar) : null,
+      ]),
+    );
+    if (encoded.length > MAX_PAYLOAD_LENGTH)
+      throw new Error("CHALLENGE_LINK_UNENCODABLE: this room is too large for a challenge code");
+    return encoded;
+  }
   if (!avatar) return toBase64Url(JSON.stringify([3, ...body, ...tail]));
   // Emitting an unreadable runner would hand the recipient a figure they cannot
   // see against the floor, and they would have no idea why. Fail where the
   // sender is, the way an unplaceable trap already does.
-  const unreadable =
-    colorRejection("body", avatar.body, avatar.body) ??
-    colorRejection("pack", avatar.pack, avatar.body);
-  if (unreadable)
-    throw new Error(
-      `CHALLENGE_LINK_UNENCODABLE: this runner ${unreadable.reason} at ${unreadable.ratio.toFixed(2)}:1`,
-    );
   // Version 4 appends the sender's runner. Four integers, and the recipient
   // finally beats a person rather than an anonymous shape.
   return toBase64Url(
@@ -245,7 +346,11 @@ function parsePayload(payload: string): Payload {
   // the customiser would have refused is one the recipient cannot see against
   // the deck, and they play as that runner, so the whole level becomes
   // unplayable for them. Refuse it here with everything else hand-editable.
-  if (result.data[0] === 4 && !isReadableAvatar(avatarFromTuple(result.data[9])))
+  if (
+    (result.data[0] === 4 || result.data[0] === 5) &&
+    result.data[9] &&
+    !isReadableAvatar(avatarFromTuple(result.data[9]))
+  )
     throw new Error("CHALLENGE_LINK_INVALID");
   return result.data;
 }
@@ -253,13 +358,27 @@ function parsePayload(payload: string): Payload {
 /** The sender's runner, or null for a link made before runners were choosable. */
 export function decodeChallengeAvatar(payload: string): AvatarConfig | null {
   const data = parsePayload(payload);
-  return data[0] === 4 ? avatarFromTuple(data[9]) : null;
+  return (data[0] === 4 || data[0] === 5) && data[9]
+    ? avatarFromTuple(data[9])
+    : null;
+}
+
+/** Authored room geometry carried by version 5 challenge codes. */
+export function decodeChallengeRuntimeTrack(payload: string): BuiltTrack | null {
+  const data = parsePayload(payload);
+  return data[0] === 5 ? trackFromRuntimeTuple(data[7]) : null;
 }
 
 export function decodeChallengeLink(payload: string): ChallengeDTO {
   const data = parsePayload(payload);
-  const segments = data[0] === 1 ? CLASSIC_TRACK : data[7];
-  const carried = data[0] === 3 || data[0] === 4 ? data[8] : null;
+  const segments = data[0] === 1
+    ? CLASSIC_TRACK
+    : data[0] === 5
+      ? null
+      : data[7];
+  const carried = data[0] === 3 || data[0] === 4 || data[0] === 5
+    ? data[8]
+    : null;
   const [, slug, baseSeed, creatorIndex, creatorAvatarSeed, names, tuples] =
     data;
   // SAFE_NAME only gates the character class, so a link could carry a slur or a
@@ -276,8 +395,11 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
   if (!creatorName) throw new Error("CHALLENGE_LINK_INVALID");
   // A track that cannot be finished is refused outright rather than handed to
   // a player who would then be stuck on it.
-  if (!isPlayableTrack(segments)) throw new Error("CHALLENGE_LINK_INVALID");
-  const track: BuiltTrack = buildTrack(segments);
+  if (segments && !isPlayableTrack(segments))
+    throw new Error("CHALLENGE_LINK_INVALID");
+  const track: BuiltTrack = data[0] === 5
+    ? trackFromRuntimeTuple(data[7])
+    : buildTrack(segments!);
   const pieceSurfaces = placementSurfaces(track);
 
   const traps: TrapInstance[] = [];
@@ -359,7 +481,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
     isDemo: true,
     // Version 1 predates composed tracks, so it has no segments to carry and
     // leaving track undefined is what marks it as the original course.
-    ...(data[0] === 1 ? {} : { track: segments }),
+    ...(data[0] === 1 || data[0] === 5 ? {} : { track: segments! }),
   };
 }
 

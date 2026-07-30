@@ -5,6 +5,43 @@ import { encodeGhostTrace } from "@/lib/game/replay-codec";
 import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
 import { generateRandomRoom, runtimeMap } from "@/components/game/RoomBuilder";
 describe("demo repository viral loop", () => {
+  it("persists authored-room geometry across repository reloads and child rounds", async () => {
+    const database = new MemoryDatabase();
+    const runtime = runtimeMap(generateRandomRoom(54321), 77, 54321, "Room Author");
+    const firstSession = new DemoRepository(database);
+    const challenge = await firstSession.importChallenge(runtime.challenge, runtime.track);
+
+    const secondSession = new DemoRepository(database);
+    await expect(secondSession.getChallengeRuntimeTrack(challenge.slug)).resolves.toEqual(runtime.track);
+    const started = await secondSession.startAttempt({
+      challengeSlug: challenge.slug,
+      clientSessionId: crypto.randomUUID(),
+      deviceClass: "desktop",
+      buildVersion: "test",
+      idempotencyKey: crypto.randomUUID(),
+    });
+    const finished = await secondSession.finishAttempt({
+      attemptId: started.attemptId,
+      outcome: "completed",
+      durationMs: 9000,
+      maxProgress: 1,
+      deathTrapInstanceId: null,
+      ghostTrace: encodeGhostTrace([{ x: 0, y: 1.25, z: 2, yaw: 0, flags: 1 }]),
+      idempotencyKey: crypto.randomUUID(),
+    });
+    const placement = firstLegalPlacement(runtime.track, finished.offeredTraps![0], challenge.traps);
+    expect(placement).not.toBeNull();
+    const child = await secondSession.publishChild({
+      parentSlug: challenge.slug,
+      attemptId: started.attemptId,
+      placement: placement!,
+      idempotencyKey: crypto.randomUUID(),
+    });
+
+    const recipientSession = new DemoRepository(database);
+    await expect(recipientSession.getChallengeRuntimeTrack(child.challenge.slug)).resolves.toEqual(runtime.track);
+  });
+
   it("completes and extends a generated clean-room track", async () => {
     const repository = new DemoRepository(new MemoryDatabase());
     const runtime = runtimeMap(generateRandomRoom(98765), 44, 98765);

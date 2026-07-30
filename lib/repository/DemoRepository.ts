@@ -56,6 +56,8 @@ interface DemoState {
   shares: Record<string, DemoShare>;
   rootKeys: Record<string, string>;
   attemptKeys: Record<string, string>;
+  /** Authored rooms are persisted beside their challenge instead of only in memory. */
+  runtimeTracks?: Record<string, BuiltTrack>;
 }
 const STATE_KEY = "state";
 const empty = (): DemoState => ({
@@ -66,6 +68,7 @@ const empty = (): DemoState => ({
   shares: {},
   rootKeys: {},
   attemptKeys: {},
+  runtimeTracks: {},
 });
 function uuid(): string {
   return (
@@ -109,7 +112,8 @@ export class DemoRepository implements GameRepository {
       : new BrowserDatabase(),
   ) {}
   private async state(): Promise<DemoState> {
-    return (await this.db.get<DemoState>(STATE_KEY)) ?? empty();
+    const stored = await this.db.get<DemoState>(STATE_KEY);
+    return stored ? { ...stored, runtimeTracks: stored.runtimeTracks ?? {} } : empty();
   }
   private async save(state: DemoState): Promise<void> {
     await this.db.set(STATE_KEY, state);
@@ -340,7 +344,9 @@ export class DemoRepository implements GameRepository {
           challenge.id,
           challenge.baseSeed,
           challenge.traps,
-          this.runtimeTracks.get(challenge.slug) ?? challengeTrack(challenge),
+          this.runtimeTracks.get(challenge.slug) ??
+            state.runtimeTracks?.[challenge.slug] ??
+            challengeTrack(challenge),
         );
         const completions = challenge.stats.completions + 1;
         challenge.stats = {
@@ -394,7 +400,9 @@ export class DemoRepository implements GameRepository {
       const valid = validatePlacement(
         input.placement,
         parent.traps,
-        this.runtimeTracks.get(parent.slug) ?? buildTrack(parent.track ?? CLASSIC_TRACK),
+        this.runtimeTracks.get(parent.slug) ??
+          state.runtimeTracks?.[parent.slug] ??
+          buildTrack(parent.track ?? CLASSIC_TRACK),
       );
       if (!valid.valid) throw new Error(`INVALID_PLACEMENT:${valid.reason}`);
       const seed = hashString(
@@ -429,8 +437,12 @@ export class DemoRepository implements GameRepository {
         createdAt: new Date().toISOString(),
       };
       state.challenges[child.slug] = child;
-      const runtimeTrack = this.runtimeTracks.get(parent.slug);
-      if (runtimeTrack) this.runtimeTracks.set(child.slug, runtimeTrack);
+      const runtimeTrack = this.runtimeTracks.get(parent.slug) ?? state.runtimeTracks?.[parent.slug];
+      if (runtimeTrack) {
+        this.runtimeTracks.set(child.slug, runtimeTrack);
+        state.runtimeTracks ??= {};
+        state.runtimeTracks[child.slug] = runtimeTrack;
+      }
       attempt.childSlug = child.slug;
       return {
         challenge: child,
@@ -483,7 +495,6 @@ export class DemoRepository implements GameRepository {
     });
   }
   async importChallenge(challenge: ChallengeDTO, runtimeTrack?: BuiltTrack): Promise<ChallengeDTO> {
-    if (runtimeTrack) this.runtimeTracks.set(challenge.slug, runtimeTrack);
     return this.transact((state) => {
       // Seed first. The Portals edition imports a link without ever reading a
       // challenge, so on a first visit the store is empty and a payload whose
@@ -491,6 +502,11 @@ export class DemoRepository implements GameRepository {
       // written. seededTrending then returns early forever and the trending
       // button serves the attacker's level permanently.
       this.seededTrending(state);
+      if (runtimeTrack) {
+        this.runtimeTracks.set(challenge.slug, runtimeTrack);
+        state.runtimeTracks ??= {};
+        state.runtimeTracks[challenge.slug] = runtimeTrack;
+      }
       // The creator opening their own link already has the real record, with
       // its accumulated stats. Adopting the link's empty stats would erase them.
       const existing = state.challenges[challenge.slug];
@@ -499,6 +515,15 @@ export class DemoRepository implements GameRepository {
       state.challenges[adopted.slug] = adopted;
       return adopted;
     });
+  }
+
+  async getChallengeRuntimeTrack(challengeSlug: string): Promise<BuiltTrack | null> {
+    const cached = this.runtimeTracks.get(challengeSlug);
+    if (cached) return cached;
+    const state = await this.state();
+    const stored = state.runtimeTracks?.[challengeSlug] ?? null;
+    if (stored) this.runtimeTracks.set(challengeSlug, stored);
+    return stored;
   }
 
   async resetDemoData(): Promise<void> {

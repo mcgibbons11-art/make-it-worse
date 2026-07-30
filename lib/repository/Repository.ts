@@ -4,4 +4,6 @@ export interface GameRepository { mode:"demo"|"supabase"; ensureGuest():Promise<
   createRootChain(track?:readonly string[]):Promise<ChallengeDTO>;startAttempt(input:StartAttemptInput):Promise<AttemptStartResult>;finishAttempt(input:FinishAttemptInput):Promise<AttemptFinishResult>;publishChild(input:PublishChildInput):Promise<PublishChildResult>;createShare(input:CreateShareInput):Promise<CreateShareResult>;recordShareOpen(input:RecordShareOpenInput):Promise<void>;resetDemoData?():Promise<void>;
   // Only the local repository needs this. A shared link carries the whole
   // challenge, so the recipient adopts it before playing or extending the chain.
-  importChallenge?(challenge:ChallengeDTO, runtimeTrack?:BuiltTrack):Promise<ChallengeDTO>; }
+  importChallenge?(challenge:ChallengeDTO, runtimeTrack?:BuiltTrack):Promise<ChallengeDTO>;
+  /** Geometry for an authored room, which has no segment recipe on ChallengeDTO. */
+  getChallengeRuntimeTrack?(challengeSlug:string):Promise<BuiltTrack|null>; }

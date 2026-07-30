@@ -19,6 +19,7 @@ import {
   isReadableAvatar,
   isSlotFilled,
   normalizeAvatar,
+  randomAvatar,
   usableColors,
 } from "@/lib/game/avatar";
 import type {
@@ -385,9 +386,15 @@ export function WardrobePanel({
             >
               This one is mine
             </button>
-            <button className="text-button" onClick={onClose}>
-              {avatar ? "Cancel" : "Keep the stock runner"}
+            <button
+              type="button"
+              className="button secondary"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => setDraft(randomAvatar())}
+            >
+              🎲 Randomize
             </button>
+            <button className="text-button" onClick={onClose}>Cancel</button>
           </div>
         </div>
       </section>

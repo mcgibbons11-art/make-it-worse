@@ -954,6 +954,12 @@ describe("outfits in a link", () => {
         `random runner ${attempt} was refused`,
       ).toBeNull();
       expect(colorRejection("pack", config.pack, config.body)).toBeNull();
+      for (const slot of WARDROBE_SLOTS) {
+        expect(
+          slot.options.some((option) => option.id === config[slot.id]),
+          `random runner ${attempt} chose a hidden ${slot.id} option`,
+        ).toBe(true);
+      }
     }
   });
 });

@@ -4,16 +4,20 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
-- [ ] Make Build Your Runner reliable in the user's actual playtest session; the editor and garment preview must both render and respond.
-  - [x] Prevent the Portals-host wardrobe from creating a second WebGL context; keep the full editor usable with a host-safe live color/outfit preview.
-- [ ] Fix builder drag-and-drop for traps and non-block items so they move exactly like blocks.
+- [x] Make Build Your Runner reliable in the user's actual playtest session; the editor and garment preview must both render and respond.
+  - [x] Contain the graphics-safe preview so it cannot cover or block the wardrobe controls.
+  - [x] Restore and verify the real dressed 3D character viewer with left-drag rotation in the Portals build.
+  - [x] Replace “Keep the stock runner” with a Randomize button that generates a complete valid runner.
+- [x] Fix builder drag-and-drop for traps and non-block items so they move exactly like blocks.
 - [x] Keep a dragged builder object exclusive so crossing stacked/overlapping objects never selects or moves them too.
-- [ ] Keep every trap on its authored base colors; never expose trap color customization.
-- [ ] Keep the builder asset tray wide enough that it never needs horizontal scrolling.
-- [ ] Keep the builder's maximum vertical jump warning 20% below the previous estimate.
+- [x] Keep every trap on its authored base colors; never expose trap color customization.
+- [x] Keep the builder asset tray wide enough that it never needs horizontal scrolling.
+- [x] Keep the builder's maximum vertical jump warning 20% below the previous estimate.
 - [x] Restore the full completion → reward → choose trap → place trap → publish/share sequence after Play a clean level.
 - [x] Give randomized clean levels varied game colors instead of making the whole room yellow.
-- [ ] Replace “Play one somebody already ruined” with a trending-map browser.
+- [x] Replace “Play one somebody already ruined” with a trending-map browser.
+- [x] Fix intermittent Add Trap submission failure where the camera flashes to the runner, returns to placement, and leaves the player stuck without placing the trap.
+- [x] Preserve the same generated room between rounds after placing a trap; never replace it with a different/classic room when playing the child version.
 
 ## Traps and movement
 
@@ -22,13 +26,22 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [ ] Make Mattress Rebound launch the runner much harder.
 - [ ] Increase trap disruption globally: knockback, bounce, slow, and slip.
 - [ ] Audit every trap for a meaningful effect and visible animation; remove passive filler behavior.
-- [ ] Fix ledge physics so the runner falls instead of snagging.
-- [ ] Improve the run cycle with more knee bend and arm swing.
+- [x] Fix ledge physics so the runner falls instead of snagging.
+- [x] Improve the run cycle with more knee bend and arm swing.
 
 ## Builder and sharing
 
 - [ ] Connect published custom maps to a real shared backend and cross-player browser.
-- [ ] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
+- [ ] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
+  - [x] Add self-contained authored-room links and raw challenge codes, plus import from either form.
+  - [x] Persist authored geometry across reloads and every child round in the local repository.
+  - [ ] Add Portals.net same-session announcement/state exchange after the host multiplayer API is available in the processed build.
+- [ ] Design and test the entire share-game system end to end: create/share/import, same-room Portals delivery, different-session challenge codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
+  - [x] Browser-test publish → local trending → link recipient and raw-code recipient.
+  - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
+  - [ ] Test same-room delivery inside a processed Portals multiplayer session.
+- [ ] Define and implement the full custom-built-game sharing path: map ownership and versions, publish/update flow, Portals SDK boundaries, required backend/storage, trending and browse ranking, recipient loading, moderation, payload/size limits, and end-to-end playtesting.
+- [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [ ] Continue builder usability testing for vertical layouts, jump warnings, Test mode, colors, and all runtime assets.
 
 ## Apartment
@@ -46,6 +59,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Menu presentation
 
 - [ ] Redesign the main-menu clouds to be fluffy, puffy, layered, and gently animated like the supplied start-screen reference.
+- [x] Restore and broadly audit every main-menu emoji/icon for missing assets, broken paths, and text-encoding corruption.
 
 ## Completed recently
 

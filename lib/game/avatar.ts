@@ -630,21 +630,23 @@ export function usableColors(
 export function randomAvatar(random: () => number = Math.random): AvatarConfig {
   const pick = <T>(list: readonly T[]): T =>
     list[Math.min(list.length - 1, Math.floor(random() * list.length))]!;
+  const wardrobePick = <Id extends string>(slot: WardrobeSlotId): Id =>
+    pick(SLOT_BY_ID.get(slot)!.options).id as Id;
   const body = pick(usableColors("body", "violet")).id;
   const garment = (key: WardrobeColorKey): AvatarColorId =>
     pick(usableColors(key, body)).id;
   return {
     body,
     pack: pick(usableColors("pack", body)).id,
-    headwear: pick(AVATAR_HEADWEAR).id,
-    face: pick(AVATAR_FACES).id,
-    eyewear: pick(AVATAR_EYEWEAR).id,
-    top: pick(AVATAR_TOPS).id,
-    outerwear: pick(AVATAR_OUTERWEAR).id,
-    legwear: pick(AVATAR_LEGWEAR).id,
-    footwear: pick(AVATAR_FOOTWEAR).id,
-    backpack: pick(AVATAR_BACKPACKS).id,
-    held: pick(AVATAR_HELD).id,
+    headwear: wardrobePick<AvatarHeadwearId>("headwear"),
+    face: wardrobePick<AvatarFaceId>("face"),
+    eyewear: wardrobePick<AvatarEyewearId>("eyewear"),
+    top: wardrobePick<AvatarTopId>("top"),
+    outerwear: wardrobePick<AvatarOuterwearId>("outerwear"),
+    legwear: wardrobePick<AvatarLegwearId>("legwear"),
+    footwear: wardrobePick<AvatarFootwearId>("footwear"),
+    backpack: wardrobePick<AvatarBackpackId>("backpack"),
+    held: wardrobePick<AvatarHeldId>("held"),
     colors: {
       headwear: garment("headwear"),
       face: garment("face"),

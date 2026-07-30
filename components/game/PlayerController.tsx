@@ -44,7 +44,13 @@ const FOOTSTEP_MIN_SPEED = 0.6;
  * deciding what they are standing on. Wide enough that a step off the edge is
  * still grounded for a frame, which is what coyote time is measured from.
  */
-const GROUND_MARGIN = 0.08;
+// Stop calling the runner grounded just before their centre leaves the deck.
+// The old positive margin extended the invisible support past the edge; the
+// capsule could then rub its rounded side against the vertical face while the
+// controller kept cancelling gravity, producing the reported ledge stutter.
+// Coyote time already preserves late jumps, so support can end slightly inside
+// the visible edge and let the body cleanly fall.
+const GROUND_MARGIN = -0.04;
 /**
  * How far in front of the runner the step assist looks, and how far forward it
  * places them when it fires.
@@ -566,7 +572,10 @@ export const PlayerController = forwardRef<
       <CapsuleCollider
         args={[PLAYER.capsuleHalfHeight, PLAYER.capsuleRadius]}
         mass={PLAYER.mass}
-        friction={0.9}
+        // Low side friction prevents the rounded capsule catching on a ledge's
+        // vertical face. Horizontal stopping is controller-driven, so this does
+        // not make ordinary running drift; soap still reduces acceleration.
+        friction={0.15}
         restitution={0.05}
       />
       <PlayerVisual avatarSeed={avatarSeed} avatar={avatar} visible={visualVisible} pose={pose} motion={motion} />

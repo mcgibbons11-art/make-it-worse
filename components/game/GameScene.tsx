@@ -222,7 +222,7 @@ export function GameScene({
             active={phase === "playing"}
             attemptSerial={attemptSerial}
             track={track}
-            visualVisible={phase !== "placing_trap"}
+            visualVisible={phase !== "placing_trap" && phase !== "publishing"}
             pose={phase === "finished" ? "victory" : phase === "failed" ? "failure" : phase === "playing" ? "playing" : "idle"}
             avatarSeed={challenge.createdByAvatarSeed}
             avatar={avatar}
@@ -241,7 +241,7 @@ export function GameScene({
           />
           <CameraRig
             player={player}
-            editorTarget={phase === "placing_trap" ? previewPosition : null}
+            editorTarget={phase === "placing_trap" || phase === "publishing" ? previewPosition : null}
             lookEnabled={phase === "playing"}
             shakeUntilRef={shakeUntilRef}
           />

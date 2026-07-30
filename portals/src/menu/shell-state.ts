@@ -18,7 +18,7 @@ import type { SubmitResult } from "../leaderboard";
  * stacking on top of it, so exactly one dialog is ever mounted and exactly one
  * focus trap is ever armed.
  */
-export type ShellView = "menu" | "settings" | "controls" | "confirm";
+export type ShellView = "menu" | "settings" | "controls" | "trending" | "confirm";
 
 /**
  * Whether leaving the run right now throws away something the player has.

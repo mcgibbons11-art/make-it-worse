@@ -415,20 +415,20 @@ const GAIT = {
   swingReachWalk: 1,
   swingReachRun: 0.5,
   /** Extra leg shortening through mid-swing: the stand-in for a knee. */
-  clearanceWalk: 0.035,
-  clearanceRun: 0.1,
+  clearanceWalk: 0.055,
+  clearanceRun: 0.18,
   /** Arm swing as a fraction of the hip angle, and how far forward it is held. */
-  armWalk: 0.5,
-  armRun: 0.82,
-  armCarryRun: 0.34,
+  armWalk: 0.62,
+  armRun: 1.14,
+  armCarryRun: 0.44,
   /**
    * Held out from the ribs, and the part of that which oscillates. Sized off
    * the screen-space measurement rather than by eye: at 7.2u/s the fore-aft
    * swing was resolving to 8px across a 202px figure, so the arms never left
    * the body's outline from the chase camera.
    */
-  armFlareRun: 0.34,
-  armOutSwing: 0.16,
+  armFlareRun: 0.4,
+  armOutSwing: 0.22,
   /** Trunk against legs: twist about the spine, lean over the hips, and the
    *  weight shift toward whichever foot is carrying. */
   twistWalk: 0.07,
@@ -907,7 +907,7 @@ export function updateRunnerPose(
     pose.armOut[leg] = ARM_SIDE[leg]
       * (GAIT.armFlareRun * run + GAIT.armOutSwing * Math.sin(TAU * (state.phase - GAIT.armLag)))
       * moving * flourish;
-    pose.handAngle[leg] = -gaitArm[leg] * 0.22 * moving;
+    pose.handAngle[leg] = -gaitArm[leg] * 0.38 * moving;
   }
   pose.lift = support - standing;
   pose.bodyTwist = -lerp(GAIT.twistWalk, GAIT.twistRun, run) * moving * flourish

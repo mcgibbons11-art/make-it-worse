@@ -1139,6 +1139,7 @@ export function PortalsApp() {
         <WardrobePanel
           avatar={settings.avatar ?? null}
           avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+          previewEnabled={false}
           onSave={(config) => {
             settings.setAvatar(config);
             setWardrobeOpen(false);

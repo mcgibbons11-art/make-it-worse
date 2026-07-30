@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ErrorInfo,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import {
@@ -186,6 +187,11 @@ export function WardrobePanel({
   const slot = WARDROBE_SLOTS.find((entry) => entry.id === openSlot)!;
   const bodyReading = deckContrast(AVATAR_COLORS.find((e) => e.id === draft.body)!.hex);
   const colorKey = slot.colorKey;
+  const bodyColor = AVATAR_COLORS.find((entry) => entry.id === draft.body)!.hex;
+  const wornItems = WARDROBE_SLOTS.flatMap((entry) => {
+    const worn = entry.options.find((option) => option.id === draft[entry.id]);
+    return worn && worn.id !== "none" ? [`${entry.label}: ${worn.label}`] : [];
+  });
 
   return (
     <div className="modal-backdrop avatar-wardrobe-backdrop">
@@ -214,13 +220,32 @@ export function WardrobePanel({
               )}
             </RunnerPreviewBoundary>
           ) : (
-            <div className="avatar-preview-safe" role="status">
-              <span aria-hidden="true">🏃</span>
-              <b>Graphics-safe runner editor</b>
-              <small>The 3D preview is unavailable here, but every outfit control still works.</small>
+            <div
+              className="avatar-preview-safe"
+              role="img"
+              aria-label={`Runner preview. ${wornItems.join(", ") || "No clothing selected"}.`}
+            >
+              <div
+                className="avatar-safe-runner"
+                style={{ "--runner-color": bodyColor } as CSSProperties}
+                aria-hidden="true"
+              >
+                <i className="avatar-safe-head" />
+                <i className="avatar-safe-body" />
+                <i className="avatar-safe-arm left" />
+                <i className="avatar-safe-arm right" />
+                <i className="avatar-safe-leg left" />
+                <i className="avatar-safe-leg right" />
+              </div>
+              <b>Your runner</b>
+              <div className="avatar-safe-outfit" aria-hidden="true">
+                {wornItems.length > 0
+                  ? wornItems.map((item) => <small key={item}>{item}</small>)
+                  : <small>No clothing selected</small>}
+              </div>
             </div>
           )}
-          <small className="avatar-turn-hint">Drag the runner to turn them</small>
+          {previewEnabled && <small className="avatar-turn-hint">Drag the runner to turn them</small>}
           <p className="avatar-reading">
             {ratioLabel(bodyReading.min)} against the palest floor
           </p>

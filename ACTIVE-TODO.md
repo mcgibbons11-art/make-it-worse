@@ -5,6 +5,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Fix first
 
 - [ ] Make Build Your Runner reliable in the user's actual playtest session; the editor and garment preview must both render and respond.
+  - [x] Prevent the Portals-host wardrobe from creating a second WebGL context; keep the full editor usable with a host-safe live color/outfit preview.
 - [ ] Fix builder drag-and-drop for traps and non-block items so they move exactly like blocks.
 - [x] Keep a dragged builder object exclusive so crossing stacked/overlapping objects never selects or moves them too.
 - [ ] Keep every trap on its authored base colors; never expose trap color customization.

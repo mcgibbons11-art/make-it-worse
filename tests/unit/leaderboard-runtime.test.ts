@@ -23,7 +23,7 @@ function installSdk(options?: { signedIn?: boolean; failReady?: boolean }) {
     loadState: vi.fn(),
     submitScore: vi.fn(async () => undefined),
     getLeaderboard: vi.fn(async () => ({
-      mode: "depth-3",
+      mode: "room-clean-000003",
       entries: [
         {
           rank: 1,
@@ -57,13 +57,13 @@ describe("Portals leaderboard runtime adapter", () => {
   it("is a safe no-op on a plain URL with no injected SDK", async () => {
     const { connect, fetchClearTimes, submitClearTime } = await adapter();
     await expect(connect()).resolves.toEqual({ status: "unavailable" });
-    await expect(fetchClearTimes(0)).resolves.toEqual({ status: "unavailable" });
-    await expect(submitClearTime(0, 12_000)).resolves.toEqual({
+    await expect(fetchClearTimes("room-abc123")).resolves.toEqual({ status: "unavailable" });
+    await expect(submitClearTime("room-abc123", 12_000)).resolves.toEqual({
       status: "unavailable",
     });
   });
 
-  it("submits and reads a signed-in player's depth board", async () => {
+  it("submits and reads a signed-in player's exact-room board", async () => {
     const sdk = installSdk();
     const {
       clearTimeToScore,
@@ -76,12 +76,12 @@ describe("Portals leaderboard runtime adapter", () => {
       status: "ok",
       player: { playerId: "player-1" },
     });
-    await expect(submitClearTime(3, 15_000)).resolves.toEqual({ status: "ok" });
+    await expect(submitClearTime("clean-000003", 15_000)).resolves.toEqual({ status: "ok" });
     expect(sdk.submitScore).toHaveBeenCalledWith(
       clearTimeToScore(15_000),
-      "depth-3",
+      "room-clean-000003",
     );
-    await expect(fetchClearTimes(3)).resolves.toEqual({
+    await expect(fetchClearTimes("clean-000003")).resolves.toEqual({
       status: "ok",
       entries: [
         {
@@ -93,7 +93,7 @@ describe("Portals leaderboard runtime adapter", () => {
       ],
     });
     expect(sdk.getLeaderboard).toHaveBeenCalledWith({
-      mode: "depth-3",
+      mode: "room-clean-000003",
       limit: 10,
     });
   });
@@ -101,7 +101,7 @@ describe("Portals leaderboard runtime adapter", () => {
   it("requires a player login before submitting", async () => {
     const sdk = installSdk({ signedIn: false });
     const { submitClearTime } = await adapter();
-    await expect(submitClearTime(2, 20_000)).resolves.toEqual({
+    await expect(submitClearTime("clean-000002", 20_000)).resolves.toEqual({
       status: "sign_in_required",
     });
     expect(sdk.submitScore).not.toHaveBeenCalled();
@@ -119,15 +119,45 @@ describe("Portals leaderboard runtime adapter", () => {
   it("keeps leaderboard limits inside the host's documented range", async () => {
     const sdk = installSdk();
     const { fetchClearTimes } = await adapter();
-    await fetchClearTimes(1, 500);
+    await fetchClearTimes("clean-000001", 500);
     expect(sdk.getLeaderboard).toHaveBeenLastCalledWith({
-      mode: "depth-1",
+      mode: "room-clean-000001",
       limit: 100,
     });
-    await fetchClearTimes(1, 0);
+    await fetchClearTimes("clean-000001", 0);
     expect(sdk.getLeaderboard).toHaveBeenLastCalledWith({
-      mode: "depth-1",
+      mode: "room-clean-000001",
       limit: 1,
+    });
+  });
+
+  it("keeps exact-room boards separate and deduplicates published-map activity", async () => {
+    const sdk = installSdk();
+    sdk.getLeaderboard.mockResolvedValueOnce({
+      mode: "map-clean-000007",
+      entries: [
+        { rank: 1, playerId: "p1", displayName: "One", avatarUrl: null, score: 2 },
+        { rank: 2, playerId: "p2", displayName: "Two", avatarUrl: null, score: 1 },
+      ],
+    });
+    const {
+      fetchPublishedMapPopularity,
+      publishedMapMode,
+      roomMode,
+      submitPublishedMapSignal,
+    } = await adapter();
+    expect(roomMode("clean-000007")).toBe("room-clean-000007");
+    expect(roomMode("clean-000008")).toBe("room-clean-000008");
+    expect(publishedMapMode("clean-000007")).toBe("map-clean-000007");
+    await expect(submitPublishedMapSignal("clean-000007", "start")).resolves.toEqual({ status: "ok" });
+    await expect(submitPublishedMapSignal("clean-000007", "clear")).resolves.toEqual({ status: "ok" });
+    expect(sdk.submitScore).toHaveBeenNthCalledWith(1, 1, "map-clean-000007");
+    expect(sdk.submitScore).toHaveBeenNthCalledWith(2, 2, "map-clean-000007");
+    await expect(fetchPublishedMapPopularity("clean-000007")).resolves.toEqual({
+      status: "ok",
+      uniquePlayers: 2,
+      clears: 1,
+      capped: false,
     });
   });
 });

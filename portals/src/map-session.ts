@@ -47,6 +47,7 @@ export interface MapSessionConnection {
     track: BuiltTrack;
     avatar: AvatarConfig | null;
     title: string;
+    publishedAt?: string;
   }): "sent" | "too_large";
   request(versionId: string): void;
   close(): void;
@@ -163,7 +164,7 @@ export async function connectMapSession(
     accept(joined.state[MAP_SESSION_STATE_KEY]);
 
     const connection: MapSessionConnection = {
-      announce({ challenge, track, avatar, title }) {
+      announce({ challenge, track, avatar, title, publishedAt }) {
         const announcement: MapAnnouncement = {
           kind: "miw-map-announcement",
           v: MAP_SESSION_PROTOCOL,
@@ -171,7 +172,7 @@ export async function connectMapSession(
           versionId: challenge.slug,
           title: title.trim().slice(0, 80) || "Untitled disaster",
           author: challenge.createdByName.trim().slice(0, 40) || "Builder",
-          publishedAt: new Date().toISOString(),
+          publishedAt: publishedAt ?? new Date().toISOString(),
           code: encodeChallengeLink(challenge, avatar, track),
         };
         if (byteLength(announcement) > MAP_SESSION_MAX_BYTES) return "too_large";

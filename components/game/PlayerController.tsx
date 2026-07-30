@@ -28,6 +28,7 @@ import { PlayerVisual, type PlayerMotionState, type PlayerPose } from "./PlayerV
 import type { DecodedGhostSample } from "@/lib/game/types";
 import { LEVEL_PIECES, type LevelPiece } from "@/lib/game/level-definition";
 import type { BuiltTrack } from "@/lib/game/track";
+import { trackFacingYaw } from "@/lib/game/track";
 import type { AvatarConfig } from "@/lib/game/avatar";
 /**
  * Ground covered between footsteps, and the speed below which the runner is
@@ -145,6 +146,7 @@ export const PlayerController = forwardRef<
   const pieces = track?.pieces ?? LEVEL_PIECES;
   const spawn = track?.spawn ?? PLAYER_SPAWN;
   const exit = track?.exit ?? EXIT_POSITION;
+  const spawnYaw = trackFacingYaw({ spawn, exit });
   const body = useRef<RapierRigidBody>(null);
   const lastGrounded = useRef(performance.now());
   const jumpPressedAt = useRef(-Infinity);
@@ -158,7 +160,7 @@ export const PlayerController = forwardRef<
   const finalized = useRef(false);
   const heldBody = useRef<RapierRigidBody | null>(null);
   const liveAttemptSerial = useRef(0);
-  const motion = useRef<PlayerMotionState>({ speed: 0, verticalVelocity: 0, grounded: true, yaw: 0, stunned: false });
+  const motion = useRef<PlayerMotionState>({ speed: 0, verticalVelocity: 0, grounded: true, yaw: spawnYaw, stunned: false });
   const setBodyRef = useCallback(
     (value: RapierRigidBody | null) => {
       body.current = value;
@@ -265,6 +267,13 @@ export const PlayerController = forwardRef<
       jumpCutArmed.current = false;
       lastSample.current = 0;
       stride.current = 0;
+      motion.current = {
+        speed: 0,
+        verticalVelocity: 0,
+        grounded: true,
+        yaw: spawnYaw,
+        stunned: false,
+      };
       // Drop a jump queued during the attempt that just ended, and keep the keys
       // the player is physically holding.
       //

@@ -419,19 +419,37 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
     const surfaceId = zone?.id ?? piece?.id;
     const ownerName = names[ownerIndex];
     if (!surfaceId || !ownerName) throw new Error("CHALLENGE_LINK_INVALID");
-    // Replaying through the canonical validator is what makes a hand-edited
-    // link safe: overlaps, zone limits, and blocked spawn/exit areas all apply.
-    const placement = validatePlacement(
-      {
-        type,
-        zoneId: surfaceId,
-        offsetX: offsetXSteps / GRID_STEPS_PER_UNIT,
-        offsetZ: offsetZSteps / GRID_STEPS_PER_UNIT,
-        rotationQuarterTurns: quarterTurns as 0 | 1 | 2 | 3,
-      },
-      traps,
-      track,
-    );
+    const offsetX = offsetXSteps / GRID_STEPS_PER_UNIT;
+    const offsetZ = offsetZSteps / GRID_STEPS_PER_UNIT;
+    // A runtime-room code is the builder's complete authored snapshot. It is
+    // allowed to contain deliberate overlaps, spawn-adjacent hazards, and traps
+    // whose footprint overhangs a narrow block—the player already has Test mode
+    // to decide whether that map is fair. Reapplying the ordinary post-clear
+    // "add one trap" restrictions here made those rooms playable before copy
+    // and invalid after paste. The tuple schema still bounds every number and
+    // the surface index still has to resolve, so reconstruction cannot escape
+    // the encoded room.
+    const placement = data[0] === 5
+      ? {
+          valid: true as const,
+          canonicalPosition: [
+            ((zone?.minX ?? piece!.minX) + (zone?.maxX ?? piece!.maxX)) / 2 + offsetX,
+            zone?.groundY ?? piece!.groundY,
+            ((zone?.minZ ?? piece!.minZ) + (zone?.maxZ ?? piece!.maxZ)) / 2 + offsetZ,
+          ] as const,
+          rotationY: quarterTurns * Math.PI / 2,
+        }
+      : validatePlacement(
+          {
+            type,
+            zoneId: surfaceId,
+            offsetX,
+            offsetZ,
+            rotationQuarterTurns: quarterTurns as 0 | 1 | 2 | 3,
+          },
+          traps,
+          track,
+        );
     if (!placement.valid) throw new Error("CHALLENGE_LINK_INVALID");
     traps.push({
       id: seededId("trap", seed),

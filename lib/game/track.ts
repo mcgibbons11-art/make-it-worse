@@ -85,6 +85,17 @@ export interface BuiltTrack {
   length: number;
 }
 
+/** Yaw whose forward (+Z) axis points from this room's spawn to its end gate. */
+export function trackFacingYaw(
+  track: Pick<BuiltTrack, "spawn" | "exit">,
+): number {
+  const dx = track.exit[0] - track.spawn[0];
+  const dz = track.exit[2] - track.spawn[2];
+  if (!Number.isFinite(dx) || !Number.isFinite(dz) || Math.hypot(dx, dz) < 0.001)
+    return 0;
+  return Math.atan2(dx, dz);
+}
+
 const SMALL_TRAPS: readonly TrapType[] = [
   "floor_fan",
   "soap_slick",

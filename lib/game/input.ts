@@ -62,9 +62,11 @@ export function getCameraYaw(): number {
   return cameraYaw;
 }
 
-/** Back to the default chase view. Called when a fresh attempt starts. */
-export function resetCameraYaw(): void {
-  cameraYaw = 0;
+/** Back to the room's spawn-facing chase view on a fresh attempt. */
+export function resetCameraYaw(radians = 0): void {
+  cameraYaw = Number.isFinite(radians)
+    ? Math.atan2(Math.sin(radians), Math.cos(radians))
+    : 0;
 }
 
 export function queueJumpPress(): void {

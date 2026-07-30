@@ -58,9 +58,10 @@ pnpm --filter @make-it-worse/portals build
 pnpm verify:portals
 ```
 
-`pnpm verify:custom-maps` is the real deployed-backend matrix. It intentionally
-requires two different ordinary Supabase user tokens and a moderator token; see
-`CUSTOM-GAME-SHARING.md` for the environment variables and exact coverage.
+`pnpm verify:custom-maps` is the optional standalone web edition's deployed-
+backend matrix. Processed Portals games cannot reach outside APIs, so the Portals
+release uses `Portals.net` inside a session and self-contained copy/paste map
+codes across sessions. See `CUSTOM-GAME-SHARING.md` for the exact boundary.
 
 ## Supabase production setup
 

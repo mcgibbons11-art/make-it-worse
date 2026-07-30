@@ -345,6 +345,14 @@ export interface BuilderPublishDetails {
   visibility: "public" | "unlisted" | "private";
 }
 
+export type RoomBuilderShareMode = "links-and-codes" | "codes-only";
+
+export function roomBuilderShareFormats(
+  mode: RoomBuilderShareMode,
+): readonly ("link" | "code")[] {
+  return mode === "codes-only" ? ["code"] : ["link", "code"];
+}
+
 export function runtimeMap(
   items: readonly RoomItem[],
   avatarSeed: number,
@@ -384,18 +392,19 @@ export function runtimeMap(
   }));
   const spawn = [spawnMarker?.x ?? 0, (spawnMarker?.y ?? 0) + 1.25, spawnMarker?.z ?? 0] as const;
   const exit = [finishMarker?.x ?? 0, (finishMarker?.y ?? 0) + 1.5, finishMarker?.z ?? -10] as const;
-  const traps: TrapInstance[] = items.flatMap((item) => {
-    if (!isTrapAsset(item.asset)) return [];
+  const traps: TrapInstance[] = items.filter(
+    (item): item is RoomItem & { asset: `trap:${TrapType}` } => isTrapAsset(item.asset),
+  ).map((item, trapIndex) => {
     const type = trapTypeOf(item.asset);
     const support = platforms.reduce<{ uid: number; distance: number } | null>((best, candidate) => {
       const distance = Math.hypot(item.x - candidate.item.x, item.z - candidate.item.z);
       return !best || distance < best.distance ? { uid: candidate.item.uid, distance } : best;
     }, null);
-    return [{
+    return {
       id: `builder-trap-${item.uid}`, type, ownerUserId: null, ownerName: "Map builder", ownerAvatarSeed: avatarSeed,
-      depthAdded: 1, zoneId: `builder-zone-${support?.uid ?? platforms[0]?.item.uid ?? 0}`, position: [item.x, item.y + 0.05, item.z] as const,
+      depthAdded: trapIndex + 1, zoneId: `builder-zone-${support?.uid ?? platforms[0]?.item.uid ?? 0}`, position: [item.x, item.y + 0.05, item.z] as const,
       rotationY: item.rotation, seed: item.uid * 7919, params: { ...TRAP_CATALOG[type].defaultParams },
-    }];
+    };
   });
   const track: BuiltTrack = { pieces, zones, spawn, exit, length: Math.max(1, Math.hypot(exit[0] - spawn[0], exit[2] - spawn[2])) };
   const runtimeSlug = `clean-${Math.abs(identity).toString(36).padStart(6, "0").slice(0, 12)}`;
@@ -423,10 +432,11 @@ interface RoomBuilderProps {
   onCleanProgress?(value: number): void;
   onCleanHazard?(contact: HazardContact): void;
   onPublish?(runtime: RoomBuilderRuntime, details: BuilderPublishDetails): Promise<string | void> | string | void;
-  onShare?(runtime: RoomBuilderRuntime, format: "link" | "code"): Promise<void> | void;
+  onShare?(runtime: RoomBuilderRuntime, format: "link" | "code", details?: BuilderPublishDetails): Promise<string | void> | string | void;
+  shareMode?: RoomBuilderShareMode;
 }
 
-export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare }: RoomBuilderProps) {
+export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare, shareMode = "links-and-codes" }: RoomBuilderProps) {
   const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed), [randomSeed]);
   const [items, setItems] = useState<RoomItem[]>(() => ensureRequiredEndpoints(generated ?? loadItems()));
   const [mode, setMode] = useState<"build" | "test">(initialMode);
@@ -439,6 +449,8 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
   const [publishTitle, setPublishTitle] = useState(() => `Chaos Map ${loadPublished().length + 1}`);
   const [publishDescription, setPublishDescription] = useState("");
   const [publishVisibility, setPublishVisibility] = useState<BuilderPublishDetails["visibility"]>("public");
+  const [publishedVersionId, setPublishedVersionId] = useState<string | null>(null);
+  const [publishedDetails, setPublishedDetails] = useState<BuilderPublishDetails | null>(null);
   const [published, setPublished] = useState<PublishedMap[]>(loadPublished);
   const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "");
   const [testSerial, setTestSerial] = useState(1);
@@ -503,12 +515,21 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     if (title.length < 2 || title.length > 80 || publishDescription.length > 280) return;
     setPublishBusy(true);
     try {
+      const details: BuilderPublishDetails = { title, description: publishDescription.trim(), visibility: publishVisibility };
       const map: PublishedMap = { id: crypto.randomUUID(), name: title, author: creatorName, createdAt: new Date().toISOString(), schemaVersion: 2, items: items.map((item) => ({ ...item })) };
       const next = [map, ...published];
       setPublished(next);
       window.localStorage.setItem(PUBLISHED_KEY, JSON.stringify(next));
-      const sharedNotice = await onPublish?.(runtime, { title, description: publishDescription.trim(), visibility: publishVisibility });
-      setNotice(sharedNotice ?? `Published “${title}” to this device's trending browser.`);
+      const sharedNotice = await onPublish?.(runtime, details);
+      setPublishedVersionId(runtime.challenge.slug);
+      setPublishedDetails(details);
+      const copiedNotice = shareMode === "codes-only"
+        ? await onShare?.(runtime, "code", details)
+        : undefined;
+      setNotice(
+        [sharedNotice, copiedNotice].filter((message): message is string => Boolean(message)).join(" ") ||
+          `Published “${title}” to this device's map browser.`,
+      );
       setPublishOpen(false);
       setPublishTitle(`Chaos Map ${next.length + 1}`);
       setPublishDescription("");
@@ -517,6 +538,15 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     } finally {
       setPublishBusy(false);
     }
+  };
+  const share = async (format: "link" | "code") => {
+    if (!onShare) return;
+    if (shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug) {
+      setNotice("Publish this exact version before copying its published map code.");
+      return;
+    }
+    const sharedNotice = await onShare(runtime, format, publishedDetails ?? undefined);
+    if (sharedNotice) setNotice(sharedNotice);
   };
   const trapMatches = TRAP_TYPES.filter((type) => TRAP_CATALOG[type].displayName.toLowerCase().includes(query.toLowerCase()));
   return <main className="room-builder">
@@ -540,12 +570,12 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
       onAssetsReady={() => undefined}
     />}
     {cleanPlay && !cleanReady && <div className="canvas-loading"><span />{cleanError || "Starting clean run…"}</div>}
-    {!cleanPlay && <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" title="Free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>}
+    {!cleanPlay && <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>}
     {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
-    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button>{onShare && <><button onClick={() => void onShare(runtime, "link")}>🔗 Copy map link</button><button onClick={() => void onShare(runtime, "code")}>📋 Copy map code</button></>}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
+    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button>{onShare && roomBuilderShareFormats(shareMode).map((format) => <button key={format} disabled={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug} aria-label={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug ? "Copy published map code; publish this version first" : undefined} onClick={() => void share(format)}>{format === "code" ? (shareMode === "codes-only" ? "📋 Copy published map code" : "📋 Copy map code") : "🔗 Copy map link"}</button>)}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
     {!cleanPlay && <p className="room-builder-notice" role="status">{notice}</p>}
     {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>Place:</b> Pick a game block or trap from the left tray.</p><p><b>Move:</b> Left-drag any placed piece. Spawn and finish can go anywhere and can be moved vertically with Lift/Lower.</p><p><b>Look:</b> Right-drag to turn the camera. Use the mouse wheel to zoom.</p><p><b>Travel:</b> WASD pans the build camera. Q and E move it vertically.</p><p><b>Edit:</b> Select a piece to color, rotate, lift, lower, copy, or remove it. Spawn and finish remain mandatory, so they cannot be copied or removed.</p><p><b>Jump check:</b> A block turns red when the runner cannot reach it from the connected course.</p><p><b>Play it:</b> Choose Test map to run the room with the finished game controls and physics.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>Got it</button></section></div>}
     {!cleanPlay && browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">COMMUNITY MAPS</div><h2>Browse maps</h2>{published.length === 0 ? <p>No maps have been published in this build yet.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><button onClick={() => { save(ensureRequiredEndpoints(map.items)); setMode("test"); setBrowseOpen(false); setNotice(`Testing “${map.name}”.`); }}>Play</button></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
-    {!cleanPlay && publishOpen && <div className="room-builder-browser"><section className="room-builder-publish" role="dialog" aria-modal="true" aria-labelledby="builder-publish-title"><div className="eyebrow">PUBLISH MAP</div><h2 id="builder-publish-title">Share this version</h2><label>Title<input value={publishTitle} maxLength={80} onChange={(event) => setPublishTitle(event.target.value)} autoFocus /></label><label>Description<textarea value={publishDescription} maxLength={280} rows={3} onChange={(event) => setPublishDescription(event.target.value)} placeholder="What kind of disaster is this?" /></label><label>Who can open it?<select value={publishVisibility} onChange={(event) => setPublishVisibility(event.target.value as BuilderPublishDetails["visibility"])}><option value="public">Public · eligible for Trending</option><option value="unlisted">Unlisted · link only</option><option value="private">Private · only me</option></select></label><div className="room-builder-publish-actions"><button className="button secondary" disabled={publishBusy} onClick={() => setPublishOpen(false)}>Cancel</button><button className="button primary" disabled={publishBusy || publishTitle.trim().length < 2} onClick={() => void publish()}>{publishBusy ? "Publishing…" : "Publish version"}</button></div></section></div>}
+    {!cleanPlay && publishOpen && <div className="room-builder-browser"><section className="room-builder-publish" role="dialog" aria-modal="true" aria-labelledby="builder-publish-title"><div className="eyebrow">PUBLISH MAP</div><h2 id="builder-publish-title">Share this version</h2><label>Title<input value={publishTitle} maxLength={80} onChange={(event) => setPublishTitle(event.target.value)} autoFocus /></label><label>Description<textarea value={publishDescription} maxLength={280} rows={3} onChange={(event) => setPublishDescription(event.target.value)} placeholder="What kind of disaster is this?" /></label>{shareMode === "codes-only" ? <p>Publishing saves this exact version, shares it with the current Portals session, and copies its map code for players in another session.</p> : <label>Who can open it?<select value={publishVisibility} onChange={(event) => setPublishVisibility(event.target.value as BuilderPublishDetails["visibility"])}><option value="public">Public · eligible for Trending</option><option value="unlisted">Unlisted · link only</option><option value="private">Private · only me</option></select></label>}<div className="room-builder-publish-actions"><button className="button secondary" disabled={publishBusy} onClick={() => setPublishOpen(false)}>Cancel</button><button className="button primary" disabled={publishBusy || publishTitle.trim().length < 2} onClick={() => void publish()}>{publishBusy ? "Publishing…" : shareMode === "codes-only" ? "Publish & copy code" : "Publish version"}</button></div></section></div>}
   </main>;
 }

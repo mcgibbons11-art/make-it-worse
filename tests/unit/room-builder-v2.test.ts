@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateRandomRoom, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
+import { generateRandomRoom, roomBuilderShareFormats, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
 import { TRAP_TYPES } from "@/lib/game/trap-catalog";
 import { PLAYER } from "@/lib/game/constants";
 
@@ -8,6 +8,11 @@ const item = (uid: number, asset: RoomItem["asset"], x: number, y: number, z: nu
 });
 
 describe("unrestricted custom map builder", () => {
+  it("offers codes without links in the Portals sharing mode", () => {
+    expect(roomBuilderShareFormats("codes-only")).toEqual(["code"]);
+    expect(roomBuilderShareFormats("links-and-codes")).toEqual(["link", "code"]);
+  });
+
   it("generates a playable document with builder-only spawn and an end gate", () => {
     const room = generateRandomRoom(1234);
     expect(room.some((entry) => entry.asset === "spawn")).toBe(true);

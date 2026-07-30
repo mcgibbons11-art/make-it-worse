@@ -11,6 +11,7 @@ import {
   TRACK_SEGMENTS,
   buildTrack,
   isPlayableTrack,
+  trackFacingYaw,
   worstTraverse,
 } from "@/lib/game/track";
 import type { TrackSegment } from "@/lib/game/track";
@@ -54,6 +55,13 @@ function withSegment(segment: TrackSegment, run: () => void): void {
 }
 
 describe("track composition", () => {
+  it("faces every spawn toward its own end gate", () => {
+    expect(trackFacingYaw({ spawn: [0, 1, 0], exit: [0, 1, 10] })).toBeCloseTo(0);
+    expect(trackFacingYaw({ spawn: [0, 1, 0], exit: [10, 1, 0] })).toBeCloseTo(Math.PI / 2);
+    expect(Math.abs(trackFacingYaw({ spawn: [0, 1, 0], exit: [0, 1, -10] }))).toBeCloseTo(Math.PI);
+    expect(trackFacingYaw({ spawn: [4, 1, 4], exit: [4, 2, 4] })).toBe(0);
+  });
+
   it("rebuilds the original course byte-identically", () => {
     const built = buildTrack(CLASSIC_TRACK);
     expect(built.pieces).toEqual(LEVEL_PIECES);

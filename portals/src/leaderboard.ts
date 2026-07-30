@@ -110,6 +110,13 @@ export type BoardResult =
   | { status: "unavailable" }
   | { status: "error"; message: string };
 
+export type PublishedMapSignal = "start" | "clear";
+
+export type PublishedMapPopularityResult =
+  | { status: "ok"; uniquePlayers: number; clears: number; capped: boolean }
+  | { status: "unavailable" }
+  | { status: "error"; message: string };
+
 // The SDK ranks higher scores first, but a faster clear is a better clear, so
 // the remaining milliseconds invert the ordering. Scores are shifted up by
 // one (MIN_SCORE..MAX_SCORE instead of 0..ATTEMPT_LIMIT_MS) so a clear that
@@ -132,11 +139,19 @@ export function scoreToClearTime(score: number): number {
   return MAX_SCORE - clampedScore;
 }
 
-// Every trap in a chain is shared by everyone playing that depth, so depth is
-// the only axis on which two players' times compare fairly. Chain slugs are
-// local to one browser in this edition and would never collect a second player.
-export function depthMode(depth: number): string {
-  return `depth-${Math.max(0, Math.trunc(depth))}`;
+function safeRoomSlug(roomSlug: string): string {
+  if (!/^[a-z0-9-]{6,24}$/.test(roomSlug)) throw new Error("ROOM_SLUG_INVALID");
+  return roomSlug;
+}
+
+/** Every exact room/version owns its own board; unrelated depths never mix. */
+export function roomMode(roomSlug: string): string {
+  return `room-${safeRoomSlug(roomSlug)}`;
+}
+
+/** Published-map participation is separate from child-room clear times. */
+export function publishedMapMode(versionId: string): string {
+  return `map-${safeRoomSlug(versionId)}`;
 }
 
 let readyPromise: Promise<PortalsSession> | null = null;
@@ -199,7 +214,7 @@ export function onPlayerChange(
 }
 
 export async function submitClearTime(
-  depth: number,
+  roomSlug: string,
   durationMs: number,
 ): Promise<SubmitResult> {
   const sdk = host();
@@ -208,7 +223,7 @@ export async function submitClearTime(
     await ready(sdk);
     const player = await sdk.getPlayer();
     if (!player.playerId) return { status: "sign_in_required" };
-    await sdk.submitScore(clearTimeToScore(durationMs), depthMode(depth));
+    await sdk.submitScore(clearTimeToScore(durationMs), roomMode(roomSlug));
     return { status: "ok" };
   } catch (error) {
     return { status: "error", message: reason(error) };
@@ -216,7 +231,7 @@ export async function submitClearTime(
 }
 
 export async function fetchClearTimes(
-  depth: number,
+  roomSlug: string,
   limit = LEADERBOARD_SIZE,
 ): Promise<BoardResult> {
   const sdk = host();
@@ -228,7 +243,7 @@ export async function fetchClearTimes(
     // the optional SDK and turning the whole panel into an error state.
     const safeLimit = Math.min(100, Math.max(1, Math.trunc(limit)));
     const board = await sdk.getLeaderboard({
-      mode: depthMode(depth),
+      mode: roomMode(roomSlug),
       limit: safeLimit,
     });
     return {
@@ -239,6 +254,47 @@ export async function fetchClearTimes(
         displayName: entry.displayName,
         clearTimeMs: scoreToClearTime(entry.score),
       })),
+    };
+  } catch (error) {
+    return { status: "error", message: reason(error) };
+  }
+}
+
+export async function submitPublishedMapSignal(
+  versionId: string,
+  signal: PublishedMapSignal,
+): Promise<SubmitResult> {
+  const sdk = host();
+  if (!sdk) return { status: "unavailable" };
+  try {
+    await ready(sdk);
+    const player = await sdk.getPlayer();
+    if (!player.playerId) return { status: "sign_in_required" };
+    // Portals keeps only each player's best score per mode. Repeated starts
+    // stay at 1 and the first clear upgrades that same player to 2.
+    await sdk.submitScore(signal === "clear" ? 2 : 1, publishedMapMode(versionId));
+    return { status: "ok" };
+  } catch (error) {
+    return { status: "error", message: reason(error) };
+  }
+}
+
+export async function fetchPublishedMapPopularity(
+  versionId: string,
+): Promise<PublishedMapPopularityResult> {
+  const sdk = host();
+  if (!sdk) return { status: "unavailable" };
+  try {
+    await ready(sdk);
+    const board = await sdk.getLeaderboard({
+      mode: publishedMapMode(versionId),
+      limit: 100,
+    });
+    return {
+      status: "ok",
+      uniquePlayers: board.entries.length,
+      clears: board.entries.filter((entry) => entry.score >= 2).length,
+      capped: board.entries.length === 100,
     };
   } catch (error) {
     return { status: "error", message: reason(error) };

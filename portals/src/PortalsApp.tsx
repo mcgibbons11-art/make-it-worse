@@ -11,8 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { TrapIcon } from "@/components/icons/TrapIcon";
-import { CoachHint, DeathNote, RunProgressNote, TrapDetailsRow } from "@/components/hud/Coach";
-import { FirstRunTour } from "@/components/hud/Onboarding";
+import { DeathNote, RunProgressNote, TrapDetailsRow } from "@/components/hud/Coach";
 import {
   MobileControls,
   useTouchControlsAvailable,
@@ -27,7 +26,6 @@ import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import {
   CONSEQUENCE_HEADLINE,
-  buildShareCopy,
   chainDepthLine,
   challengeStatLine,
   depthPill,
@@ -72,9 +70,11 @@ import { AvatarApartment } from "@/components/hud/wardrobe/AvatarApartment";
 import {
   connect,
   fetchClearTimes,
+  fetchPublishedMapPopularity,
   onPlayerChange,
   signIn,
   submitClearTime,
+  submitPublishedMapSignal,
   type BoardResult,
   type PortalsPlayer,
   type SubmitResult,
@@ -83,6 +83,14 @@ import {
   connectMapSession,
   type MapSessionResult,
 } from "./map-session";
+import {
+  PUBLISHED_MAP_CODE_PREFIX,
+  encodePublishedMapCode,
+  listRememberedPublishedMaps,
+  rememberPublishedMap,
+  wrapPublishedMapCode,
+  type PublishedMapRecord,
+} from "./published-map-catalog";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
 const RoomBuilder = lazy(() =>
   import("@/components/game/RoomBuilder").then((module) => ({
@@ -131,7 +139,7 @@ class ToolBoundary extends Component<
     );
   }
 }
-function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "leaderboard" | "runner" | "settings" }) {
+function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "runner" | "settings" }) {
   return (
     <span
       className="portals-menu-icon"
@@ -155,7 +163,6 @@ const format = (ms: number) =>
     .toString()
     .padStart(2, "0")}`;
 function LeaderboardPanel({
-  depth,
   board,
   loading,
   playerId,
@@ -163,7 +170,6 @@ function LeaderboardPanel({
   onSignIn,
   onRetry,
 }: {
-  depth: number;
   board: BoardResult | null;
   loading: boolean;
   playerId: string | null;
@@ -174,9 +180,7 @@ function LeaderboardPanel({
   return (
     <div className="leaderboard">
       <div className="eyebrow">
-        {depth === 0
-          ? "FASTEST CLEAN RUNS"
-          : `FASTEST CLEARS · DISASTER ${depth}`}
+        FASTEST TIMES · THIS ROOM
       </div>
       {submitStatus?.status === "sign_in_required" && (
         <button className="button secondary" onClick={onSignIn}>
@@ -229,6 +233,14 @@ function LeaderboardPanel({
       </p>
     </div>
   );
+}
+
+interface TrendingMapItem {
+  map: PublishedMapRecord;
+  uniquePlayers: number;
+  clears: number;
+  capped: boolean;
+  popularityAvailable: boolean;
 }
 
 function StartSplash({ onStart }: { onStart(): void }) {
@@ -288,9 +300,7 @@ export function PortalsApp() {
   const [notice, setNotice] = useState("");
   const [player, setPlayer] = useState<PortalsPlayer | null>(null);
   const [board, setBoard] = useState<BoardResult | null>(null);
-  const [boardDepth, setBoardDepth] = useState(0);
   const [boardLoading, setBoardLoading] = useState(false);
-  const [boardOpen, setBoardOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitResult | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
@@ -303,8 +313,9 @@ export function PortalsApp() {
   // message they were about to send a friend. Held here so a screen can say it
   // before that happens.
   const [guest, setGuest] = useState<GuestProfile | null>(null);
-  const [trendingItems, setTrendingItems] = useState<ChallengeDTO[]>([]);
+  const [trendingItems, setTrendingItems] = useState<TrendingMapItem[]>([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
+  const [activePublishedVersionId, setActivePublishedVersionId] = useState<string | null>(null);
   // Shell surfaces stack: only the top one renders, so only one dialog is ever
   // mounted and only one focus trap is ever armed. Closing is a pop, which is
   // what lets Settings return to the pause panel when pause opened it and to
@@ -344,11 +355,12 @@ export function PortalsApp() {
    * path that works when the clipboard API is refused, which is every browser
    * that has not granted permission.
    */
-  const copyText = useCallback(async (text: string, done: string) => {
+  const copyText = useCallback(async (text: string, done: string): Promise<boolean> => {
     try {
       if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
       await navigator.clipboard.writeText(text);
       setNotice(done);
+      return true;
     } catch {
       const field = document.createElement("textarea");
       field.value = text;
@@ -359,65 +371,67 @@ export function PortalsApp() {
       const copied = document.execCommand("copy");
       field.remove();
       setNotice(copied ? done : "Select and copy: " + text);
+      return copied;
     }
   }, []);
-  const copyChallengeMessage = useCallback(async () => {
-    // Without the encoded level this was a bare sentence with no link at all,
-    // so there was nothing for the recipient to open. This edition has no
-    // /c/<slug> route, so the payload rides the page's own URL.
+  const copyChallengeCode = useCallback(async () => {
     const target = result?.challenge ?? challenge;
-    let text = "I survived MAKE IT WORSE on Portals. Your turn!";
-    if (target) {
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.set(
-          CHALLENGE_LINK_PARAM,
-          encodeChallengeLink(target, settings.avatar, runtimeTrack),
-        );
-        text = buildShareCopy(target, url.toString());
-      } catch {
-        // encodeChallengeLink now refuses to emit an undecodable link. Sitting
-        // outside this try, that throw made the button silently do nothing.
-        setNotice(
-          "This course could not be turned into a link. Try adding the trap again.",
-        );
-        return;
-      }
+    if (!target) {
+      setNotice("There is no challenge to copy yet.");
+      return;
     }
-    await copyText(text, "Challenge message copied.");
-  }, [challenge, copyText, result, runtimeTrack, settings.avatar]);
-  const copyBuiltRoom = useCallback(async (
-    runtime: { challenge: ChallengeDTO; track: BuiltTrack },
-    format: "link" | "code",
-  ) => {
     try {
-      const payload = encodeChallengeLink(runtime.challenge, settings.avatar, runtime.track);
-      if (format === "code") {
-        await copyText(payload, "Map challenge code copied.");
-        return;
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.set(CHALLENGE_LINK_PARAM, payload);
+      const code = encodeChallengeLink(target, settings.avatar, runtimeTrack);
       await copyText(
-        `I built a MAKE IT WORSE game. Try it: ${url.toString()}`,
-        "Map link copied.",
+        code,
+        "Challenge code copied. Choose Use map code on Portals to load it.",
       );
     } catch {
-      setNotice("This room is too large to share as one Portals-safe code. Publish a smaller version.");
+      setNotice(
+        "This course is too large for one Portals map code. Remove a few pieces and try again.",
+      );
     }
-  }, [copyText, settings.avatar]);
+  }, [challenge, copyText, result, runtimeTrack, settings.avatar]);
+  const copyBuiltRoom = useCallback(async (runtime: {
+    challenge: ChallengeDTO;
+    track: BuiltTrack;
+  }): Promise<string> => {
+    const published = listRememberedPublishedMaps().find(
+      (map) => map.versionId === runtime.challenge.slug,
+    );
+    if (!published)
+      return "Publish this exact version before copying its published map code.";
+    const copied = await copyText(
+      published.code,
+      "Published map code copied. Choose Use map code on Portals to load it.",
+    );
+    return copied
+      ? "Published map code copied."
+      : "Clipboard access was blocked. Select the map code shown by the game and copy it.";
+  }, [copyText]);
   const registerBuiltRoom = useCallback(async (
     runtime: { challenge: ChallengeDTO; track: BuiltTrack },
     details: { title: string },
   ): Promise<string | void> => {
+    const publishedAt = new Date().toISOString();
+    const publishedCode = encodePublishedMapCode({
+      challenge: runtime.challenge,
+      track: runtime.track,
+      avatar: settings.avatar,
+      title: details.title,
+      publishedAt,
+    });
+    rememberPublishedMap(publishedCode);
     await repository.importChallenge?.(runtime.challenge, runtime.track);
     const session = await mapSessionReady.current;
-    if (session?.status !== "ok") return;
+    if (session?.status !== "ok")
+      return `Published “${details.title}” on this device.`;
     const outcome = session.connection.announce({
       challenge: runtime.challenge,
       track: runtime.track,
       avatar: settings.avatar,
       title: details.title,
+      publishedAt,
     });
     return outcome === "sent"
       ? `Published “${details.title}” to this device and everyone in this Portals session.`
@@ -465,10 +479,20 @@ export function PortalsApp() {
     let active = true;
     let close: () => void = () => undefined;
     const connecting = connectMapSession(async ({ announcement, challenge: shared, track }) => {
-      const stored = await (repository.importChallenge?.(shared, track ?? undefined) ?? shared);
+      if (!track) return;
+      const publishedCode = wrapPublishedMapCode({
+        challengeCode: announcement.code,
+        title: announcement.title,
+        mapId: announcement.mapId,
+        versionId: announcement.versionId,
+        publishedAt: announcement.publishedAt,
+      });
+      const published = rememberPublishedMap(publishedCode);
+      await (repository.importChallenge?.(shared, track) ?? shared);
       if (!active) return;
-      setTrendingItems((current) => [stored, ...current.filter((item) => item.slug !== stored.slug)].slice(0, 12));
-      setNotice(`“${announcement.title}” was shared in this Portals session. It is now in Trending games.`);
+      setNotice(
+        `“${published.title}” was published in this Portals session. It is now eligible for Trending.`,
+      );
     });
     mapSessionReady.current = connecting;
     void connecting.then((result) => {
@@ -482,10 +506,9 @@ export function PortalsApp() {
       close();
     };
   }, [repository]);
-  const loadBoard = useCallback(async (depth: number) => {
-    setBoardDepth(depth);
+  const loadBoard = useCallback(async (roomSlug: string) => {
     setBoardLoading(true);
-    setBoard(await fetchClearTimes(depth));
+    setBoard(await fetchClearTimes(roomSlug));
     setBoardLoading(false);
   }, []);
   useEffect(() => {
@@ -503,11 +526,17 @@ export function PortalsApp() {
     }, 50);
     return () => clearInterval(timer);
   }, [phase, startedAt]);
-  const open = useCallback((next: ChallengeDTO, nextRuntimeTrack: BuiltTrack | null = null) => {
+  const open = useCallback((
+    next: ChallengeDTO,
+    nextRuntimeTrack: BuiltTrack | null = null,
+    publishedVersionId: string | null = null,
+  ) => {
     // Models are decoded once per session, not per challenge. Clearing this on
     // every open re-closed a gate that only ever opens on first mount.
     setChallenge(next);
     setRuntimeTrack(nextRuntimeTrack);
+    setActivePublishedVersionId(publishedVersionId);
+    setBoard(null);
     setPhase("intro");
     setResult(null);
     setPlacement(null);
@@ -536,6 +565,8 @@ export function PortalsApp() {
     setNotice(next.notice);
     setElapsed(next.elapsed);
     setPhase(next.phase);
+    setActivePublishedVersionId(null);
+    setBoard(null);
   }, []);
   // A shared link carries the level in its own URL, so an incoming player goes
   // straight into their friend's challenge instead of the title screen.
@@ -573,7 +604,6 @@ export function PortalsApp() {
     applyRun(EMPTY_RUN);
     setRuntimeTrack(null);
     setViews([]);
-    setBoardOpen(false);
     setRandomRoomSeed(Date.now() ^ Math.floor(Math.random() * 0x7fffffff));
     setEditorOpen(true);
   };
@@ -581,23 +611,54 @@ export function PortalsApp() {
     setTrendingLoading(true);
     openView("trending");
     try {
-      setTrendingItems(await repository.listTrending(12));
+      const knownMaps = listRememberedPublishedMaps().slice(0, 24);
+      const ranked = await Promise.all(
+        knownMaps.map(async (map): Promise<TrendingMapItem> => {
+          await (repository.importChallenge?.(map.challenge, map.track) ?? map.challenge);
+          const popularity = await fetchPublishedMapPopularity(map.versionId);
+          return popularity.status === "ok"
+            ? {
+                map,
+                uniquePlayers: popularity.uniquePlayers,
+                clears: popularity.clears,
+                capped: popularity.capped,
+                popularityAvailable: true,
+              }
+            : {
+                map,
+                uniquePlayers: 0,
+                clears: 0,
+                capped: false,
+                popularityAvailable: false,
+              };
+        }),
+      );
+      ranked.sort(
+        (a, b) =>
+          b.uniquePlayers - a.uniquePlayers ||
+          b.clears - a.clears ||
+          Date.parse(b.map.publishedAt) - Date.parse(a.map.publishedAt),
+      );
+      setTrendingItems(ranked.slice(0, 12));
     } catch {
       setNotice("Trending games could not be loaded. Try again.");
     } finally {
       setTrendingLoading(false);
     }
   };
-  const playTrending = async (item: ChallengeDTO) => {
+  const playTrending = async (item: TrendingMapItem) => {
     try {
-      const authoredTrack = await repository.getChallengeRuntimeTrack?.(item.slug) ?? null;
-      open(item, authoredTrack);
+      const stored = await (
+        repository.importChallenge?.(item.map.challenge, item.map.track) ??
+        item.map.challenge
+      );
+      open(stored, item.map.track, item.map.versionId);
     } catch {
       setNotice("That game could not be opened. Try another one.");
     }
   };
   const importSharedGame = async () => {
-    const pasted = window.prompt("Paste a MAKE IT WORSE map link or challenge code")?.trim();
+    const pasted = window.prompt("Paste a MAKE IT WORSE map code")?.trim();
     if (!pasted) return;
     try {
       const urlText = pasted.split(/\s+/).find((part) => /^https?:\/\//i.test(part));
@@ -611,12 +672,23 @@ export function PortalsApp() {
           // query strings, so failing URL parsing is not an error here.
         }
       }
+      if (payload.startsWith(PUBLISHED_MAP_CODE_PREFIX)) {
+        const published = rememberPublishedMap(payload);
+        const stored = await (
+          repository.importChallenge?.(published.challenge, published.track) ??
+          published.challenge
+        );
+        open(stored, published.track, published.versionId);
+        return;
+      }
       const shared = decodeChallengeLink(payload);
       const sharedTrack = decodeChallengeRuntimeTrack(payload);
-      const stored = await (repository.importChallenge?.(shared, sharedTrack ?? undefined) ?? shared);
-      open(stored, sharedTrack);
+      const stored = await (
+        repository.importChallenge?.(shared, sharedTrack ?? undefined) ?? shared
+      );
+      open(stored, sharedTrack, null);
     } catch {
-      setNotice("That map link or challenge code is damaged. Ask the builder to copy it again.");
+      setNotice("That map code is damaged. Ask the builder to copy it again.");
     }
   };
   const start = useCallback(async () => {
@@ -659,8 +731,11 @@ export function PortalsApp() {
     finishing.current = false;
     progress.current = 0;
     setPhase("playing");
-  }, [challenge, repository]);
+    if (activePublishedVersionId)
+      void submitPublishedMapSignal(activePublishedVersionId, "start");
+  }, [activePublishedVersionId, challenge, repository]);
   const prepareCleanRun = useCallback(async (runtime: { challenge: ChallengeDTO; track: BuiltTrack }) => {
+    setActivePublishedVersionId(null);
     setRuntimeTrack(runtime.track);
     const stored = await (repository.importChallenge?.(runtime.challenge, runtime.track) ?? runtime.challenge);
     const started = await repository.startAttempt({
@@ -717,9 +792,11 @@ export function PortalsApp() {
     recordRunEnd({ outcome: "completed", progress: 1, cause: null });
     AudioManager.finish();
     navigator.vibrate?.([45, 40, 70]);
-    setSubmitStatus(await submitClearTime(challenge.depth, duration));
-    await loadBoard(challenge.depth);
-  }, [attemptId, challenge, loadBoard, repository, startedAt]);
+    setSubmitStatus(await submitClearTime(challenge.slug, duration));
+    if (activePublishedVersionId)
+      void submitPublishedMapSignal(activePublishedVersionId, "clear");
+    await loadBoard(challenge.slug);
+  }, [activePublishedVersionId, attemptId, challenge, loadBoard, repository, startedAt]);
   // The SDK requires sign-in to come from a direct player action. Posting the
   // just-finished time here saves the player from replaying the run.
   const handleSignIn = useCallback(async () => {
@@ -731,9 +808,11 @@ export function PortalsApp() {
     if (result.status !== "ok") return;
     setPlayer(result.player);
     if (!challenge || phase !== "finished") return;
-    setSubmitStatus(await submitClearTime(challenge.depth, elapsed));
-    await loadBoard(challenge.depth);
-  }, [challenge, elapsed, loadBoard, phase]);
+    setSubmitStatus(await submitClearTime(challenge.slug, elapsed));
+    if (activePublishedVersionId)
+      void submitPublishedMapSignal(activePublishedVersionId, "clear");
+    await loadBoard(challenge.slug);
+  }, [activePublishedVersionId, challenge, elapsed, loadBoard, phase]);
   const fail = useCallback(
     // `knownDuration` is for the paused case: startedAt is not rebased until
     // the run resumes, so mid-pause it is stale by however long the menu was
@@ -903,9 +982,6 @@ export function PortalsApp() {
     applyRun(EMPTY_RUN);
     setRuntimeTrack(null);
     setViews([]);
-    // The board is loaded at the run's depth, so leaving it open would put
-    // "FASTEST CLEARS · DISASTER 3" on a title screen with no run behind it.
-    setBoardOpen(false);
   }, [applyRun]);
   /**
    * Run an action, or ask first when it would throw the run away.
@@ -1030,7 +1106,22 @@ export function PortalsApp() {
           className="button secondary"
           onClick={() => void browseTrending()}
         >
-          🔥 Browse trending games
+          🔥 Trending games
+        </button>
+        <button
+          className="button secondary"
+          onClick={() =>
+            guard(
+              () => void importSharedGame(),
+              {
+                title: "Leave this run?",
+                body: "Loading a map code replaces the run you are on. This run does not come back.",
+                confirmLabel: "Use a map code",
+              },
+            )
+          }
+        >
+          📥 Use map code
         </button>
         <button
           className="button secondary"
@@ -1049,18 +1140,6 @@ export function PortalsApp() {
           }}
         >
           <MenuIcon name="apartment" /> Visit your apartment
-        </button>
-        <button
-          className="button secondary"
-          onClick={() => {
-            setBoardOpen((open) => !open);
-            // One `board` is shared with the finish panel. Opening this at
-            // depth 0 mid-chain replaced that panel's table with a different
-            // depth's times while its heading still claimed this one's.
-            if (!boardOpen) void loadBoard(challenge?.depth ?? 0);
-          }}
-        >
-          <MenuIcon name="leaderboard" /> {boardOpen ? "Hide leaderboard" : "Global leaderboard"}
         </button>
         <button
           className="button secondary"
@@ -1104,17 +1183,6 @@ export function PortalsApp() {
           </button>
         )}
       </div>
-      {boardOpen && (
-        <LeaderboardPanel
-          depth={boardDepth}
-          board={board}
-          loading={boardLoading}
-          playerId={player?.playerId ?? null}
-          submitStatus={null}
-          onSignIn={() => void handleSignIn()}
-          onRetry={() => void loadBoard(boardDepth)}
-        />
-      )}
       {/* The only place a damaged challenge link ever said so was a panel that
           is not mounted on the title screen, so the message was set and never
           shown. */}
@@ -1147,25 +1215,21 @@ export function PortalsApp() {
           labelledBy="portals-trending-title"
           panelClassName="portals-trending"
         >
-          <div className="eyebrow">BROWSE GAMES</div>
-          <h2 id="portals-trending-title">Trending disasters</h2>
+          <div className="eyebrow">PUBLISHED MAPS</div>
+          <h2 id="portals-trending-title">Trending games</h2>
           <p className="portals-lede">
-            Rooms published on this device or shared by players in this Portals
-            session appear here. Global publishing still needs platform storage
-            that the current SDK does not expose.
+            Published maps known to this device or Portals session, ranked by
+            unique signed-in players. Challenge codes never enter this list.
           </p>
-          <button className="button secondary" onClick={() => void importSharedGame()}>
-            📥 Import map link or code
-          </button>
           <div className="portals-maps" aria-busy={trendingLoading}>
             {trendingLoading && <p>Finding the worst ideas…</p>}
             {!trendingLoading && trendingItems.length === 0 && (
-              <p>No games have been published on this device yet.</p>
+              <p>No published maps are known here yet. Publish one in Build your game.</p>
             )}
             {trendingItems.map((item, index) => (
               <button
                 className="portals-map"
-                key={item.slug}
+                key={item.map.versionId}
                 onClick={() =>
                   guard(() => void playTrending(item), {
                     title: "Leave this run?",
@@ -1174,9 +1238,9 @@ export function PortalsApp() {
                   })
                 }
               >
-                <strong>{index === 0 ? "🔥 " : ""}{item.createdByName}&rsquo;s game</strong>
+                <strong>{index === 0 ? "🔥 " : ""}{item.map.title}</strong>
                 <span>
-                  {item.traps.length} trap{item.traps.length === 1 ? "" : "s"} · {item.stats.attempts} run{item.stats.attempts === 1 ? "" : "s"}
+                  by {item.map.author} · {item.map.challenge.traps.length} trap{item.map.challenge.traps.length === 1 ? "" : "s"} · {item.popularityAvailable ? `${item.uniquePlayers}${item.capped ? "+" : ""} player${item.uniquePlayers === 1 ? "" : "s"} · ${item.clears} clear${item.clears === 1 ? "" : "s"}` : "ranking available on Portals"}
                 </span>
               </button>
             ))}
@@ -1265,7 +1329,8 @@ export function PortalsApp() {
             void fail(outcome);
           }}
           onPublish={(runtime, details) => registerBuiltRoom(runtime, details)}
-          onShare={(runtime, format) => copyBuiltRoom(runtime, format)}
+          onShare={(runtime) => copyBuiltRoom(runtime)}
+          shareMode="codes-only"
           onClose={() => {
             setEditorOpen(false);
             setRandomRoomSeed(null);
@@ -1476,7 +1541,6 @@ export function PortalsApp() {
           <div className="hud-actions">
             <button
               aria-label="Open how to play"
-              title="How to play"
               onClick={() => {
                 pause();
                 openView("controls");
@@ -1489,18 +1553,6 @@ export function PortalsApp() {
         </header>
       )}
       {runPanel === "playing" && <MobileControls />}
-      {/* Both were written, tested and imported, and then mounted by nothing -
-          the unit tests render them directly, so the suite stayed green while
-          no player could reach them. The tour teaches move/jump/reach-the-door
-          on a first run; CoachHint holds its tongue until the player has shown
-          they need it. Suppressed behind a modal, where a menu already has the
-          player's attention and a second card on top is just noise. */}
-      <FirstRunTour
-        phase={phase}
-        suppressed={view !== null}
-        touchControls={touchControls}
-      />
-      {view === null && <CoachHint phase={phase} />}
       {runPanel === "failed" && (
         <Overlay
           className="failure-backdrop"
@@ -1540,19 +1592,18 @@ export function PortalsApp() {
           <h2 id="portals-finished-title">YOU SURVIVED</h2>
           <div className="finish-time">{format(elapsed)}</div>
           <LeaderboardPanel
-            depth={challenge.depth}
             board={board}
             loading={boardLoading}
             playerId={player?.playerId ?? null}
             submitStatus={submitStatus}
             onSignIn={() => void handleSignIn()}
-            onRetry={() => void loadBoard(challenge.depth)}
+            onRetry={() => void loadBoard(challenge.slug)}
           />
           <button
             className="button primary huge"
-            onClick={() => offered ? setPhase("choosing_trap") : void copyChallengeMessage()}
+            onClick={() => offered ? setPhase("choosing_trap") : void copyChallengeCode()}
           >
-            {offered ? "Make it worse" : "Share the final form"}
+            {offered ? "Make it worse" : "Copy final challenge code"}
           </button>
           <div className="portals-buttons">
             {!offered && (
@@ -1730,18 +1781,17 @@ export function PortalsApp() {
             <span className="worse-number">{result.estimatedWorsePercent}%</span>.
           </p>
           <p className="portals-share-warning">
-            Portals runs this build in a secure static sandbox, so player-made
-            chains persist in this browser. The full web deployment supports
-            cross-device challenge links.
+            The code contains this complete playable version. Your friend stays
+            on Portals and pastes it into Use map code.
           </p>
           <div className="portals-buttons">
             {/* Sending it on IS the win, so it is the loud one. It was the
                 secondary under a red "Play your version". */}
             <button
               className="button danger huge"
-              onClick={() => void copyChallengeMessage()}
+              onClick={() => void copyChallengeCode()}
             >
-              Copy challenge message
+              Copy challenge code
             </button>
             <button
               className="button secondary"

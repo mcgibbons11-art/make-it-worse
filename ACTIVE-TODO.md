@@ -21,6 +21,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Traps and movement
 
+- [x] Face the runner from the spawn point toward the room's end gate on every map load and every Try again attempt; never respawn looking backward.
 - [x] Redesign Junk Drift/trash pile and finish its animation/effect pass.
 - [x] Make the pedal bin eject trash debris that causes slipping.
 - [x] Make Mattress Rebound launch the runner much harder.
@@ -31,36 +32,41 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Builder and sharing
 
-- [ ] Finish and prove the full custom-built-game sharing and discovery path: draft → publish → durable versioned link/code → same-session or cross-session delivery → Trending/search browse → exact-version play → child rounds → reporting/moderation. This remains open until the processed Portals and provisioned Supabase checks below both pass with different real players.
-- [ ] Connect published custom maps to a real shared backend and cross-player browser.
-  - [x] Implement the Supabase schema, secured RPCs, Next API, builder publisher, and community browser.
-  - [ ] Apply migration 0021 to an approved Supabase project, configure the deployment, and verify with two real accounts/devices.
+- [x] Remove the main-menu Global leaderboard and scope every leaderboard to the exact custom-built room or shared challenge version being played, so unrelated rooms and trap depths never share scores.
+- [x] Move code redemption out of Trending: add a dedicated main-menu Use map code action that pastes and immediately loads the exact published map or shared challenge without treating ordinary challenge codes as Trending publications.
+- [ ] Finish and prove the full Portals-native custom-game path: draft → publish to this device/session → durable map code → same-session automatic delivery or cross-session paste → Trending catalog → exact-version play → child rounds. This remains open until the processed Portals check below passes with different real players.
+- [x] Resolve global backend feasibility for the Portals release: processed Portals games block every outside `fetch`, WebSocket, and WebRTC connection, and the SDK exposes no global user-content store. Use Portals session relay plus self-contained map codes instead of presenting local data as global Trending.
+  - [x] Keep the completed Supabase schema/API/community browser as an optional standalone-web extension; it is not used by or required for the Portals release.
 - [x] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
-  - [x] Add self-contained authored-room links and raw challenge codes, plus import from either form.
+  - [x] Make Copy map code → Use map code the primary Portals cross-session flow; retain old link imports only for backward compatibility.
   - [x] Persist authored geometry across reloads and every child round in the local repository.
   - [x] Add a bounded/versioned Portals.net announcement/request/response exchange with late-join shared state and an unavailable-host fallback.
-- [ ] Design and test the entire share-game system end to end: create/share/import, same-room Portals delivery, different-session challenge codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
-  - [x] Browser-test publish → local trending → link recipient and raw-code recipient.
+- [ ] Design and test the entire Portals share-game system end to end: create/share/import, same-room delivery, different-session map codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
+  - [x] Browser-test publish → local Trending catalog → raw-code recipient.
   - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
   - [ ] Test same-room delivery inside a processed Portals multiplayer session.
-  - [ ] Run the publish/browse/report/rollback matrix against the provisioned Supabase database rather than mocked RPCs.
-- [ ] Define and implement the full custom-built-game sharing path.
+- [x] Define and implement the full Portals-native custom-built-game sharing path.
   - [x] Document the Portals SDK boundary, same-session message path, required global backend, data model, ranking approach, and release test matrix in `CUSTOM-GAME-SHARING.md`.
-  - [x] Ship immutable self-contained map links/codes, recipient import, local persistence, child-round inheritance, and local Trending registration.
+  - [x] Ship immutable self-contained map codes, recipient import, local persistence, child-round inheritance, and published-map Trending registration.
   - [x] Add stable map ownership plus immutable version records, publish/update history, titles/descriptions, visibility, and rollback.
   - [x] Implement shared Supabase storage/API code for cross-player publishing and loading; never label per-device data global.
-  - [ ] Obtain/confirm the approved shared project, apply the migration, and activate that API in production.
   - [x] Build the global browse experience: pagination, search/filtering, creator attribution, version compatibility, and recipient loading/failure recovery.
   - [x] Implement real Trending events/ranking: unique impressions/starts, clears, likes, shares, reports, freshness decay, smoothing, and author diversity.
   - [x] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
   - [x] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
-  - [x] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, and two child rounds locally end to end.
-  - [ ] Test same-room late join in a processed Portals session and execute `pnpm verify:custom-maps` against the real backend to prove reporting, moderation, visibility, immutable versions, stale-write rejection, and rollback.
+  - [x] Test payload ceilings, corruption/replay, old-version immutability, browser restart, different-player code import, and two child rounds locally end to end.
+  - [ ] Test same-room late join in a processed Portals session.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [x] Test builder vertical layouts, rotated jump footprints, conservative jump warnings, real-game Test mode, platform colors, trap base colors, overlap-safe dragging, and all 55 runtime trap assets.
 
 ## Apartment
 
+- [ ] Rebuild the apartment completely from scratch as a believable permanent player home; do not line up preassembled corner-room chunks to fake a floor plan.
+  - [ ] Inventory and dismantle the existing apartment/corner-room assets into modular floors, wall runs, corners, doors, windows, trim, fixtures, and individual furniture/decor pieces.
+  - [ ] Design and assemble a coherent room-by-room apartment from those modular pieces with believable circulation, scale, sightlines, wall continuity, and distinct room purposes.
+  - [ ] Make every furniture and decor object individually selectable, movable, rotatable, and placeable by the player rather than baking furnishings into room chunks.
+  - [ ] Persist the complete apartment shell choices and exact furniture/decor layout across reloads so it functions as the player's permanent home.
+  - [ ] Complete five independent design-review rounds against rendered builds, address every material finding, and retain the review evidence before marking the remake complete.
 - [x] Replace apartment movement/camera with the same controller, physics, and camera settings used by the main game and builder Test mode.
 - [x] Expand the apartment to six times the original floor area and turn the asset set into connected rooms the runner can explore.
 - [x] Add richer decorating with drag/drop floor placement, moving, organizing, color customization, and local persistence.
@@ -73,6 +79,9 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Menu presentation
 
+- [x] Remove automatic first-run and post-death coaching cards; guidance only opens after the player explicitly chooses How to play or a `?` guide.
+- [x] Keep builder and apartment guidance behind their own opt-in `?` tutorial buttons; never prompt either tutorial automatically.
+- [x] Remove native hover tooltips from game and builder controls so they cannot obscure the interface.
 - [x] Redesign the main-menu clouds to be fluffy, puffy, layered, and gently animated like the supplied start-screen reference.
 - [x] Restore and broadly audit every main-menu emoji/icon for missing assets, broken paths, and text-encoding corruption.
 

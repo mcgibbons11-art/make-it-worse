@@ -12,7 +12,7 @@ import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
 import { GRID_SIZE } from "@/lib/game/constants";
 import { isInterfaceTarget, resetCameraYaw } from "@/lib/game/input";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
-import { CLASSIC_TRACK, buildTrack, type BuiltTrack } from "@/lib/game/track";
+import { CLASSIC_TRACK, buildTrack, trackFacingYaw, type BuiltTrack } from "@/lib/game/track";
 import { snapToGrid } from "@/lib/game/placement";
 import { PlayerVisual } from "./PlayerVisual";
 import { Lighting } from "./Lighting";
@@ -86,6 +86,7 @@ export function GameScene({
     () => trackOverride ?? buildTrack(challenge.track ?? CLASSIC_TRACK),
     [challenge.track, trackOverride],
   );
+  const spawnYaw = useMemo(() => trackFacingYaw(track), [track]);
   const validation = useMemo(
     () =>
       placement ? validatePlacement(placement, challenge.traps, track) : null,
@@ -123,8 +124,8 @@ export function GameScene({
   // the camera swung round starts the next run looking sideways, and the first
   // input of the attempt goes somewhere the player did not ask for.
   useEffect(() => {
-    resetCameraYaw();
-  }, [attemptSerial]);
+    resetCameraYaw(spawnYaw);
+  }, [attemptSerial, spawnYaw]);
   // Nudging a held trap with the keys, because a mouse is bad at 0.25u.
   //
   // The intent is carried UNCLAMPED between presses. placementFromWorld pins a
@@ -274,7 +275,7 @@ export function GameScene({
           )}
         </>
       ) : (
-        <group position={[0, 1.25, 1.2]}>
+        <group position={track.spawn} rotation={[0, spawnYaw, 0]}>
           <PlayerVisual avatarSeed={challenge.createdByAvatarSeed} avatar={avatar} />
         </group>
       )}

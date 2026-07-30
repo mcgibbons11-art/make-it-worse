@@ -754,6 +754,38 @@ export function PedalBinLid() {
   );
 }
 
+/** Loose rubbish thrown by the pedal bin. Physics and the slip telegraph live
+ * in TrapsWaveB; this is only the lit, readable prop carried by that arc. */
+export function BinTrash() {
+  const scraps = [
+    [-0.48, 0.1, -0.12, PALETTE.cream],
+    [-0.2, 0.16, 0.3, PALETTE.orange],
+    [0.08, 0.12, -0.22, PALETTE.yellow],
+    [0.35, 0.18, 0.18, PALETTE.blue],
+    [0.52, 0.1, -0.08, PALETTE.purple],
+  ] as const;
+  return (
+    <group name="binTrashProp">
+      {scraps.map(([x, y, z, color], index) => (
+        <mesh
+          key={index}
+          name={`binTrashScrap${index}`}
+          castShadow
+          position={[x, y, z]}
+          rotation={[index * 0.7, index * 1.1, index * 0.45]}
+        >
+          <boxGeometry args={[0.34 + (index % 2) * 0.12, 0.08, 0.24]} />
+          <meshStandardMaterial color={color} roughness={0.88} />
+        </mesh>
+      ))}
+      <mesh name="binTrashCan" castShadow position={[0.02, 0.13, 0.08]} rotation={[Math.PI / 2, 0, 0.45]}>
+        <cylinderGeometry args={[0.13, 0.13, 0.32, 12]} />
+        <meshStandardMaterial color={PALETTE.muted} roughness={0.55} metalness={0.22} />
+      </mesh>
+    </group>
+  );
+}
+
 /** The jamb the door hangs on. Static: only the leaf swings. */
 export function SwingDoorJamb({ height }: { height: number }) {
   return (
@@ -1197,25 +1229,51 @@ export function Kettle() {
 export function JunkDrift() {
   return (
     <group name="junkDriftProp">
-      <mesh name="driftHeap" castShadow receiveShadow position={[0, 0.16, 0]} scale={[1, 0.42, 1]}>
-        <sphereGeometry args={[0.72, 14, 10]} />
-        <meshStandardMaterial color={PALETTE.muted} {...SOFT} />
+      {/* An asymmetric pile of readable rubbish instead of two smooth blobs.
+          The separate silhouettes keep it legible while the trap swells. */}
+      <mesh name="driftHeap" castShadow receiveShadow position={[-0.12, 0.12, 0.02]} scale={[1.15, 0.38, 0.92]} rotation={[0, 0.25, 0]}>
+        <dodecahedronGeometry args={[0.58, 1]} />
+        <meshStandardMaterial color="#6f665f" {...SOFT} />
       </mesh>
-      <mesh name="driftCrust" position={[0, 0.24, 0]} scale={[1, 0.34, 1]}>
-        <sphereGeometry args={[0.5, 12, 8]} />
-        <meshStandardMaterial color={PALETTE.purple} {...SOFT} />
+      <mesh name="driftCrust" castShadow position={[0.28, 0.17, -0.12]} scale={[0.82, 0.4, 0.7]} rotation={[0.18, -0.35, 0.08]}>
+        <dodecahedronGeometry args={[0.5, 0]} />
+        <meshStandardMaterial color="#91847a" {...SOFT} />
       </mesh>
-      <mesh name="driftBox" castShadow position={[-0.3, 0.2, 0.16]} rotation={[0.2, 0.4, -0.3]}>
-        <boxGeometry args={[0.26, 0.2, 0.2]} />
+      <mesh name="driftBox" castShadow position={[-0.34, 0.28, 0.18]} rotation={[0.18, 0.45, -0.26]}>
+        <boxGeometry args={[0.38, 0.28, 0.3]} />
         <meshStandardMaterial color={PALETTE.orange} {...PLASTIC} />
       </mesh>
-      <mesh name="driftCard" castShadow position={[0.34, 0.24, -0.1]} rotation={[0, -0.5, 0.5]}>
-        <boxGeometry args={[0.3, 0.04, 0.22]} />
+      <mesh name="driftCard" castShadow position={[0.43, 0.35, -0.06]} rotation={[0.1, -0.62, 0.65]}>
+        <boxGeometry args={[0.44, 0.045, 0.3]} />
         <meshStandardMaterial color={PALETTE.cream} {...PLASTIC} />
       </mesh>
-      <mesh name="driftBall" castShadow position={[0.12, 0.3, 0.3]}>
-        <sphereGeometry args={[0.11, 10, 8]} />
+      <mesh name="driftBall" castShadow position={[0.08, 0.34, 0.36]}>
+        <sphereGeometry args={[0.15, 12, 9]} />
         <meshStandardMaterial color={PALETTE.yellow} {...PLASTIC} />
+      </mesh>
+      <mesh name="driftTin" castShadow position={[0.3, 0.33, 0.26]} rotation={[Math.PI / 2, 0.15, 0.42]}>
+        <cylinderGeometry args={[0.13, 0.13, 0.36, 12]} />
+        <meshStandardMaterial color={PALETTE.blue} {...METAL} />
+      </mesh>
+      <mesh name="driftBottle" castShadow position={[-0.06, 0.39, -0.28]} rotation={[0.35, 0, -0.78]}>
+        <cylinderGeometry args={[0.07, 0.1, 0.42, 10]} />
+        <meshStandardMaterial color={PALETTE.green} transparent opacity={0.82} {...PLASTIC} />
+      </mesh>
+      <mesh name="driftBottleCap" castShadow position={[-0.19, 0.53, -0.28]} rotation={[0.35, 0, -0.78]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.08, 10]} />
+        <meshStandardMaterial color={PALETTE.red} {...PLASTIC} />
+      </mesh>
+      <mesh name="driftWheel" castShadow position={[-0.47, 0.31, -0.18]} rotation={[Math.PI / 2, 0.2, 0]}>
+        <torusGeometry args={[0.17, 0.055, 8, 16]} />
+        <meshStandardMaterial color={PALETTE.ink} {...SOFT} />
+      </mesh>
+      <mesh name="driftPaper" castShadow position={[0.02, 0.5, 0.02]} rotation={[0.2, 0.4, -0.18]}>
+        <icosahedronGeometry args={[0.18, 1]} />
+        <meshStandardMaterial color={PALETTE.cream} {...SOFT} />
+      </mesh>
+      <mesh name="driftFork" castShadow position={[0.5, 0.24, 0.2]} rotation={[0.15, -0.65, 0.2]}>
+        <boxGeometry args={[0.06, 0.055, 0.52]} />
+        <meshStandardMaterial color={PALETTE.muted} {...METAL} />
       </mesh>
     </group>
   );

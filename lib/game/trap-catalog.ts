@@ -6,14 +6,18 @@ import type { TrapType } from "./types";
 // suggests. tests/unit/risk-calibration.test.ts re-runs the rule below and
 // fails if any weight here drifts from it.
 //
-// WHAT A CONTACT COSTS. Every trap reports an impulse magnitude through
-// onHazard. GameScene turns that, and only that, into the two things a runner
-// feels:
+// CALIBRATION BASELINE. Every trap reports an impulse magnitude through
+// onHazard. The relative risk table was fitted to this shared response:
 //     stun      = clamp(impulse * 22, 250, 500) ms, during which
 //                 PlayerController cuts acceleration to 25%
 //     knockback = min(5.5, 1.8 + impulse * 0.22), applied along -Z
-// So a trap's hazard output is fully described by the impulse it reports and
-// how often it may report again while the runner is still in reach.
+// The live game now applies a stronger, uniform feel pass after that relative
+// calibration (longer stun, harder knockback, a small lift, and less steering
+// while disrupted). Because it is roster-wide, it deliberately does not
+// re-rank traps or rewrite existing challenge scores. Per-trap mechanics such
+// as launch, slip, pull, or teleport remain additional to this shared contact.
+// A trap's baseline hazard output is therefore described by the impulse it
+// reports and how often it may report again while the runner is still in reach.
 //
 // THE RULE. Over one exposure window E a trap lands
 //     contacts  = 1 + E / repeatGate        (a one-shot lands exactly 1)
@@ -214,7 +218,7 @@ export const TRAP_CATALOG: Record<TrapType, TrapDefinition> = {
   dust_bunny: { type: "dust_bunny", displayName: "Dust Bunny", articleName: "a dust bunny", shortDescription: "Walks where you walked, a moment late.", category: "prop", placementRadius: 0.6, riskWeight: 1.1, iconKey: "dustbunny", defaultParams: { lag: 1600, chase: 3.6 } },
   flood_puddle: { type: "flood_puddle", displayName: "Overflowing Sink", articleName: "an overflowing sink", shortDescription: "Bigger the longer you dither.", category: "movement", placementRadius: 0.75, riskWeight: 1.05, iconKey: "sink", defaultParams: { start: 0.7, growth: 0.055, widest: 2 } },
   updraft_vent: { type: "updraft_vent", displayName: "Floor Vent", articleName: "a floor vent", shortDescription: "Only lifts you once you have left the ground.", category: "movement", placementRadius: 0.65, riskWeight: 1, iconKey: "updraft", defaultParams: { reach: 0.9, lift: 4.2, ceiling: 2.6 } },
-  mattress_rebound: { type: "mattress_rebound", displayName: "Propped Mattress", articleName: "a propped mattress", shortDescription: "Gives your speed back, pointing the other way.", category: "prop", placementRadius: 0.9, riskWeight: 1.2, iconKey: "mattress", defaultParams: { span: 1.8, bounce: 1.15 } },
+  mattress_rebound: { type: "mattress_rebound", displayName: "Propped Mattress", articleName: "a propped mattress", shortDescription: "Launches you up and throws your speed back harder.", category: "prop", placementRadius: 0.9, riskWeight: 1.2, iconKey: "mattress", defaultParams: { span: 1.8, bounce: 1.6 } },
   plate_shards: { type: "plate_shards", displayName: "Plate Stack", articleName: "a stack of plates", shortDescription: "One nudge, and the floor is ruined for good.", category: "sweeper", placementRadius: 0.7, riskWeight: 1.15, iconKey: "plates", defaultParams: { spread: 2.4 } },
   cat_flap: { type: "cat_flap", displayName: "Cat Flap", articleName: "a cat flap", shortDescription: "Crawl or sprint. Anything between hurts.", category: "sweeper", placementRadius: 0.8, riskWeight: 1.05, iconKey: "catflap", defaultParams: { span: 1.3, slow: 2.2, fast: 6 } },
   // The sixteen below live in components/game/traps/TrapsWaveB.tsx, and follow
@@ -241,7 +245,7 @@ export const TRAP_CATALOG: Record<TrapType, TrapDefinition> = {
   clothes_airer: { type: "clothes_airer", displayName: "Clothes Airer", articleName: "a clothes airer", shortDescription: "Ignores runners. Catches dodgers.", category: "sweeper", placementRadius: 1, riskWeight: 1.05, iconKey: "airer", defaultParams: { length: 2.1, sidestep: 2.6 } },
   ice_dispenser: { type: "ice_dispenser", displayName: "Ice Dispenser", articleName: "an ice dispenser", shortDescription: "One magazine, then it is furniture.", category: "prop", placementRadius: 1.1, riskWeight: 1, iconKey: "icedispenser", defaultParams: { range: 4.5, spread: 1.3 } },
   kettle_boil: { type: "kettle_boil", displayName: "Boiling Kettle", articleName: "a boiling kettle", shortDescription: "Comes to the boil on its own schedule.", category: "movement", placementRadius: 0.9, riskWeight: 1.1, iconKey: "kettle", defaultParams: { scald: 1.9 } },
-  junk_drift: { type: "junk_drift", displayName: "Junk Drift", articleName: "a drift of junk", shortDescription: "Grows on whatever is standing near it.", category: "prop", placementRadius: 0.75, riskWeight: 1.05, iconKey: "junkdrift", defaultParams: { base: 0.75, feed: 4.5 } },
-  charles_murder_baby: { type: "charles_murder_baby", displayName: "Charles the Murder Baby", articleName: "a murder baby named Charles", shortDescription: "He crawls. He judges. He has chosen violence.", category: "prop", placementRadius: 0.7, riskWeight: 1.4, iconKey: "charles", defaultParams: { speed: 2.25, leash: 3.8, impulse: 13 } },
+  junk_drift: { type: "junk_drift", displayName: "Junk Drift", articleName: "a drift of junk", shortDescription: "Feeds on nearby clutter, swells, then lunges.", category: "prop", placementRadius: 0.9, riskWeight: 1.05, iconKey: "junkdrift", defaultParams: { base: 0.9, feed: 5 } },
+  charles_murder_baby: { type: "charles_murder_baby", displayName: "Charles the Murder Baby", articleName: "a murder baby named Charles", shortDescription: "He crawls. He judges. He has chosen violence.", category: "prop", placementRadius: 0.7, riskWeight: 1.4, iconKey: "charles", defaultParams: { speed: 2.25, leash: 3.8 } },
 };
 export function trapName(type: TrapType): string { return TRAP_CATALOG[type].displayName.toLowerCase(); }

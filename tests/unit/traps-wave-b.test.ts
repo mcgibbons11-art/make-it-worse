@@ -272,6 +272,18 @@ describe("wave B schedules keep the counter-play each trap is built on", () => {
     expect(swipe).toBeGreaterThan(pedal);
   });
 
+  it("makes the pedal bin eject visible trash that leaves a slippery field", () => {
+    const bin = sections().get("BinPedalTrap");
+    expect(bin).toBeDefined();
+    expect(bin).toContain("PEDAL_TRASH_FLIGHT_MS");
+    expect(bin).toContain("PEDAL_TRASH_LIFE_MS");
+    expect(bin).toContain("PEDAL_TRASH_SLIP_MS");
+    expect(bin).toContain("soapUntilRef.current");
+    expect(bin).toContain('"trash_ejected"');
+    expect(bin).toContain('"trash_slipped"');
+    expect(bin).toContain("<BinTrash");
+  });
+
   it("leaves the shoe rack's shove enough time to be answered", () => {
     // The opening shove is only fair if there is a readable gap before the
     // topple lands on the patch it puts the runner on.
@@ -350,6 +362,17 @@ describe("wave B schedules keep the counter-play each trap is built on", () => {
     // and one close to it would only ever catch a run that was already lost.
     expect(WAVE_B_SCHEDULE.kettleBoil.boilMs).toBeLessThan(ATTEMPT_LIMIT_MS / 2);
     expect(WAVE_B_SCHEDULE.kettleBoil.boilMs).toBeGreaterThan(WAVE_B_HAZARD.kettle_boil.gateMs);
+  });
+
+  it("makes Junk Drift swell from clutter and visibly lunge at the runner", () => {
+    const junk = sections().get("JunkDriftTrap");
+    expect(junk).toBeDefined();
+    expect(TRAP_CATALOG.junk_drift.defaultParams["feed"]).toBeGreaterThanOrEqual(5);
+    expect(junk).toContain("DUST_SHOVE");
+    expect(junk).toContain("DUST_LIFT");
+    expect(junk).toContain("fluff.current.position.z = lunging");
+    expect(junk).toContain("rummage");
+    expect(junk).toContain('"dust_caught"');
   });
 });
 

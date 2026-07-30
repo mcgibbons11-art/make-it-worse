@@ -38,7 +38,7 @@ describe("recorded trap audio assets", () => {
     const pixabay = manifest.files.filter(
       (entry) => entry.license === "Pixabay Content License",
     );
-    expect(pixabay).toHaveLength(38);
+    expect(pixabay).toHaveLength(39);
     for (const entry of pixabay) {
       expect(entry.source, entry.file).toMatch(/^https:\/\/pixabay\.com\/sound-effects\//);
       expect(entry.title, entry.file).toBeTruthy();

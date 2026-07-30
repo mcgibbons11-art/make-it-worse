@@ -29,12 +29,13 @@ async function expectMechanic(page: Page, type: TrapType, event: string) {
     .toBe(true);
 }
 
-// Seven of the sixteen traps in TRAP_TYPES are exercised here. The floor fan,
+// Seven representative traps in the 55-entry TRAP_TYPES roster are exercised
+// here. The floor fan,
 // toaster launcher, ceiling fan, banana peel, robot mop, mousetrap, sprinkler,
 // laundry basket, and industrial magnet have no step yet: the sandbox places
 // all sixteen, so each is reachable through /dev/sandbox?trap=<type> when a
 // step is written for it.
-test("seven of the sixteen traps prove their production physics mechanic", async ({ page }) => {
+test("representative traps prove their production physics mechanics", async ({ page }) => {
   test.setTimeout(90_000);
 
   await test.step("hammer moving collider attributes a sweep contact", async () => {
@@ -102,8 +103,23 @@ test("seven of the sixteen traps prove their production physics mechanic", async
         }, before),
       )
       .toBeGreaterThan(0.2);
-    await page.evaluate(() => window.__MIW_SANDBOX__!.teleportPlayer("angry_vacuum", 0, -1.2));
-    await expectMechanic(page, "angry_vacuum", "suction_applied");
+    // The vacuum has chased away from its authored placement by this point, so
+    // teleport to the live rigid body rather than to that stale origin.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            window.__MIW_SANDBOX__!.teleportPlayerToTrapBody("angry_vacuum");
+            return (
+              window.__MIW_SANDBOX__?.getState().mechanics.some(
+                (entry) =>
+                  entry.trapType === "angry_vacuum" && entry.event === "suction_applied",
+              ) ?? false
+            );
+          }),
+        { intervals: [100] },
+      )
+      .toBe(true);
   });
 
   await test.step("toilet physically orbits and its sweep collider contacts", async () => {

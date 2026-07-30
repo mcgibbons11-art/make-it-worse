@@ -2043,14 +2043,15 @@ export function UpdraftVentTrap({
 const MATTRESS = WAVE_A_HAZARD.mattress_rebound;
 const MATTRESS_SPAN_FALLBACK = 1.8;
 /** Multiplier on the returned speed. Over 1 gives back more than it took. */
-const MATTRESS_BOUNCE_FALLBACK = 1.15;
+const MATTRESS_BOUNCE_FALLBACK = 1.6;
 const MATTRESS_BAND_HALF = 0.45;
 const MATTRESS_HEIGHT = 1.8;
 /** Under this the board just absorbs, which is what makes a crawl safe. */
 const MATTRESS_MIN_SPEED = 1.2;
 /** Cap, so a freak approach cannot fire the runner off the map. */
-const MATTRESS_MAX_RETURN = 9;
-const MATTRESS_STUMBLE_MS = 320;
+const MATTRESS_MAX_RETURN = 12.5;
+const MATTRESS_VERTICAL_RETURN = 4.5;
+const MATTRESS_STUMBLE_MS = 520;
 
 export function MattressReboundTrap({
   trap,
@@ -2105,18 +2106,19 @@ export function MattressReboundTrap({
         lastReport.current = now;
         const mass = target.mass();
         const returned = Math.min(MATTRESS_MAX_RETURN, approach * (1 + bounce));
+        const impulseMass = mass > 0 ? mass : 1;
         target.applyImpulse(
           {
-            x: forward.x * returned * (mass > 0 ? mass : 1),
-            y: 0.8,
-            z: forward.z * returned * (mass > 0 ? mass : 1),
+            x: forward.x * returned * impulseMass,
+            y: MATTRESS_VERTICAL_RETURN * impulseMass,
+            z: forward.z * returned * impulseMass,
           },
           true,
         );
         soapUntilRef.current = Math.max(soapUntilRef.current, now + MATTRESS_STUMBLE_MS);
         squash.current = 1;
         contact(trap, onHazard, MATTRESS.impulse);
-        mechanic(trap, onMechanic, "mattress_returned", returned);
+        mechanic(trap, onMechanic, "mattress_launched", Math.hypot(returned, MATTRESS_VERTICAL_RETURN));
       }
     }
     // Heats with the approaching runner's speed: the wind-up is the runner's

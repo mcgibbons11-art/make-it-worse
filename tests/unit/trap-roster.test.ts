@@ -20,6 +20,32 @@ const ORIGINAL_ORDER: readonly TrapType[] = [
   "giant_beach_ball",
 ];
 
+const read = (relativePath: string) =>
+  readFileSync(new URL(`../../${relativePath}`, import.meta.url), "utf8");
+
+const RENDERER_SOURCE = read("components/game/TrapRenderer.tsx");
+const TRAP_COMPONENT_SOURCES = [
+  RENDERER_SOURCE,
+  read("components/game/traps/LauncherTraps.tsx"),
+  read("components/game/traps/ForceTraps.tsx"),
+  read("components/game/traps/NewTraps.tsx"),
+  read("components/game/traps/TrapsWaveA.tsx"),
+  read("components/game/traps/TrapsWaveB.tsx"),
+  read("components/game/traps/CharlesTrap.tsx"),
+];
+
+function componentBlock(name: string): string | null {
+  for (const source of TRAP_COMPONENT_SOURCES) {
+    const declaration = new RegExp(`(?:export\\s+)?function ${name}\\(`).exec(source);
+    if (!declaration) continue;
+    const start = declaration.index;
+    const remainder = source.slice(start + declaration[0].length);
+    const next = /\n(?:export\s+)?function \w+\(/.exec(remainder);
+    return source.slice(start, next ? start + declaration[0].length + next.index : undefined);
+  }
+  return null;
+}
+
 describe("trap roster", () => {
   it("never reorders the trap indices a shared link depends on", () => {
     expect(TRAP_TYPES.slice(0, ORIGINAL_ORDER.length)).toEqual(ORIGINAL_ORDER);
@@ -43,6 +69,43 @@ describe("trap roster", () => {
 
   it("has no orphaned catalog entries", () => {
     expect(Object.keys(TRAP_CATALOG).sort()).toEqual([...TRAP_TYPES].sort());
+  });
+
+  it("gives every trap a gameplay consequence and a visible state change", () => {
+    const renderedBy = new Map<TrapType, string>();
+    for (const match of RENDERER_SOURCE.matchAll(
+      /case "([a-z_]+)":\s*\r?\n\s*return <(\w+)/g,
+    )) {
+      renderedBy.set(match[1] as TrapType, match[2]!);
+    }
+    expect([...renderedBy.keys()].sort()).toEqual([...TRAP_TYPES].sort());
+
+    for (const type of TRAP_TYPES) {
+      const component = renderedBy.get(type)!;
+      const block = componentBlock(component);
+      expect(block, `${type} renders ${component}, but its implementation is missing`).not.toBeNull();
+
+      // Contacts, direct impulses/velocity changes, status fields, and moving
+      // spawned props are all real consequences. A catalogue description plus
+      // a static collider is not: that was the passive-filler failure this
+      // audit was added to stop.
+      expect(
+        /contact\s*\(|onHazard\s*\(\s*\{|applyImpulse\s*\(|setLinvel\s*\(|setTranslation\s*\(|setNextKinematicTranslation\s*\(|(?:soap|stun)UntilRef\.current|mechanic\s*\(/.test(
+          block!,
+        ),
+        `${type} has no gameplay consequence`,
+      ).toBe(true);
+
+      // Most traps animate continuously in useFrame. A collision-driven prop
+      // such as the laundry basket also qualifies when it visibly moves or
+      // spawns bodies in response to the player.
+      expect(
+        /useFrame\s*\(|type="dynamic"|setNextKinematicTranslation\s*\(|setTranslation\s*\(|setLinvel\s*\(|\.(?:rotation|position)\.[xyz]\s*=|\.scale\.(?:set|setScalar)\s*\(|\.visible\s*=/.test(
+          block!,
+        ),
+        `${type} has no visible animation or state change`,
+      ).toBe(true);
+    }
   });
 
   it("keeps every trap placeable somewhere", () => {

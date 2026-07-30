@@ -19,6 +19,7 @@ import {
   BallMachine,
   BathroomScalesBase,
   BathroomScalesPlate,
+  BinTrash,
   ClothesAirer,
   CrockeryStack,
   CuckooBird,
@@ -721,12 +722,18 @@ const PEDAL_SWIPE_FALLBACK = 1.4;
 const PEDAL_HEIGHT = 1;
 const PEDAL_SHOVE = 4.6;
 const PEDAL_SLAM_DOWN = 2.8;
+const PEDAL_TRASH_FLIGHT_MS = 620;
+const PEDAL_TRASH_LIFE_MS = 2400;
+const PEDAL_TRASH_REACH = 1.05;
+const PEDAL_TRASH_DISTANCE = 1.45;
+const PEDAL_TRASH_SLIP_MS = 1650;
 
 type PedalPhase = "open" | "held" | "falling" | "shut";
 
 export function BinPedalTrap({
   trap,
   player,
+  soapUntilRef,
   trapBodies,
   startedAt,
   onHazard,
@@ -736,16 +743,22 @@ export function BinPedalTrap({
   useRegisterTrapBody(body, trapBodies, trap.id);
   const lid = useRef<Group>(null);
   const live = useRef<Mesh>(null);
+  const trash = useRef<Group>(null);
+  const trashAt = useRef(Number.NEGATIVE_INFINITY);
+  const touchingTrash = useRef(false);
   const phase = useRef<PedalPhase>("open");
   const phaseAt = useRef(0);
   const lastSlam = useRef(0);
   const pedal = Math.max(0.3, trapNumber(trap, "pedal", PEDAL_PLATE_FALLBACK));
   const swipe = Math.max(pedal, trapNumber(trap, "swipe", PEDAL_SWIPE_FALLBACK));
+  const forward = useMemo(() => trapForward(trap.rotationY), [trap.rotationY]);
 
   useEffect(() => {
     phase.current = "open";
     phaseAt.current = 0;
     lastSlam.current = 0;
+    trashAt.current = Number.NEGATIVE_INFINITY;
+    touchingTrash.current = false;
   }, [startedAt]);
 
   useFrame(() => {
@@ -776,6 +789,9 @@ export function BinPedalTrap({
       phase.current = "shut";
       phaseAt.current = now;
       lastSlam.current = now;
+      trashAt.current = now;
+      touchingTrash.current = false;
+      mechanic(trap, onMechanic, "trash_ejected", PEDAL_TRASH_DISTANCE);
       if (isLive(target) && reach < swipe) {
         const p = target.translation();
         const dx = p.x - trap.position[0];
@@ -809,6 +825,50 @@ export function BinPedalTrap({
     // The swipe only lights while the lid is actually up, because that is the
     // only time this ground costs anything.
     if (live.current) live.current.visible = state === "held" || state === "falling";
+
+    // The lid now throws actual rubbish rather than ending at the slam. It
+    // follows a visible arc, lands in front of the bin, and remains a slippery
+    // field for the rest of this cycle.
+    const trashAge = now - trashAt.current;
+    const trashLive = trashAge >= 0 && trashAge < PEDAL_TRASH_LIFE_MS;
+    if (trash.current) {
+      trash.current.visible = trashLive;
+      if (trashLive) {
+        const flight = Math.min(1, trashAge / PEDAL_TRASH_FLIGHT_MS);
+        trash.current.position.set(
+          0,
+          0.08 + Math.sin(flight * Math.PI) * 1.05,
+          0.18 + flight * PEDAL_TRASH_DISTANCE,
+        );
+        trash.current.rotation.set(
+          flight < 1 ? flight * 5.4 : 0,
+          flight * 2.7,
+          flight < 1 ? -flight * 3.8 : 0,
+        );
+      }
+    }
+    if (trashLive && trashAge >= PEDAL_TRASH_FLIGHT_MS && isLive(target)) {
+      const p = target.translation();
+      const centerX = trap.position[0] + forward.x * PEDAL_TRASH_DISTANCE;
+      const centerZ = trap.position[2] + forward.z * PEDAL_TRASH_DISTANCE;
+      const inTrash =
+        Math.hypot(p.x - centerX, p.z - centerZ) < PEDAL_TRASH_REACH &&
+        p.y - trap.position[1] < PEDAL_HEIGHT;
+      if (inTrash) {
+        soapUntilRef.current = Math.max(soapUntilRef.current, now + PEDAL_TRASH_SLIP_MS);
+        if (!touchingTrash.current) {
+          target.applyImpulse(
+            { x: forward.x * 2.2, y: 0.75, z: forward.z * 2.2 },
+            true,
+          );
+          contact(trap, onHazard, PEDAL.impulse);
+          mechanic(trap, onMechanic, "trash_slipped", PEDAL_TRASH_SLIP_MS);
+        }
+      }
+      touchingTrash.current = inTrash;
+    } else {
+      touchingTrash.current = false;
+    }
   }, TRAP_FRAME_PRIORITY);
 
   return (
@@ -839,6 +899,13 @@ export function BinPedalTrap({
       <PedalBinBody />
       <group ref={lid} position={PEDAL_BIN_LID_HINGE}>
         <PedalBinLid />
+      </group>
+      <group ref={trash} visible={false}>
+        <mesh name="binTrashSlipField" position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[PEDAL_TRASH_REACH, 30]} />
+          <meshBasicMaterial color={PALETTE.danger} transparent opacity={0.25} />
+        </mesh>
+        <BinTrash />
       </group>
     </RigidBody>
   );
@@ -2281,14 +2348,14 @@ export function KettleBoilTrap({
 const DUST = WAVE_B_HAZARD.junk_drift;
 const DUST_CHARGE_MS = WAVE_B_SCHEDULE.junkDrift.chargeMs;
 const DUST_LUNGE_MS = WAVE_B_SCHEDULE.junkDrift.lungeMs;
-const DUST_BASE_FALLBACK = 0.75;
-const DUST_FEED_FALLBACK = 4.5;
+const DUST_BASE_FALLBACK = 0.9;
+const DUST_FEED_FALLBACK = 5;
 /** Metres of reach per neighbouring body, and the count it stops counting at. */
-const DUST_PER_NEIGHBOUR = 0.42;
-const DUST_NEIGHBOUR_CAP = 4;
+const DUST_PER_NEIGHBOUR = 0.55;
+const DUST_NEIGHBOUR_CAP = 5;
 const DUST_HEIGHT = 1;
-const DUST_SHOVE = 3.4;
-const DUST_LIFT = 1.4;
+const DUST_SHOVE = 6.4;
+const DUST_LIFT = 2.8;
 
 export function JunkDriftTrap({
   trap,
@@ -2348,15 +2415,29 @@ export function JunkDriftTrap({
     }
 
     if (rim.current) rim.current.scale.setScalar(reach);
+    const lunging = phase >= DUST_CHARGE_MS && phase < DUST_CHARGE_MS + DUST_LUNGE_MS;
     if (charge.current) {
       const closing = Math.min(1, phase / DUST_CHARGE_MS);
-      const lunging = phase >= DUST_CHARGE_MS && phase < DUST_CHARGE_MS + DUST_LUNGE_MS;
       charge.current.scale.setScalar(Math.max(0.001, reach * (lunging ? 1 : closing)));
       charge.current.visible = lunging ? blink(phase, 70) > 0.5 : true;
     }
-    // The ball of fluff carries the same number, so how fed it is reads off the
-    // prop as well as off the floor.
-    if (fluff.current) fluff.current.scale.setScalar(reach * 0.45);
+    // The pile visibly rummages during the charge and surges on the hit. The
+    // previous uniform scale made it read as a breathing grey ball rather than
+    // a drift of loose junk with a direction and an attack.
+    if (fluff.current) {
+      const chargeProgress = Math.min(1, phase / DUST_CHARGE_MS);
+      const lungeProgress = lunging ? (phase - DUST_CHARGE_MS) / DUST_LUNGE_MS : 0;
+      const size = reach * 0.42;
+      fluff.current.scale.set(
+        size * (1 + Math.sin(chargeProgress * Math.PI * 4) * 0.06),
+        size * (lunging ? 0.78 : 0.9 + chargeProgress * 0.1),
+        size * (lunging ? 1.45 : 1),
+      );
+      fluff.current.position.y = 0.16 + (lunging ? Math.sin(lungeProgress * Math.PI) * 0.24 : 0);
+      fluff.current.position.z = lunging ? Math.sin(lungeProgress * Math.PI) * 0.42 : 0;
+      fluff.current.rotation.y = Math.sin(elapsed * 0.008) * (0.08 + neighbours * 0.025);
+      fluff.current.rotation.z = lunging ? Math.sin(lungeProgress * Math.PI) * 0.16 : 0;
+    }
   }, TRAP_FRAME_PRIORITY);
 
   return (

@@ -303,8 +303,8 @@ export const PlayerController = forwardRef<
     const acceleration =
       PLAYER.acceleration *
       control *
-      (slippery ? 0.24 : 1) *
-      (stunned ? 0.25 : 1);
+      (slippery ? 0.18 : 1) *
+      (stunned ? 0.2 : 1);
     // The chase camera sits behind the runner and looks along +Z, which makes
     // its right-hand direction world -X. Driving +X on "right" therefore sent
     // the runner to screen-left: every horizontal input was mirrored.

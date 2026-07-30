@@ -70,7 +70,7 @@ export const placements: TrapPlacementInput[] = [
   { type: "spring_pad", zoneId: "bridge", offsetX: 0.75, offsetZ: -2.5, rotationQuarterTurns: 0 },
   { type: "tilt_plate", zoneId: "convergence", offsetX: 0, offsetZ: -0.5, rotationQuarterTurns: 0 },
   { type: "flood_puddle", zoneId: "start", offsetX: -2, offsetZ: 1.5, rotationQuarterTurns: 0 },
-  { type: "junk_drift", zoneId: "start", offsetX: 3, offsetZ: -1.5, rotationQuarterTurns: 0 },
+  { type: "junk_drift", zoneId: "start", offsetX: 3.25, offsetZ: -1.5, rotationQuarterTurns: 0 },
   { type: "sticky_gum", zoneId: "runway", offsetX: 0, offsetZ: -2.25, rotationQuarterTurns: 0 },
   { type: "bunting_line", zoneId: "runway", offsetX: 2, offsetZ: -0.5, rotationQuarterTurns: 0 },
   { type: "plate_shards", zoneId: "bridge", offsetX: -0.75, offsetZ: -0.25, rotationQuarterTurns: 0 },

@@ -103,12 +103,13 @@ describe("new trap risk weights derive from measured hazard output", () => {
 
   it("leaves the roster mean the difficulty curve was fitted to", () => {
     // survivalOdds in difficulty.ts is fitted against a mean weight of about
-    // 1.066. Six traps is a quarter of the roster, so a careless set of weights
+    // 1.073 after Charles became the 55th trap. Six traps is a substantial
+    // share of the roster, so a careless set of weights
     // here would move the score every existing challenge is shown.
     const mean =
       TRAP_TYPES.reduce((sum, type) => sum + TRAP_CATALOG[type].riskWeight, 0) /
       TRAP_TYPES.length;
-    expect(mean).toBeCloseTo(1.066, 2);
+    expect(mean).toBeCloseTo(1.073, 2);
   });
 });
 

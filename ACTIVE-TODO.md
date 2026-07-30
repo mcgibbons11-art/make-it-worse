@@ -21,11 +21,11 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Traps and movement
 
-- [ ] Redesign Junk Drift/trash pile and finish its animation/effect pass.
-- [ ] Make the pedal bin eject trash debris that causes slipping.
-- [ ] Make Mattress Rebound launch the runner much harder.
-- [ ] Increase trap disruption globally: knockback, bounce, slow, and slip.
-- [ ] Audit every trap for a meaningful effect and visible animation; remove passive filler behavior.
+- [x] Redesign Junk Drift/trash pile and finish its animation/effect pass.
+- [x] Make the pedal bin eject trash debris that causes slipping.
+- [x] Make Mattress Rebound launch the runner much harder.
+- [x] Increase trap disruption globally: knockback, bounce, slow, and slip.
+- [x] Audit every trap for a meaningful effect and visible animation; remove passive filler behavior.
 - [x] Fix ledge physics so the runner falls instead of snagging.
 - [x] Improve the run cycle with more knee bend and arm swing.
 

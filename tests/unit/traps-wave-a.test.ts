@@ -116,12 +116,12 @@ describe("wave A risk weights derive from measured hazard output", () => {
 
   it("leaves the roster mean the difficulty curve was fitted to", () => {
     // survivalOdds in difficulty.ts is fitted against a mean weight of about
-    // 1.066. Sixteen traps is a large share of the roster, so a careless set of
+    // 1.073 after Charles became the 55th trap. Sixteen traps is a large share of
     // weights here would move the score every existing challenge is shown.
     const mean =
       TRAP_TYPES.reduce((sum, type) => sum + TRAP_CATALOG[type].riskWeight, 0) /
       TRAP_TYPES.length;
-    expect(mean).toBeCloseTo(1.066, 2);
+    expect(mean).toBeCloseTo(1.073, 2);
   });
 
   it("keeps the reported impulse and the repeat gate out of the placement params", () => {
@@ -227,6 +227,21 @@ describe("wave A traps do what their catalogue entry claims", () => {
     // can actually hold, so a threshold above it would make the band open-ended
     // and turn the trap into a second extension cord.
     expect(Number(fast)).toBeLessThan(PLAYER.moveSpeed);
+  });
+
+  it("makes the mattress a real upward launch, not a soft horizontal nudge", () => {
+    const bounce = TRAP_CATALOG.mattress_rebound.defaultParams["bounce"];
+    expect(typeof bounce).toBe("number");
+    expect(bounce as number).toBeGreaterThanOrEqual(1.6);
+
+    const mattress = source.slice(
+      source.indexOf("const MATTRESS_SPAN_FALLBACK"),
+      source.indexOf("// Plate Shards"),
+    );
+    expect(mattress).toContain("const MATTRESS_VERTICAL_RETURN = 4.5");
+    expect(mattress).toContain("const MATTRESS_MAX_RETURN = 12.5");
+    expect(mattress).toContain("y: MATTRESS_VERTICAL_RETURN * impulseMass");
+    expect(mattress).toContain('"mattress_launched"');
   });
 
   it("cannot re-topple the dominoes faster than the gate it is priced on", () => {

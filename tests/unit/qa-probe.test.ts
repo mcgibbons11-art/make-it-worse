@@ -279,6 +279,7 @@ describe("PROBE D: trap params that nothing reads, and renderer keys nothing sup
       "components/game/traps/NewTraps.tsx",
       "components/game/traps/TrapsWaveA.tsx",
       "components/game/traps/TrapsWaveB.tsx",
+      "components/game/traps/CharlesTrap.tsx",
       "components/game/TrapRenderer.tsx",
       "components/game/effects/EffectsLayer.tsx",
     ].map(read).join("\n");
@@ -314,17 +315,15 @@ describe("PROBE D: trap params that nothing reads, and renderer keys nothing sup
     // reason (see the comment above it in trap-catalog.ts). Shrink this list as
     // the keys are either wired up or removed; do not delete the test.
     expect(perTrap).toEqual([
-      "swinging_hammer: amplitude, speed",
+      "swinging_hammer: amplitude",
       "rolling_fridge: impulse, mass",
       "floor_fan: force",
       "soap_slick: traction, wobble",
-      "angry_vacuum: speed, suction, leash",
-      "rotating_toilet: speed",
+      "angry_vacuum: suction",
       "giant_beach_ball: restitution",
       "toaster_launcher: interval, muzzleSpeed",
-      "ceiling_fan: speed",
       "banana_peel: launch",
-      "robot_mop: patrol, speed",
+      "robot_mop: patrol",
     ]);
     // The other direction is the one that would silently change behaviour: a
     // renderer reading a key nothing supplies falls through to a literal

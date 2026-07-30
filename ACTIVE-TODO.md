@@ -51,7 +51,7 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [ ] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
   - [ ] Test payload ceilings, corruption/replay, old-version link immutability, browser restart, different-player import, same-room late join, child rounds, and backend rollback end to end.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
-- [ ] Continue builder usability testing for vertical layouts, jump warnings, Test mode, colors, and all runtime assets.
+- [x] Test builder vertical layouts, rotated jump footprints, conservative jump warnings, real-game Test mode, platform colors, trap base colors, overlap-safe dragging, and all 55 runtime trap assets.
 
 ## Apartment
 
@@ -62,7 +62,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Audio and assets
 
 - [x] Replace the synthesized menu score with the supplied `menu music.mp3` track.
-- [ ] Cut, normalize, resample, and integrate the remaining supplied sound effects.
+- [x] Cut, normalize, resample, and integrate all 37 supplied sound effects; keep long beds loop-safe and one-shots bounded.
 - [ ] Continue using img2threejs for every new 3D asset, with generated reference images where useful.
 
 ## Menu presentation

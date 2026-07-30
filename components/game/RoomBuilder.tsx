@@ -4,7 +4,6 @@ import { RoundedBox } from "@react-three/drei";
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { dressRunner } from "./PlayerVisual";
 import GameCanvas from "./GameCanvas";
 import { TrapPreviewProp } from "./placement/TrapPreview";
 import { TrapIcon } from "@/components/icons/TrapIcon";
@@ -125,6 +124,13 @@ function platformSpec(asset: BuilderAsset): PlatformSpec | null {
   }
 }
 
+function orientedPlatformSpec(item: RoomItem): PlatformSpec | null {
+  const spec = platformSpec(item.asset);
+  if (!spec) return null;
+  const quarterTurn = Math.abs(Math.sin(item.rotation)) > 0.5;
+  return quarterTurn ? { ...spec, width: spec.depth, depth: spec.width } : spec;
+}
+
 function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
   const items = source.filter((item, index) =>
     !isRequiredEndpoint(item.asset) || source.findIndex((candidate) => candidate.asset === item.asset) === index,
@@ -155,7 +161,7 @@ const JUMP_DISTANCE = PLAYER.moveSpeed * (2 * PLAYER.jumpVelocity / GRAVITY) * 0
 /** Returns the platform uids not connected to the builder's spawn by a feasible jump. */
 export function unreachablePlatformIds(items: readonly RoomItem[]): Set<number> {
   const surfaces = items.flatMap((item) => {
-    const spec = platformSpec(item.asset);
+    const spec = orientedPlatformSpec(item);
     return spec ? [{ item, spec }] : [];
   });
   const spawn = items.find((item) => item.asset === "spawn");
@@ -261,7 +267,7 @@ function BuilderItemView({ item, mode, selected, warning, onSelect, onMove }: {
   };
   return (
     <group position={[item.x, item.y, item.z]} rotation={[0, item.rotation, 0]} onPointerDown={down} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
-      {!platformSpec(item.asset) && mode === "build" && (
+      {!platformSpec(item.asset) && mode === "build" && selected && (
         <mesh name="builder-drag-handle" position={[0, 0.8, 0]}>
           <cylinderGeometry args={[dragRadius, dragRadius, 1.7, 16]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
@@ -276,9 +282,7 @@ function BuilderItemView({ item, mode, selected, warning, onSelect, onMove }: {
   );
 }
 
-function SceneController({ mode, items, avatar, avatarSeed, setNotice }: {
-  mode: "build" | "test"; items: readonly RoomItem[]; avatar: AvatarConfig | null; avatarSeed: number; setNotice(value: string): void;
-}) {
+function SceneController() {
   const { camera, gl } = useThree();
   const keys = useRef(new Set<string>());
   const target = useRef(new THREE.Vector3(0, 1, 0));
@@ -286,90 +290,41 @@ function SceneController({ mode, items, avatar, avatarSeed, setNotice }: {
   const pitch = useRef(0.58);
   const distance = useRef(15);
   const orbit = useRef<{ x: number; y: number } | null>(null);
-  const runner = useMemo(() => dressRunner(avatar, avatarSeed), [avatar, avatarSeed]);
-  const velocityY = useRef(0);
-  const grounded = useRef(true);
-  const stride = useRef(0);
-  const completed = useRef(false);
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => { keys.current.add(event.key.toLowerCase()); };
     const up = (event: KeyboardEvent) => { keys.current.delete(event.key.toLowerCase()); };
-    const pointerDown = (event: PointerEvent) => { if (mode === "build" && event.button === 2) orbit.current = { x: event.clientX, y: event.clientY }; };
+    const pointerDown = (event: PointerEvent) => { if (event.button === 2) orbit.current = { x: event.clientX, y: event.clientY }; };
     const pointerMove = (event: PointerEvent) => { if (!orbit.current) return; yaw.current -= (event.clientX - orbit.current.x) * 0.006; pitch.current = THREE.MathUtils.clamp(pitch.current + (event.clientY - orbit.current.y) * 0.004, -1.3, 1.3); orbit.current = { x: event.clientX, y: event.clientY }; };
     const pointerUp = () => { orbit.current = null; };
-    const contextMenu = (event: MouseEvent) => { if (mode === "build") event.preventDefault(); };
-    const wheel = (event: WheelEvent) => { if (mode === "build") distance.current = THREE.MathUtils.clamp(distance.current + event.deltaY * 0.012, 3, 80); };
+    const contextMenu = (event: MouseEvent) => event.preventDefault();
+    const wheel = (event: WheelEvent) => { distance.current = THREE.MathUtils.clamp(distance.current + event.deltaY * 0.012, 3, 80); };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
     gl.domElement.addEventListener("pointerdown", pointerDown); gl.domElement.addEventListener("contextmenu", contextMenu); window.addEventListener("pointermove", pointerMove); window.addEventListener("pointerup", pointerUp);
     gl.domElement.addEventListener("wheel", wheel, { passive: true });
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); gl.domElement.removeEventListener("pointerdown", pointerDown); gl.domElement.removeEventListener("contextmenu", contextMenu); window.removeEventListener("pointermove", pointerMove); window.removeEventListener("pointerup", pointerUp); gl.domElement.removeEventListener("wheel", wheel); };
-  }, [gl, mode]);
-
-  useEffect(() => {
-    const spawn = items.find((item) => item.asset === "spawn");
-    runner.position.set(spawn?.x ?? 0, (spawn?.y ?? 0) + 0.94, spawn?.z ?? 0);
-    velocityY.current = 0;
-    completed.current = false;
-  }, [items, mode, runner]);
+  }, [gl]);
 
   useFrame((_, deltaRaw) => {
     const delta = Math.min(0.05, deltaRaw);
     const pressed = keys.current;
-    if (mode === "build") {
-      const x = Number(pressed.has("d") || pressed.has("arrowright")) - Number(pressed.has("a") || pressed.has("arrowleft"));
-      const z = Number(pressed.has("s") || pressed.has("arrowdown")) - Number(pressed.has("w") || pressed.has("arrowup"));
-      const y = Number(pressed.has("e") || pressed.has(" ")) - Number(pressed.has("q") || pressed.has("shift"));
-      const speed = delta * Math.max(5, distance.current * 0.65);
-      target.current.x += (x * Math.cos(yaw.current) + z * Math.sin(yaw.current)) * speed;
-      target.current.z += (z * Math.cos(yaw.current) - x * Math.sin(yaw.current)) * speed;
-      target.current.y += y * speed;
-      const horizontal = Math.cos(pitch.current) * distance.current;
-      camera.position.set(target.current.x + Math.sin(yaw.current) * horizontal, target.current.y + Math.sin(pitch.current) * distance.current, target.current.z + Math.cos(yaw.current) * horizontal);
-      camera.lookAt(target.current);
-      runner.visible = false;
-      return;
-    }
-
-    runner.visible = true;
     const x = Number(pressed.has("d") || pressed.has("arrowright")) - Number(pressed.has("a") || pressed.has("arrowleft"));
     const z = Number(pressed.has("s") || pressed.has("arrowdown")) - Number(pressed.has("w") || pressed.has("arrowup"));
-    const length = Math.hypot(x, z);
-    if (length) {
-      runner.position.x += (x / length) * PLAYER.moveSpeed * delta;
-      runner.position.z += (z / length) * PLAYER.moveSpeed * delta;
-      runner.rotation.y = Math.atan2(x, z);
-      stride.current += delta * 11;
-    }
-    if (pressed.has(" ") && grounded.current) { velocityY.current = PLAYER.jumpVelocity; grounded.current = false; }
-    velocityY.current -= GRAVITY * delta;
-    const previousY = runner.position.y;
-    runner.position.y += velocityY.current * delta;
-    let landing: number | null = null;
-    for (const item of items) {
-      const spec = platformSpec(item.asset); if (!spec) continue;
-      const localX = Math.abs(runner.position.x - item.x); const localZ = Math.abs(runner.position.z - item.z);
-      if (localX <= spec.width / 2 && localZ <= spec.depth / 2 && velocityY.current <= 0 && previousY >= item.y + 0.82 && runner.position.y <= item.y + 0.98) landing = Math.max(landing ?? -Infinity, item.y + 0.94);
-    }
-    if (landing !== null) { runner.position.y = landing; velocityY.current = 0; grounded.current = true; } else if (Math.abs(velocityY.current) > 0.1) grounded.current = false;
-    const spawn = items.find((item) => item.asset === "spawn");
-    if (runner.position.y < -12) { runner.position.set(spawn?.x ?? 0, (spawn?.y ?? 0) + 0.94, spawn?.z ?? 0); velocityY.current = 0; setNotice("You fell. Reset to the builder spawn point."); }
-    for (const item of items) {
-      const distanceTo = Math.hypot(runner.position.x - item.x, runner.position.z - item.z);
-      if (isTrapAsset(item.asset) && distanceTo < TRAP_CATALOG[trapTypeOf(item.asset)].placementRadius + 0.35) { runner.position.set(spawn?.x ?? 0, (spawn?.y ?? 0) + 0.94, spawn?.z ?? 0); setNotice(`${TRAP_CATALOG[trapTypeOf(item.asset)].displayName} got you.`); }
-      if (item.asset === "finish" && distanceTo < 1.15 && Math.abs(runner.position.y - item.y) < 2 && !completed.current) { completed.current = true; setNotice("Map cleared! Return to Build mode to keep editing."); }
-    }
-    runner.position.y += length ? Math.abs(Math.sin(stride.current)) * 0.025 : 0;
-    target.current.set(runner.position.x, runner.position.y + 0.25, runner.position.z);
-    camera.position.lerp(new THREE.Vector3(runner.position.x, runner.position.y + 6.4, runner.position.z + 9.2), 1 - Math.exp(-delta * 5));
+    const y = Number(pressed.has("e") || pressed.has(" ")) - Number(pressed.has("q") || pressed.has("shift"));
+    const speed = delta * Math.max(5, distance.current * 0.65);
+    target.current.x += (x * Math.cos(yaw.current) + z * Math.sin(yaw.current)) * speed;
+    target.current.z += (z * Math.cos(yaw.current) - x * Math.sin(yaw.current)) * speed;
+    target.current.y += y * speed;
+    const horizontal = Math.cos(pitch.current) * distance.current;
+    camera.position.set(target.current.x + Math.sin(yaw.current) * horizontal, target.current.y + Math.sin(pitch.current) * distance.current, target.current.z + Math.cos(yaw.current) * horizontal);
     camera.lookAt(target.current);
   });
-  return <primitive object={runner} />;
+  return null;
 }
 
-function BuilderScene({ items, mode, avatar, avatarSeed, selectedUid, onSelect, onMove, setNotice }: {
-  items: readonly RoomItem[]; mode: "build" | "test"; avatar: AvatarConfig | null; avatarSeed: number; selectedUid: number | null;
-  onSelect(uid: number | null): void; onMove(uid: number, x: number, z: number): void; setNotice(value: string): void;
+function BuilderScene({ items, mode, selectedUid, onSelect, onMove }: {
+  items: readonly RoomItem[]; mode: "build" | "test"; selectedUid: number | null;
+  onSelect(uid: number | null): void; onMove(uid: number, x: number, z: number): void;
 }) {
   const unreachable = useMemo(() => unreachablePlatformIds(items), [items]);
   return <>
@@ -379,7 +334,7 @@ function BuilderScene({ items, mode, avatar, avatarSeed, selectedUid, onSelect, 
     {mode === "build" && <gridHelper args={[2000, 800, PALETTE.muted, "#c9e1e6"]} position={[0, -0.04, 0]} />}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]} onPointerDown={() => onSelect(null)}><planeGeometry args={[2000, 2000]} /><meshStandardMaterial color="#e8f6f4" transparent opacity={mode === "build" ? 0.26 : 0.05} /></mesh>
     {items.map((item) => <BuilderItemView key={item.uid} item={item} mode={mode} selected={item.uid === selectedUid} warning={mode === "build" && unreachable.has(item.uid)} onSelect={(uid) => onSelect(uid)} onMove={onMove} />)}
-    <SceneController mode={mode} items={items} avatar={avatar} avatarSeed={avatarSeed} setNotice={setNotice} />
+    <SceneController />
   </>;
 }
 
@@ -404,11 +359,10 @@ export function runtimeMap(
     }] : [];
   });
   const platforms = items.flatMap((item) => {
-    const spec = platformSpec(item.asset);
+    const spec = orientedPlatformSpec(item);
     if (!spec) return [];
-    const quarterTurn = Math.abs(Math.sin(item.rotation)) > 0.5;
-    const width = quarterTurn ? spec.depth : spec.width;
-    const depth = quarterTurn ? spec.width : spec.depth;
+    const width = spec.width;
+    const depth = spec.depth;
     const inset = Math.min(0.28, width / 5, depth / 5);
     return [{ item, width, depth, inset }];
   });
@@ -467,7 +421,7 @@ interface RoomBuilderProps {
   onShare?(runtime: RoomBuilderRuntime, format: "link" | "code"): Promise<void> | void;
 }
 
-export function RoomBuilder({ avatar, avatarSeed, creatorName = "Map builder", onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare }: RoomBuilderProps) {
+export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare }: RoomBuilderProps) {
   const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed), [randomSeed]);
   const [items, setItems] = useState<RoomItem[]>(() => ensureRequiredEndpoints(generated ?? loadItems()));
   const [mode, setMode] = useState<"build" | "test">(initialMode);
@@ -518,7 +472,7 @@ export function RoomBuilder({ avatar, avatarSeed, creatorName = "Map builder", o
     const item: RoomItem = { uid: nextUid(), asset, x: 0, y: 0, z: 0, rotation: 0, color: defaultColor(asset) };
     save([...items, item]);
     setSelectedUid(item.uid);
-    setNotice(asset === "spawn" ? "" : `${assetLabel(asset)} added at the camera origin. Drag it or use Lift/Lower.`);
+    setNotice("");
   };
   const changeSelected = (change: Partial<RoomItem>) => { if (!selected) return; save(items.map((item) => item.uid === selected.uid ? { ...item, ...change } : item)); };
   const remove = () => {
@@ -546,7 +500,7 @@ export function RoomBuilder({ avatar, avatarSeed, creatorName = "Map builder", o
   const trapMatches = TRAP_TYPES.filter((type) => TRAP_CATALOG[type].displayName.toLowerCase().includes(query.toLowerCase()));
   return <main className="room-builder">
     {mode === "build" ? <Canvas shadows camera={{ fov: 48, near: 0.05, far: 5000 }} onPointerMissed={() => setSelectedUid(null)}>
-      <BuilderScene items={items} mode="build" avatar={avatar} avatarSeed={avatarSeed} selectedUid={selectedUid} onSelect={setSelectedUid} onMove={moveItem} setNotice={setNotice} />
+      <BuilderScene items={items} mode="build" selectedUid={selectedUid} onSelect={setSelectedUid} onMove={moveItem} />
     </Canvas> : <GameCanvas
       challenge={runtime.challenge}
       trackOverride={runtime.track}

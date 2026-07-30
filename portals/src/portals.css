@@ -1,6 +1,188 @@
 #root {
   min-height: 100svh;
 }
+.start-splash {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(380px, 1.1fr);
+  align-items: center;
+  gap: clamp(28px, 6vw, 110px);
+  padding: clamp(32px, 8vw, 150px);
+  color: #171a2b;
+  background: linear-gradient(165deg, #73cdf2 0%, #a9e4fa 72%, #d8f5ff 100%);
+}
+.start-splash-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 670px;
+}
+.start-splash-kicker {
+  margin: 0 0 14px;
+  font-size: clamp(0.78rem, 1.2vw, 1.05rem);
+  font-weight: 1000;
+  letter-spacing: 0.18em;
+}
+.start-splash-title {
+  margin: 0;
+  font-size: clamp(5rem, 10vw, 10.5rem);
+  line-height: 0.66;
+  letter-spacing: -0.08em;
+}
+.start-splash-title span,
+.start-splash-title strong {
+  display: block;
+}
+.start-splash-title strong {
+  color: #ff5964;
+  -webkit-text-stroke: 2px #171a2b;
+  text-shadow: 7px 8px 0 #fff8e8, 11px 12px 0 #171a2b;
+  transform: rotate(-1.5deg);
+}
+.start-splash-lede {
+  max-width: 610px;
+  margin: clamp(34px, 5vw, 58px) 0 28px;
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  line-height: 1.12;
+  font-weight: 950;
+}
+.start-splash-button {
+  min-width: min(310px, 100%);
+  padding: 20px 34px;
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  box-shadow: 0 8px 0 #171a2b;
+}
+.start-cloud {
+  position: absolute;
+  z-index: 1;
+  width: 180px;
+  height: 68px;
+  border-radius: 46px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 14px 0 rgba(255, 255, 255, 0.2);
+}
+.start-cloud::before,
+.start-cloud::after {
+  content: "";
+  position: absolute;
+  bottom: 18px;
+  border-radius: 50%;
+  background: inherit;
+}
+.start-cloud::before { left: 34px; width: 82px; height: 82px; }
+.start-cloud::after { right: 25px; width: 105px; height: 105px; }
+.start-cloud-left { left: -70px; top: 16%; transform: scale(0.82); }
+.start-cloud-right { right: 5%; top: 7%; transform: scale(1.12); }
+.start-course-card {
+  position: relative;
+  z-index: 2;
+  width: min(620px, 43vw);
+  aspect-ratio: 1.45;
+  justify-self: center;
+  border: 8px solid #171a2b;
+  border-radius: 42px;
+  background: #fff8e8;
+  box-shadow: 32px 35px 0 rgba(23, 26, 43, 0.18);
+  transform: rotate(-7deg);
+}
+.start-course-floor {
+  position: absolute;
+  left: 20%;
+  bottom: -8%;
+  width: 65%;
+  height: 64%;
+  overflow: hidden;
+  border: 7px solid #171a2b;
+  border-radius: 28px;
+  background: #8868ef;
+}
+.start-course-exit {
+  position: absolute;
+  top: -7%;
+  right: 10%;
+  padding: 20px 28px;
+  border: 6px solid #171a2b;
+  background: #74e6af;
+  font-size: 0.8rem;
+  font-weight: 1000;
+  box-shadow: 0 0 22px rgba(116, 230, 175, 0.7);
+}
+.start-runner {
+  position: absolute;
+  left: -4%;
+  top: 35%;
+  width: 56px;
+  height: 83px;
+  border: 6px solid #171a2b;
+  border-radius: 25px;
+  background: #4d8bff;
+}
+.start-runner b {
+  position: absolute;
+  left: -7px;
+  top: -27px;
+  width: 61px;
+  height: 42px;
+  border: 6px solid #171a2b;
+  border-radius: 50%;
+  background: #fff8e8;
+}
+.start-runner b::before,
+.start-runner b::after {
+  content: "";
+  position: absolute;
+  top: 11px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #171a2b;
+}
+.start-runner b::before { left: 17px; }
+.start-runner b::after { right: 17px; }
+.start-hammer {
+  position: absolute;
+  left: 33%;
+  top: 45%;
+  width: 95px;
+  height: 38px;
+  border: 6px solid #171a2b;
+  border-radius: 13px;
+  background: #ff5964;
+  transform: rotate(13deg);
+}
+.start-hammer::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  bottom: 23px;
+  width: 15px;
+  height: 110px;
+  border: 5px solid #171a2b;
+  background: #ffd84d;
+  transform: rotate(4deg);
+}
+.start-ball {
+  position: absolute;
+  right: 17%;
+  top: 45%;
+  width: 68px;
+  height: 68px;
+  border: 6px solid #171a2b;
+  border-radius: 50%;
+  background: conic-gradient(#ffd84d 0 25%, #49d5d1 0 50%, #5c70ff 0 75%, #ff5964 0);
+}
+@media (max-width: 850px) {
+  .start-splash {
+    grid-template-columns: 1fr;
+    align-content: center;
+    padding: 42px 28px;
+  }
+  .start-splash-copy { text-align: center; justify-self: center; }
+  .start-splash-lede { margin-left: auto; margin-right: auto; }
+  .start-course-card { display: none; }
+  .start-cloud-right { right: -40px; }
+}
 .portals-home {
   /* The settings and confirm dialogs open over the title screen too, and
      .portals-overlay is absolutely positioned. */
@@ -11,7 +193,31 @@
   padding: 24px;
   background: linear-gradient(150deg, #79d5ff, #d8f5ff);
 }
+.portals-home::before,
+.portals-home::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 105px;
+  background:
+    radial-gradient(circle at 36% 43%, rgba(255, 255, 255, 0.72) 0 35%, transparent 36%),
+    radial-gradient(circle at 64% 35%, rgba(255, 255, 255, 0.72) 0 43%, transparent 44%),
+    linear-gradient(to bottom, transparent 43%, rgba(255, 255, 255, 0.72) 44% 86%, transparent 87%);
+  filter: drop-shadow(0 13px 0 rgba(255, 255, 255, 0.2));
+  pointer-events: none;
+}
+.portals-home::before {
+  left: -62px;
+  top: 15%;
+}
+.portals-home::after {
+  right: 5%;
+  top: 7%;
+  transform: scale(1.12);
+}
 .portals-card {
+  position: relative;
+  z-index: 1;
   width: min(820px, 100%);
   padding: clamp(28px, 6vw, 64px);
   text-align: center;

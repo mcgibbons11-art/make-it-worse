@@ -7,8 +7,10 @@ import * as THREE from "three";
 import { dressRunner } from "./PlayerVisual";
 import GameCanvas from "./GameCanvas";
 import { TrapPreviewProp } from "./placement/TrapPreview";
+import { TrapIcon } from "@/components/icons/TrapIcon";
 import { PALETTE, PLAYER } from "@/lib/game/constants";
 import { createSeededRandom } from "@/lib/game/seed";
+import { AudioManager } from "@/lib/audio/AudioManager";
 import { TRAP_CATALOG, TRAP_TYPES } from "@/lib/game/trap-catalog";
 import type { AvatarConfig } from "@/lib/game/avatar";
 import type { ChallengeDTO, TrapInstance, TrapType } from "@/lib/game/types";
@@ -51,6 +53,8 @@ const PIECES: readonly { asset: BuilderPieceKind; emoji: string; label: string; 
   { asset: "spawn", emoji: "🏁", label: "Spawn point", color: PALETTE.yellow },
   { asset: "finish", emoji: "🚪", label: "Game end gate", color: PALETTE.green },
 ];
+const BUILDABLE_PIECES = PIECES.filter((entry) => entry.asset !== "spawn" && entry.asset !== "finish");
+const isRequiredEndpoint = (asset: BuilderAsset) => asset === "spawn" || asset === "finish";
 
 const pieceInfo = (asset: BuilderPieceKind) => PIECES.find((entry) => entry.asset === asset)!;
 const defaultColor = (asset: BuilderAsset) => isTrapAsset(asset) ? PALETTE.orange : pieceInfo(asset).color;
@@ -117,6 +121,46 @@ function platformSpec(asset: BuilderAsset): PlatformSpec | null {
     case "ramp": return { width: 3.2, depth: 4.5, thickness: 0.55, rotationX: -0.16 };
     default: return null;
   }
+}
+
+function snapEndpointToPlatform(item: RoomItem, items: readonly RoomItem[]): RoomItem {
+  const platforms = items.flatMap((candidate) => {
+    const spec = platformSpec(candidate.asset);
+    return spec ? [{ item: candidate, spec }] : [];
+  });
+  if (platforms.length === 0) return item;
+  const support = platforms.reduce((best, candidate) => {
+    const halfWidth = Math.max(0, candidate.spec.width / 2 - 0.35);
+    const halfDepth = Math.max(0, candidate.spec.depth / 2 - 0.35);
+    const x = THREE.MathUtils.clamp(item.x, candidate.item.x - halfWidth, candidate.item.x + halfWidth);
+    const z = THREE.MathUtils.clamp(item.z, candidate.item.z - halfDepth, candidate.item.z + halfDepth);
+    const distance = Math.hypot(item.x - x, item.z - z);
+    return distance < best.distance ? { item: candidate.item, x, z, distance } : best;
+  }, { item: platforms[0]!.item, x: platforms[0]!.item.x, z: platforms[0]!.item.z, distance: Number.POSITIVE_INFINITY });
+  return { ...item, x: snap(support.x), y: support.item.y, z: snap(support.z) };
+}
+
+function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
+  const items = source.filter((item, index) =>
+    !isRequiredEndpoint(item.asset) || source.findIndex((candidate) => candidate.asset === item.asset) === index,
+  ).map((item) => ({ ...item }));
+  let nextUid = Math.max(0, ...items.map((item) => item.uid)) + 1;
+  let platforms = items.filter((item) => platformSpec(item.asset));
+  if (platforms.length === 0) {
+    const startBlock: RoomItem = { uid: nextUid++, asset: "platform", x: 0, y: 0, z: 2, rotation: 0, color: defaultColor("platform") };
+    const finishBlock: RoomItem = { uid: nextUid++, asset: "platform", x: 0, y: 0, z: -6, rotation: 0, color: defaultColor("platform") };
+    items.push(startBlock, finishBlock);
+    platforms = [startBlock, finishBlock];
+  }
+  if (!items.some((item) => item.asset === "spawn")) {
+    const support = platforms[0]!;
+    items.push({ uid: nextUid++, asset: "spawn", x: support.x, y: support.y, z: support.z, rotation: 0, color: defaultColor("spawn") });
+  }
+  if (!items.some((item) => item.asset === "finish")) {
+    const support = platforms.at(-1)!;
+    items.push({ uid: nextUid++, asset: "finish", x: support.x, y: support.y, z: support.z, rotation: 0, color: defaultColor("finish") });
+  }
+  return items.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, items) : item);
 }
 
 const GRAVITY = 9.81 * PLAYER.gravityScale;
@@ -207,6 +251,7 @@ function BuilderItemView({ item, mode, selected, warning, onSelect, onMove }: {
   const down = (event: ThreeEvent<PointerEvent>) => {
     if (mode !== "build" || event.button !== 0) return;
     event.stopPropagation();
+    AudioManager.click();
     onSelect(item.uid);
     (event.nativeEvent.target as Element).setPointerCapture(event.pointerId);
   };
@@ -245,14 +290,15 @@ function SceneController({ mode, items, avatar, avatarSeed, setNotice }: {
   useEffect(() => {
     const down = (event: KeyboardEvent) => { keys.current.add(event.key.toLowerCase()); };
     const up = (event: KeyboardEvent) => { keys.current.delete(event.key.toLowerCase()); };
-    const pointerDown = (event: PointerEvent) => { if (mode === "build" && event.button === 0) orbit.current = { x: event.clientX, y: event.clientY }; };
+    const pointerDown = (event: PointerEvent) => { if (mode === "build" && event.button === 2) orbit.current = { x: event.clientX, y: event.clientY }; };
     const pointerMove = (event: PointerEvent) => { if (!orbit.current) return; yaw.current -= (event.clientX - orbit.current.x) * 0.006; pitch.current = THREE.MathUtils.clamp(pitch.current + (event.clientY - orbit.current.y) * 0.004, -1.3, 1.3); orbit.current = { x: event.clientX, y: event.clientY }; };
     const pointerUp = () => { orbit.current = null; };
+    const contextMenu = (event: MouseEvent) => { if (mode === "build") event.preventDefault(); };
     const wheel = (event: WheelEvent) => { if (mode === "build") distance.current = THREE.MathUtils.clamp(distance.current + event.deltaY * 0.012, 3, 80); };
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
-    gl.domElement.addEventListener("pointerdown", pointerDown); window.addEventListener("pointermove", pointerMove); window.addEventListener("pointerup", pointerUp);
+    gl.domElement.addEventListener("pointerdown", pointerDown); gl.domElement.addEventListener("contextmenu", contextMenu); window.addEventListener("pointermove", pointerMove); window.addEventListener("pointerup", pointerUp);
     gl.domElement.addEventListener("wheel", wheel, { passive: true });
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); gl.domElement.removeEventListener("pointerdown", pointerDown); window.removeEventListener("pointermove", pointerMove); window.removeEventListener("pointerup", pointerUp); gl.domElement.removeEventListener("wheel", wheel); };
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); gl.domElement.removeEventListener("pointerdown", pointerDown); gl.domElement.removeEventListener("contextmenu", contextMenu); window.removeEventListener("pointermove", pointerMove); window.removeEventListener("pointerup", pointerUp); gl.domElement.removeEventListener("wheel", wheel); };
   }, [gl, mode]);
 
   useEffect(() => {
@@ -370,11 +416,12 @@ interface RoomBuilderProps { avatar: AvatarConfig | null; avatarSeed: number; on
 
 export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMode = "build" }: RoomBuilderProps) {
   const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed), [randomSeed]);
-  const [items, setItems] = useState<RoomItem[]>(() => generated ?? loadItems());
+  const [items, setItems] = useState<RoomItem[]>(() => ensureRequiredEndpoints(generated ?? loadItems()));
   const [mode, setMode] = useState<"build" | "test">(initialMode);
   const [selectedUid, setSelectedUid] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [published, setPublished] = useState<PublishedMap[]>(loadPublished);
   const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "Free camera mode. Place game pieces anywhere, including vertically.");
   const [testSerial, setTestSerial] = useState(1);
@@ -385,11 +432,30 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
   const save = (next: RoomItem[]) => { setItems(next); if (!generated) window.localStorage.setItem(STORE_KEY, JSON.stringify(next)); };
   const add = (asset: BuilderAsset) => {
     const item: RoomItem = { uid: nextUid(), asset, x: 0, y: 0, z: 0, rotation: 0, color: defaultColor(asset) };
-    save([...items, item]); setSelectedUid(item.uid); setNotice(`${assetLabel(asset)} added at the camera origin. Drag it or use Lift/Lower.`);
+    save([...items, item]);
+    setSelectedUid(item.uid);
+    setNotice(asset === "spawn" ? "" : `${assetLabel(asset)} added at the camera origin. Drag it or use Lift/Lower.`);
   };
   const changeSelected = (change: Partial<RoomItem>) => { if (!selected) return; save(items.map((item) => item.uid === selected.uid ? { ...item, ...change } : item)); };
-  const remove = () => { if (!selected) return; save(items.filter((item) => item.uid !== selected.uid)); setSelectedUid(null); };
-  const duplicate = () => { if (!selected) return; const copy = { ...selected, uid: nextUid(), x: selected.x + 0.75, z: selected.z + 0.75 }; save([...items, copy]); setSelectedUid(copy.uid); };
+  const remove = () => {
+    if (!selected || isRequiredEndpoint(selected.asset)) return;
+    const next = items.filter((item) => item.uid !== selected.uid);
+    if (platformSpec(selected.asset) && !next.some((item) => platformSpec(item.asset))) {
+      setNotice("Keep at least one block so the required spawn and finish markers stay on land.");
+      return;
+    }
+    save(next.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, next) : item));
+    setSelectedUid(null);
+  };
+  const duplicate = () => { if (!selected || isRequiredEndpoint(selected.asset)) return; const copy = { ...selected, uid: nextUid(), x: selected.x + 0.75, z: selected.z + 0.75 }; save([...items, copy]); setSelectedUid(copy.uid); };
+  const moveItem = (uid: number, x: number, z: number) => {
+    const moving = items.find((item) => item.uid === uid);
+    if (!moving) return;
+    const moved = items.map((item) => item.uid === uid ? { ...item, x, z } : item);
+    save(isRequiredEndpoint(moving.asset)
+      ? moved.map((item) => item.uid === uid ? snapEndpointToPlatform(item, moved) : item)
+      : moved.map((item) => isRequiredEndpoint(item.asset) ? snapEndpointToPlatform(item, moved) : item));
+  };
   const publish = () => {
     if (!items.some((item) => item.asset === "spawn") || !items.some((item) => item.asset === "finish")) { setNotice("Add a spawn point and game end gate before publishing."); return; }
     const name = window.prompt("Name this map", `Chaos Map ${published.length + 1}`)?.trim(); if (!name) return;
@@ -399,7 +465,7 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
   const trapMatches = TRAP_TYPES.filter((type) => TRAP_CATALOG[type].displayName.toLowerCase().includes(query.toLowerCase()));
   return <main className="room-builder">
     {mode === "build" ? <Canvas shadows camera={{ fov: 48, near: 0.05, far: 5000 }} onPointerMissed={() => setSelectedUid(null)}>
-      <BuilderScene items={items} mode="build" avatar={avatar} avatarSeed={avatarSeed} selectedUid={selectedUid} onSelect={setSelectedUid} onMove={(uid, x, z) => save(items.map((item) => item.uid === uid ? { ...item, x, z } : item))} setNotice={setNotice} />
+      <BuilderScene items={items} mode="build" avatar={avatar} avatarSeed={avatarSeed} selectedUid={selectedUid} onSelect={setSelectedUid} onMove={moveItem} setNotice={setNotice} />
     </Canvas> : <GameCanvas
       challenge={runtime.challenge}
       trackOverride={runtime.track}
@@ -417,10 +483,11 @@ export function RoomBuilder({ avatar, avatarSeed, onClose, randomSeed, initialMo
       onMovePlacement={() => undefined}
       onAssetsReady={() => undefined}
     />}
-    <header><div><span className="eyebrow">BUILD YOUR GAME</span><strong>{mode === "build" ? "Unlimited camera builder" : "Testing your map"}</strong><small>{mode === "build" ? "WASD pan · Q/E vertical · hold left drag orbit · wheel zoom" : "WASD run · Space jump"}</small></div><button className="button secondary" onClick={onClose}>← Menu</button></header>
-    {mode === "build" && <aside className="room-builder-tray"><strong>Actual game assets</strong><div>{PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><span>💥</span>{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
-    <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build"} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build"} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button><button onClick={publish}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>
+    <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" title="Free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>
+    {mode === "build" && <aside className="room-builder-tray"><strong>Actual game assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
+    <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button><button onClick={publish}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>
     <p className="room-builder-notice" role="status">{notice}</p>
-    {browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">COMMUNITY MAPS</div><h2>Browse maps</h2>{published.length === 0 ? <p>No maps have been published in this build yet.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><button onClick={() => { save(map.items.map((item) => ({ ...item }))); setMode("test"); setBrowseOpen(false); setNotice(`Testing “${map.name}”.`); }}>Play</button></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
+    {guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>Place:</b> Pick a game block or trap from the left tray.</p><p><b>Move:</b> Left-drag a placed piece. The required spawn and finish markers snap onto blocks.</p><p><b>Look:</b> Right-drag to turn the camera. Use the mouse wheel to zoom.</p><p><b>Travel:</b> WASD pans the build camera. Q and E move it vertically.</p><p><b>Edit:</b> Select a piece to color, rotate, lift, lower, copy, or remove it. Spawn and finish cannot be copied or removed.</p><p><b>Jump check:</b> A block turns red when the runner cannot reach it from the connected course.</p><p><b>Play it:</b> Choose Test map to run the room with the finished game controls and physics.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>Got it</button></section></div>}
+    {browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">COMMUNITY MAPS</div><h2>Browse maps</h2>{published.length === 0 ? <p>No maps have been published in this build yet.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><button onClick={() => { save(ensureRequiredEndpoints(map.items)); setMode("test"); setBrowseOpen(false); setNotice(`Testing “${map.name}”.`); }}>Play</button></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
   </main>;
 }

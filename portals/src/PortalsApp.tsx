@@ -183,6 +183,37 @@ function LeaderboardPanel({
     </div>
   );
 }
+
+function StartSplash({ onStart }: { onStart(): void }) {
+  return (
+    <main className="start-splash">
+      <div className="start-cloud start-cloud-left" aria-hidden="true" />
+      <div className="start-cloud start-cloud-right" aria-hidden="true" />
+      <section className="start-splash-copy" aria-labelledby="start-splash-title">
+        <p className="start-splash-kicker">A FRIENDSHIP-STRESS TEST</p>
+        <h1 className="start-splash-title" id="start-splash-title">
+          <span>MAKE IT</span>
+          <strong>WORSE</strong>
+        </h1>
+        <p className="start-splash-lede">
+          Beat the level. Add one awful thing. Send it to a friend.
+        </p>
+        <button className="button danger start-splash-button" onClick={onStart} autoFocus>
+          ▶️ Start game
+        </button>
+      </section>
+      <div className="start-course-card" aria-hidden="true">
+        <div className="start-course-floor">
+          <i className="start-runner"><b /></i>
+          <i className="start-hammer" />
+          <i className="start-ball" />
+        </div>
+        <div className="start-course-exit">EXIT</div>
+      </div>
+    </main>
+  );
+}
+
 export function PortalsApp() {
   const touchControls = useTouchControlsAvailable();
   const repository = useMemo(() => new DemoRepository(), []);
@@ -218,6 +249,7 @@ export function PortalsApp() {
   const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [apartmentOpen, setApartmentOpen] = useState(false);
+  const [showStartSplash, setShowStartSplash] = useState(true);
   // The name the game hands you rides on every trap you add and into every
   // message you send, and the first time a reviewer saw theirs was inside the
   // message they were about to send a friend. Held here so a screen can say it
@@ -313,6 +345,18 @@ export function PortalsApp() {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
     };
+  }, []);
+  useEffect(() => {
+    const playUiClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const control = event.target.closest(
+        'button, [role="button"], select, input[type="button"], input[type="submit"], input[type="checkbox"], input[type="radio"], input[type="color"], input[type="range"]',
+      );
+      if (!control || control.matches(":disabled, [aria-disabled='true']")) return;
+      AudioManager.click();
+    };
+    document.addEventListener("click", playUiClick, true);
+    return () => document.removeEventListener("click", playUiClick, true);
   }, []);
   useEffect(() => {
     void repository.ensureGuest().then((profile) => {
@@ -457,7 +501,6 @@ export function PortalsApp() {
     finishing.current = false;
     progress.current = 0;
     setPhase("playing");
-    AudioManager.click();
   }, [challenge, repository]);
   const complete = useCallback(async () => {
     if (finishing.current || !attemptId || !challenge) return;
@@ -606,7 +649,6 @@ export function PortalsApp() {
     }
     setPlacement(placement);
     setPhase("placing_trap");
-    AudioManager.click();
   };
   const publish = async () => {
     if (!challenge || !attemptId || !placement) return;
@@ -797,12 +839,6 @@ export function PortalsApp() {
         >
           ▶️ Play a clean level
         </button>
-        {/* One way in. Four controls at near-equal weight gave a first-time
-            player no "start here", and three of the four named a concept the
-            screen had not yet defined. */}
-        <p className="portals-actions-note">
-          No traps yet. Beat it and you get to add the first one.
-        </p>
         <button
           className="button secondary"
           onClick={() =>
@@ -904,11 +940,7 @@ export function PortalsApp() {
       <p className="portals-notice" role="status" aria-live="polite">
         {notice}
       </p>
-      <span className="portals-note">
-        {touchControls
-          ? "Touch controls enabled · tap the menu button to pause"
-          : "Keyboard + mouse · Esc opens this menu"}
-      </span>
+      {touchControls && <span className="portals-note">Touch controls enabled · tap the menu button to pause</span>}
     </>
   );
   const shellDialogs = (
@@ -1022,6 +1054,12 @@ export function PortalsApp() {
           onClose={() => setApartmentOpen(false)}
         />
       </Suspense>
+    );
+  if (showStartSplash && !challenge)
+    return (
+      <StartSplash
+        onStart={() => setShowStartSplash(false)}
+      />
     );
   if (!challenge)
     return (

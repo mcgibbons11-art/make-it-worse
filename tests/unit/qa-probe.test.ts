@@ -81,10 +81,12 @@ function placementZonesAfter(upTo: (name: string) => boolean): Map<string, Surfa
   return rows;
 }
 
-/** Every field of every resolved surface that disagrees with a SQL row. */
+/** Every field of every legacy link surface that disagrees with a SQL row. */
 function geometryDrift(rows: Map<string, SurfaceRow>): string[] {
   const drift: string[] = [];
-  for (const surface of placementSurfaces()) {
+  for (const zone of PLACEMENT_ZONES) {
+    const surface: SurfaceRow & { id: string } = { id: zone.id, minX: zone.minX,
+      maxX: zone.maxX, minZ: zone.minZ, maxZ: zone.maxZ, groundY: zone.groundY };
     const row = rows.get(surface.id);
     if (!row) {
       drift.push(`${surface.id}: the client offers this surface and no migration seeds it`);
@@ -123,7 +125,7 @@ describe("PROBE A: placement surface geometry, client vs SQL", () => {
     console.log(`\n--- SELF-TEST: pre-0018 state yields ${before.length} mismatches, as it must ---`);
   });
 
-  it("pins every resolved placement surface against public.placement_zones", () => {
+  it("pins every legacy link surface against public.placement_zones", () => {
     const sql = placementZonesAfter(() => true);
     expect(sql.size, "parsed no placement_zones rows out of the migrations").toBeGreaterThan(0);
 
@@ -131,12 +133,8 @@ describe("PROBE A: placement surface geometry, client vs SQL", () => {
     // that ever returned nothing the comparison would pass while checking
     // nothing at all, which is the failure mode this file exists to hunt.
     const surfaces = placementSurfaces();
-    expect(surfaces.length, "placementSurfaces() resolved to nothing").toBeGreaterThan(15);
-    for (const zone of PLACEMENT_ZONES)
-      expect(
-        surfaces.some((surface) => surface.id === zone.id),
-        `authored zone ${zone.id} vanished from the resolved set`,
-      ).toBe(true);
+    expect(surfaces.length, "placementSurfaces() resolved to nothing").toBeGreaterThan(8);
+    expect(surfaces.some((surface) => surface.id === "runway_front")).toBe(false);
 
     const drift = geometryDrift(sql);
     console.log(
@@ -400,7 +398,11 @@ describe("PROBE G: fixtures that may have stopped testing what they claim", () =
 
     const off: string[] = [];
     for (const trap of decoded.traps) {
-      const surface = placementSurfaces().find((entry) => entry.id === trap.zoneId);
+      const zone = PLACEMENT_ZONES.find((entry) => entry.id === trap.zoneId);
+      const surface = zone && {
+        id: zone.id, minX: zone.minX, maxX: zone.maxX,
+        minZ: zone.minZ, maxZ: zone.maxZ, groundY: zone.groundY,
+      };
       if (!surface) {
         off.push(`${trap.type}: zone "${trap.zoneId}" no longer resolves to a surface`);
         continue;

@@ -17,7 +17,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { NAMED_TRACKS } from "@/lib/game/track";
 
 const push = vi.fn();
 const createRootChain = vi.fn(async (track?: readonly string[]) => ({
@@ -38,6 +37,9 @@ vi.mock("@/lib/repository/createRepository", () => ({
 // Not part of this promise, and it drags the settings store in behind it.
 vi.mock("@/components/hud/SettingsPanel", () => ({
   SettingsPanel: () => null,
+}));
+vi.mock("@/components/hud/AvatarCustomizer", () => ({
+  AvatarCustomizer: () => createElement("button", null, "Build your runner"),
 }));
 
 const { default: HomePageClient } = await import(
@@ -82,37 +84,16 @@ function mapCards(): HTMLButtonElement[] {
   return [...host.querySelectorAll<HTMLButtonElement>(".home-map")];
 }
 
-describe("the home map picker", () => {
-  it("keeps the maps behind their own toggle", async () => {
+describe("the simplified home actions", () => {
+  it("removes the curated map picker", async () => {
     await mount();
     expect(mapCards()).toHaveLength(0);
-    await click(byText("button", "Pick a map"));
-    expect(mapCards()).toHaveLength(NAMED_TRACKS.length);
-    await click(byText("button", "Hide the maps"));
-    expect(mapCards()).toHaveLength(0);
+    expect(byText("button", "Pick a map")).toBeUndefined();
   });
 
-  it("offers every curated course by name and tagline", async () => {
+  it("puts Build your runner on the home screen", async () => {
     await mount();
-    await click(byText("button", "Pick a map"));
-    expect(mapCards().map((card) => card.querySelector("strong")?.textContent)).toEqual(
-      NAMED_TRACKS.map((map) => map.name),
-    );
-    expect(mapCards().map((card) => card.querySelector("span")?.textContent)).toEqual(
-      NAMED_TRACKS.map((map) => map.tagline),
-    );
-  });
-
-  it("builds the chain on the course that was picked", async () => {
-    // The load-bearing one. A picker that dropped its argument would still hand
-    // back a playable level and still route to it.
-    await mount();
-    await click(byText("button", "Pick a map"));
-    const wanted = NAMED_TRACKS[3]!;
-    await click(mapCards()[3]);
-    expect(createRootChain).toHaveBeenCalledTimes(1);
-    expect(createRootChain).toHaveBeenCalledWith(wanted.segmentIds);
-    expect(push).toHaveBeenCalledWith(`/c/slug-for-${wanted.segmentIds.length}`);
+    expect(byText("button", "Build your runner")).toBeDefined();
   });
 
   it("still rolls the dice when no course is named", async () => {
@@ -122,13 +103,12 @@ describe("the home map picker", () => {
     expect(push).toHaveBeenCalledWith("/c/slug-for-dice");
   });
 
-  it("says so when a picked map cannot be opened", async () => {
+  it("says so when a fresh chain cannot be opened", async () => {
     createRootChain.mockRejectedValueOnce(new Error("offline"));
     await mount();
-    await click(byText("button", "Pick a map"));
-    await click(mapCards()[0]);
+    await click(byText("button", "Start a fresh chain"));
     expect(host.querySelector('[role="alert"]')?.textContent).toBe(
-      "Could not open that map. Try once more.",
+      "Could not start a fresh chain. Try once more.",
     );
     expect(push).not.toHaveBeenCalled();
   });

@@ -13,10 +13,16 @@ async function walk(directory) {
   const files = [];
   for (const item of await readdir(directory, { withFileTypes: true })) {
     const absolute = path.join(directory, item.name);
-    if (item.isSymbolicLink())
+    // Dropbox Cloud Files can mark a hydrated regular file as a reparse point.
+    // On Windows Dirent reports that as a symbolic link even though lstat says
+    // it is a regular file and readlink returns EINVAL. Use the authoritative
+    // stat for the exact path so a real symlink is still rejected without
+    // falsely invalidating every file in a synced workspace.
+    const itemStat = await lstat(absolute);
+    if (itemStat.isSymbolicLink())
       throw new Error(`Static output contains a symbolic link: ${absolute}`);
-    if (item.isDirectory()) files.push(...(await walk(absolute)));
-    else if (item.isFile()) files.push(absolute);
+    if (itemStat.isDirectory()) files.push(...(await walk(absolute)));
+    else if (itemStat.isFile()) files.push(absolute);
     else throw new Error(`Static output contains a non-regular file: ${absolute}`);
   }
   return files;

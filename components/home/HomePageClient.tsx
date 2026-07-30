@@ -3,18 +3,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createRepository } from "@/lib/repository/createRepository";
-import { NAMED_TRACKS } from "@/lib/game/track";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type { ChallengeDTO } from "@/lib/game/types";
 import { TrapIcon } from "@/components/icons/TrapIcon";
 import { SettingsPanel } from "@/components/hud/SettingsPanel";
+import { AvatarCustomizer } from "@/components/hud/AvatarCustomizer";
 export default function HomePageClient() {
   const router = useRouter();
   const repository = useMemo(() => createRepository(), []);
   const [trending, setTrending] = useState<ChallengeDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState(false);
-  const [maps, setMaps] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     void repository
@@ -74,14 +73,11 @@ export default function HomePageClient() {
             >
               {loading ? "Creating clean-ish level…" : "Start a fresh chain"}
             </button>
-            <button
-              className="button secondary"
-              onClick={() => setMaps((open) => !open)}
-              disabled={loading}
-              aria-expanded={maps}
-            >
-              {maps ? "Hide the maps" : "Pick a map"}
-            </button>
+            <AvatarCustomizer
+              alwaysVisible
+              launcherClassName="button secondary"
+              launcherLabel="Build your runner"
+            />
             {trending[0] && (
               <Link
                 className="button secondary"
@@ -91,32 +87,6 @@ export default function HomePageClient() {
               </Link>
             )}
           </div>
-          {maps && (
-            // The curated courses, beside the dice roll, for a player who wants
-            // a KNOWN one - to race a friend on the same ground, or to avoid
-            // the harder rooms on purpose. Every entry is gated through
-            // isPlayableTrack by named-tracks.test.ts, so nothing here can hand
-            // out a course a runner cannot finish.
-            //
-            // A list of buttons rather than the Portals edition's buttons
-            // carrying role="listitem", which costs them their button
-            // semantics. The how-strip above is already an ol/li, so this is
-            // the shape this page reads in.
-            <ul className="home-maps">
-              {NAMED_TRACKS.map((map) => (
-                <li key={map.id}>
-                  <button
-                    className="home-map"
-                    onClick={() => void startChain(map.segmentIds)}
-                    disabled={loading}
-                  >
-                    <strong>{map.name}</strong>
-                    <span>{map.tagline}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
           <small>No download. No account. Just consequences.</small>
           {error && (
             <p className="inline-error" role="alert">
@@ -201,7 +171,6 @@ export default function HomePageClient() {
         <div>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
-          <Link href="/credits">Credits</Link>
         </div>
       </footer>
       <SettingsPanel open={settings} onClose={() => setSettings(false)} />

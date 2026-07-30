@@ -113,6 +113,10 @@ export function dressRunner(
 ): THREE.Group {
   const clone = runnerPrototype().clone(true);
   const look = resolveAvatar(avatar, avatarSeed);
+  // This is the no-hat hairstyle, not a base layer for every hat. Leaving it
+  // visible made caps, crowns, and helmets intersect it or render behind it.
+  const stockHair = clone.getObjectByName("Hair cap__pivot");
+  if (stockHair) stockHair.visible = look.headwear === "hair";
   // The ghost must never land on the player's own colour - the two share
   // createdByAvatarSeed - and must read as "the ghost" on every replay, so it
   // takes one fixed hue rather than a second seed-derived pick.

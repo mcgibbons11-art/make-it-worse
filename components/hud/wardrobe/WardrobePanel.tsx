@@ -21,7 +21,6 @@ import type {
   WardrobeSlotId,
 } from "@/lib/game/avatar";
 import { WARDROBE_ITEM_COUNT } from "@/lib/game/wardrobe";
-import { useSettingsStore } from "@/stores/settings-store";
 import { RunnerStage } from "./RunnerStage";
 
 const ratioLabel = (ratio: number) => `${ratio.toFixed(1)}:1`;
@@ -110,7 +109,6 @@ export function WardrobePanel({
   onSave: (config: AvatarConfig) => void;
   onClose: () => void;
 }) {
-  const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   const [draft, setDraft] = useState<AvatarConfig>(() =>
     avatar ? normalizeAvatar(avatar) : DEFAULT_AVATAR,
   );
@@ -125,6 +123,7 @@ export function WardrobePanel({
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [onClose]);
+
 
   const chooseBody = useCallback((body: AvatarColorId) => {
     // A pack that read fine against the old body can be invisible on the new
@@ -163,7 +162,8 @@ export function WardrobePanel({
         {/* Stood on the exact deck colour that hides runners best, so the
             measured ratio below it is something you can also just look at. */}
         <div className="avatar-stage" style={{ background: bodyReading.worstDeck }}>
-          <RunnerStage avatar={draft} avatarSeed={avatarSeed} spin={!reducedMotion} />
+          <RunnerStage avatar={draft} avatarSeed={avatarSeed} />
+          <small className="avatar-turn-hint">Drag the runner to turn them</small>
           <p className="avatar-reading">
             {ratioLabel(bodyReading.min)} against the palest floor
           </p>

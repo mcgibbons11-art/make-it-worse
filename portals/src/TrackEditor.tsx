@@ -17,7 +17,7 @@
 //    records an undo step, describes itself for the live region, and saves the
 //    course so reopening the editor picks up where the player left off.
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ATTEMPT_LIMIT_MS, PLAYER } from "@/lib/game/constants";
 import {
   DEFAULT_CUSTOM_TRACK,
@@ -33,7 +33,7 @@ import {
   isPlayableTrack,
   worstTraverse,
 } from "@/lib/game/track";
-import type { JSX, KeyboardEvent } from "react";
+import type { DragEvent, JSX, KeyboardEvent } from "react";
 import type { BuiltTrack, TrackSegment } from "@/lib/game/track";
 import "./track-editor.css";
 
@@ -870,6 +870,63 @@ function TrackProfile({
 
 // ---------------------------------------------------------------------------
 
+/** A real top-down drawing of one catalogue piece, used on draggable cards. */
+function SegmentMiniature({ segment }: { segment: TrackSegment }) {
+  const bounds = segment.pieces.reduce(
+    (box, piece) => ({
+      minX: Math.min(box.minX, piece.center[0] - piece.size[0] / 2),
+      maxX: Math.max(box.maxX, piece.center[0] + piece.size[0] / 2),
+      minZ: Math.min(box.minZ, piece.center[2] - piece.size[2] / 2),
+      maxZ: Math.max(box.maxZ, piece.center[2] + piece.size[2] / 2),
+    }),
+    { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity },
+  );
+  const width = Math.max(bounds.maxX - bounds.minX, 0.1);
+  const depth = Math.max(bounds.maxZ - bounds.minZ, 0.1);
+  const scale = Math.min(92 / width, 42 / depth);
+  const offsetX = (100 - width * scale) / 2;
+  const offsetZ = (50 - depth * scale) / 2;
+  return (
+    <svg className="track-editor-miniature" viewBox="0 0 100 50" aria-hidden="true">
+      {segment.pieces.map((piece) => (
+        <rect
+          key={piece.id}
+          x={offsetX + (piece.center[0] - piece.size[0] / 2 - bounds.minX) * scale}
+          y={offsetZ + (piece.center[2] - piece.size[2] / 2 - bounds.minZ) * scale}
+          width={Math.max(piece.size[0] * scale, 2)}
+          height={Math.max(piece.size[2] * scale, 2)}
+          fill={piece.color}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function CourseDropZone({
+  ready,
+  copying,
+  onDrop,
+}: {
+  ready: boolean;
+  copying: boolean;
+  onDrop(event: DragEvent<HTMLLIElement>): void;
+}) {
+  return (
+    <li
+      className={`track-editor-dropzone${ready ? " is-ready" : ""}`}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = copying ? "copy" : "move";
+      }}
+      onDrop={onDrop}
+    >
+      Drop a map piece here
+    </li>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
 export function TrackEditor({
   initial,
   onPlay,
@@ -901,6 +958,7 @@ export function TrackEditor({
     () => readStore(browserStorage()).saves,
   );
   const [saveName, setSaveName] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
   const placed = timeline.present.placed;
   const nextUid = useRef(MAX_MIDDLE_SEGMENTS);
   const buttons = useRef(new Map<string, HTMLButtonElement>());
@@ -1013,6 +1071,46 @@ export function TrackEditor({
       next,
       `adding ${segment.label}`,
       `Added ${segment.label} at position ${insertAt + 2} of ${next.length + 2}.`,
+    );
+  };
+
+  const startDrag = (event: DragEvent<HTMLElement>, value: string) => {
+    event.dataTransfer.setData("text/plain", value);
+    event.dataTransfer.effectAllowed = value.startsWith("palette:") ? "copy" : "move";
+    setDragging(value);
+  };
+
+  const dropAt = (event: DragEvent<HTMLElement>, insertionIndex: number) => {
+    event.preventDefault();
+    const value = event.dataTransfer.getData("text/plain") || dragging || "";
+    setDragging(null);
+    if (value.startsWith("palette:")) {
+      const segment = SEGMENT_MAP.get(value.slice("palette:".length));
+      if (!segment || full) return;
+      const uid = nextUid.current;
+      nextUid.current += 1;
+      const next = insertPlaced(placed, insertionIndex, { uid, id: segment.id });
+      setSelectedUid(uid);
+      apply(
+        next,
+        `adding ${segment.label}`,
+        `Dropped ${segment.label} into position ${insertionIndex + 2}.`,
+      );
+      return;
+    }
+    if (!value.startsWith("course:")) return;
+    const uid = Number(value.slice("course:".length));
+    const from = placed.findIndex((entry) => entry.uid === uid);
+    const entry = placed[from];
+    if (!entry) return;
+    const without = removePlaced(placed, from);
+    const adjustedIndex = from < insertionIndex ? insertionIndex - 1 : insertionIndex;
+    if (adjustedIndex === from) return;
+    const next = insertPlaced(without, adjustedIndex, entry);
+    apply(
+      next,
+      `moving ${labelOf(entry.id)}`,
+      `${labelOf(entry.id)} dropped into position ${adjustedIndex + 2}.`,
     );
   };
 
@@ -1133,20 +1231,6 @@ export function TrackEditor({
     setStatus(`Deleted ${save.name}.`);
   };
 
-  const loadPreset = (preset: Preset) => {
-    const next = preset.ids.map((id) => {
-      const uid = nextUid.current;
-      nextUid.current += 1;
-      return { uid, id };
-    });
-    setSelectedUid(null);
-    apply(
-      next,
-      `loading ${preset.name}`,
-      `Loaded ${preset.name}: ${next.length + 2} segments.`,
-    );
-  };
-
   const stepBack = () => {
     const next = undo(timeline);
     if (next === timeline) {
@@ -1219,11 +1303,11 @@ export function TrackEditor({
       tabIndex={-1}
       onKeyDown={handleKey}
     >
-      <div className="eyebrow">TRACK EDITOR</div>
-      <h2 id={`${domId}-title`}>Build the course.</h2>
+      <div className="eyebrow">BUILD YOUR GAME</div>
+      <h2 id={`${domId}-title`}>Drag the course together.</h2>
       <p className="track-editor-lede">
-        Lay segments between the landing pad and the finish room. The runner has
-        one fixed jump, so every join is measured against it as you go.
+        Drag actual map pieces from the palette into the course. Move them by
+        dragging again; the landing pad and finish stay fixed.
       </p>
 
       <dl className="track-editor-stats">
@@ -1362,43 +1446,6 @@ export function TrackEditor({
             )}
           </div>
 
-          <div className="track-editor-starters">
-            <p className="track-editor-note">
-              Start from one of these, then change whatever you like. Every one
-              is assembled through the same check the game runs on a shared
-              link, so all of them are playable before you touch them.
-            </p>
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                className="track-editor-preset"
-                onClick={() => loadPreset(preset)}
-              >
-                <strong>{preset.name}</strong>
-                <small>
-                  {preset.ids.length + 2} segments · {preset.blurb}
-                </small>
-              </button>
-            ))}
-            <h4 className="eyebrow">OR TAKE A MAP APART</h4>
-            <p className="track-editor-note">
-              The same maps the front screen offers, opened up. Loading one
-              replaces the middle of your course; the pinned ends stay put.
-            </p>
-            {MAP_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                className="track-editor-preset"
-                onClick={() => loadPreset(preset)}
-              >
-                <strong>{preset.name}</strong>
-                <small>
-                  {preset.ids.length + 2} segments · {preset.blurb}
-                </small>
-              </button>
-            ))}
-          </div>
-
           <ol className="track-editor-course">
             <li className="track-editor-card is-pinned">
               <span className="track-editor-index" aria-hidden="true">
@@ -1408,7 +1455,13 @@ export function TrackEditor({
                 <strong>{START.label}</strong>
                 <small>Pinned start · {START.length}u</small>
               </span>
+              <SegmentMiniature segment={START} />
             </li>
+            <CourseDropZone
+              ready={dragging !== null}
+              copying={dragging?.startsWith("palette:") ?? false}
+              onDrop={(event) => dropAt(event, 0)}
+            />
             {placed.map((entry, index) => {
               const segment = SEGMENT_MAP.get(entry.id);
               if (!segment) return null;
@@ -1416,11 +1469,14 @@ export function TrackEditor({
               const selected = entry.uid === selectedUid;
               const seam = review.seams[index];
               return (
+                <Fragment key={entry.uid}>
                 <li
-                  key={entry.uid}
                   className={`track-editor-card${selected ? " is-selected" : ""}${
                     seam?.blocks ? " is-blocked" : ""
                   }`}
+                  draggable
+                  onDragStart={(event) => startDrag(event, `course:${entry.uid}`)}
+                  onDragEnd={() => setDragging(null)}
                 >
                   <span className="track-editor-index" aria-hidden="true">
                     {index + 2}
@@ -1449,6 +1505,7 @@ export function TrackEditor({
                       {DIFFICULTY_WORDS[segment.difficulty]} · {segment.length}u
                     </small>
                   </button>
+                  <SegmentMiniature segment={segment} />
                   <span className="track-editor-controls">
                     <button
                       ref={register(`up-${entry.uid}`)}
@@ -1503,6 +1560,12 @@ export function TrackEditor({
                     </p>
                   )}
                 </li>
+                <CourseDropZone
+                  ready={dragging !== null}
+                  copying={dragging?.startsWith("palette:") ?? false}
+                  onDrop={(event) => dropAt(event, index + 1)}
+                />
+                </Fragment>
               );
             })}
             <li className="track-editor-card is-pinned">
@@ -1513,6 +1576,7 @@ export function TrackEditor({
                 <strong>{FINISH.label}</strong>
                 <small>Pinned finish · {FINISH.length}u</small>
               </span>
+              <SegmentMiniature segment={FINISH} />
             </li>
           </ol>
           {placed.length === 0 && (
@@ -1553,6 +1617,9 @@ export function TrackEditor({
                       key={segment.id}
                       ref={register(`add-${segment.id}`)}
                       className="track-editor-add"
+                      draggable={!full}
+                      onDragStart={(event) => startDrag(event, `palette:${segment.id}`)}
+                      onDragEnd={() => setDragging(null)}
                       aria-disabled={full}
                       aria-label={`Add ${segment.label} ${
                         selectedIndex < 0
@@ -1575,6 +1642,7 @@ export function TrackEditor({
                           ))}
                         </span>
                       </span>
+                      <SegmentMiniature segment={segment} />
                       <span
                         id={`${domId}-desc-${segment.id}`}
                         className="track-editor-desc"

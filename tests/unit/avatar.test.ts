@@ -360,6 +360,8 @@ describe("the picker", () => {
       backpack: "daypack",
       held: "flag",
       headwear: "cap",
+      face: "warpaint",
+      eyewear: "round",
     });
     for (const slot of WARDROBE_SLOTS) {
       const chips = [...container.querySelectorAll('input[name="avatar-slot"]')];

@@ -18,7 +18,15 @@ import { useSettingsStore } from "@/stores/settings-store";
  * The Portals edition keeps its runner somewhere else entirely and mounts that
  * component directly.
  */
-export function AvatarCustomizer() {
+export function AvatarCustomizer({
+  alwaysVisible = false,
+  launcherClassName = "avatar-launcher",
+  launcherLabel,
+}: {
+  alwaysVisible?: boolean;
+  launcherClassName?: string;
+  launcherLabel?: string;
+} = {}) {
   const phase = useGameStore((state) => state.phase);
   // Only reached when no avatar is set, where it is what the runner already
   // looks like, so the launcher chip shows the figure the player would keep.
@@ -47,13 +55,13 @@ export function AvatarCustomizer() {
   }, [dismissAvatarPrompt]);
 
   if (!open)
-    return phase === "intro" ? (
-      <button className="avatar-launcher" onClick={() => setManualOpen(true)}>
+    return phase === "intro" || alwaysVisible ? (
+      <button className={launcherClassName} onClick={() => setManualOpen(true)}>
         <span
           className="avatar-launcher-chip"
           style={{ background: resolveAvatar(avatar, seed).bodyColor }}
         />
-        {avatar ? "Edit your runner" : "Make your runner"}
+        {launcherLabel ?? (avatar ? "Edit your runner" : "Make your runner")}
       </button>
     ) : null;
 

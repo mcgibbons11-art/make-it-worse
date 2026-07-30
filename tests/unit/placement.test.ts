@@ -114,11 +114,10 @@ describe("placement", () => {
     // board before; anything at or below that means the pieces stopped being
     // reachable and the jank is back.
     const surfaces = placementSurfaces();
-    expect(surfaces.length).toBeGreaterThan(15);
-    // Every authored zone survives, because links in circulation name them.
-    for (const id of ["runway_front", "stones_mid", "bridge_mid", "finish_front"])
-      expect(surfaces.some((surface) => surface.id === id)).toBe(true);
-    // And the raw pieces are reachable now too.
+    expect(surfaces.length).toBeGreaterThan(8);
+    // Only the real blocks are drawn. Legacy pad ids still validate old links,
+    // but are no longer presented as smaller preferred targets in the editor.
+    expect(surfaces.some((surface) => surface.id === "runway_front")).toBe(false);
     for (const id of ["start", "runway", "bridge", "finish"])
       expect(surfaces.some((surface) => surface.id === id)).toBe(true);
   });
@@ -129,7 +128,7 @@ describe("placement", () => {
     // computing offsets against the surface it started on, which is how a drag
     // appeared to stop dead at an invisible line.
     const surfaces = placementSurfaces();
-    const from = surfaces.find((surface) => surface.id === "runway_front")!;
+    const from = surfaces.find((surface) => surface.id === "runway")!;
     const to = surfaces.find((surface) => surface.id !== from.id && surface.id !== "start")!;
     const x = (to.minX + to.maxX) / 2;
     const z = (to.minZ + to.maxZ) / 2;

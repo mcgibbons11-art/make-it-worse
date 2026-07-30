@@ -8,21 +8,14 @@ import type { Vec3Tuple } from "@/lib/game/types";
 import { getCameraYaw, setCameraYaw } from "@/lib/game/input";
 import { useSettingsStore } from "@/stores/settings-store";
 
-/** The whole course, so placing a trap can be done looking at all of it. */
-export interface EditorFraming {
-  centerX: number;
-  centerZ: number;
-  groundY: number;
-  spanX: number;
-  spanZ: number;
-}
-
-/** How far the aerial camera leans off vertical. 0 is straight down. */
-const AERIAL_TILT = 0.42;
-/** Slack around the course so its edges are not flush with the screen edge. */
-const AERIAL_MARGIN = 1.22;
-/** Never drop below this, or a tiny custom track puts the camera in the floor. */
-const AERIAL_MIN_HEIGHT = 12;
+/**
+ * Close three-quarter view used while carrying a trap.
+ *
+ * Keeping this relative to `editorTarget` is the important part: the camera
+ * travels with a mouse drag or keyboard nudge instead of leaving the trap to
+ * shrink into a course-wide overhead map.
+ */
+export const PLACEMENT_CAMERA_OFFSET = [4.2, 5.8, -4.8] as const;
 
 /** Radians of yaw per pixel dragged. A full turn is roughly a screen width. */
 const LOOK_SENSITIVITY = 0.006;
@@ -41,13 +34,11 @@ const LOOK_LIMIT = Math.PI * 0.55;
 export function CameraRig({
   player,
   editorTarget,
-  editorFraming = null,
   lookEnabled = false,
   shakeUntilRef,
 }: {
   player: React.RefObject<RapierRigidBody | null>;
   editorTarget: Vec3Tuple | null;
-  editorFraming?: EditorFraming | null;
   /** Whether a left-drag turns the view. Off while a trap is being placed. */
   lookEnabled?: boolean;
   shakeUntilRef: React.MutableRefObject<number>;
@@ -119,38 +110,15 @@ export function CameraRig({
       // is skipped instead: the camera simply holds still, which is recoverable.
       if (!editorTarget.every(Number.isFinite)) return;
 
-      if (editorFraming) {
-        // Placing a trap is a map-reading job, not a driving one, so the camera
-        // leaves the runner's shoulder and goes up until the whole course is on
-        // screen. Solved against the live projection rather than a guessed
-        // altitude: fit the depth through the vertical field of view and the
-        // width through the horizontal one, then take whichever needs more air.
-        const fovY = ((camera as { fov?: number }).fov ?? 52) * (Math.PI / 180);
-        const aspect = (camera as { aspect?: number }).aspect ?? 16 / 9;
-        const halfY = Math.tan(fovY / 2);
-        const forDepth = editorFraming.spanZ / 2 / halfY;
-        const forWidth = editorFraming.spanX / 2 / (halfY * aspect);
-        const height = Math.max(AERIAL_MIN_HEIGHT, Math.max(forDepth, forWidth) * AERIAL_MARGIN);
-        target.current.set(editorFraming.centerX, editorFraming.groundY, editorFraming.centerZ);
-        desired.current.set(
-          editorFraming.centerX,
-          editorFraming.groundY + height,
-          // Leaning back along -Z keeps the runner's own forward direction
-          // pointing up the screen, so a drag reads the same way the run does.
-          editorFraming.centerZ - height * AERIAL_TILT,
-        );
-        smoothed.current.lerp(desired.current, 1 - Math.exp(-5 * delta));
-        camera.position.copy(smoothed.current);
-        look.current.lerp(target.current, 1 - Math.exp(-6 * delta));
-        camera.lookAt(look.current);
-        return;
-      }
-
       target.current.set(editorTarget[0], editorTarget[1], editorTarget[2]);
-      desired.current.set(editorTarget[0] + 5.8, editorTarget[1] + 7.2, editorTarget[2] - 6.4);
-      smoothed.current.lerp(desired.current, 1 - Math.exp(-6 * delta));
+      desired.current.set(
+        editorTarget[0] + PLACEMENT_CAMERA_OFFSET[0],
+        editorTarget[1] + PLACEMENT_CAMERA_OFFSET[1],
+        editorTarget[2] + PLACEMENT_CAMERA_OFFSET[2],
+      );
+      smoothed.current.lerp(desired.current, 1 - Math.exp(-8 * delta));
       camera.position.copy(smoothed.current);
-      look.current.lerp(target.current, 1 - Math.exp(-7 * delta));
+      look.current.lerp(target.current, 1 - Math.exp(-10 * delta));
       camera.lookAt(look.current);
       return;
     }

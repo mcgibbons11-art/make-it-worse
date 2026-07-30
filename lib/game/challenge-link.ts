@@ -20,7 +20,7 @@ import {
   isReadableAvatar,
 } from "./avatar";
 import { zoneCenter } from "./level-definition";
-import { validatePlacement } from "./placement";
+import { placementSurfaces, validatePlacement } from "./placement";
 import { seededId } from "./seed";
 import {
   CLASSIC_TRACK,
@@ -157,8 +157,17 @@ export function encodeChallengeLink(
   const creatorIndex = nameIndex(challenge.createdByName);
   const segments = challenge.track ?? CLASSIC_TRACK;
   const track = buildTrack(segments);
+  // Keep authored zones first so every older tuple index keeps its meaning;
+  // real platform surfaces are appended for new free-placement links.
+  const pieceSurfaces = placementSurfaces(track);
   const traps = challenge.traps.map((trap) => {
-    const zoneIndex = track.zones.findIndex((entry) => entry.id === trap.zoneId);
+    const legacyIndex = track.zones.findIndex((entry) => entry.id === trap.zoneId);
+    const pieceIndex = pieceSurfaces.findIndex((entry) => entry.id === trap.zoneId);
+    const zoneIndex = legacyIndex >= 0
+      ? legacyIndex
+      : pieceIndex >= 0
+        ? track.zones.length + pieceIndex
+        : -1;
     // A trap whose zone is not in this challenge's own track used to encode as
     // index -1, which decode then refused. The sender saw a normal-looking
     // link, the recipient saw "that link is damaged", and the chain died one
@@ -167,7 +176,12 @@ export function encodeChallengeLink(
       throw new Error(
         `CHALLENGE_LINK_UNENCODABLE: trap ${trap.id} sits in zone "${trap.zoneId}", which this track does not contain`,
       );
-    const [centerX, centerZ] = zoneCenter(track.zones[zoneIndex]!);
+    const [centerX, centerZ] = legacyIndex >= 0
+      ? zoneCenter(track.zones[legacyIndex]!)
+      : [
+          (pieceSurfaces[pieceIndex]!.minX + pieceSurfaces[pieceIndex]!.maxX) / 2,
+          (pieceSurfaces[pieceIndex]!.minZ + pieceSurfaces[pieceIndex]!.maxZ) / 2,
+        ];
     return [
       TRAP_TYPES.indexOf(trap.type),
       zoneIndex,
@@ -264,6 +278,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
   // a player who would then be stuck on it.
   if (!isPlayableTrack(segments)) throw new Error("CHALLENGE_LINK_INVALID");
   const track: BuiltTrack = buildTrack(segments);
+  const pieceSurfaces = placementSurfaces(track);
 
   const traps: TrapInstance[] = [];
   for (const [
@@ -278,14 +293,16 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
   ] of tuples) {
     const type = TRAP_TYPES[typeIndex]!;
     const zone: PlacementZone | undefined = track.zones[zoneIndex];
+    const piece = pieceSurfaces[zoneIndex - track.zones.length];
+    const surfaceId = zone?.id ?? piece?.id;
     const ownerName = names[ownerIndex];
-    if (!zone || !ownerName) throw new Error("CHALLENGE_LINK_INVALID");
+    if (!surfaceId || !ownerName) throw new Error("CHALLENGE_LINK_INVALID");
     // Replaying through the canonical validator is what makes a hand-edited
     // link safe: overlaps, zone limits, and blocked spawn/exit areas all apply.
     const placement = validatePlacement(
       {
         type,
-        zoneId: zone.id,
+        zoneId: surfaceId,
         offsetX: offsetXSteps / GRID_STEPS_PER_UNIT,
         offsetZ: offsetZSteps / GRID_STEPS_PER_UNIT,
         rotationQuarterTurns: quarterTurns as 0 | 1 | 2 | 3,
@@ -301,7 +318,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
       ownerName,
       ownerAvatarSeed,
       depthAdded: traps.length + 1,
-      zoneId: zone.id,
+      zoneId: surfaceId,
       position: placement.canonicalPosition,
       rotationY: placement.rotationY,
       seed,

@@ -37,7 +37,7 @@ describe("placement preview fallback", () => {
   const pieceBacked = surfaces.filter((surface) => !zoneIds.has(surface.id));
 
   it("exposes placement surfaces that are pieces rather than authored zones", () => {
-    expect(surfaces.length).toBeGreaterThan(track.zones.length);
+    expect(surfaces.length).toBeGreaterThan(0);
     expect(pieceBacked.length).toBeGreaterThan(0);
   });
 

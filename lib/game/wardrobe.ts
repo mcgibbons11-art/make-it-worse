@@ -31,6 +31,8 @@ export type WardrobeSlotId =
 /** Slots whose garment takes a colour. The rest draw in fixed ink and glass. */
 export type WardrobeColorKey =
   | "headwear"
+  | "face"
+  | "eyewear"
   | "top"
   | "outerwear"
   | "legwear"
@@ -142,7 +144,7 @@ export interface WardrobeOption<Id extends string> {
 // "Hair" is the empty option for the head: it is what the sculpt already draws,
 // so choosing it removes a hat rather than adding one.
 export const AVATAR_HEADWEAR: readonly WardrobeOption<AvatarHeadwearId>[] = [
-  { id: "hair", label: "Just hair" },
+  { id: "hair", label: "No hat" },
   { id: "cap", label: "Cap" },
   { id: "band", label: "Headband" },
   { id: "bobble", label: "Bobble hat" },
@@ -270,9 +272,9 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
   {
     id: "face",
     label: "Face",
-    note: "Brows, whiskers and paint, drawn in ink so they read at chase-camera distance.",
+    note: "Brows, whiskers and paint, with their own colour.",
     options: AVATAR_FACES,
-    colorKey: null,
+    colorKey: "face",
     sockets: ["Head mass__pivot"],
   },
   {
@@ -280,7 +282,7 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     label: "Eyewear",
     note: "Sits in front of the eyes. Overrides the Shades expression when both are set.",
     options: AVATAR_EYEWEAR,
-    colorKey: null,
+    colorKey: "eyewear",
     sockets: ["Head mass__pivot"],
   },
   {

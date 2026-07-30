@@ -18,7 +18,7 @@ import { recordRunEnd, recordTrapPlaced } from "@/lib/game/coaching";
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
 import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
-import { CLASSIC_TRACK, NAMED_TRACKS, buildTrack } from "@/lib/game/track";
+import { CLASSIC_TRACK, buildTrack } from "@/lib/game/track";
 import { placementFromWorld, validatePlacement } from "@/lib/game/placement";
 import { challengeTrack, firstLegalPlacement } from "@/lib/game/trap-choice";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
@@ -79,6 +79,11 @@ const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
 const WardrobePanel = lazy(() =>
   import("@/components/hud/wardrobe/WardrobePanel").then((module) => ({
     default: module.WardrobePanel,
+  })),
+);
+const AvatarApartment = lazy(() =>
+  import("@/components/hud/wardrobe/AvatarApartment").then((module) => ({
+    default: module.AvatarApartment,
   })),
 );
 // Seconds left when the timer turns warm and the countdown pill appears. The
@@ -201,10 +206,10 @@ export function PortalsApp() {
   const [boardDepth, setBoardDepth] = useState(0);
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
-  const [mapsOpen, setMapsOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitResult | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
+  const [apartmentOpen, setApartmentOpen] = useState(false);
   // The name the game hands you rides on every trap you add and into every
   // message you send, and the first time a reviewer saw theirs was inside the
   // message they were about to send a friend. Held here so a screen can say it
@@ -434,7 +439,6 @@ export function PortalsApp() {
   const playCustomTrack = useCallback(
     async (segmentIds: readonly string[]) => {
       setEditorOpen(false);
-      setMapsOpen(false);
       open(await repository.createRootChain(segmentIds));
     },
     [open, repository],
@@ -844,37 +848,31 @@ export function PortalsApp() {
         </button>
         <button
           className="button secondary"
-          onClick={() => setMapsOpen((current) => !current)}
+          onClick={() => {
+            setViews([]);
+            setWardrobeOpen(true);
+          }}
         >
-          {mapsOpen ? "Hide the maps" : "Pick a map"}
+          <span
+            className="avatar-launcher-chip"
+            style={{
+              background: resolveAvatar(
+                settings.avatar,
+                challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1,
+              ).bodyColor,
+            }}
+          />
+          Build your runner
         </button>
-        {mapsOpen && (
-          // The curated list, directly under its own toggle: the third way to
-          // start a course, beside the dice roll and the editor, for a player
-          // who wants a KNOWN one - to race a friend on the same ground, or to
-          // dodge the difficulty-3 rooms on purpose. Every entry passed
-          // isPlayableTrack under test, so nothing here can hand out a course
-          // a runner cannot finish.
-          <div className="portals-maps" role="list">
-            {NAMED_TRACKS.map((map) => (
-              <button
-                key={map.id}
-                role="listitem"
-                className="portals-map"
-                onClick={() =>
-                  guard(() => void playCustomTrack(map.segmentIds), {
-                    title: "Leave this run?",
-                    body: `${map.name} replaces the level you are on. This run does not come back.`,
-                    confirmLabel: `Play ${map.name}`,
-                  })
-                }
-              >
-                <strong>{map.name}</strong>
-                <span>{map.tagline}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <button
+          className="button secondary"
+          onClick={() => {
+            setViews([]);
+            setApartmentOpen(true);
+          }}
+        >
+          Visit your apartment
+        </button>
         <button
           className="button secondary"
           onClick={() => {
@@ -905,7 +903,7 @@ export function PortalsApp() {
             )
           }
         >
-          Build your own track
+          Build your game
         </button>
         <button className="button secondary" onClick={() => openView("settings")}>
           Settings
@@ -957,14 +955,6 @@ export function PortalsApp() {
           ? "Touch controls enabled · tap the menu button to pause"
           : "Keyboard + mouse · Esc opens this menu"}
       </span>
-      <a
-        className="text-button portals-credits"
-        href="./assets/models/LICENSES.md"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Licensed art credits
-      </a>
     </>
   );
   const shellDialogs = (
@@ -1004,6 +994,26 @@ export function PortalsApp() {
           />
         </Overlay>
       )}
+      {wardrobeOpen && (
+        <Suspense
+          fallback={
+            <div className="canvas-loading">
+              <span />
+              Opening the wardrobe…
+            </div>
+          }
+        >
+          <WardrobePanel
+            avatar={settings.avatar ?? null}
+            avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+            onSave={(config) => {
+              settings.setAvatar(config);
+              setWardrobeOpen(false);
+            }}
+            onClose={() => setWardrobeOpen(false)}
+          />
+        </Suspense>
+      )}
     </>
   );
   // Without the track this resolved a composed course's zone id against the
@@ -1033,6 +1043,16 @@ export function PortalsApp() {
     soundedPlacement.current = placementValid;
     AudioManager.placement(placementValid);
   }, [placementValid]);
+  if (apartmentOpen)
+    return (
+      <Suspense fallback={<div className="canvas-loading"><span />Building your apartment…</div>}>
+        <AvatarApartment
+          avatar={settings.avatar ?? null}
+          avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+          onClose={() => setApartmentOpen(false)}
+        />
+      </Suspense>
+    );
   if (!challenge)
     return (
       <main className="portals-home">
@@ -1149,26 +1169,6 @@ export function PortalsApp() {
           </div>
         </Overlay>
       )}
-      {wardrobeOpen && (
-        <Suspense
-          fallback={
-            <div className="canvas-loading">
-              <span />
-              Opening the wardrobeâ€¦
-            </div>
-          }
-        >
-          <WardrobePanel
-            avatar={settings.avatar ?? null}
-            avatarSeed={challenge.createdByAvatarSeed}
-            onSave={(config) => {
-              settings.setAvatar(config);
-              setWardrobeOpen(false);
-            }}
-            onClose={() => setWardrobeOpen(false)}
-          />
-        </Suspense>
-      )}
       {runPanel === "playing" && (
         // The attempt is hard-capped at ATTEMPT_LIMIT_MS by PlayerController and
         // this HUD counted up in silence, so the first anyone learned of a clock
@@ -1215,14 +1215,6 @@ export function PortalsApp() {
         </header>
       )}
       {runPanel === "playing" && <MobileControls />}
-      <a
-        className="text-button portals-credits in-game"
-        href="./assets/models/LICENSES.md"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Art credits
-      </a>
       {/* Both were written, tested and imported, and then mounted by nothing -
           the unit tests render them directly, so the suite stayed green while
           no player could reach them. The tour teaches move/jump/reach-the-door

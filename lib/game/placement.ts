@@ -56,13 +56,12 @@ const surfaceOfPiece = (piece: LevelPiece): PlacementSurface => ({
 });
 
 function surfacesOf(track?: BuiltTrack): readonly PlacementSurface[] {
-  const zones = track ? track.zones : [...ZONE_MAP.values()];
   const pieces = track ? track.pieces : LEVEL_PIECES;
-  const seen = new Set(zones.map((zone) => zone.id));
-  return [
-    ...zones.map(surfaceOfZone),
-    ...pieces.filter((piece) => !seen.has(piece.id)).map(surfaceOfPiece),
-  ];
+  // The visible blocks are the authoring surface. Authored placement zones are
+  // still accepted by findSurface so old challenge links remain valid, but
+  // they no longer sit on top of blocks as smaller preferred "pads" that make
+  // the rest of the same floor feel forbidden.
+  return pieces.map(surfaceOfPiece);
 }
 
 /** Resolve a placement id, authored zones first so existing links keep working. */

@@ -105,28 +105,6 @@ export function GameScene({
   // placementSurfaces() is the same resolved set validatePlacement uses, so the
   // preview and the verdict can no longer disagree about where a surface is.
   const surfaces = useMemo(() => placementSurfaces(track), [track]);
-  // The course's own extent, so the placement camera can frame all of it rather
-  // than a guessed box. Derived from the same surfaces a trap may stand on, so
-  // a custom track that is longer, wider or shorter than the classic one is
-  // framed correctly without anyone maintaining a second set of numbers.
-  const editorFraming = useMemo(() => {
-    if (surfaces.length === 0) return null;
-    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, groundY = -Infinity;
-    for (const surface of surfaces) {
-      minX = Math.min(minX, surface.minX);
-      maxX = Math.max(maxX, surface.maxX);
-      minZ = Math.min(minZ, surface.minZ);
-      maxZ = Math.max(maxZ, surface.maxZ);
-      groundY = Math.max(groundY, surface.groundY);
-    }
-    return {
-      centerX: (minX + maxX) / 2,
-      centerZ: (minZ + maxZ) / 2,
-      groundY,
-      spanX: maxX - minX,
-      spanZ: maxZ - minZ,
-    };
-  }, [surfaces]);
   const previewPosition = useMemo(() => {
     if (!placement) return null;
     if (validation?.valid) return validation.canonicalPosition;
@@ -261,7 +239,6 @@ export function GameScene({
           <CameraRig
             player={player}
             editorTarget={phase === "placing_trap" ? previewPosition : null}
-            editorFraming={phase === "placing_trap" ? editorFraming : null}
             lookEnabled={phase === "playing"}
             shakeUntilRef={shakeUntilRef}
           />

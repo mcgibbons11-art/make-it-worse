@@ -100,6 +100,8 @@ export type ColorSlot = "body" | "pack" | WardrobeColorKey;
 
 export interface AvatarGarmentColors {
   headwear: AvatarColorId;
+  face: AvatarColorId;
+  eyewear: AvatarColorId;
   top: AvatarColorId;
   outerwear: AvatarColorId;
   legwear: AvatarColorId;
@@ -215,6 +217,8 @@ const COLOR_MAP = new Map(AVATAR_COLORS.map((entry) => [entry.id, entry]));
 
 const DEFAULT_GARMENT_COLORS: AvatarGarmentColors = {
   headwear: "ink",
+  face: "coffee",
+  eyewear: "ink",
   top: "cobalt",
   outerwear: "charcoal",
   legwear: "charcoal",
@@ -298,6 +302,8 @@ export function normalizeAvatar(
     held: known(AVATAR_HELD, stored.held, "none"),
     colors: {
       headwear: knownColor(colors.headwear, DEFAULT_GARMENT_COLORS.headwear),
+      face: knownColor(colors.face, DEFAULT_GARMENT_COLORS.face),
+      eyewear: knownColor(colors.eyewear, DEFAULT_GARMENT_COLORS.eyewear),
       top: knownColor(colors.top, DEFAULT_GARMENT_COLORS.top),
       outerwear: knownColor(colors.outerwear, DEFAULT_GARMENT_COLORS.outerwear),
       legwear: knownColor(colors.legwear, DEFAULT_GARMENT_COLORS.legwear),
@@ -376,6 +382,8 @@ function garmentHexes(
 ): Readonly<Record<WardrobeColorKey, string>> {
   return {
     headwear: COLOR_MAP.get(colors.headwear)!.hex,
+    face: COLOR_MAP.get(colors.face)!.hex,
+    eyewear: COLOR_MAP.get(colors.eyewear)!.hex,
     top: COLOR_MAP.get(colors.top)!.hex,
     outerwear: COLOR_MAP.get(colors.outerwear)!.hex,
     legwear: COLOR_MAP.get(colors.legwear)!.hex,
@@ -639,6 +647,8 @@ export function randomAvatar(random: () => number = Math.random): AvatarConfig {
     held: pick(AVATAR_HELD).id,
     colors: {
       headwear: garment("headwear"),
+      face: garment("face"),
+      eyewear: garment("eyewear"),
       top: garment("top"),
       outerwear: garment("outerwear"),
       legwear: garment("legwear"),
@@ -728,6 +738,9 @@ const CODE_FIELDS: readonly CodeField[] = [
   { kind: "garment", key: "backpack" },
   { kind: "item", slot: "held" },
   { kind: "garment", key: "held" },
+  // Appended so every pre-colour wardrobe code keeps every earlier position.
+  { kind: "garment", key: "face" },
+  { kind: "garment", key: "eyewear" },
 ];
 
 export const WARDROBE_CODE_LENGTH = CODE_FIELDS.length;

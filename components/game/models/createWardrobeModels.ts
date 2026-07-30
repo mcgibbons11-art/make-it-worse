@@ -768,7 +768,7 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
 // --- Face -------------------------------------------------------------------
 
 function browBar(side: -1 | 1, lift: number, tilt: number): THREE.Mesh {
-  const bar = part(slab(0.105, 0.026, 0.022), "ink", {
+  const bar = part(slab(0.105, 0.026, 0.022), "main", {
     x: side * 0.11,
     y: HEAD.eye.y + lift,
     z: 0.283,
@@ -782,7 +782,7 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
     case "plain":
       return [];
     case "grin": {
-      const mouth = part(ring(0.078, 0.017, Math.PI), "ink", { x: 0, y: -0.115, z: 0.272 });
+      const mouth = part(ring(0.078, 0.017, Math.PI), "main", { x: 0, y: -0.115, z: 0.272 });
       mouth.rotation.z = Math.PI;
       mouth.rotation.x = 0.16;
       const teeth = part(slab(0.12, 0.018, 0.012), "cream", { x: 0, y: -0.122, z: 0.288 });
@@ -791,16 +791,16 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
     case "focused":
       return [browBar(-1, 0.072, 0.34), browBar(1, 0.072, 0.34)];
     case "shades": {
-      const lens = part(slab(0.235, 0.062, 0.028), "ink", { x: 0, y: HEAD.eye.y, z: 0.286 });
-      const left = part(slab(0.02, 0.026, 0.16), "ink", { x: -0.15, y: HEAD.eye.y, z: 0.21 });
-      const right = part(slab(0.02, 0.026, 0.16), "ink", { x: 0.15, y: HEAD.eye.y, z: 0.21 });
+      const lens = part(slab(0.235, 0.062, 0.028), "main", { x: 0, y: HEAD.eye.y, z: 0.286 });
+      const left = part(slab(0.02, 0.026, 0.16), "main", { x: -0.15, y: HEAD.eye.y, z: 0.21 });
+      const right = part(slab(0.02, 0.026, 0.16), "main", { x: 0.15, y: HEAD.eye.y, z: 0.21 });
       return [lens, left, right];
     }
     case "brows":
       return [browBar(-1, 0.085, -0.1), browBar(1, 0.085, -0.1)];
     case "moustache": {
       const make = (side: -1 | 1) => {
-        const hair = part(ball(0.062, 0.024, 0.022), "ink", {
+        const hair = part(ball(0.062, 0.024, 0.022), "main", {
           x: side * 0.056,
           y: -0.132,
           z: 0.276,
@@ -811,13 +811,13 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [make(-1), make(1)];
     }
     case "beard": {
-      const chin = part(ball(0.2, 0.12, 0.185), "ink", { x: 0, y: -0.185, z: 0.145 });
-      const lip = part(ball(0.085, 0.022, 0.024), "ink", { x: 0, y: -0.135, z: 0.272 });
+      const chin = part(ball(0.2, 0.12, 0.185), "main", { x: 0, y: -0.185, z: 0.145 });
+      const lip = part(ball(0.085, 0.022, 0.024), "main", { x: 0, y: -0.135, z: 0.272 });
       return [chin, lip];
     }
     case "freckles": {
       const dot = (x: number, y: number) =>
-        part(ball(0.014, 0.012, 0.01), "ink", { x, y, z: 0.288 });
+        part(ball(0.014, 0.012, 0.01), "main", { x, y, z: 0.288 });
       return [
         dot(-0.155, -0.1),
         dot(-0.12, -0.128),
@@ -829,7 +829,7 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
     }
     case "warpaint": {
       const stripe = (side: -1 | 1) =>
-        part(slab(0.135, 0.032, 0.014), "ink", {
+        part(slab(0.135, 0.032, 0.014), "main", {
           x: side * 0.105,
           y: -0.128,
           z: 0.281,
@@ -837,10 +837,10 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [stripe(-1), stripe(1)];
     }
     case "mask": {
-      const cover = part(ball(0.232, 0.145, 0.21), "cream", { x: 0, y: -0.165, z: 0.135 });
-      const loopLeft = part(ring(0.09, 0.012), "cream", { x: -0.225, y: -0.13, z: 0.11 });
+      const cover = part(ball(0.232, 0.145, 0.21), "main", { x: 0, y: -0.165, z: 0.135 });
+      const loopLeft = part(ring(0.09, 0.012), "main", { x: -0.225, y: -0.13, z: 0.11 });
       loopLeft.rotation.y = Math.PI / 2;
-      const loopRight = part(ring(0.09, 0.012), "cream", { x: 0.225, y: -0.13, z: 0.11 });
+      const loopRight = part(ring(0.09, 0.012), "main", { x: 0.225, y: -0.13, z: 0.11 });
       loopRight.rotation.y = Math.PI / 2;
       return [cover, loopLeft, loopRight];
     }
@@ -852,13 +852,13 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
 function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
   if (id === "none") return [];
   const temple = (side: -1 | 1) =>
-    part(slab(0.018, 0.02, 0.17), "ink", { x: side * 0.152, y: HEAD.eye.y, z: 0.205 });
+    part(slab(0.018, 0.02, 0.17), "main", { x: side * 0.152, y: HEAD.eye.y, z: 0.205 });
   const bridge = (width: number, y: number) =>
-    part(slab(width, 0.016, 0.016), "ink", { x: 0, y, z: 0.288 });
+    part(slab(width, 0.016, 0.016), "main", { x: 0, y, z: 0.288 });
   switch (id) {
     case "round": {
       const lens = (side: -1 | 1) => {
-        const rim = part(ring(0.056, 0.014), "ink", {
+        const rim = part(ring(0.056, 0.014), "main", {
           x: side * HEAD.eye.x,
           y: HEAD.eye.y,
           z: 0.292,
@@ -877,7 +877,7 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
       // wear-sunglasses.png: a deliberately chunky square frame, where the
       // border is about a fifth of the lens rather than a hairline.
       const lens = (side: -1 | 1) =>
-        part(slab(0.118, 0.094, 0.02), "ink", {
+        part(slab(0.118, 0.094, 0.02), "main", {
           x: side * HEAD.eye.x,
           y: HEAD.eye.y,
           z: 0.286,
@@ -900,7 +900,7 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
     }
     case "goggles": {
       const cup = (side: -1 | 1) => {
-        const shell = part(tube(0.078, 0.07, 0.05, 18), "ink", {
+        const shell = part(tube(0.078, 0.07, 0.05, 18), "main", {
           x: side * 0.115,
           y: HEAD.eye.y,
           z: 0.278,
@@ -920,7 +920,7 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
     }
     case "aviator": {
       const lens = (side: -1 | 1) => {
-        const glass = part(ball(0.068, 0.05, 0.02), "ink", {
+        const glass = part(ball(0.068, 0.05, 0.02), "main", {
           x: side * 0.112,
           y: HEAD.eye.y - 0.006,
           z: 0.286,
@@ -938,7 +938,7 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
       ];
     }
     case "visorband": {
-      const visor = part(plate(0.325, 0.12, 1.9), "ink", { x: 0, y: HEAD.eye.y, z: 0 });
+      const visor = part(plate(0.325, 0.12, 1.9), "main", { x: 0, y: HEAD.eye.y, z: 0 });
       const band = part(ring(0.334, 0.026), "trim", { x: 0, y: HEAD.eye.y - 0.072, z: -0.012 });
       band.rotation.x = Math.PI / 2;
       return [visor, band];
@@ -2058,7 +2058,15 @@ function specsFor(look: ResolvedAvatar): Spec[] {
     add(SOCKETS.torso, `pack:${look.backpack}`, () => backpackParts(look.backpack));
 
   if (look.held !== "none")
-    add(SOCKETS.handRight, `held:${look.held}`, () => heldParts(look.held));
+    add(SOCKETS.handRight, `held:${look.held}`, () => {
+      // These were authored at icon-detail scale and became nearly invisible
+      // once the runner was fitted to the gameplay capsule. Make them read as
+      // comedy props: five times the prior size, still rooted at the fist.
+      const prop = group(...heldParts(look.held));
+      prop.scale.setScalar(5);
+      prop.position.x = 0.04;
+      return [prop];
+    });
 
   return specs;
 }
@@ -2069,6 +2077,10 @@ function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
   switch (slot) {
     case "headwear":
       return "headwear";
+    case "face":
+      return "face";
+    case "eyewear":
+      return "eyewear";
     case "top":
     case "topSleeve":
     case "topShoulder":
@@ -2088,8 +2100,6 @@ function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
     case "held":
       return "held";
     default:
-      // face and eyewear draw in ink and glass; they never read the palette's
-      // main colour, so which key they are handed cannot show.
       return "headwear";
   }
 }

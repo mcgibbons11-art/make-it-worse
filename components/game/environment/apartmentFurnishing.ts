@@ -452,7 +452,11 @@ export function addApartmentFurnishing(context: FurnishingContext): void {
   //
   // x -1.45 with a half width of 0.52 leaves 0.03 between the frame's right edge
   // and the sofa arm's left face at -0.90. Anything wider and the arm clips it.
-  part("door-reveal", "Doorway reveal", "trim-navy", [-1.45, 1.03, -2.02], {
+  // Wall B's inner face is z=-2.00. At -2.02 this 0.04-deep panel ended
+  // exactly on that plane, so the navy doorway and cream wall fought for the
+  // same depth pixels as the camera moved. Bring the reveal 0.01 into the room;
+  // it remains tucked behind the frame but now has an unambiguous front face.
+  part("door-reveal", "Doorway reveal", "trim-navy", [-1.45, 1.03, -2.01], {
     points: rect(0.52, 1.03),
     depth: 0.04,
     axis: "z",

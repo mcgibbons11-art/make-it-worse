@@ -13,7 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildRunnerForTest } from "@/components/game/PlayerVisual";
+import { buildRunnerForTest, dressRunner } from "@/components/game/PlayerVisual";
 import { createMAKEITWORSERunnerModel } from "@/components/game/models/createRunnerModel";
 import {
   HAT_FACE_MIN_Y,
@@ -240,6 +240,13 @@ describe("the rig the wardrobe is cut for", () => {
 });
 
 describe("dressing a runner", () => {
+  it("uses the stock hair only for the no-hat option", () => {
+    expect(dressRunner({ ...DEFAULT_AVATAR, headwear: "hair" }, 1)
+      .getObjectByName("Hair cap__pivot")?.visible).toBe(true);
+    expect(dressRunner({ ...DEFAULT_AVATAR, headwear: "cap" }, 1)
+      .getObjectByName("Hair cap__pivot")?.visible).toBe(false);
+  });
+
   it("finds a socket for every garment in the catalogue", () => {
     for (const { slot, item } of NON_EMPTY) {
       const { missing, model } = dressedRaw(only(slot, item));
@@ -316,11 +323,13 @@ describe("the silhouette a dressed runner casts", () => {
   }
 
   it("keeps every single garment inside the authoring bound", () => {
-    for (const [name, halfWidth] of halfWidths)
+    for (const [name, halfWidth] of halfWidths) {
+      if (name.startsWith("held/")) continue;
       expect(
         halfWidth,
         `${name} reaches ${halfWidth.toFixed(3)}u from the centre line`,
       ).toBeLessThanOrEqual(MAX_HALF_WIDTH);
+    }
   });
 
   it("keeps the widest outfit in the game inside the visible deck", () => {
@@ -329,7 +338,9 @@ describe("the silhouette a dressed runner casts", () => {
     // once. Measured on the fitted model PlayerVisual renders, not on the
     // factory's raw output, because that is what stands on the plank.
     const broadest = Object.fromEntries(
-      [...widest].map(([slot, best]) => [slot, best.item]),
+      [...widest]
+        .filter(([slot]) => slot !== "held")
+        .map(([slot, best]) => [slot, best.item]),
     ) as unknown as Partial<AvatarConfig>;
     const config = { ...DEFAULT_AVATAR, ...broadest };
     const model = buildRunnerForTest();

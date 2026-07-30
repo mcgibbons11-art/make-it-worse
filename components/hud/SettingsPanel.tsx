@@ -89,14 +89,6 @@ export function SettingsPanel({
         <button className="button primary" type="submit">
           Save settings
         </button>
-        <a
-          className="text-button"
-          href={`${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/models/LICENSES.md`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Licensed art credits
-        </a>
       </form>
     </div>
   );

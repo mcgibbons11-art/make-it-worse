@@ -26,21 +26,14 @@ import type { AvatarConfig } from "@/lib/game/avatar";
 export function RunnerStage({
   avatar,
   avatarSeed,
-  spin,
 }: {
   avatar: AvatarConfig | null;
   avatarSeed: number;
-  /** Turntable, off under reduced motion. */
-  spin: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const pivot = useRef<THREE.Group | null>(null);
-  // Read inside the draw loop rather than depended on, so toggling reduced
-  // motion does not tear down the scene the runner has been added to.
-  const spinning = useRef(spin);
-  useEffect(() => {
-    spinning.current = spin;
-  }, [spin]);
+  const dragging = useRef(false);
+  const lastPointerX = useRef(0);
 
   useEffect(() => {
     const element = canvas.current;
@@ -93,12 +86,8 @@ export function RunnerStage({
     watcher.observe(element);
 
     let frame = 0;
-    let last = performance.now();
-    const draw = (now: number) => {
+    const draw = () => {
       frame = requestAnimationFrame(draw);
-      const delta = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      if (spinning.current) turntable.rotation.y += delta * 0.5;
       engine.render(scene, lens);
     };
     frame = requestAnimationFrame(draw);
@@ -121,5 +110,31 @@ export function RunnerStage({
     };
   }, [avatar, avatarSeed]);
 
-  return <canvas ref={canvas} className="avatar-figure" width={300} height={400} />;
+  return (
+    <canvas
+      ref={canvas}
+      className="avatar-figure"
+      width={300}
+      height={400}
+      aria-label="Runner preview. Drag left or right to rotate."
+      onPointerDown={(event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        dragging.current = true;
+        lastPointerX.current = event.clientX;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (!dragging.current || !pivot.current) return;
+        pivot.current.rotation.y += (event.clientX - lastPointerX.current) * 0.012;
+        lastPointerX.current = event.clientX;
+      }}
+      onPointerUp={(event) => {
+        dragging.current = false;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onPointerCancel={() => {
+        dragging.current = false;
+      }}
+    />
+  );
 }

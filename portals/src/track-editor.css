@@ -248,13 +248,52 @@
 }
 .track-editor-card {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr) 110px auto;
   gap: 6px 12px;
   align-items: center;
   padding: 10px 12px;
   border: 3px solid var(--editor-ink);
   border-radius: 18px;
   background: white;
+}
+.track-editor-card[draggable="true"] {
+  cursor: grab;
+}
+.track-editor-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+.track-editor-miniature {
+  display: block;
+  width: 100%;
+  min-width: 90px;
+  height: 54px;
+  padding: 3px;
+  border: 2px solid var(--editor-ink);
+  border-radius: 10px;
+  background: #eef5ff;
+}
+.track-editor-miniature rect {
+  stroke: var(--editor-ink);
+  stroke-width: 1.2;
+}
+.track-editor-dropzone {
+  display: grid;
+  place-items: center;
+  min-height: 30px;
+  margin: -3px 8px;
+  border: 3px dashed rgba(23, 26, 43, 0.38);
+  border-radius: 12px;
+  color: var(--editor-quiet);
+  font-size: 0.72rem;
+  font-weight: 900;
+  list-style: none;
+  transition: min-height 0.12s ease, background 0.12s ease;
+}
+.track-editor-dropzone.is-ready {
+  min-height: 48px;
+  border-color: var(--editor-focus);
+  background: rgba(37, 99, 214, 0.12);
+  color: var(--editor-ink);
 }
 .track-editor-card.is-pinned {
   background: rgba(255, 216, 77, 0.55);
@@ -401,6 +440,9 @@
   box-shadow: 0 5px 0 var(--editor-ink);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
+.track-editor-add[draggable="true"] {
+  cursor: grab;
+}
 .track-editor-add:hover[aria-disabled="false"] {
   transform: translateY(-2px);
   box-shadow: 0 7px 0 var(--editor-ink);
@@ -484,6 +526,9 @@
 @media (max-width: 540px) {
   .track-editor-card {
     grid-template-columns: 38px minmax(0, 1fr);
+  }
+  .track-editor-card > .track-editor-miniature {
+    grid-column: 1 / -1;
   }
   .track-editor-controls {
     grid-column: 1 / -1;

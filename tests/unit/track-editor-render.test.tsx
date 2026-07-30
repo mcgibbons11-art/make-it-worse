@@ -122,15 +122,12 @@ describe("what the editor hands over", () => {
     );
   });
 
-  it("starts from a preset that is playable before it is touched", async () => {
+  it("shows draggable real pieces and no fake preset picker", async () => {
     await mount(<TrackEditor onPlay={() => {}} onCancel={() => {}} />);
-    const presets = host.querySelectorAll<HTMLButtonElement>(".track-editor-preset");
-    expect(presets.length).toBeGreaterThan(0);
-    for (const preset of presets) {
-      await click(preset);
-      expect(cardLabels().length).toBeGreaterThan(0);
-      expect(playButton().disabled).toBe(false);
-    }
+    expect(host.querySelector(".track-editor-starters")).toBeNull();
+    expect(host.querySelectorAll(".track-editor-miniature").length).toBeGreaterThan(4);
+    expect(host.querySelectorAll(".track-editor-add[draggable='true']").length).toBeGreaterThan(0);
+    expect(host.querySelectorAll(".track-editor-dropzone").length).toBeGreaterThan(0);
   });
 });
 

@@ -367,6 +367,22 @@ describe("sculpted props fit the call sites that mount them", () => {
     }
   });
 
+  it("keeps the doorway reveal in front of the wall instead of coplanar with it", () => {
+    const room = createMAKEITWORSEApartmentRoomModel({
+      textureSize: TEXTURE_SIZE,
+      variant: "living",
+    });
+    let reveal: Object3D | null = null;
+    room.traverse((node) => {
+      if (node.name === "Doorway reveal") reveal = node;
+    });
+
+    expect(reveal).not.toBeNull();
+    const bounds = new Box3().setFromObject(reveal!);
+    // Wall B's room-facing plane is z=-2.00. A max of exactly -2.00 flickers.
+    expect(bounds.max.z).toBeGreaterThan(-2);
+  });
+
   it("leaves the corridor the course runs down completely clear", () => {
     // The room-local envelope test above is the input to this one, but it is not
     // the claim that matters for gameplay. This measures where the rooms

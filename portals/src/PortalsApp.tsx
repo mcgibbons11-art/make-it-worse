@@ -953,7 +953,9 @@ export function PortalsApp() {
         {notice}
       </p>
       <span className="portals-note">
-        Desktop browser edition · Esc opens this menu
+        {touchControls
+          ? "Touch controls enabled · tap the menu button to pause"
+          : "Keyboard + mouse · Esc opens this menu"}
       </span>
       <a
         className="text-button portals-credits"
@@ -980,7 +982,7 @@ export function PortalsApp() {
           labelledBy="portals-controls-title"
           panelClassName="portals-settings"
         >
-          <ControlsPanel onBack={closeView} />
+          <ControlsPanel onBack={closeView} touchControls={touchControls} />
         </Overlay>
       )}
       {view === "confirm" && pending && (

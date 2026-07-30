@@ -237,26 +237,50 @@ export function SettingsMenu({ onBack }: { readonly onBack: () => void }) {
 }
 
 /** What the keys do, which the shell only ever stated as "WASD · Space · E · R". */
-export function ControlsPanel({ onBack }: { readonly onBack: () => void }) {
+const TOUCH_CONTROLS = [
+  ["Left pad", "Drag to move."],
+  ["JUMP", "Tap to jump."],
+  ["GRAB", "Hold to carry a loose prop, release to throw it forward."],
+  ["Scene", "Drag outside the controls to turn the camera."],
+] as const;
+
+export function ControlsPanel({
+  onBack,
+  touchControls = false,
+}: {
+  readonly onBack: () => void;
+  readonly touchControls?: boolean;
+}) {
   return (
     <>
-      <div className="eyebrow">DESKTOP KEYBOARD</div>
+      <div className="eyebrow">
+        {touchControls ? "TOUCH CONTROLS" : "DESKTOP KEYBOARD"}
+      </div>
       <h2 id="portals-controls-title">How to play</h2>
       <p className="portals-lede">
         Reach the door before the clock runs out. Survive and you get to add one
         awful thing for the next player.
       </p>
       <dl className="portals-controls">
-        {CONTROLS.map((row) => (
-          <div className="portals-control" key={row.action}>
-            <dt>
-              {row.keys.map((key) => (
-                <kbd key={key}>{key}</kbd>
-              ))}
-            </dt>
-            <dd>{row.action}</dd>
-          </div>
-        ))}
+        {touchControls
+          ? TOUCH_CONTROLS.map(([control, action]) => (
+              <div className="portals-control" key={control}>
+                <dt>
+                  <kbd>{control}</kbd>
+                </dt>
+                <dd>{action}</dd>
+              </div>
+            ))
+          : CONTROLS.map((row) => (
+              <div className="portals-control" key={row.action}>
+                <dt>
+                  {row.keys.map((key) => (
+                    <kbd key={key}>{key}</kbd>
+                  ))}
+                </dt>
+                <dd>{row.action}</dd>
+              </div>
+            ))}
       </dl>
       <button className="button primary huge" onClick={onBack}>
         Done

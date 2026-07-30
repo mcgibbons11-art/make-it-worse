@@ -17,7 +17,11 @@ import {
   runStatus,
   type ShellView,
 } from "@/portals/src/menu/shell-state";
-import { Overlay, focusableWithin } from "@/portals/src/menu/ShellPanels";
+import {
+  ControlsPanel,
+  Overlay,
+  focusableWithin,
+} from "@/portals/src/menu/ShellPanels";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -154,6 +158,21 @@ describe("how the menu describes the run behind it", () => {
 });
 
 describe("the controls reference", () => {
+  it("shows the actual touch gestures instead of keyboard bindings on mobile", async () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(
+        createElement(ControlsPanel, { onBack: () => undefined, touchControls: true }),
+      );
+    });
+    expect(host.textContent).toContain("TOUCH CONTROLS");
+    expect(host.textContent).toContain("Left pad");
+    expect(host.textContent).toContain("turn the camera");
+    expect(host.textContent).not.toContain("DESKTOP KEYBOARD");
+    await act(async () => root.unmount());
+  });
+
   it("names a key and an action for every row", () => {
     expect(CONTROLS.length).toBeGreaterThan(0);
     for (const row of CONTROLS) {

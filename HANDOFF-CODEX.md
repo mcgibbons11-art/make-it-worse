@@ -29,9 +29,10 @@ their status claims are now stale. This is the current boundary:
   detail/practical-light contracts, refinement provenance, and extensive geometry
   tests. Do not fabricate formal pipeline review entries; further work is optional
   visual polish, not an objectively closable acceptance item.
-- The remaining 37 Pixabay files are still absent (`CREDITS.json`: 30 filed,
-  37 planned). They require real manual downloads and attribution; automation or
-  invented provenance remains forbidden.
+- The Pixabay pass is complete. All 37 planned downloads were purposefully cut
+  to their mechanic windows, nine sustained beds have seam-crossfaded loops,
+  every output is 44.1 kHz stereo, and all 38 Pixabay recordings have complete
+  title/author/source/original-filename/license provenance. `planned` is empty.
 - The four wearable references called out later (`jersey`, `poncho`, `hightop`,
   and `sandal`) are already implemented in the wardrobe catalog and generated
   model factory. The second-runner ghost is also already recorded, encoded,
@@ -115,10 +116,10 @@ in-flight vacuum files uncommitted (see §3).
 - **Animation pass**: squash/stretch, arm swing, landing settle in PlayerController/runner.
 - **Onboarding**: FirstRunTour, CoachHint, DeathNote, TrapDetailsRow, countdown pill,
   WASD/Space keycaps on the intro card (off the attempt clock).
-- **Audio plumbing**: `AudioManager` derives RECORDED_TRAPS from TRAP_TYPES; per-file
-  peak normalization to SAMPLE_PEAK 0.8414 (−1.5 dBFS); missing files are silent
-  no-ops until present. Dropping a correctly-named mp3 into `public/audio/` is the
-  entire wiring for a trap sound. 17 trap sounds present; 37 missing (see §4 task A).
+- **Audio plumbing and recordings**: `AudioManager` derives RECORDED_TRAPS from
+  TRAP_TYPES and all 53 traps that report audio now ship a reachable recording.
+  Nine new continuous mechanics are registered as held beds so they do not stack
+  long one-shots. Per-file peaks are normalized at decode time.
 - **Portals sync unblocked twice** (see §4 task B for the one remaining step).
 
 ---
@@ -142,7 +143,13 @@ leave it). Remaining work is §4 A (sounds), B (Portals folder switch), D, E, F,
 
 ## 4. THE TASK LIST, in priority order
 
-### A. Pixabay sound effects — 37 traps still silent  *(user-facing, mechanical)*
+### A. Pixabay sound effects — COMPLETE  *(user-facing, mechanical)*
+
+**Completion update**: 37 files were downloaded through the user's browser,
+imported by `scripts/import-pixabay-audio.mjs`, trimmed/time-processed into their
+recorded mechanic windows, resampled to 44.1 kHz stereo, credited, tested, and
+copied into the committed Portals bundle. The historical sourcing workflow below
+is retained as provenance, not an open task.
 
 **State**: `public/audio/CREDITS.json` has a `planned` array — one row per missing
 trap with `trap`, `file` (target filename), `seconds` (duration window), `mechanic`,
@@ -409,7 +416,7 @@ in order: fill-bound environment (shrink canvas to test), shadow pass (halve
 renderer.info draw calls before comparing), the 3.2MB GameCanvas chunk's parse
 cost (one-time, not per-frame — don't confuse startup jank with steady-state).
 
-### 7.4 Audio finishing details (extends task A)
+### 7.4 Audio finishing details (task A is now complete)
 
 - AudioManager normalizes per-file to SAMPLE_PEAK (−1.5 dBFS) at decode time, so
   don't loudness-match files by hand — just avoid clipped sources.

@@ -89,6 +89,23 @@ The repository does not currently integrate a CAPTCHA widget. If CAPTCHA is
 enabled for anonymous sign-in in Supabase, add a client challenge flow and pass
 its token to `signInAnonymously` before enabling it for production.
 
+## Trap audio
+
+`public/audio/CREDITS.json` is the source-of-truth provenance manifest. Every
+trap that reports an audio contact has a recording; Pixabay-derived files retain
+their source/search URL, title, author, original filename, license, and processing
+note. Raw browser downloads live in the ignored `sound effects/` folder.
+
+To reproduce the 2026-07-29 cuts from those raw downloads:
+
+```powershell
+pnpm import:pixabay-audio
+```
+
+The importer creates 44.1 kHz stereo MP3 excerpts and crossfades the seams of
+continuous beds. Rebuild `portals/dist` afterward so the static edition receives
+the regenerated audio files.
+
 ## Portals build and import
 
 Build the static edition locally first:

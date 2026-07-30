@@ -286,36 +286,13 @@ const RECORDED_TRAPS: readonly TrapType[] = TRAP_TYPES.filter(
 );
 
 /**
- * The trap recordings that ship today, warmed ahead of first use.
- *
- * Deliberately still a hand-written list, and the difference from the one above
- * is what it costs when it goes stale. Stale there meant a shipped file was
- * unreachable for ever, silently. Stale here means the first hit of that trap
- * in a session synthesises instead of playing its file, and every hit after it
- * plays the file — the same "still in flight" path the loader already treats as
- * normal and the fallback test already covers. Warming all fifty-three instead
- * would put thirty-eight sequential 404s in front of `ambient.mp3`, which is
- * the largest file and already the last to warm.
- *
- * Add a key here when its recording lands.
+ * Every reachable trap recording is now present, so warming is derived too.
+ * The old hand-maintained fifteen-item list would make a newly imported sound
+ * synthesise on its first hit even though the file shipped. `NEVER_RECORDED`
+ * remains the honest exception for laundry_basket, whose trap reports no audio
+ * contact at all.
  */
-const WARMED_TRAPS = [
-  "swinging_hammer",
-  "rolling_fridge",
-  "floor_fan",
-  "soap_slick",
-  "spring_pad",
-  "angry_vacuum",
-  "rotating_toilet",
-  "giant_beach_ball",
-  "toaster_launcher",
-  "ceiling_fan",
-  "banana_peel",
-  "robot_mop",
-  "mousetrap",
-  "sprinkler",
-  "fridge_magnet",
-] as const satisfies readonly TrapType[];
+const WARMED_TRAPS: readonly TrapType[] = RECORDED_TRAPS;
 
 const RECORDED = new Set<SampleKey>([...CUE_KEYS, ...RECORDED_TRAPS, "ambient"]);
 
@@ -348,6 +325,15 @@ const SUSTAINED_TRAPS: Partial<
   angry_vacuum: { build: "hum", strike: false },
   sprinkler: { build: "spray", strike: false },
   rotating_toilet: { build: "hum", strike: true },
+  sticky_gum: { build: "spray", strike: false },
+  conveyor_strip: { build: "hum", strike: false },
+  dust_bunny: { build: "hum", strike: false },
+  flood_puddle: { build: "spray", strike: false },
+  updraft_vent: { build: "wind", strike: false },
+  slow_fuse: { build: "wind", strike: false },
+  stove_ring: { build: "hum", strike: false },
+  kettle_boil: { build: "spray", strike: false },
+  junk_drift: { build: "hum", strike: false },
 };
 
 /**
@@ -377,11 +363,11 @@ function severityOf(weight: number): number {
   return SEVERITY_FLOOR + (1 - SEVERITY_FLOOR) * weight;
 }
 
-/** Short cues first, then the traps, then the ambient bed, which is the longest. */
+/** Short cues first, then ambient, then trap recordings. */
 const WARM_ORDER: readonly SampleKey[] = [
   ...CUE_KEYS,
-  ...WARMED_TRAPS,
   "ambient",
+  ...WARMED_TRAPS,
 ];
 
 /**

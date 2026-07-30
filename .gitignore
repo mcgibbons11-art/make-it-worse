@@ -62,6 +62,7 @@ next-env.d.ts
 /.next-*/
 /.playwright-mcp/
 /portals/dist-*/
+/sound effects/
 __pycache__/
 
 # sculpt review renders: regenerable from spec + factory via the preview

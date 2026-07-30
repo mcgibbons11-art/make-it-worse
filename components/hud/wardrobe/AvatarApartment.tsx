@@ -202,7 +202,6 @@ export function AvatarApartment({
         <div>
           <span className="eyebrow">YOUR APARTMENT</span>
           <strong>{room}</strong>
-          <small>WASD to run · hold left click and drag to orbit</small>
         </div>
         <button className="button secondary" onClick={onClose}>Back to menu</button>
       </header>

@@ -1179,6 +1179,14 @@ export function PortalsApp() {
             {secondsLeft === COUNTDOWN_FROM ? "Ten seconds left" : ""}
           </span>
           <div className="hud-actions">
+            <button
+              aria-label="Open how to play"
+              title="How to play"
+              onClick={() => {
+                pause();
+                openView("controls");
+              }}
+            >?</button>
             <button aria-label="Reset attempt (R)" onClick={() => void fail("reset")}>↻</button>
             <button aria-label="Pause game (Escape)" onClick={pause}>Ⅱ</button>
             <button aria-label={settings.muted ? "Unmute audio (M)" : "Mute audio (M)"} onClick={() => settings.toggleMuted()}>♫</button>

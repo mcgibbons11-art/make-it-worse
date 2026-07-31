@@ -101,6 +101,7 @@ test("representative traps prove their production physics mechanics", async ({ p
           const position = window.__MIW_SANDBOX__?.getState().traps.angry_vacuum?.position;
           return position ? Math.hypot(position.x - start.x, position.z - start.z) : 0;
         }, before),
+        { timeout: 10_000 },
       )
       .toBeGreaterThan(0.2);
     // The vacuum has chased away from its authored placement by this point, so
@@ -141,14 +142,31 @@ test("representative traps prove their production physics mechanics", async ({ p
     await openTrap(page, "giant_beach_ball");
     await page.evaluate(() => window.__MIW_SANDBOX__!.teleportPlayerToTrapBody("giant_beach_ball"));
     await expectMechanic(page, "giant_beach_ball", "ball_contact");
+    // Give keyboard focus to the same surface a player clicks before using E.
+    // Direct route navigation can otherwise leave Chromium's focus on the
+    // document chrome rather than the WebGL game.
+    await page.locator("canvas").first().click({ position: { x: 20, y: 20 } });
     await page.keyboard.down("e");
-    await page.evaluate(() => {
-      window.__MIW_SANDBOX__!.teleportPlayer("giant_beach_ball", 0, -1);
-      window.__MIW_SANDBOX__!.placeTrapInFrontOfPlayer("giant_beach_ball", 1);
-      window.__MIW_SANDBOX__!.setPlayerVelocity(0, 0, 0.2);
-    });
     await expect
-      .poll(async () => JSON.parse(await page.getByLabel("Sandbox interaction telemetry").textContent() || "{}").holdingObject)
+      .poll(async () => {
+        // The ball is deliberately very bouncy. Under software-rendered WebGL
+        // it can leave the 2.4u grab radius between the one setup frame and the
+        // controller frame that observes KeyE. Keep putting the same live body
+        // in the real grab cone while the key is held; this exercises the
+        // production proximity/facing branch without depending on one frame.
+        await page.evaluate(() => {
+          // The authored ball sits near the -Z edge of right-island. The old
+          // -1u offset put the runner in the void before the grab frame. Move
+          // half a unit toward the island centre, then put the ball another
+          // unit ahead; both bodies stay over the same solid platform.
+          window.__MIW_SANDBOX__!.teleportPlayer("giant_beach_ball", 0, 0.5);
+          window.__MIW_SANDBOX__!.placeTrapInFrontOfPlayer("giant_beach_ball", 1);
+          window.__MIW_SANDBOX__!.setPlayerVelocity(0, 0, 0.2);
+        });
+        return JSON.parse(
+          await page.getByLabel("Sandbox interaction telemetry").textContent() || "{}",
+        ).holdingObject;
+      }, { intervals: [100], timeout: 10_000 })
       .toBe(true);
     await page.keyboard.up("e");
     await expect

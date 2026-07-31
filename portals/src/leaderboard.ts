@@ -6,7 +6,7 @@
 // can show, rather than throwing into a render path.
 //
 // Type declarations mirror https://portals.to/portals-sdk/portals.d.ts (SDK
-// v1.0.0). The SDK file itself is managed by Portals and must not be vendored.
+// v1.4.0). The SDK file itself is managed by Portals and must not be vendored.
 
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
 
@@ -44,20 +44,24 @@ export interface PortalsNetSession {
   state: Record<string, unknown>;
 }
 
+export interface PortalsNetEvents {
+  message: (data: unknown, fromId: string) => void;
+  playerjoin: (player: PortalsNetPlayer, players: PortalsNetPlayer[]) => void;
+  playerleave: (player: PortalsNetPlayer, players: PortalsNetPlayer[]) => void;
+  state: (key: string, value: unknown) => void;
+  status: (status: "connected" | "disconnected") => void;
+}
+
 export interface PortalsNet {
   join(options?: { channel?: string }): Promise<PortalsNetSession>;
-  leave(): void;
+  leave(): Promise<void>;
   send(data: unknown): void;
   setState(key: string, value: unknown): void;
   getState(key?: string): unknown;
   players(): PortalsNetPlayer[];
-  self(): PortalsNetPlayer;
-  on(event: "message", handler: (data: unknown, fromId: string) => void): void;
-  on(event: "state", handler: (key: string, value: unknown) => void): void;
-  on(event: "status", handler: (status: string) => void): void;
-  off(event: "message", handler: (data: unknown, fromId: string) => void): void;
-  off(event: "state", handler: (key: string, value: unknown) => void): void;
-  off(event: "status", handler: (status: string) => void): void;
+  self(): PortalsNetPlayer | null;
+  on<E extends keyof PortalsNetEvents>(event: E, handler: PortalsNetEvents[E]): void;
+  off<E extends keyof PortalsNetEvents>(event: E, handler: PortalsNetEvents[E]): void;
 }
 
 export interface PortalsSdk {

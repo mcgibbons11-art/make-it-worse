@@ -159,8 +159,22 @@ export async function connectMapSession(
     const stateHandler = (key: string, value: unknown) => {
       if (key === MAP_SESSION_STATE_KEY) accept(value);
     };
+    // Shared state is the primary late-join path, but a processed Portals
+    // preview can occasionally join with an empty initial snapshot while the
+    // already-connected publisher still has the confirmed latest version.
+    // Portals documents `playerjoin` specifically for keeping the live roster
+    // current, so use it as a bounded recovery signal: rebroadcast only the
+    // latest validated map once. Existing peers ignore the duplicate through
+    // `seen`; the new connection receives the version even when its join
+    // snapshot raced the host's state mirror.
+    const playerJoinHandler = () => {
+      if (!latest) return;
+      const response: MapAnnouncement = { ...latest, kind: "miw-map-response" };
+      if (byteLength(response) <= MAP_SESSION_MAX_BYTES) net.send(response);
+    };
     net.on("message", messageHandler);
     net.on("state", stateHandler);
+    net.on("playerjoin", playerJoinHandler);
     accept(joined.state[MAP_SESSION_STATE_KEY]);
 
     const connection: MapSessionConnection = {
@@ -193,6 +207,7 @@ export async function connectMapSession(
       close() {
         net.off("message", messageHandler);
         net.off("state", stateHandler);
+        net.off("playerjoin", playerJoinHandler);
         net.leave();
       },
     };

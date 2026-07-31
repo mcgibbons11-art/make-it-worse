@@ -30,6 +30,7 @@ function installSdk(initialState: Record<string, unknown> = {}) {
     message: [] as Array<(data: unknown, fromId: string) => void>,
     state: [] as Array<(key: string, value: unknown) => void>,
     status: [] as Array<(status: string) => void>,
+    playerjoin: [] as Array<(player: unknown, players: unknown[]) => void>,
   };
   const sent: unknown[] = [];
   const stateWrites: Array<[string, unknown]> = [];
@@ -98,9 +99,35 @@ describe("Portals same-session map protocol", () => {
     host.handlers.message[0]?.({ kind: "miw-map-request", v: MAP_SESSION_PROTOCOL, versionId: runtime.challenge.slug }, "peer");
     expect(parseMapSessionMessage(host.sent.at(-1))).toMatchObject({ kind: "miw-map-response", versionId: runtime.challenge.slug });
 
+    host.handlers.playerjoin[0]?.(
+      { id: "late-peer", playerId: "late-player", displayName: "Late player", avatarUrl: null },
+      [],
+    );
+    expect(parseMapSessionMessage(host.sent.at(-1))).toMatchObject({
+      kind: "miw-map-response",
+      versionId: runtime.challenge.slug,
+    });
+
     result.connection.close();
     expect(host.net.leave).toHaveBeenCalledOnce();
-    expect(host.net.off).toHaveBeenCalledTimes(2);
+    expect(host.net.off).toHaveBeenCalledTimes(3);
+  });
+
+  it("resends validated shared state when a player joins after the publisher", async () => {
+    const lateMap = announcement(23);
+    const host = installSdk({ [MAP_SESSION_STATE_KEY]: lateMap });
+    const result = await connectMapSession(vi.fn());
+    expect(result.status).toBe("ok");
+
+    host.handlers.playerjoin[0]?.(
+      { id: "new-connection", playerId: null, displayName: null, avatarUrl: null },
+      [],
+    );
+
+    expect(parseMapSessionMessage(host.sent.at(-1))).toMatchObject({
+      kind: "miw-map-response",
+      versionId: lateMap.versionId,
+    });
   });
 
   it("ignores corrupted announcements without poisoning the session", async () => {

@@ -135,7 +135,7 @@ export function PersonalBestPill({ challengeSlug }: { challengeSlug: string }) {
           : "No personal best on this challenge yet"
       }
     >
-      {best ? `PB ${formatTime(best.timeMs)}` : "NO PB YET"}
+      {best ? `BEST ${formatTime(best.timeMs)}` : "NO BEST YET"}
     </div>
   );
 }

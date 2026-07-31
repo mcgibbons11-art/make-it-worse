@@ -26,6 +26,7 @@ import {
   AVATAR_EYEWEAR,
   AVATAR_FACES,
   AVATAR_FOOTWEAR,
+  AVATAR_HAIR,
   AVATAR_HEADWEAR,
   AVATAR_HELD,
   AVATAR_LEGWEAR,
@@ -38,6 +39,7 @@ import type {
   AvatarEyewearId,
   AvatarFaceId,
   AvatarFootwearId,
+  AvatarHairId,
   AvatarHeadwearId,
   AvatarHeldId,
   AvatarLegwearId,
@@ -52,6 +54,7 @@ export {
   AVATAR_EYEWEAR,
   AVATAR_FACES,
   AVATAR_FOOTWEAR,
+  AVATAR_HAIR,
   AVATAR_HEADWEAR,
   AVATAR_HELD,
   AVATAR_LEGWEAR,
@@ -64,6 +67,7 @@ export type {
   AvatarEyewearId,
   AvatarFaceId,
   AvatarFootwearId,
+  AvatarHairId,
   AvatarHeadwearId,
   AvatarHeldId,
   AvatarLegwearId,
@@ -100,6 +104,7 @@ export type ColorSlot = "body" | "pack" | WardrobeColorKey;
 
 export interface AvatarGarmentColors {
   headwear: AvatarColorId;
+  hair: AvatarColorId;
   face: AvatarColorId;
   eyewear: AvatarColorId;
   top: AvatarColorId;
@@ -116,6 +121,7 @@ export interface AvatarConfig {
   /** The shoulder straps. Read against the torso, which encloses them. */
   pack: AvatarColorId;
   headwear: AvatarHeadwearId;
+  hair: AvatarHairId;
   face: AvatarFaceId;
   eyewear: AvatarEyewearId;
   top: AvatarTopId;
@@ -135,6 +141,7 @@ export interface ResolvedAvatar {
   bodyColor: string;
   packColor: string;
   headwear: AvatarHeadwearId;
+  hair: AvatarHairId;
   face: AvatarFaceId;
   eyewear: AvatarEyewearId;
   top: AvatarTopId;
@@ -217,6 +224,7 @@ const COLOR_MAP = new Map(AVATAR_COLORS.map((entry) => [entry.id, entry]));
 
 const DEFAULT_GARMENT_COLORS: AvatarGarmentColors = {
   headwear: "ink",
+  hair: "coffee",
   face: "coffee",
   eyewear: "ink",
   top: "cobalt",
@@ -231,6 +239,7 @@ export const DEFAULT_AVATAR: AvatarConfig = {
   body: "violet",
   pack: "cream",
   headwear: "hair",
+  hair: "classic",
   face: "plain",
   eyewear: "none",
   top: "none",
@@ -292,6 +301,7 @@ export function normalizeAvatar(
     body: knownColor(stored.body, DEFAULT_AVATAR.body),
     pack: knownColor(stored.pack, DEFAULT_AVATAR.pack),
     headwear: known(AVATAR_HEADWEAR, stored.headwear, "hair"),
+    hair: known(AVATAR_HAIR, stored.hair, "classic"),
     face: known(AVATAR_FACES, stored.face, "plain"),
     eyewear: known(AVATAR_EYEWEAR, stored.eyewear, "none"),
     top: known(AVATAR_TOPS, stored.top, "none"),
@@ -302,6 +312,7 @@ export function normalizeAvatar(
     held: known(AVATAR_HELD, stored.held, "none"),
     colors: {
       headwear: knownColor(colors.headwear, DEFAULT_GARMENT_COLORS.headwear),
+      hair: knownColor(colors.hair, DEFAULT_GARMENT_COLORS.hair),
       face: knownColor(colors.face, DEFAULT_GARMENT_COLORS.face),
       eyewear: knownColor(colors.eyewear, DEFAULT_GARMENT_COLORS.eyewear),
       top: knownColor(colors.top, DEFAULT_GARMENT_COLORS.top),
@@ -329,6 +340,7 @@ export function resolveAvatar(
       bodyColor,
       packColor: PALETTE.red,
       headwear: "hair",
+      hair: "classic",
       face: "plain",
       eyewear: "none",
       top: "none",
@@ -340,6 +352,11 @@ export function resolveAvatar(
       garmentColors: garmentHexes(DEFAULT_GARMENT_COLORS),
       sculptTints: {
         "torso-purple": bodyColor,
+        // The stock hair cap is hidden by PlayerVisual. Its material is also
+        // used by the baked leg meshes, so repainting it removes the false
+        // permanent trousers when Legs: None is selected.
+        "hair-ink": bodyColor,
+        skin: bodyColor,
         "strap-coral": PALETTE.red,
       },
     };
@@ -350,6 +367,8 @@ export function resolveAvatar(
   const garmentColors = garmentHexes(full.colors);
   const sculptTints: Record<string, string> = {
     "torso-purple": bodyColor,
+    "hair-ink": bodyColor,
+    skin: bodyColor,
     "strap-coral": full.backpack === "none" ? packColor : garmentColors.backpack,
   };
   // Choosing footwear replaces the shoe rather than adding to it, so the
@@ -361,6 +380,7 @@ export function resolveAvatar(
     bodyColor,
     packColor,
     headwear: full.headwear,
+    hair: full.hair,
     // Shades predate the eyewear slot. Where a link or a saved runner carries
     // both, the explicit choice wins and the expression drops back to neutral,
     // so nobody ends up wearing two pairs of sunglasses.
@@ -382,6 +402,7 @@ function garmentHexes(
 ): Readonly<Record<WardrobeColorKey, string>> {
   return {
     headwear: COLOR_MAP.get(colors.headwear)!.hex,
+    hair: COLOR_MAP.get(colors.hair)!.hex,
     face: COLOR_MAP.get(colors.face)!.hex,
     eyewear: COLOR_MAP.get(colors.eyewear)!.hex,
     top: COLOR_MAP.get(colors.top)!.hex,
@@ -536,6 +557,11 @@ export function colorRejection(
   body: AvatarColorId,
 ): AvatarRejection | null {
   const hex = avatarColor(id);
+  // Hair is a small high-mounted detail rather than part of the silhouette a
+  // player tracks against the deck, so every authored swatch remains
+  // available. This is the one wardrobe slot intended as unrestricted color
+  // expression rather than a gameplay-readability surface.
+  if (slot === "hair") return null;
   if (slot === "pack") {
     const bodyHex = avatarColor(body);
     const ratio = contrastRatio(hex, bodyHex);
@@ -635,20 +661,64 @@ export function randomAvatar(random: () => number = Math.random): AvatarConfig {
   const body = pick(usableColors("body", "violet")).id;
   const garment = (key: WardrobeColorKey): AvatarColorId =>
     pick(usableColors(key, body)).id;
+  const headwear = wardrobePick<AvatarHeadwearId>("headwear");
+  let hair = wardrobePick<AvatarHairId>("hair");
+  let face = wardrobePick<AvatarFaceId>("face");
+  let eyewear = wardrobePick<AvatarEyewearId>("eyewear");
+  let top = wardrobePick<AvatarTopId>("top");
+  let outerwear = wardrobePick<AvatarOuterwearId>("outerwear");
+  let backpack = wardrobePick<AvatarBackpackId>("backpack");
+  // Randomize is a presentation shortcut, so it should produce a curated
+  // outfit rather than blindly stacking mutually occluding face layers. A
+  // manually built avatar may keep those serialized choices; the renderer
+  // hides them naturally behind a full-face helmet.
+  if (headwear === "helmet") {
+    hair = "none";
+    face = "plain";
+    eyewear = "none";
+  } else if (headwear === "visor") {
+    // The visor is already a face-wide lens. A second face layer or glasses
+    // underneath turns the random preview into a stack of intersecting slabs.
+    // Players can still deliberately build that combination themselves.
+    face = "plain";
+    eyewear = "none";
+  } else if (face === "mask") {
+    eyewear = "none";
+    if (headwear !== "hair" && headwear !== "band") face = "plain";
+  }
+  const openHairHeadwear = ["hair", "band", "visor", "earmuffs", "headphones"];
+  if (!openHairHeadwear.includes(headwear)) hair = "none";
+  const bulkyOuter = outerwear === "puffer" || outerwear === "poncho";
+  if (bulkyOuter) {
+    // These are complete torso silhouettes. Randomly adding a shirt and pack
+    // beneath/behind them produces visual noise without showing either item.
+    top = "none";
+    backpack = "none";
+  } else if (outerwear === "harness") {
+    // Harness straps need a quiet field behind them to remain recognizable in
+    // the compact preview. Patterned tops and packs can still be chosen by
+    // hand, but Randomize presents the harness over the runner's body.
+    top = "none";
+    backpack = "none";
+  }
+  if ((backpack === "cape" || backpack === "wings") && outerwear !== "none")
+    outerwear = "none";
   return {
     body,
     pack: pick(usableColors("pack", body)).id,
-    headwear: wardrobePick<AvatarHeadwearId>("headwear"),
-    face: wardrobePick<AvatarFaceId>("face"),
-    eyewear: wardrobePick<AvatarEyewearId>("eyewear"),
-    top: wardrobePick<AvatarTopId>("top"),
-    outerwear: wardrobePick<AvatarOuterwearId>("outerwear"),
+    headwear,
+    hair,
+    face,
+    eyewear,
+    top,
+    outerwear,
     legwear: wardrobePick<AvatarLegwearId>("legwear"),
     footwear: wardrobePick<AvatarFootwearId>("footwear"),
-    backpack: wardrobePick<AvatarBackpackId>("backpack"),
+    backpack,
     held: wardrobePick<AvatarHeldId>("held"),
     colors: {
       headwear: garment("headwear"),
+      hair: garment("hair"),
       face: garment("face"),
       eyewear: garment("eyewear"),
       top: garment("top"),
@@ -743,6 +813,10 @@ const CODE_FIELDS: readonly CodeField[] = [
   // Appended so every pre-colour wardrobe code keeps every earlier position.
   { kind: "garment", key: "face" },
   { kind: "garment", key: "eyewear" },
+  // Hair shipped after the original wardrobe code. Append-only keeps every
+  // earlier character in every shared runner code stable.
+  { kind: "item", slot: "hair" },
+  { kind: "garment", key: "hair" },
 ];
 
 export const WARDROBE_CODE_LENGTH = CODE_FIELDS.length;

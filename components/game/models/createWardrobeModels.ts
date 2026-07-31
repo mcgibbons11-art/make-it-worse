@@ -54,6 +54,9 @@
 
 import * as THREE from "three";
 import { PALETTE } from "@/lib/game/constants";
+import { createHeadwearUpgradeModel } from "./createHeadwearUpgradeModels";
+import { createHairStyleModel } from "./createHairModels";
+import { createWearableUpgradeModel } from "./createWearableUpgradeModels";
 import type {
   AvatarBackpackId,
   AvatarEyewearId,
@@ -179,7 +182,7 @@ export const HELD_MIN_X = 0.33;
 
 // --- Materials --------------------------------------------------------------
 
-export type WardrobeTint = "main" | "trim" | "ink" | "cream" | "steel" | "glow";
+export type WardrobeTint = "main" | "trim" | "hairShadow" | "skin" | "ink" | "cream" | "steel" | "glow";
 
 /**
  * Every template mesh is built against this and never renders with it. Roles
@@ -226,7 +229,7 @@ function trimOf(main: string): THREE.Color {
  * in gated slots, so they take the wearer's colour rather than the dark navy
  * the hand-authored props use.
  */
-function makePalette(main: string): Record<WardrobeTint, THREE.Material> {
+function makePalette(main: string, skinColor: string): Record<WardrobeTint, THREE.Material> {
   const cloth = (color: THREE.ColorRepresentation) =>
     new THREE.MeshStandardMaterial({
       color,
@@ -239,6 +242,11 @@ function makePalette(main: string): Record<WardrobeTint, THREE.Material> {
   return {
     main: cloth(main),
     trim: cloth(trimOf(main)),
+    // Hair needs modelling contrast without suddenly turning cream or grey.
+    // Keeping this role in the selected hue fixes the pale chunks that made
+    // curls, locs and puff buns look like separate accessories.
+    hairShadow: cloth(new THREE.Color(main).multiplyScalar(0.62)),
+    skin: cloth(skinColor),
     ink: cloth(PALETTE.ink),
     cream: cloth(PALETTE.cream),
     steel: new THREE.MeshStandardMaterial({
@@ -542,6 +550,7 @@ export const SOCKETS = {
   handRight: "Hand right__pivot",
   legLeft: "Leg left__pivot",
   legRight: "Leg right__pivot",
+  pelvis: "Leg mass__pivot",
   shoeLeft: "Sneaker left__pivot",
   shoeRight: "Sneaker right__pivot",
   shoulderLeft: "Shoulder cap left__pivot",
@@ -686,27 +695,7 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       return [band, brim];
     }
     case "helmet": {
-      // Full-face motorcycle helmet: the old item was a round cap with one
-      // stripe, so it read as the stock hair shell in a different colour.
-      const shellGeometry = new THREE.SphereGeometry(1, 26, 16, 0, Math.PI * 2, 0, Math.PI * 0.58);
-      shellGeometry.scale(0.385, 0.37, 0.375);
-      const shell = part(shellGeometry, "main", { x: 0, y: 0.075, z: -0.018 });
-      const visor = part(slab(0.61, 0.12, 0.035), "ink", { x: 0, y: 0.02, z: 0.338 });
-      visor.rotation.x = -0.08;
-      const chin = part(slab(0.56, 0.12, 0.09), "main", { x: 0, y: -0.25, z: 0.215 });
-      chin.rotation.x = -0.16;
-      const leftJaw = part(slab(0.09, 0.24, 0.11), "main", { x: -0.305, y: -0.15, z: 0.16 });
-      leftJaw.rotation.z = -0.22;
-      const rightJaw = leftJaw.clone();
-      rightJaw.position.x = 0.305;
-      rightJaw.rotation.z = 0.22;
-      const leftPivot = part(tube(0.055, 0.055, 0.025, 16), "steel", { x: -0.345, y: -0.05, z: 0.205 });
-      leftPivot.rotation.z = Math.PI / 2;
-      const rightPivot = leftPivot.clone();
-      rightPivot.position.x = 0.345;
-      const stripe = part(slab(0.065, 0.32, 0.025), "trim", { x: 0, y: 0.245, z: 0.265 });
-      stripe.rotation.x = -0.56;
-      return [shell, visor, chin, leftJaw, rightJaw, leftPivot, rightPivot, stripe];
+      return [createHeadwearUpgradeModel("helmet")];
     }
     case "tophat": {
       const brim = part(tube(0.4, 0.4, 0.026, 26), "main", { x: 0, y: 0.13, z: -0.01 });
@@ -716,47 +705,10 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       return [hatCrown(-0.02, 0.19), brim, stack, band];
     }
     case "crown": {
-      const base = part(tube(0.335, 0.29, 0.13, 26, true), "main", { x: 0, y: 0.14, z: -0.012 });
-      const lowerBand = part(ring(0.326, 0.032), "trim", { x: 0, y: 0.085, z: -0.012 });
-      lowerBand.rotation.x = Math.PI / 2;
-      const points: THREE.Object3D[] = [];
-      for (let index = 0; index < 7; index++) {
-        const angle = (index / 7) * Math.PI * 2;
-        const tall = index % 2 === 0;
-        const height = tall ? 0.31 : 0.23;
-        const spike = part(new THREE.ConeGeometry(tall ? 0.072 : 0.062, height, 4), "main", {
-          x: Math.sin(angle) * 0.275,
-          y: 0.28 + height / 2,
-          z: Math.cos(angle) * 0.275 - 0.012,
-        });
-        spike.rotation.y = -angle + Math.PI / 4;
-        const pearl = part(ball(0.038, 0.038, 0.038), "cream", {
-          x: Math.sin(angle) * 0.275,
-          y: 0.29 + height,
-          z: Math.cos(angle) * 0.275 - 0.012,
-        });
-        points.push(spike, pearl);
-      }
-      const jewels = [-1, 0, 1].map((offset) => {
-        const jewel = part(new THREE.OctahedronGeometry(0.045, 0), offset === 0 ? "glow" : "trim", {
-          x: offset * 0.14,
-          y: 0.145,
-          z: 0.302,
-        });
-        jewel.scale.y = 1.25;
-        return jewel;
-      });
-      return [base, lowerBand, ...points, ...jewels];
+      return [createHeadwearUpgradeModel("crown")];
     }
     case "cowboy": {
-      const brim = part(tube(0.45, 0.4, 0.034, 26), "main", { x: 0, y: 0.095, z: -0.01 });
-      brim.scale.z = 1.08;
-      const crown = part(ball(0.28, 0.24, 0.26), "main", { x: 0, y: 0.315, z: -0.025 });
-      crown.scale.x = 0.92;
-      const crease = part(slab(0.07, 0.19, 0.34), "trim", { x: 0, y: 0.39, z: -0.025 });
-      const band = part(ring(0.285, 0.024), "trim", { x: 0, y: 0.17, z: -0.018 });
-      band.rotation.x = Math.PI / 2;
-      return [brim, crown, crease, band];
+      return [createHeadwearUpgradeModel("cowboy")];
     }
     case "earmuffs": {
       const band = part(ring(0.375, 0.032, Math.PI), "main", { x: 0, y: -0.055, z: -0.035 });
@@ -767,12 +719,7 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       ];
     }
     case "beret": {
-      const cap = part(ball(0.352, 0.115, 0.342), "main", { x: 0, y: 0.285, z: -0.045 });
-      cap.rotation.z = 0.2;
-      const brim = part(ring(0.302, 0.024), "trim", { x: -0.016, y: 0.225, z: -0.03 });
-      brim.rotation.x = Math.PI / 2;
-      const nub = part(ball(0.03, 0.035, 0.03), "trim", { x: 0.045, y: 0.415, z: -0.05 });
-      return [cap, brim, nub];
+      return [createHeadwearUpgradeModel("beret")];
     }
     case "headphones": {
       // wear-headphones.png: a padded band over the crown in the contrast
@@ -831,11 +778,7 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
     case "plain":
       return [];
     case "grin": {
-      const mouth = part(ring(0.085, 0.018, Math.PI), "main", { x: 0, y: -0.19, z: 0.312 });
-      mouth.rotation.z = Math.PI;
-      mouth.rotation.x = 0.16;
-      const teeth = part(slab(0.13, 0.022, 0.014), "cream", { x: 0, y: -0.184, z: 0.328 });
-      return [mouth, teeth];
+      return [createHeadwearUpgradeModel("grin")];
     }
     case "focused":
       return [browBar(-1, 0.072, 0.34), browBar(1, 0.072, 0.34)];
@@ -868,17 +811,7 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [make(-1), make(1)];
     }
     case "beard": {
-      const cheek = (side: -1 | 1) => {
-        const tuft = part(ball(0.105, 0.08, 0.075), "main", {
-          x: side * 0.145,
-          y: -0.18,
-          z: 0.225,
-        });
-        tuft.rotation.z = side * 0.18;
-        return tuft;
-      };
-      const chin = part(ball(0.17, 0.07, 0.105), "main", { x: 0, y: -0.255, z: 0.205 });
-      return [cheek(-1), cheek(1), chin];
+      return [createHeadwearUpgradeModel("beard")];
     }
     case "goatee": {
       const patch = part(ball(0.075, 0.045, 0.035), "main", { x: 0, y: -0.195, z: 0.294 });
@@ -908,15 +841,7 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [stripe(-1), stripe(1)];
     }
     case "mask": {
-      const cover = part(ball(0.225, 0.14, 0.09), "main", { x: 0, y: -0.17, z: 0.275 });
-      cover.rotation.x = -0.12;
-      const foldTop = part(slab(0.34, 0.018, 0.018), "trim", { x: 0, y: -0.12, z: 0.36 });
-      const foldBottom = part(slab(0.27, 0.016, 0.016), "trim", { x: 0, y: -0.205, z: 0.35 });
-      const loopLeft = part(ring(0.115, 0.012), "cream", { x: -0.31, y: -0.145, z: 0.1 });
-      loopLeft.rotation.y = Math.PI / 2;
-      const loopRight = part(ring(0.115, 0.012), "cream", { x: 0.31, y: -0.145, z: 0.1 });
-      loopRight.rotation.y = Math.PI / 2;
-      return [cover, foldTop, foldBottom, loopLeft, loopRight];
+      return [createHeadwearUpgradeModel("mask")];
     }
   }
 }
@@ -975,55 +900,13 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
       return [assembly];
     }
     case "goggles": {
-      const frame = part(ring(0.105, 0.021), "main", { x: 0, y: HEAD.eye.y, z: 0.329 });
-      frame.scale.x = 2.45;
-      frame.scale.y = 1.03;
-      const lens = part(ball(0.235, 0.086, 0.025), "steel", { x: 0, y: HEAD.eye.y, z: 0.334 });
-      const strap = part(ring(0.34, 0.038), "trim", { x: 0, y: HEAD.eye.y + 0.008, z: -0.012 });
-      strap.rotation.x = Math.PI / 2;
-      const vents = [-0.12, 0, 0.12].map((x) =>
-        part(slab(0.055, 0.014, 0.016), "cream", { x, y: HEAD.eye.y + 0.105, z: 0.325 }),
-      );
-      return [strap, lens, frame, ...vents];
+      return [createHeadwearUpgradeModel("goggles")];
     }
     case "aviator": {
-      const lens = (side: -1 | 1) => {
-        const glass = part(ball(0.068, 0.05, 0.02), "main", {
-          x: side * 0.112,
-          y: HEAD.eye.y - 0.006,
-          z: 0.286,
-        });
-        glass.rotation.z = -side * 0.12;
-        return glass;
-      };
-      const assembly = group(
-        lens(-1),
-        lens(1),
-        bridge(0.08, HEAD.eye.y + 0.024),
-        bridge(0.07, HEAD.eye.y + 0.004),
-        temple(-1),
-        temple(1),
-      );
-      assembly.position.z = 0.05;
-      return [assembly];
+      return [createHeadwearUpgradeModel("aviator")];
     }
     case "visorband": {
-      const visor = part(plate(0.325, 0.12, 1.9), "main", { x: 0, y: HEAD.eye.y, z: 0 });
-      const connector = (side: -1 | 1) => {
-        const arm = part(slab(0.045, 0.045, 0.245), "trim", {
-          x: side * 0.305,
-          y: HEAD.eye.y,
-          z: 0.105,
-        });
-        const hinge = part(tube(0.045, 0.045, 0.024, 14), "steel", {
-          x: side * 0.327,
-          y: HEAD.eye.y,
-          z: -0.015,
-        });
-        hinge.rotation.z = Math.PI / 2;
-        return group(arm, hinge);
-      };
-      return [visor, connector(-1), connector(1)];
+      return [createHeadwearUpgradeModel("visorband")];
     }
   }
 }
@@ -1141,23 +1024,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       shell.add(part(torsoShell(0.03, 0.115, 0.019), "cream"));
       return [shell];
     case "tank": {
-      // wear-tank.png: a plain coral body under one continuous cream binding
-      // that runs round the neckline, over each shoulder and down the armhole.
-      // The binding is the whole of the garment's second colour, and it is
-      // what this was missing.
-      //
-      // It goes round as a full ring because the shell is a lathe and has one
-      // height all the way round. The reference's front scoop is not a shape
-      // this can hold, so what is bound here is the edge that exists.
-      shell.add(part(torsoShell(HEM, 0.155, 0.014), "main"));
-      const neckline = part(ring(torsoRadius(0.155) + 0.016, 0.015), "cream", {
-        x: 0,
-        y: 0.155,
-        z: 0,
-      });
-      neckline.rotation.x = Math.PI / 2;
-      shell.add(neckline);
-      return [shell, tankStrap(-1), tankStrap(1), armholeBinding(-1), armholeBinding(1)];
+      return [createWearableUpgradeModel("tank")];
     }
     case "stripes": {
       // No reference. Three deep bands in the derived trim read as shading on
@@ -1233,23 +1100,6 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       return [shell];
     }
   }
-}
-
-/**
- * The cream edge the tank's binding leaves along each armhole.
- *
- * Set just outboard of the strap it edges rather than round it, because the
- * cream in wear-tank.png runs along the armhole side of the strap and stops
- * there. Its own arc matches tankStrap's so the two read as one bound piece.
- */
-function armholeBinding(side: -1 | 1): THREE.Mesh {
-  const band = part(ring(0.118, 0.013, Math.PI), "cream", {
-    x: side * 0.173,
-    y: 0.155,
-    z: 0,
-  });
-  band.rotation.y = Math.PI / 2;
-  return band;
 }
 
 /** An over-the-shoulder strap, arcing front to back where a strap would. */
@@ -1378,23 +1228,10 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       return [shell];
     }
     case "puffer": {
-      // wear-puffer.png: horizontal quilted baffles, a full-length zip in a
-      // dark contrast, and a stand collar (built on the neck socket below).
-      for (const y of [HEM + 0.05, HEM + 0.15, HEM + 0.25, HEM + 0.35, HEM + 0.44])
-        shell.add(part(torsoShell(y - 0.045, y + 0.045, 0.042), "main"));
-      // A curved strip rather than a flat slab, so the zip follows the barrel
-      // of the baffles instead of standing off it at the shoulders.
-      shell.add(part(plate(0.305, 0.44, 0.22), "trim", { x: 0, y: HEM + 0.245, z: 0 }));
-      return [shell];
+      return [createWearableUpgradeModel("puffer")];
     }
     case "vest": {
-      // wear-vest.png: a quilted puffer vest, not a flat one - four horizontal
-      // baffles, a dark full-length zip, and a stand collar in the body colour
-      // (built on the neck socket below).
-      for (const y of [HEM + 0.06, HEM + 0.17, HEM + 0.28, HEM + 0.38])
-        shell.add(part(torsoShell(y - 0.05, y + 0.05, 0.036), "main"));
-      shell.add(part(plate(0.3, 0.42, 0.2), "trim", { x: 0, y: HEM + 0.23, z: 0 }));
-      return [shell];
+      return [createWearableUpgradeModel("vest")];
     }
     case "cape": {
       // wear-cape.png: a bell that flares toward the hem, a rounded collar in a
@@ -1677,10 +1514,9 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       return [cuff, pad];
     }
     case "kilt": {
-      const panel = limbSleeve(LEG, side, -0.02, 0.44, legRadius(0) + 0.01, 0.1, true);
-      const band = limbSleeve(LEG, side, -0.03, 0.05, legRadius(0) + 0.015, legRadius(0) + 0.015);
-      band.userData["wardrobeTint"] = "trim";
-      return [panel, band];
+      // The actual kilt is a single pelvis-mounted garment. Returning no
+      // per-leg tubes prevents it from reading as a pair of shorts.
+      return [];
     }
     case "tights": {
       // No reference. A second skin is the point, so the sleeve stays thin -
@@ -1707,6 +1543,59 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       return [leg, waist, ankle];
     }
   }
+}
+
+/**
+ * A shared waist joins the two animated leg shells into one believable pair
+ * of trousers. It rides the pelvis, not either leg, so it stays centred while
+ * the stride swings underneath it and overlaps the shirt hem by 0.018u.
+ */
+function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
+  if (id === "kneepads" || id === "none") return [];
+  if (id === "kilt") {
+    return [createWearableUpgradeModel("kilt")];
+  }
+  if (id === "tights") {
+    const fitted = part(new THREE.CylinderGeometry(0.178, 0.19, 0.105, 24), "main", {
+      x: 0,
+      y: 0.0525,
+      z: 0,
+    });
+    fitted.scale.z = 0.75;
+    const band = part(new THREE.TorusGeometry(0.179, 0.01, 5, 24), "trim", {
+      x: 0,
+      y: 0.108,
+      z: 0,
+    });
+    band.rotation.x = Math.PI / 2;
+    band.scale.z = 0.75;
+    return [fitted, band];
+  }
+  const yoke = part(new THREE.CylinderGeometry(0.19, 0.205, 0.13, 20), "main", {
+    x: 0,
+    y: 0.065,
+    z: 0,
+  });
+  yoke.scale.z = 0.78;
+  const waistband = part(new THREE.TorusGeometry(0.19, 0.016, 6, 20), "trim", {
+    x: 0,
+    y: 0.13,
+    z: 0,
+  });
+  waistband.rotation.x = Math.PI / 2;
+  waistband.scale.z = 0.78;
+  return [yoke, waistband];
+}
+
+function overallLowerParts(): THREE.Object3D[] {
+  const yoke = part(new THREE.CylinderGeometry(0.195, 0.205, 0.14, 20), "main", {
+    x: 0,
+    y: 0.06,
+    z: 0,
+  });
+  yoke.scale.z = 0.8;
+  const pocket = part(slab(0.11, 0.07, 0.025), "trim", { x: 0, y: 0.08, z: 0.165 });
+  return [yoke, pocket];
 }
 
 // --- Footwear ---------------------------------------------------------------
@@ -1779,39 +1668,7 @@ function footwearFootParts(id: AvatarFootwearId): THREE.Object3D[] {
         part(roundedSlab(SHOE.x * 2.18, 0.05, SHOE.z * 2.04), "cream", { x: 0, y: -0.085, z: 0.005 }),
       ];
     case "sandal": {
-      // wear-sandal.png: a thick cream footbed in two tiers, two straps
-      // CROSSING over the instep, and a sling behind the heel. The sole was
-      // the coloured piece and the straps the dark one, which is the reference
-      // exactly inverted - it reads a sandal as a coloured plank with bars
-      // laid over it.
-      //
-      // The straps are trim rather than the reference's own coloured strap,
-      // and that is the one place this item departs from it. Choosing footwear
-      // repaints the sculpt's sneaker to the wearer's colour, so unlike every
-      // other shoe here there is a main-coloured foot still showing under an
-      // open garment: a main strap lying straight on it would have nothing to
-      // read against. What the reference settles is that the strap contrasts
-      // with the sole, and it still does.
-      const footbed = part(roundedSlab(SHOE.x * 2.08, 0.042, SHOE.z * 2.0), "cream", {
-        x: 0,
-        y: -0.058,
-        z: 0.005,
-      });
-      const midsole = part(roundedSlab(SHOE.x * 2.22, 0.034, SHOE.z * 2.04), "cream", {
-        x: 0,
-        y: -0.092,
-        z: 0.005,
-      });
-      // Rotated about Y rather than Z, so the pair cross in the plane of the
-      // foot the way the reference's do. Rotating about Z would tilt them off
-      // the footbed instead, and would widen the shoe rather than the strap.
-      const strap = (side: -1 | 1) => {
-        const band = part(roundedSlab(SHOE.x * 2.16, 0.028, 0.05), "trim", { x: 0, y: 0.012, z: 0.03 });
-        band.rotation.y = side * 0.55;
-        return band;
-      };
-      const sling = part(ring(0.076, 0.015, Math.PI), "trim", { x: 0, y: 0.006, z: -0.1 });
-      return [footbed, midsole, strap(-1), strap(1), sling];
+      return [createWearableUpgradeModel("sandal")];
     }
     case "cleats": {
       // The shoe is cut from wear-trainers.png, which is the one foot
@@ -1901,10 +1758,7 @@ function backpackParts(id: AvatarBackpackId): THREE.Object3D[] {
       return [body, flap, pocket, buckle, grab];
     }
     case "bedroll": {
-      const roll = part(tube(0.088, 0.088, 0.34, 16), "main", { x: 0, y: 0.09, z: -0.29 });
-      roll.rotation.z = Math.PI / 2;
-      const strap = part(slab(0.035, 0.03, 0.2), "trim", { x: 0, y: 0.09, z: -0.29 });
-      return [roll, strap];
+      return [createWearableUpgradeModel("bedroll")];
     }
     case "jetpack": {
       // wear-jetpack.png: one rounded body with a porthole, swept fins either
@@ -1963,40 +1817,10 @@ function backpackParts(id: AvatarBackpackId): THREE.Object3D[] {
       return [cylinderFor(-1), cylinderFor(1), valve, yoke];
     }
     case "cape": {
-      const cloak = part(
-        new THREE.CylinderGeometry(0.26, 0.38, 0.27 - HEM, 18, 1, true, Math.PI - 1.05, 2.1),
-        "main",
-        { x: 0, y: (0.27 + HEM) / 2, z: 0 },
-      );
-      cloak.name = "Cape cloth";
-      const collar = part(
-        new THREE.CylinderGeometry(0.3, 0.26, 0.075, 18, 1, true, Math.PI - 1.25, 2.5),
-        "trim",
-        { x: 0, y: 0.3, z: 0 },
-      );
-      const tie = part(slab(0.125, 0.028, 0.028), "cream", { x: 0, y: 0.25, z: 0.185 });
-      return [cloak, collar, tie];
+      return [createWearableUpgradeModel("cape")];
     }
     case "wings": {
-      const panel = (side: -1 | 1, rx: number, ry: number, y: number, tilt: number) => {
-        const membrane = part(ball(rx, ry, 0.016), "main", {
-          x: side * (rx + 0.05), y, z: -0.225,
-        });
-        membrane.rotation.z = -side * tilt;
-        const rim = part(ball(rx + 0.013, ry + 0.013, 0.012), "cream", {
-          x: side * (rx + 0.05), y, z: -0.237,
-        });
-        rim.rotation.z = -side * tilt;
-        const back = part(ball(rx, ry, 0.01), "main", {
-          x: side * (rx + 0.05), y, z: -0.255,
-        });
-        back.rotation.z = -side * tilt;
-        return group(rim, membrane, back);
-      };
-      const wing = (side: -1 | 1) =>
-        group(panel(side, 0.15, 0.19, 0.17, 0.35), panel(side, 0.1, 0.1, 0.015, 0.2));
-      const knot = part(ball(0.035, 0.046, 0.03), "cream", { x: 0, y: 0.075, z: -0.216 });
-      return [wing(-1), wing(1), knot];
+      return [createWearableUpgradeModel("wings")];
     }
   }
 }
@@ -2016,9 +1840,7 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
     case "none":
       return [];
     case "flag": {
-      const pole = part(tube(0.012, 0.012, 0.36, 8), "trim", { x: 0.05, y: 0.1, z: 0 });
-      const banner = part(slab(0.01, 0.11, 0.17), "main", { x: 0.05, y: 0.22, z: 0.095 });
-      return [pole, banner];
+      return [createWearableUpgradeModel("flag")];
     }
     case "torch": {
       // wear-torch.png: a pale bowl on a pale handle with a banded collar under
@@ -2061,6 +1883,7 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
       }
       loaf.position.set(0.05, 0.07, 0.02);
       loaf.rotation.x = 0.55;
+      loaf.rotation.y = 0.48;
       return [loaf];
     }
     case "plunger": {
@@ -2077,26 +1900,7 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
       return [handle, collar, cup, rim];
     }
     case "balloon": {
-      // No reference. The string used to rise straight off the fist, which put
-      // the skin 0.027u from the upper arm: not touching, and reading as welded
-      // to it, which is what a player reported as the balloon going through the
-      // body. Measured against the torso it was never close - 0.318 of the
-      // lathe's own radius clear - so the arm is what it was up against.
-      //
-      // The clearance is spent by leaning the string forward, because z is the
-      // only direction there is any. x is pinned between the 0.325u skull the
-      // hand swings past and the deck the runner may not overhang, which is a
-      // corridor 0.125u wide, and a ball wide enough to read as a balloon uses
-      // most of it. Leaning about X keeps every x exactly where it was, so the
-      // skull clearance the old one had is the clearance this one has.
-      const lean = group(
-        part(tube(0.007, 0.007, 0.3, 6), "trim", { x: 0, y: 0.16, z: 0 }),
-        part(ball(0.015, 0.019, 0.015), "trim", { x: 0, y: 0.316, z: 0 }),
-        part(ball(0.05, 0.082, 0.082), "main", { x: 0, y: 0.4, z: 0 }),
-      );
-      lean.position.set(0.048, 0.01, 0);
-      lean.rotation.x = 0.62;
-      return [lean];
+      return [createWearableUpgradeModel("balloon")];
     }
     case "trophy": {
       // wear-trophy.png: a cup with a rolled rim and two ring handles, on a
@@ -2111,14 +1915,36 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
       const foot = part(tube(0.044, 0.044, 0.024, 12), "trim", { x: 0.058, y: 0.024, z: 0 });
       const base = part(tube(0.055, 0.055, 0.018, 12), "trim", { x: 0.058, y: 0.004, z: 0 });
       const grip = (side: -1 | 1) => {
-        const loop = part(ring(0.031, 0.009), "main", { x: 0.058, y: 0.15, z: side * 0.06 });
-        loop.rotation.y = Math.PI / 2;
+        // TorusGeometry already faces the chase camera. The previous handles
+        // were arranged in depth and then turned edge-on, so they vanished.
+        const loop = part(ring(0.031, 0.009), "main", { x: 0.058 + side * 0.062, y: 0.15, z: 0 });
         return loop;
       };
       return [cup, rim, stem, knop, foot, base, grip(-1), grip(1)];
     }
   }
 }
+
+export interface GripSpec {
+  /** Authored point that must sit inside the palm. */
+  gripPoint: readonly [number, number, number];
+  /** Per-item presentation angle; broad faces should read from chase view. */
+  rotation: readonly [number, number, number];
+  /** Readability scale after the grip point has been moved to the origin. */
+  scale: readonly [number, number, number];
+  /** Small outboard offset from the hand centre. */
+  handOffset: readonly [number, number, number];
+}
+
+export const HELD_GRIPS: Readonly<Record<Exclude<AvatarHeldId, "none">, GripSpec>> = {
+  flag: { gripPoint: [0.05, 0, 0], rotation: [0, 0.24, -0.3], scale: [1.02, 1.42, 1.42], handOffset: [0.055, 0, 0.015] },
+  torch: { gripPoint: [0.055, 0.015, 0], rotation: [0, 0.08, -0.08], scale: [1.15, 1.75, 1.75], handOffset: [0.07, 0, 0] },
+  umbrella: { gripPoint: [0.055, 0.22, 0], rotation: [-0.08, -0.18, 0.16], scale: [1.15, 1.65, 1.65], handOffset: [0.07, 0, 0.02] },
+  baguette: { gripPoint: [0.05, 0.07, 0.02], rotation: [-0.08, 0.28, 0.72], scale: [1.35, 1.62, 1.82], handOffset: [0.21, 0, 0.01] },
+  plunger: { gripPoint: [0.058, 0.055, 0], rotation: [0.12, 0.24, -0.12], scale: [1.25, 1.65, 1.75], handOffset: [0.13, 0, 0.02] },
+  balloon: { gripPoint: [0.048, 0.01, 0], rotation: [0, 0.05, -0.08], scale: [1.45, 1.7, 1.7], handOffset: [0.09, 0, 0.02] },
+  trophy: { gripPoint: [0.058, 0.055, 0], rotation: [0, 0.08, -0.08], scale: [1.2, 1.7, 1.7], handOffset: [0.115, 0, 0.015] },
+};
 
 // --- Assembly ---------------------------------------------------------------
 
@@ -2128,11 +1954,26 @@ function specsFor(look: ResolvedAvatar): Spec[] {
     specs.push({ socket, key, build: () => group(...parts()) });
   };
 
+  // Open accessories do not replace a hairstyle. Full hats still tuck it to
+  // avoid two complete skull shells occupying the same space, but a visor,
+  // headband, earmuffs or headphones must never make a selected hair choice
+  // silently disappear.
+  const hairVisible = (["hair", "band", "visor", "earmuffs", "headphones"] as const)
+    .includes(look.headwear as "hair" | "band" | "visor" | "earmuffs" | "headphones");
+  if (look.hair !== "none" && hairVisible)
+    add(SOCKETS.head, `hair:${look.hair}`, () => [
+      createHairStyleModel(look.hair, look.garmentColors.hair),
+    ]);
   if (look.headwear !== "hair")
     add(SOCKETS.head, `headwear:${look.headwear}`, () => headwearParts(look.headwear));
-  if (look.face !== "plain")
+  // A full-face motorcycle helmet owns the entire face plane. Rendering a
+  // mask, beard, or glasses underneath its visor turns the front into a stack
+  // of intersecting slabs; keep those choices serialized, but occlude them the
+  // same way a real helmet does while it is worn.
+  const faceCoveredByHelmet = look.headwear === "helmet";
+  if (look.face !== "plain" && !faceCoveredByHelmet)
     add(SOCKETS.head, `face:${look.face}`, () => facePartsFor(look.face));
-  if (look.eyewear !== "none")
+  if (look.eyewear !== "none" && !faceCoveredByHelmet)
     add(SOCKETS.head, `eyewear:${look.eyewear}`, () => eyewearParts(look.eyewear));
 
   if (look.top !== "none") {
@@ -2145,10 +1986,20 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         add(socket, `topSleeve:${look.top}:${side}`, () => [
           sleeve(side, reach, "main", DEEP_CUFFS[look.top], SLEEVE_HOOPS[look.top]),
         ]);
-    for (const [socket] of SHOULDER_SOCKETS)
-      add(socket, `topShoulder:${look.top}`, () => [
-        shoulderPad(0.092, "main", SHOULDER_BANDS[look.top]),
-      ]);
+    // A tank top has cut armholes by definition. The generic shoulder caps
+    // turned it back into a T-shirt and were the source of its floating hoop.
+    if (look.top !== "tank")
+      for (const [socket] of SHOULDER_SOCKETS)
+        add(socket, `topShoulder:${look.top}`, () => [
+          shoulderPad(0.092, "main", SHOULDER_BANDS[look.top]),
+        ]);
+    if (look.top === "overalls" && look.legwear === "none") {
+      add(SOCKETS.pelvis, "topPelvis:overalls", overallLowerParts);
+      for (const [socket, side] of LEG_SOCKETS)
+        add(socket, `topOverallLeg:overalls:${side}`, () => [
+          limbSleeve(LEG, side, -0.02, 0.52, legRadius(0) + 0.018, legRadius(0.52) + 0.024),
+        ]);
+    }
   }
 
   if (look.outerwear !== "none") {
@@ -2165,9 +2016,12 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         ]);
   }
 
-  if (look.legwear !== "none")
-    for (const [socket, side] of LEG_SOCKETS)
-      add(socket, `legwear:${look.legwear}:${side}`, () => legwearParts(look.legwear, side));
+  if (look.legwear !== "none") {
+    add(SOCKETS.pelvis, `legwearPelvis:${look.legwear}`, () => pelvisLegwearParts(look.legwear));
+    if (look.legwear !== "kilt")
+      for (const [socket, side] of LEG_SOCKETS)
+        add(socket, `legwear:${look.legwear}:${side}`, () => legwearParts(look.legwear, side));
+  }
 
   if (look.footwear !== "none") {
     for (const [socket, side] of LEG_SOCKETS)
@@ -2176,6 +2030,9 @@ function specsFor(look: ResolvedAvatar): Spec[] {
       );
     for (const [socket] of SHOE_SOCKETS)
       add(socket, `shoeFoot:${look.footwear}`, () => footwearFootParts(look.footwear));
+  } else {
+    for (const [socket] of SHOE_SOCKETS)
+      add(socket, "bareFoot:none", () => [createWearableUpgradeModel("barefoot")]);
   }
 
   if (look.backpack !== "none")
@@ -2183,26 +2040,13 @@ function specsFor(look: ResolvedAvatar): Spec[] {
 
   if (look.held !== "none")
     add(SOCKETS.handRight, `held:${look.held}`, () => {
-      // Every authored handle crosses x=.05/y=0. Move that grip to the local
-      // origin before scaling, then seat it in the outboard half of the palm.
-      // X stays at authored size: widening a handle makes it miss the hand and
-      // widening a balloon makes it swing through the head. Height and depth
-      // get the readable-size pass the props need on screen.
-      const readableScale: Record<Exclude<AvatarHeldId, "none">, number> = {
-        flag: 2,
-        torch: 2,
-        umbrella: 1.85,
-        baguette: 2.05,
-        plunger: 1.9,
-        balloon: 1.9,
-        trophy: 1.9,
-      };
+      const spec = HELD_GRIPS[look.held as Exclude<AvatarHeldId, "none">];
       const contents = group(...heldParts(look.held));
-      contents.position.x = -0.05;
+      contents.position.set(-spec.gripPoint[0], -spec.gripPoint[1], -spec.gripPoint[2]);
       const prop = group(contents);
-      prop.position.x = 0.055;
-      const size = readableScale[look.held as Exclude<AvatarHeldId, "none">];
-      prop.scale.set(1, size, size);
+      prop.position.set(...spec.handOffset);
+      prop.rotation.set(...spec.rotation);
+      prop.scale.set(...spec.scale);
       return [prop];
     });
 
@@ -2213,6 +2057,8 @@ function specsFor(look: ResolvedAvatar): Spec[] {
 function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
   const slot = key.slice(0, key.indexOf(":"));
   switch (slot) {
+    case "hair":
+      return "hair";
     case "headwear":
       return "headwear";
     case "face":
@@ -2220,6 +2066,8 @@ function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
     case "eyewear":
       return "eyewear";
     case "top":
+    case "topPelvis":
+    case "topOverallLeg":
     case "topSleeve":
     case "topShoulder":
     case "topCollar":
@@ -2229,9 +2077,11 @@ function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
     case "outerCollar":
       return "outerwear";
     case "legwear":
+    case "legwearPelvis":
       return "legwear";
     case "shoeShin":
     case "shoeFoot":
+    case "bareFoot":
       return "footwear";
     case "pack":
       return "backpack";
@@ -2303,7 +2153,7 @@ export function createWardrobeAttachments(look: ResolvedAvatar): WardrobeAttachm
     const colorKey = paletteKeyFor(spec.key);
     let palette = palettes.get(colorKey);
     if (!palette) {
-      palette = makePalette(look.garmentColors[colorKey]);
+      palette = makePalette(look.garmentColors[colorKey], look.bodyColor);
       palettes.set(colorKey, palette);
     }
     const node = templateFor(spec).clone(true);

@@ -113,14 +113,17 @@ export function dressRunner(
 ): THREE.Group {
   const clone = runnerPrototype().clone(true);
   const look = resolveAvatar(avatar, avatarSeed);
-  // This is the no-hat hairstyle, not a base layer for every hat. Leaving it
-  // visible made caps, crowns, and helmets intersect it or render behind it.
+  // The old sculpt cap is no longer the hidden default under every hat. Hair
+  // is now a real wardrobe slot with twenty generated styles, including the
+  // classic crop, so the baked cap stays off for every combination.
   const stockHair = clone.getObjectByName("Hair cap__pivot");
-  if (stockHair) stockHair.visible = look.headwear === "hair";
+  if (stockHair) stockHair.visible = false;
   // The sculpt's shoulder caps are the sleeves of its baked-in purple shirt,
   // not anatomy. Real tops author their own sleeves; leaving these underneath
   // made Top: None look like a shirt and made sleeveless tops grow T-shirt
-  // cuffs. The torso itself stays as the runner's body-coloured base surface.
+  // cuffs. The torso, arms and legs now share the chosen body colour, so None
+  // is genuinely the unclothed character instead of a permanent shirt/pants
+  // outfit hiding below every wardrobe option.
   clone.getObjectByName("Shoulder cap left__pivot")?.removeFromParent();
   clone.getObjectByName("Shoulder cap right__pivot")?.removeFromParent();
   const showPackStraps = look.backpack !== "none";
@@ -134,6 +137,15 @@ export function dressRunner(
   const rightStockSole = clone.getObjectByName("Sole right");
   if (leftStockSole) leftStockSole.visible = false;
   if (rightStockSole) rightStockSole.visible = false;
+  // Sandals are complete replacements with an authored foot, footbed and
+  // straps. Leaving the baked closed sneaker underneath made them closed shoes
+  // with bars laid over the top.
+  if (look.footwear === "none" || look.footwear === "sandal") {
+    const leftStockShoe = clone.getObjectByName("Sneaker left");
+    const rightStockShoe = clone.getObjectByName("Sneaker right");
+    if (leftStockShoe) leftStockShoe.visible = false;
+    if (rightStockShoe) rightStockShoe.visible = false;
+  }
   // The ghost must never land on the player's own colour - the two share
   // createdByAvatarSeed - and must read as "the ghost" on every replay, so it
   // takes one fixed hue rather than a second seed-derived pick.
@@ -416,11 +428,11 @@ const GAIT = {
   swingReachRun: 0.5,
   /** Extra leg shortening through mid-swing: the stand-in for a knee. */
   clearanceWalk: 0.055,
-  clearanceRun: 0.18,
+  clearanceRun: 0.23,
   /** Arm swing as a fraction of the hip angle, and how far forward it is held. */
   armWalk: 0.62,
-  armRun: 1.14,
-  armCarryRun: 0.44,
+  armRun: 1.3,
+  armCarryRun: 0.52,
   /**
    * Held out from the ribs, and the part of that which oscillates. Sized off
    * the screen-space measurement rather than by eye: at 7.2u/s the fore-aft

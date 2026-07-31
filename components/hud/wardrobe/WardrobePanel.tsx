@@ -117,9 +117,7 @@ function ColorRow({
               }
               onChange={() => onPick(entry.id)}
             />
-            <span className="avatar-swatch" style={{ background: entry.hex }}>
-              {rejection && <em aria-hidden="true">{ratioLabel(rejection.ratio)}</em>}
-            </span>
+            <span className="avatar-swatch" style={{ background: entry.hex }} />
             <small>{entry.label}</small>
           </label>
         );
@@ -248,7 +246,7 @@ export function WardrobePanel({
           )}
           {previewEnabled && <small className="avatar-turn-hint">Drag the runner to turn them</small>}
           <p className="avatar-reading">
-            {ratioLabel(bodyReading.min)} against the palest floor
+            {bodyReading.min < 3 ? "Low contrast on pale floors" : "Readable on pale floors"}
           </p>
         </div>
         {/* A grid item defaults to min-height:auto, which is tall enough for
@@ -283,7 +281,7 @@ export function WardrobePanel({
           </p>
 
           <fieldset className="avatar-group">
-            <legend>Body</legend>
+            <legend>Body / skin</legend>
             <ColorRow
               name="avatar-body"
               offered={AVATAR_COLORS}
@@ -295,8 +293,8 @@ export function WardrobePanel({
               focusFirst={firstControl}
             />
             <p className="avatar-note">
-              The floor is a pale wash of each platform&apos;s colour. Anything
-              under {ratioLabel(3)} against it disappears while you are running.
+              Bright swatches that would disappear against the course are
+              unavailable. Pick any outlined colour and your runner stays easy to see.
             </p>
           </fieldset>
 

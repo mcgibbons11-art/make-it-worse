@@ -48,6 +48,8 @@ import {
 import { AvatarCustomizer } from "@/components/hud/AvatarCustomizer";
 import { MobileControls } from "@/components/hud/MobileControls";
 import { SettingsPanel } from "@/components/hud/SettingsPanel";
+import { PersonalBestPill, ProgressionRibbon } from "@/components/hud/ProgressionHud";
+import { useProgressionStore } from "@/stores/progression-store";
 const GameCanvas = dynamic(() => import("./GameCanvas"), {
   ssr: false,
   loading: () => (
@@ -141,6 +143,8 @@ export default function GameClient({ slug }: { slug: string }) {
   );
   const game = useGameStore();
   const settings = useSettingsStore();
+  const recordProgressRun = useProgressionStore((state) => state.recordRunEnd);
+  const recordProgressTrap = useProgressionStore((state) => state.recordTrapPlaced);
   const [assetsReady, setAssetsReady] = useState(false);
   const set = game.set;
   const samples = useRef<DecodedGhostSample[]>([]);
@@ -399,6 +403,14 @@ export default function GameClient({ slug }: { slug: string }) {
         elapsedMs: elapsed,
         offeredTraps: result.offeredTraps,
       });
+      recordProgressRun({
+        challengeSlug: game.challenge.slug,
+        depth: game.challenge.depth,
+        outcome: "completed",
+        durationMs: Math.round(elapsed),
+        progress: 1,
+        hazardTrapType: null,
+      });
       AudioManager.finish();
       navigator.vibrate?.([45, 40, 70]);
       const mapId = search.get("map");
@@ -426,6 +438,7 @@ export default function GameClient({ slug }: { slug: string }) {
     game.startedAt,
     recorder,
     primaryRepository,
+    recordProgressRun,
     repository,
     search,
     set,
@@ -473,6 +486,14 @@ export default function GameClient({ slug }: { slug: string }) {
         ghostTrace: null,
         idempotencyKey: crypto.randomUUID(),
       });
+      recordProgressRun({
+        challengeSlug: game.challenge.slug,
+        depth: game.challenge.depth,
+        outcome,
+        durationMs: Math.round(elapsed),
+        progress: progress.current,
+        hazardTrapType: recent?.trapType ?? null,
+      });
       // Losing the run used to play the same thud as a bonk.
       AudioManager.fail();
       setTimeout(
@@ -487,6 +508,7 @@ export default function GameClient({ slug }: { slug: string }) {
       game.elapsedMs,
       game.startedAt,
       recorder,
+      recordProgressRun,
       repository,
       set,
     ],
@@ -552,6 +574,7 @@ export default function GameClient({ slug }: { slug: string }) {
       setShareUrl(
         absoluteShareUrl(result.attributedShareUrl, result.challenge),
       );
+      recordProgressTrap(game.placement.type);
       set({ publishResult: result, phase: "sharing" });
       AudioManager.publish();
     } catch (error) {
@@ -569,6 +592,7 @@ export default function GameClient({ slug }: { slug: string }) {
     game.challenge,
     game.placement,
     repository,
+    recordProgressTrap,
     set,
   ]);
   const createAttributedShare = useCallback(
@@ -910,6 +934,7 @@ export default function GameClient({ slug }: { slug: string }) {
             }
             onSettings={() => setSettingsOpen(true)}
           />
+          <PersonalBestPill challengeSlug={game.challenge.slug} />
           <MobileControls />
         </>
       )}
@@ -931,6 +956,7 @@ export default function GameClient({ slug }: { slug: string }) {
           progress={reached}
           contact={deathCause}
           onRetry={() => void startAttempt()}
+          footer={<ProgressionRibbon />}
           {...(clipBlob ? { onShareClip: () => void shareClip() } : {})}
         />
       )}{" "}
@@ -943,6 +969,7 @@ export default function GameClient({ slug }: { slug: string }) {
             if (game.offeredTraps) set({ phase: "choosing_trap" });
             else router.push("/");
           }}
+          footer={<ProgressionRibbon />}
           {...(clipBlob ? { onShareClip: () => void shareClip() } : {})}
         />
       )}{" "}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "asset": "runner-hair-catalog",
+  "referenceImage": "hair-20-style-reference.png",
+  "styleOrder": [
+    "classic",
+    "buzz",
+    "crew",
+    "spikes",
+    "mohawk",
+    "fauxhawk",
+    "quiff",
+    "pompadour",
+    "sidepart",
+    "slickback",
+    "bob",
+    "curlybob",
+    "afro",
+    "puffs",
+    "ponytail",
+    "highpony",
+    "braids",
+    "locs",
+    "shag",
+    "undercut"
+  ],
+  "intake": {
+    "source": "ChatGPT image generation, 2026-07-30",
+    "purpose": "twenty distinct player-customizable hairstyles",
+    "constraints": [
+      "head-pivot attachment only",
+      "single player-selected base color with derived shadow tone",
+      "readable in wardrobe preview and chase camera",
+      "no gameplay collider or raycast behavior"
+    ]
+  },
+  "stages": {
+    "intake": "complete",
+    "blockout": "complete",
+    "structural": "complete",
+    "materials": "complete",
+    "runtime": "generated"
+  },
+  "reviewHistory": [
+    {
+      "date": "2026-07-30",
+      "pass": "fast-mode reference comparison",
+      "status": "continue",
+      "note": "All twenty reference silhouettes were translated into bounded low-poly procedural families; formal multi-angle on-runner review remains part of the wearable audit."
+    }
+  ]
+}

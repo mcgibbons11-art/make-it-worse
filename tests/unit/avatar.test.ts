@@ -403,9 +403,8 @@ describe("the picker", () => {
     expect(html).toContain(`${cream.ratio.toFixed(1)}:1`);
     expect(html).toContain("disabled");
     // The chosen body's own reading is on screen next to the figure.
-    expect(html).toContain(
-      `${deckContrast(avatarColor(DEFAULT_AVATAR.body)).min.toFixed(1)}:1 against the palest floor`,
-    );
+    expect(deckContrast(avatarColor(DEFAULT_AVATAR.body)).min).toBeGreaterThanOrEqual(3);
+    expect(html).toContain("Readable on pale floors");
   });
 });
 

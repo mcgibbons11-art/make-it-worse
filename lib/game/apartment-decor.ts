@@ -56,20 +56,28 @@ export interface ApartmentStyle {
   floorColor: string;
 }
 
-export type ApartmentDecorShortcutAction = "copy" | "paste" | "delete";
+export type ApartmentDecorShortcutAction = "copy" | "paste" | "delete" | "undo" | "redo";
 
 export function apartmentDecorShortcutAction(
   event: Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "key" | "metaKey" | "repeat" | "shiftKey">,
   interfaceTarget: boolean,
   hasSelection: boolean,
   hasClipboard: boolean,
+  hasUndo = false,
+  hasRedo = false,
 ): ApartmentDecorShortcutAction | null {
-  if (interfaceTarget || event.repeat || event.altKey || event.shiftKey) return null;
+  if (interfaceTarget || event.repeat || event.altKey) return null;
+  const modifier = event.ctrlKey || event.metaKey;
+  if (modifier && event.code === "KeyZ") {
+    if (event.shiftKey && hasRedo) return "redo";
+    if (!event.shiftKey && hasUndo) return "undo";
+  }
+  if (modifier && !event.shiftKey && event.code === "KeyY" && hasRedo) return "redo";
+  if (event.shiftKey) return null;
   if (
     (event.key === "Delete" || event.code === "Delete" || event.key === "Backspace" || event.code === "Backspace")
     && hasSelection
   ) return "delete";
-  const modifier = event.ctrlKey || event.metaKey;
   if (modifier && event.code === "KeyC" && hasSelection) return "copy";
   if (modifier && event.code === "KeyV" && hasClipboard) return "paste";
   return null;

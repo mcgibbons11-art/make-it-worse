@@ -1,7 +1,15 @@
 import type { PlacementZone, TrapType, Vec3Tuple } from "./types";
 import { TRAP_TYPES } from "./trap-catalog";
 
-export interface LevelPiece { id: string; center: Vec3Tuple; size: Vec3Tuple; rotationX?: number; color: string; }
+export interface LevelPiece {
+  id: string;
+  center: Vec3Tuple;
+  size: Vec3Tuple;
+  rotationX?: number;
+  rotationY?: number;
+  rotationZ?: number;
+  color: string;
+}
 // The twelve pieces used to overlap continuously in Z from 0 to 41, so the
 // widest gap anywhere on the course was 0.30u and the whole level could be run
 // with W held down. The only thing that ever interrupted it was a 0.35u step

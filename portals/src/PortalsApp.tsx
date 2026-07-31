@@ -12,11 +12,15 @@ import {
 } from "react";
 import { TrapIcon } from "@/components/icons/TrapIcon";
 import { DeathNote, RunProgressNote, TrapDetailsRow } from "@/components/hud/Coach";
+import { PersonalBestPill, ProgressionRibbon } from "@/components/hud/ProgressionHud";
 import {
   MobileControls,
   useTouchControlsAvailable,
 } from "@/components/hud/MobileControls";
-import { recordRunEnd, recordTrapPlaced } from "@/lib/game/coaching";
+import {
+  recordRunEnd as recordCoachingRunEnd,
+  recordTrapPlaced as recordCoachingTrapPlaced,
+} from "@/lib/game/coaching";
 import { ATTEMPT_LIMIT_MS } from "@/lib/game/constants";
 import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
@@ -63,11 +67,10 @@ import type {
 } from "@/lib/game/types";
 import { isInterfaceTarget, resetInput } from "@/lib/game/input";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useProgressionStore } from "@/stores/progression-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
 import { resolveAvatar } from "@/lib/game/avatar";
-import { WardrobePanel } from "@/components/hud/wardrobe/WardrobePanel";
-import { AvatarApartment } from "@/components/hud/wardrobe/AvatarApartment";
 import {
   connect,
   fetchClearTimes,
@@ -86,6 +89,7 @@ import {
 } from "./map-session";
 import {
   encodePublishedMapCode,
+  forgetPublishedMap,
   listRememberedPublishedMaps,
   rememberPublishedMap,
   wrapPublishedMapCode,
@@ -96,6 +100,16 @@ const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
 const RoomBuilder = lazy(() =>
   import("@/components/game/RoomBuilder").then((module) => ({
     default: module.RoomBuilder,
+  })),
+);
+const WardrobePanel = lazy(() =>
+  import("@/components/hud/wardrobe/WardrobePanel").then((module) => ({
+    default: module.WardrobePanel,
+  })),
+);
+const AvatarApartment = lazy(() =>
+  import("@/components/hud/wardrobe/AvatarApartment").then((module) => ({
+    default: module.AvatarApartment,
   })),
 );
 const MENU_ICON_BASE = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/menu-icons/`;
@@ -278,6 +292,8 @@ export function PortalsApp() {
   const touchControls = useTouchControlsAvailable();
   const repository = useMemo(() => new DemoRepository(), []);
   const settings = useSettingsStore();
+  const recordProgressRun = useProgressionStore((state) => state.recordRunEnd);
+  const recordProgressTrap = useProgressionStore((state) => state.recordTrapPlaced);
   const [assetsReady, setAssetsReady] = useState(false);
   const [phase, setPhase] = useState<GamePhase>("booting");
   const [challenge, setChallenge] = useState<ChallengeDTO | null>(null);
@@ -751,6 +767,14 @@ export function PortalsApp() {
     finishing.current = false;
     progress.current = 0;
     setPhase("playing");
+    // The random-room builder only authors the generated runtime. Once that
+    // exact challenge and track are stored, leave the editor shell and mount
+    // the same GameCanvas + HUD + pause/help/result flow every other map uses.
+    // Keeping RoomBuilder mounted here was why clean play lost its clock,
+    // progress bar, PB target and pause controls even though the run state was
+    // already the normal one.
+    setEditorOpen(false);
+    setRandomRoomSeed(null);
   }, [repository]);
   const complete = useCallback(async () => {
     if (finishing.current || !attemptId || !challenge) return;
@@ -784,14 +808,22 @@ export function PortalsApp() {
     setElapsed(duration);
     setOffered(finished.offeredTraps);
     setPhase("finished");
-    recordRunEnd({ outcome: "completed", progress: 1, cause: null });
+    recordCoachingRunEnd({ outcome: "completed", progress: 1, cause: null });
+    recordProgressRun({
+      challengeSlug: challenge.slug,
+      depth: challenge.depth,
+      outcome: "completed",
+      durationMs: Math.round(duration),
+      progress: 1,
+      hazardTrapType: null,
+    });
     AudioManager.finish();
     navigator.vibrate?.([45, 40, 70]);
     setSubmitStatus(await submitClearTime(challenge.slug, duration));
     if (activePublishedVersionId)
       void submitPublishedMapSignal(activePublishedVersionId, "clear");
     await loadBoard(challenge.slug);
-  }, [activePublishedVersionId, attemptId, challenge, loadBoard, repository, startedAt]);
+  }, [activePublishedVersionId, attemptId, challenge, loadBoard, recordProgressRun, repository, startedAt]);
   // The SDK requires sign-in to come from a direct player action. Posting the
   // just-finished time here saves the player from replaying the run.
   const handleSignIn = useCallback(async () => {
@@ -839,11 +871,20 @@ export function PortalsApp() {
       // it is the same contact the sentence above was written from, so the two
       // can never disagree about what happened.
       setDeathCause(outcome === "reset" ? null : recent);
-      recordRunEnd({
+      recordCoachingRunEnd({
         outcome,
         progress: progress.current,
         cause: recent?.trapType ?? null,
       });
+      if (challenge)
+        recordProgressRun({
+          challengeSlug: challenge.slug,
+          depth: challenge.depth,
+          outcome,
+          durationMs: Math.round(duration),
+          progress: progress.current,
+          hazardTrapType: recent?.trapType ?? null,
+        });
       // Losing the run used to play the same thud as a bonk.
       AudioManager.fail();
       void repository.finishAttempt({
@@ -857,7 +898,7 @@ export function PortalsApp() {
       });
       failTimer.current = window.setTimeout(() => setPhase("failed"), 450);
     },
-    [attemptId, repository, startedAt],
+    [attemptId, challenge, recordProgressRun, repository, startedAt],
   );
   // Which of the three offers this course can actually hold. At mint time all
   // three are placeable by construction, because the offer is drawn against the
@@ -916,7 +957,8 @@ export function PortalsApp() {
       });
       setResult(published);
       setPhase("sharing");
-      recordTrapPlaced(placement.type);
+      recordCoachingTrapPlaced(placement.type);
+      recordProgressTrap(placement.type);
       AudioManager.publish();
     } catch (error) {
       console.error("[trap-publish] failed", error);
@@ -1347,6 +1389,7 @@ export function PortalsApp() {
           }}
           onPublish={(runtime, details) => registerBuiltRoom(runtime, details)}
           onShare={(runtime) => copyBuiltRoom(runtime)}
+          onDeletePublished={(runtime) => forgetPublishedMap(runtime.challenge.slug)}
           shareMode="codes-only"
           onClose={() => {
             setEditorOpen(false);
@@ -1369,30 +1412,32 @@ export function PortalsApp() {
     );
   if (wardrobeOpen)
     return (
-      <RunnerEditorBoundary
-        safeFallback={
+      <Suspense fallback={<div className="canvas-loading"><span />Opening your wardrobe…</div>}>
+        <RunnerEditorBoundary
+          safeFallback={
+            <WardrobePanel
+              avatar={settings.avatar ?? null}
+              avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
+              previewEnabled={false}
+              onSave={(config) => {
+                settings.setAvatar(config);
+                setWardrobeOpen(false);
+              }}
+              onClose={() => setWardrobeOpen(false)}
+            />
+          }
+        >
           <WardrobePanel
             avatar={settings.avatar ?? null}
             avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
-            previewEnabled={false}
             onSave={(config) => {
               settings.setAvatar(config);
               setWardrobeOpen(false);
             }}
             onClose={() => setWardrobeOpen(false)}
           />
-        }
-      >
-        <WardrobePanel
-          avatar={settings.avatar ?? null}
-          avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
-          onSave={(config) => {
-            settings.setAvatar(config);
-            setWardrobeOpen(false);
-          }}
-          onClose={() => setWardrobeOpen(false)}
-        />
-      </RunnerEditorBoundary>
+        </RunnerEditorBoundary>
+      </Suspense>
     );
   if (showStartSplash && !challenge)
     return (
@@ -1524,6 +1569,7 @@ export function PortalsApp() {
         // says how far that clock got you, which is what makes the cap read as a
         // rule rather than as a trick.
         <header className="game-hud">
+          <PersonalBestPill challengeSlug={challenge.slug} />
           <div
             className={`hud-pill timer${closing ? " is-warm" : ""}`}
             aria-label={`Elapsed time ${format(elapsed)}`}
@@ -1586,6 +1632,7 @@ export function PortalsApp() {
               and one that died at 88% produced the same card. */}
           <RunProgressNote percent={runProgress} />
           <DeathNote contact={deathCause} />
+          <ProgressionRibbon />
           <button className="button danger huge" onClick={() => void start()}>
             🔁 Try again
           </button>
@@ -1608,6 +1655,7 @@ export function PortalsApp() {
           <div className="eyebrow">IMPOSSIBLY</div>
           <h2 id="portals-finished-title">YOU SURVIVED</h2>
           <div className="finish-time">{format(elapsed)}</div>
+          <ProgressionRibbon />
           <LeaderboardPanel
             board={board}
             loading={boardLoading}
@@ -1646,19 +1694,19 @@ export function PortalsApp() {
               reach the settings or read the controls from here at all. */}
           <div className="portals-buttons">
             <button className="button primary huge" onClick={resume}>
-              Resume
+              ▶️ Resume
             </button>
             <button className="button secondary" onClick={() => openView("settings")}>
-              Settings
+              ⚙️ Settings
             </button>
             <button className="button secondary" onClick={() => openView("controls")}>
-              How to play
+              ❓ How to play
             </button>
             <button className="button secondary" onClick={() => void restart()}>
-              Restart this attempt
+              🔁 Restart this attempt
             </button>
             <button className="button secondary" onClick={() => openView("menu")}>
-              Main menu
+              🏠 Main menu
             </button>
           </div>
         </Overlay>

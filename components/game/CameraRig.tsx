@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Vector3 } from "three";
-import type { RapierRigidBody } from "@react-three/rapier";
+import { useRapier, type RapierRigidBody } from "@react-three/rapier";
 import type { Vec3Tuple } from "@/lib/game/types";
 import { getCameraYaw, setCameraYaw } from "@/lib/game/input";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -19,6 +19,8 @@ export const PLACEMENT_CAMERA_OFFSET = [4.2, 5.8, -4.8] as const;
 
 /** Radians of yaw per pixel dragged. A full turn is roughly a screen width. */
 const LOOK_SENSITIVITY = 0.006;
+const CAMERA_WALL_PADDING = 0.28;
+const CAMERA_MIN_DISTANCE = 1.15;
 
 export function CameraRig({
   player,
@@ -61,6 +63,10 @@ export function CameraRig({
   const seeded = useRef(false);
   const settings = useSettingsStore();
   const gl = useThree((state) => state.gl);
+  const { world, rapier } = useRapier();
+  const rayOrigin = useRef(new Vector3());
+  const rayDirection = useRef(new Vector3());
+  const collisionAdjusted = useRef(new Vector3());
 
   // Hold the left button and sweep to look around. The yaw lands in the input
   // singleton rather than local state because turning the view is only half the
@@ -157,7 +163,42 @@ export function CameraRig({
         Math.max(chaseHeight, position.y + chaseHeight - 0.1),
         position.z - chaseDistance * cosYaw - lead * sinYaw,
       );
-      smoothed.current.lerp(desired.current, 1 - Math.exp(-8 * delta));
+      // Keep the camera on the runner's side of walls and tall platforms. The
+      // query uses fixed solids only: moving traps must not punch the camera in
+      // and the player capsule must never collide with its own view ray.
+      rayOrigin.current.set(position.x, position.y + chaseTargetHeight, position.z);
+      rayDirection.current.copy(desired.current).sub(rayOrigin.current);
+      const desiredDistance = rayDirection.current.length();
+      let obstructionDistance = desiredDistance;
+      if (desiredDistance > CAMERA_MIN_DISTANCE) {
+        rayDirection.current.multiplyScalar(1 / desiredDistance);
+        const ray = new rapier.Ray(
+          rayOrigin.current,
+          rayDirection.current,
+        );
+        const flags = rapier.QueryFilterFlags.EXCLUDE_SENSORS
+          | rapier.QueryFilterFlags.EXCLUDE_DYNAMIC
+          | rapier.QueryFilterFlags.EXCLUDE_KINEMATIC;
+        const hit = world.castRay(ray, desiredDistance, true, flags);
+        if (hit) obstructionDistance = Math.max(
+          CAMERA_MIN_DISTANCE,
+          hit.timeOfImpact - CAMERA_WALL_PADDING,
+        );
+      }
+      if (obstructionDistance < desiredDistance) {
+        collisionAdjusted.current.copy(rayOrigin.current).addScaledVector(
+          rayDirection.current,
+          obstructionDistance,
+        );
+        // Obstructions close immediately so no frame renders from inside a
+        // wall. Returning to the full chase distance stays softly damped.
+        if (smoothed.current.distanceTo(rayOrigin.current) > obstructionDistance)
+          smoothed.current.copy(collisionAdjusted.current);
+        else
+          smoothed.current.lerp(collisionAdjusted.current, 1 - Math.exp(-14 * delta));
+      } else {
+        smoothed.current.lerp(desired.current, 1 - Math.exp(-8 * delta));
+      }
       camera.position.copy(smoothed.current);
       target.current.set(
         position.x + velocity.x * 0.08 + chaseLookAhead * sinYaw,

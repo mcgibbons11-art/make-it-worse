@@ -19,6 +19,7 @@
 
 export type WardrobeSlotId =
   | "headwear"
+  | "hair"
   | "face"
   | "eyewear"
   | "top"
@@ -31,6 +32,7 @@ export type WardrobeSlotId =
 /** Slots whose garment takes a colour. The rest draw in fixed ink and glass. */
 export type WardrobeColorKey =
   | "headwear"
+  | "hair"
   | "face"
   | "eyewear"
   | "top"
@@ -55,6 +57,29 @@ export type AvatarHeadwearId =
   | "earmuffs"
   | "beret"
   | "headphones";
+
+export type AvatarHairId =
+  | "none"
+  | "classic"
+  | "buzz"
+  | "crew"
+  | "spikes"
+  | "mohawk"
+  | "fauxhawk"
+  | "quiff"
+  | "pompadour"
+  | "sidepart"
+  | "slickback"
+  | "bob"
+  | "curlybob"
+  | "afro"
+  | "puffs"
+  | "ponytail"
+  | "highpony"
+  | "braids"
+  | "locs"
+  | "shag"
+  | "undercut";
 
 export type AvatarFaceId =
   | "plain"
@@ -161,6 +186,30 @@ export const AVATAR_HEADWEAR: readonly WardrobeOption<AvatarHeadwearId>[] = [
   { id: "earmuffs", label: "Earmuffs" },
   { id: "beret", label: "Beret" },
   { id: "headphones", label: "Headphones" },
+];
+
+export const AVATAR_HAIR: readonly WardrobeOption<AvatarHairId>[] = [
+  { id: "none", label: "Bald" },
+  { id: "classic", label: "Classic crop" },
+  { id: "buzz", label: "Buzz cut" },
+  { id: "crew", label: "Crew cut" },
+  { id: "spikes", label: "Chunky spikes" },
+  { id: "mohawk", label: "Mohawk" },
+  { id: "fauxhawk", label: "Fauxhawk" },
+  { id: "quiff", label: "Swept quiff" },
+  { id: "pompadour", label: "Pompadour" },
+  { id: "sidepart", label: "Side part" },
+  { id: "slickback", label: "Slick back" },
+  { id: "bob", label: "Bob" },
+  { id: "curlybob", label: "Curly bob" },
+  { id: "afro", label: "Afro" },
+  { id: "puffs", label: "Puff buns" },
+  { id: "ponytail", label: "Low ponytail" },
+  { id: "highpony", label: "High ponytail" },
+  { id: "braids", label: "Twin braids" },
+  { id: "locs", label: "Locs" },
+  { id: "shag", label: "Shag" },
+  { id: "undercut", label: "Swept undercut" },
 ];
 
 export const AVATAR_FACES: readonly WardrobeOption<AvatarFaceId>[] = [
@@ -283,6 +332,14 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     note: "Rides the head pivot, so it counter-rotates with the head as you run.",
     options: AVATAR_HEADWEAR,
     colorKey: "headwear",
+    sockets: ["Head mass__pivot"],
+  },
+  {
+    id: "hair",
+    label: "Hair",
+    note: "Twenty procedural styles with their own full color palette. Full hats tuck hair away; open accessories leave it visible.",
+    options: AVATAR_HAIR,
+    colorKey: "hair",
     sockets: ["Head mass__pivot"],
   },
   {

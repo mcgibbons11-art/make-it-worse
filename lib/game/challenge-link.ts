@@ -129,13 +129,28 @@ const trackSchema = z
   .max(MAX_TRACK_SEGMENTS);
 
 const runtimeNumber = z.number().finite().min(-100_000).max(100_000);
-const runtimePieceSchema = z.tuple([
+const runtimePieceV1Schema = z.tuple([
   runtimeNumber, runtimeNumber, runtimeNumber,
-  z.number().finite().min(0.02).max(2_048),
-  z.number().finite().min(0.02).max(2_048),
-  z.number().finite().min(0.02).max(2_048),
+  z.number().finite().min(0.02).max(100_000),
+  z.number().finite().min(0.02).max(100_000),
+  z.number().finite().min(0.02).max(100_000),
   z.string().regex(/^#[0-9a-f]{6}$/i),
   z.number().finite().min(-Math.PI * 2).max(Math.PI * 2),
+]);
+// Appended rotations preserve every existing version-5 code while allowing
+// the builder's full transform inspector to survive a map-code round trip.
+const runtimePieceSchema = z.union([
+  runtimePieceV1Schema,
+  z.tuple([
+    runtimeNumber, runtimeNumber, runtimeNumber,
+    z.number().finite().min(0.02).max(100_000),
+    z.number().finite().min(0.02).max(100_000),
+    z.number().finite().min(0.02).max(100_000),
+    z.string().regex(/^#[0-9a-f]{6}$/i),
+    z.number().finite().min(-Math.PI * 2).max(Math.PI * 2),
+    z.number().finite().min(-Math.PI * 2).max(Math.PI * 2),
+    z.number().finite().min(-Math.PI * 2).max(Math.PI * 2),
+  ]),
 ]);
 const runtimeZoneSchema = z.tuple([
   runtimeNumber, runtimeNumber, runtimeNumber, runtimeNumber, runtimeNumber,
@@ -204,6 +219,8 @@ function runtimeTuple(track: BuiltTrack): z.infer<typeof runtimeTrackSchema> {
       piece.size[0], piece.size[1], piece.size[2],
       piece.color,
       piece.rotationX ?? 0,
+      piece.rotationY ?? 0,
+      piece.rotationZ ?? 0,
     ]),
     track.zones.map((zone) => [
       zone.minX, zone.maxX, zone.minZ, zone.maxZ, zone.groundY,
@@ -225,6 +242,8 @@ function trackFromRuntimeTuple(tuple: z.infer<typeof runtimeTrackSchema>): Built
       size: [piece[3], piece[4], piece[5]],
       color: piece[6],
       ...(piece[7] ? { rotationX: piece[7] } : {}),
+      ...(piece.length > 8 && piece[8] ? { rotationY: piece[8] } : {}),
+      ...(piece.length > 9 && piece[9] ? { rotationZ: piece[9] } : {}),
     })),
     zones: zones.map((zone, index) => {
       const mask = BigInt(`0x${zone[6]}`);

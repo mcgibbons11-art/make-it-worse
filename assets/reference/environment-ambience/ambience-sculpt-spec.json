@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "asset": "environment-ambience",
+  "referenceImage": "plane-birds-reference.png",
+  "intake": {
+    "source": "ChatGPT image generation, 2026-07-30",
+    "purpose": "distant non-interactable sky dressing",
+    "recognitionCues": [
+      "rounded cream propeller plane with coral nose and blue wings",
+      "small rounded bird with two broad readable wing poses"
+    ]
+  },
+  "runtimeContract": {
+    "colliders": false,
+    "castsShadows": false,
+    "cameraRelative": true,
+    "lowCost": true,
+    "interactive": false
+  },
+  "stages": {
+    "intake": "complete",
+    "blockout": "complete",
+    "structural": "complete",
+    "materials": "complete",
+    "runtime": "generated"
+  },
+  "reviewHistory": [
+    {
+      "date": "2026-07-30",
+      "pass": "fast-mode structural eyeball",
+      "status": "skipped-formal-review",
+      "note": "Reference silhouettes were reduced for distant readability; no formal img2threejs scoring review was performed."
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
   PUBLISHED_MAP_CODE_PREFIX,
   decodePublishedMapCode,
   encodePublishedMapCode,
+  forgetPublishedMap,
   listRememberedPublishedMaps,
   rememberPublishedMap,
 } from "@/portals/src/published-map-catalog";
@@ -45,12 +46,16 @@ describe("Portals published-map codes", () => {
       size: piece.size,
       color: piece.color,
       rotationX: piece.rotationX,
+      rotationY: piece.rotationY,
+      rotationZ: piece.rotationZ,
     }))).toEqual(
       runtime.track.pieces.map((piece) => ({
         center: piece.center,
         size: piece.size,
         color: piece.color,
         rotationX: piece.rotationX,
+        rotationY: piece.rotationY,
+        rotationZ: piece.rotationZ,
       })),
     );
     expect(decoded.track.zones.map((zone) => ({
@@ -114,5 +119,17 @@ describe("Portals published-map codes", () => {
     ]);
     storage.setItem(PUBLISHED_MAP_CATALOG_KEY, JSON.stringify(["damaged", second]));
     expect(listRememberedPublishedMaps(storage).map((map) => map.code)).toEqual([second]);
+  });
+
+  it("forgets one saved publication without damaging the others", () => {
+    const storage = new MemoryStorage();
+    const first = published(12);
+    const second = published(13);
+    rememberPublishedMap(first.code, storage);
+    rememberPublishedMap(second.code, storage);
+    forgetPublishedMap(first.runtime.challenge.slug, storage);
+    expect(listRememberedPublishedMaps(storage).map((map) => map.versionId)).toEqual([
+      second.runtime.challenge.slug,
+    ]);
   });
 });

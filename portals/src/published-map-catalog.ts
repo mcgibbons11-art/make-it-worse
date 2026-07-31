@@ -216,3 +216,19 @@ export function rememberPublishedMap(
   );
   return map;
 }
+
+/** Remove one locally remembered publication without touching any map code a
+ * player has already copied. Old codes remain self-contained and playable. */
+export function forgetPublishedMap(
+  versionId: string,
+  storage: Storage | null = browserStorage(),
+): void {
+  if (!storage) return;
+  const next = listRememberedPublishedMaps(storage).filter(
+    (entry) => entry.versionId !== versionId,
+  );
+  storage.setItem(
+    PUBLISHED_MAP_CATALOG_KEY,
+    JSON.stringify(next.map((entry) => entry.code)),
+  );
+}

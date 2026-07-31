@@ -387,8 +387,12 @@ export const PlayerController = forwardRef<
     // jump is taken, it leaves both components of velocity exactly as they were,
     // and it moves the runner by translation, so it cannot bend the arc track.ts
     // certifies courses against and cannot disturb the upright pin above.
-    const headingX = -input.x;
-    const headingZ = input.z;
+    // Probe in the camera-relative direction the controller is actually
+    // driving. Using raw input here worked only at camera yaw zero; after the
+    // player orbited the camera, the assist looked sideways and the capsule
+    // could snag on the ledge directly in front of it.
+    const headingX = targetX;
+    const headingZ = targetZ;
     const heading = Math.hypot(headingX, headingZ);
     if (grounded && surface !== null && nextY <= 0 && heading > 0.1) {
       const probeX = position.x + (headingX / heading) * STEP_PROBE;

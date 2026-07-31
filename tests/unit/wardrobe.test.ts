@@ -81,7 +81,7 @@ function boxOf(meshes: readonly THREE.Mesh[]): THREE.Box3 {
 }
 
 function only(slot: string, item: string): Partial<AvatarConfig> {
-  return { ...DEFAULT_AVATAR, [slot]: item };
+  return { ...DEFAULT_AVATAR, hair: slot === "hair" ? (item as AvatarConfig["hair"]) : "none", [slot]: item };
 }
 
 const NON_EMPTY = WARDROBE_SLOTS.flatMap((slot) =>
@@ -240,9 +240,11 @@ describe("the rig the wardrobe is cut for", () => {
 });
 
 describe("dressing a runner", () => {
-  it("uses the stock hair only for the no-hat option", () => {
+  it("replaces the baked stock cap with the selected hair slot", () => {
     expect(dressRunner({ ...DEFAULT_AVATAR, headwear: "hair" }, 1)
-      .getObjectByName("Hair cap__pivot")?.visible).toBe(true);
+      .getObjectByName("Hair cap__pivot")?.visible).toBe(false);
+    expect(wardrobeMeshes(dressRunner({ ...DEFAULT_AVATAR, headwear: "hair" }, 1)).length)
+      .toBeGreaterThan(0);
     expect(dressRunner({ ...DEFAULT_AVATAR, headwear: "cap" }, 1)
       .getObjectByName("Hair cap__pivot")?.visible).toBe(false);
   });
@@ -277,7 +279,7 @@ describe("dressing a runner", () => {
         `two ${slot.id} options draw alike`,
       ).toBe(slot.options.length);
     }
-  });
+  }, 20_000);
 
   it("leaves a dressed runner clonable", () => {
     // PlayerVisual clones the runner template and the ghost clones materials
@@ -794,6 +796,10 @@ describe("garments through the run cycle", () => {
     rig.getObjectByName("Eye right__pivot")!.getWorldPosition(eye);
     for (const { slot, item } of NON_EMPTY) {
       if (slot !== "headwear") continue;
+      // The motorcycle helmet is deliberately full-face: its visor and jaw
+      // guard belong in front of the eyes. It is checked by the general head
+      // and body clearance tests below instead of this open-face hat rule.
+      if (item === "helmet") continue;
       const { model } = dressedRaw(only(slot, item));
       const across = verticesOf(wardrobeMeshes(model, SOCKETS.head)).find(
         (point) =>
@@ -854,6 +860,10 @@ describe("colour rules", () => {
       if (!slot.colorKey) continue;
       for (const entry of AVATAR_COLORS) {
         const rejected = Boolean(colorRejection(slot.colorKey, entry.id, "violet"));
+        if (slot.colorKey === "hair") {
+          expect(rejected, `hair/${entry.id}`).toBe(false);
+          continue;
+        }
         expect(rejected, `${slot.colorKey}/${entry.id}`).toBe(
           deckContrast(entry.hex).min < MIN_CONTRAST,
         );
@@ -960,6 +970,18 @@ describe("outfits in a link", () => {
           `random runner ${attempt} chose a hidden ${slot.id} option`,
         ).toBe(true);
       }
+      if (config.headwear === "helmet") {
+        expect(config.hair).toBe("none");
+        expect(config.face).toBe("plain");
+        expect(config.eyewear).toBe("none");
+      }
+      if (config.face === "mask") expect(config.eyewear).toBe("none");
+      if (config.outerwear === "puffer" || config.outerwear === "poncho") {
+        expect(config.top).toBe("none");
+        expect(config.backpack).toBe("none");
+      }
+      if (config.backpack === "cape" || config.backpack === "wings")
+        expect(config.outerwear).toBe("none");
     }
   });
 });

@@ -83,7 +83,11 @@ export function LevelGeometry({
           type="fixed"
           colliders={false}
           position={piece.center}
-          rotation={[piece.rotationX ?? 0, 0, 0]}
+          rotation={[
+            piece.rotationX ?? 0,
+            piece.rotationY ?? 0,
+            piece.rotationZ ?? 0,
+          ]}
         >
           <CuboidCollider
             args={[piece.size[0] / 2, piece.size[1] / 2, piece.size[2] / 2]}

@@ -1095,7 +1095,9 @@ export function AvatarApartment({
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [catalogGroup, setCatalogGroup] = useState<(typeof DECOR_GROUPS)[number]["id"]>("all");
-  const [undoDecor, setUndoDecor] = useState<ApartmentDecorItem[] | null>(null);
+  const undoDecor = useRef<ApartmentDecorItem[][]>([]);
+  const redoDecor = useRef<ApartmentDecorItem[][]>([]);
+  const [history, setHistory] = useState({ undo: 0, redo: 0 });
   const [saveError, setSaveError] = useState<string | null>(null);
   const [decor, setDecor] = useState<ApartmentDecorItem[]>(() => (
     normalizeFreeApartmentDecor(typeof window === "undefined"
@@ -1174,7 +1176,10 @@ export function AvatarApartment({
   }, []);
 
   const rememberUndo = useCallback(() => {
-    setUndoDecor(decor.map((item) => ({ ...item })));
+    undoDecor.current.push(decor.map((item) => ({ ...item })));
+    if (undoDecor.current.length > 100) undoDecor.current.shift();
+    redoDecor.current = [];
+    setHistory({ undo: undoDecor.current.length, redo: 0 });
   }, [decor]);
 
   const moveDecor = useCallback((uid: string, x: number, z: number) => {
@@ -1274,6 +1279,24 @@ export function AvatarApartment({
     AudioManager.click();
   }, [decor, rememberUndo]);
 
+  const undoLastEdit = useCallback(() => {
+    const previous = undoDecor.current.pop();
+    if (!previous) return;
+    redoDecor.current.push(decor.map((item) => ({ ...item })));
+    setDecor(previous.map((item) => ({ ...item })));
+    setHistory({ undo: undoDecor.current.length, redo: redoDecor.current.length });
+    setSelectedUid(null);
+  }, [decor]);
+
+  const redoLastEdit = useCallback(() => {
+    const next = redoDecor.current.pop();
+    if (!next) return;
+    undoDecor.current.push(decor.map((item) => ({ ...item })));
+    setDecor(next.map((item) => ({ ...item })));
+    setHistory({ undo: undoDecor.current.length, redo: redoDecor.current.length });
+    setSelectedUid(null);
+  }, [decor]);
+
   useEffect(() => {
     if (mode !== "decorate") return;
     const down = (event: KeyboardEvent) => {
@@ -1282,29 +1305,26 @@ export function AvatarApartment({
         isApartmentTextEntry(event.target),
         selected !== null,
         copiedDecor.current !== null,
+        undoDecor.current.length > 0,
+        redoDecor.current.length > 0,
       );
       if (!action) return;
       event.preventDefault();
       if (action === "copy") copySelected();
       else if (action === "paste") pasteCopied();
+      else if (action === "undo") undoLastEdit();
+      else if (action === "redo") redoLastEdit();
       else removeSelected();
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [copySelected, mode, pasteCopied, removeSelected, selected]);
+  }, [copySelected, mode, pasteCopied, redoLastEdit, removeSelected, selected, undoLastEdit]);
 
   const restoreStarter = () => {
     if (!window.confirm("Restore the starter apartment? Your current furniture layout will be replaced.")) return;
     rememberUndo();
     setDecor(normalizeFreeApartmentDecor(DEFAULT_APARTMENT_DECOR));
     setStyle({ ...DEFAULT_APARTMENT_STYLE });
-    setSelectedUid(null);
-  };
-
-  const undoLastEdit = () => {
-    if (!undoDecor) return;
-    setDecor(undoDecor.map((item) => ({ ...item })));
-    setUndoDecor(null);
     setSelectedUid(null);
   };
 
@@ -1361,7 +1381,8 @@ export function AvatarApartment({
         <aside className="avatar-apartment-decor" aria-label="Apartment furniture">
           <div className="avatar-apartment-decor-heading">
             <span className="eyebrow">🛋️ DECORATE</span>
-            <button onClick={undoLastEdit} disabled={!undoDecor}>↶ Undo</button>
+            <button onClick={undoLastEdit} disabled={history.undo === 0}>↶ Undo</button>
+            <button onClick={redoLastEdit} disabled={history.redo === 0}>↷ Redo</button>
           </div>
           {saveError && <small className="avatar-apartment-save-error">⚠️ {saveError}</small>}
           {selected && (
@@ -1400,6 +1421,7 @@ export function AvatarApartment({
               >{group.label}</button>
             ))}
           </div>
+          <small className="avatar-apartment-scroll-cue">↕ Scroll for all furniture</small>
           <div className="avatar-apartment-decor-grid">
             {activeGroup.types.map((type) => {
               const definition = DECOR[type];
@@ -1454,7 +1476,7 @@ export function AvatarApartment({
             <p><b>🧶 Floor coverings:</b> The apartment shell is continuous wood throughout. Open Floors to add movable rectangular, round, or runner rugs and tile sections; they can be dragged, rotated, copied, recolored, removed, and saved like furniture.</p>
             <p><b>🎨 Edit a selection:</b> Recolor tintable furniture, rotate it in 15° steps, duplicate it, or remove it. Wall decorations, lamps, and appliances are freely movable too.</p>
             <p><b>⌨️ Clipboard hotkeys:</b> Ctrl/Cmd+C copies the selected item, Ctrl/Cmd+V pastes an offset copy, and Backspace or Delete removes the selection. These work for walls and doorways as well as furniture.</p>
-            <p><b>↶ Undo and restore:</b> Undo reverses the last layout edit. Restore starter layout replaces the current arrangement and apartment colors with the original home.</p>
+            <p><b>↶ Edit history:</b> Undo/Redo keep up to 100 layout edits. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redoes. Restore starter layout replaces the current arrangement and apartment colors with the original home.</p>
             <p><b>🧱 Explore collisions:</b> In Explore mode, solid furniture becomes real collision geometry again, so test that hallways and doors remain walkable.</p>
             <p><b>💾 Permanent home:</b> Furniture, floor coverings, partitions, and wall, trim, and wood colors save automatically on this device and return after reload.</p>
             <button className="button primary" onClick={closeGuide}>✅ Got it</button>

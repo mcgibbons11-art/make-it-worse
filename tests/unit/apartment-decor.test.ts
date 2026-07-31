@@ -36,6 +36,9 @@ describe("apartment decor persistence", () => {
     expect(apartmentDecorShortcutAction(event({ code: "KeyC", metaKey: true }), false, true, false)).toBe("copy");
     expect(apartmentDecorShortcutAction(event({ code: "KeyV", ctrlKey: true }), false, false, true)).toBe("paste");
     expect(apartmentDecorShortcutAction(event({ code: "KeyV", metaKey: true }), false, false, true)).toBe("paste");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyZ", ctrlKey: true }), false, false, false, true, false)).toBe("undo");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyZ", ctrlKey: true, shiftKey: true }), false, false, false, false, true)).toBe("redo");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyY", metaKey: true }), false, false, false, false, true)).toBe("redo");
     expect(apartmentDecorShortcutAction(event({ code: "KeyV", ctrlKey: true }), true, false, true)).toBeNull();
     expect(apartmentDecorShortcutAction(event({ key: "Delete", repeat: true }), false, true, false)).toBeNull();
     expect(apartmentDecorShortcutAction(event({ key: "Backspace" }), true, true, false)).toBeNull();

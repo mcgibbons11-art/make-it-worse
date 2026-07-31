@@ -1,0 +1,28 @@
+{
+  "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
+  "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
+  "sourceReferences": [
+    "assets/reference/wear-tank.png",
+    "assets/reference/wear-puffer.png",
+    "assets/reference/wear-vest.png",
+    "assets/reference/wear-sandal.png",
+    "assets/reference/wear-cape.png",
+    "assets/reference/wear-wings.png",
+    "assets/reference/wearable-upgrades/missing-wearables-reference.png"
+  ],
+  "items": [
+    "tank",
+    "puffer",
+    "vest",
+    "barefoot",
+    "sandal",
+    "kilt",
+    "bedroll",
+    "cape",
+    "wings",
+    "flag",
+    "balloon"
+  ],
+  "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts",
+  "reviewStatus": "generated structural pass; multi-angle runtime review required"
+}

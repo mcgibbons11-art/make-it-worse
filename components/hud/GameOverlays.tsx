@@ -96,10 +96,10 @@ export function ChallengeIntro({
           disabled={!assetsReady}
         >
           {!assetsReady
-            ? "Loading the apartment…"
+            ? "⏳ Loading the apartment…"
             : newest
-              ? "Beat their version"
-              : "Beat it. Add the first problem."}
+              ? "🏁 Beat their version"
+              : "🏁 Beat it. Add the first problem."}
         </button>
         {/* The game picks a name and then never mentions it. A reviewer met
             theirs for the first time inside the message they were about to send
@@ -115,7 +115,7 @@ export function ChallengeIntro({
         <div className="intro-footer">
           <span>WASD / arrows · Space jump · hold E grab / release shove · R reset</span>
           <button className="text-button" onClick={withClick(onSettings)}>
-            Settings
+            ⚙️ Settings
           </button>
         </div>
       </section>
@@ -200,6 +200,7 @@ export function FailureCard({
   contact,
   onRetry,
   onShareClip,
+  footer,
 }: {
   message: string;
   attempts: number;
@@ -208,6 +209,7 @@ export function FailureCard({
   contact?: { trapType: TrapType; ownerName: string } | null;
   onRetry(): void;
   onShareClip?: () => void;
+  footer?: React.ReactNode;
 }) {
   // Order matters: "reset" and "clock" are checked before the fall, because a
   // reset message can still mention where you were when you gave up.
@@ -231,13 +233,14 @@ export function FailureCard({
         <RunProgressNote percent={progress * 100} />
         {contact ? <DeathNote contact={contact} /> : null}
         <button className="button danger huge" onClick={withClick(onRetry)}>
-          Try again
+          🔁 Try again
         </button>
         {onShareClip && (
           <button className="button secondary" onClick={withClick(onShareClip)}>
-            Share the last 10 seconds
+            🎬 Share the last 10 seconds
           </button>
         )}
+        {footer}
         <small>Press Enter or tap to retry</small>
       </section>
     </div>
@@ -249,12 +252,14 @@ export function FinishCard({
   onShareClip,
   onShareFinal,
   terminal = false,
+  footer,
 }: {
   elapsedMs: number;
   onContinue(): void;
   onShareClip?: () => void;
   onShareFinal?: () => void;
   terminal?: boolean;
+  footer?: React.ReactNode;
 }) {
   return (
     <div className="modal-backdrop confetti">
@@ -274,18 +279,19 @@ export function FinishCard({
             : "Now collect your deeply irresponsible reward."}
         </p>
         <button className="button primary huge" onClick={withClick(onContinue)}>
-          {terminal ? "Start a new disaster" : "Make it worse"}
+          {terminal ? "🎲 Start a new disaster" : "🪤 Make it worse"}
         </button>
         {terminal && onShareFinal && (
           <button className="button secondary" onClick={withClick(onShareFinal)}>
-            Share the final form
+            📤 Share the final form
           </button>
         )}
         {onShareClip && (
           <button className="button secondary" onClick={withClick(onShareClip)}>
-            Share the winning clip
+            🎬 Share the winning clip
           </button>
         )}
+        {footer}
       </section>
     </div>
   );
@@ -345,7 +351,7 @@ export function TrapChoicePanel({
             style={{ marginTop: 18 }}
             onClick={withClick(onEndChain)}
           >
-            Finish the chain here
+            🏁 Finish the chain here
           </button>
         )}
       </section>
@@ -415,10 +421,10 @@ export function PlacementPanel({
         disabled={!result.valid || publishing}
         onClick={withClick(onConfirm)}
       >
-        {publishing ? "Making it worse…" : "Add this trap"}
+        {publishing ? "⏳ Making it worse…" : "🪤 Add this trap"}
       </button>
       <button className="text-button" onClick={withClick(onBack)}>
-        Pick a different trap
+        ↩️ Pick a different trap
       </button>
     </aside>
   );
@@ -477,17 +483,17 @@ export function SharePanel({
             with the full width and the loud fill. Everything else is a way of
             not sending it yet. */}
         <button className="button danger huge share-send" onClick={withClick(onSend)}>
-          Send it to a friend
+          📤 Send it to a friend
         </button>
         <div className="share-actions">
           <button className="button secondary" onClick={withClick(onCopy)}>
-            Copy challenge link
+            📋 Copy challenge link
           </button>
           <button className="button secondary" onClick={withClick(onPlay)}>
-            Play your version
+            ▶️ Play your version
           </button>
           <Link className="text-button" href="/">
-            Back to home
+            🏠 Back to home
           </Link>
         </div>
         <div className="chain-timeline">
@@ -525,10 +531,10 @@ export function PauseCard({
         <div className="panel-kicker">PAUSED</div>
         <h2>The chaos will wait.</h2>
         <button className="button primary" onClick={withClick(onResume)}>
-          Resume
+          ▶️ Resume
         </button>
         <button className="button secondary" onClick={withClick(onHome)}>
-          Quit to home
+          🏠 Quit to home
         </button>
       </section>
     </div>

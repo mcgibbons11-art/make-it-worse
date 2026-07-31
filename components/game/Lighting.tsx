@@ -2,7 +2,11 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Color, DirectionalLight, LinearSRGBColorSpace, Mesh, Object3D } from "three";
+import { Color, DirectionalLight, Group, LinearSRGBColorSpace, Mesh, Object3D, Vector3 } from "three";
+import {
+  createSkyBirdModel,
+  createSkyPlaneModel,
+} from "./models/createSkyAmbienceModel";
 import {
   FOG_DENSITY,
   FOG_RADIANCE,
@@ -61,14 +65,169 @@ void main(){
   #include <colorspace_fragment>
 }`;
 
+const CLOUD_PUFFS = [
+  [-1.45, -0.06, 0, 0.68],
+  [-0.76, 0.12, 0.08, 0.9],
+  [0, 0.3, 0, 1.08],
+  [0.78, 0.1, -0.04, 0.86],
+  [1.43, -0.08, 0.05, 0.62],
+] as const;
+
 function Cloud({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
   return (
     <group position={position} scale={scale}>
-      {[-1, 0, 0.9].map((x, index) => (
-        <mesh key={x} position={[x, index === 1 ? 0.28 : 0, 0]}>
-          <sphereGeometry args={[index === 1 ? 0.85 : 0.62, 12, 9]} />
-          <meshStandardMaterial color="white" roughness={1} />
+      {/* A broad soft base keeps the cloud reading as one puffy silhouette
+          instead of a row of unrelated balls. It is decorative and never
+          participates in raycasts or physics. */}
+      <mesh position={[0, -0.19, 0]} scale={[1.9, 0.45, 0.72]} raycast={() => undefined} renderOrder={-5} frustumCulled={false}>
+        <sphereGeometry args={[1, 14, 9]} />
+        <meshBasicMaterial color="#f5fbff" fog={false} depthTest={false} depthWrite={false} />
+      </mesh>
+      {CLOUD_PUFFS.map(([x, y, z, puffScale], index) => (
+        <mesh
+          key={`${x}-${index}`}
+          position={[x, y, z]}
+          scale={[puffScale, puffScale * 0.92, puffScale * 0.78]}
+          raycast={() => undefined}
+          renderOrder={-5}
+          frustumCulled={false}
+        >
+          <sphereGeometry args={[0.82, 14, 10]} />
+          <meshBasicMaterial color={index % 2 ? "#ffffff" : "#f3f9ff"} fog={false} depthTest={false} depthWrite={false} />
         </mesh>
+      ))}
+    </group>
+  );
+}
+
+function disposeGenerated(root: Object3D) {
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) return;
+    child.geometry.dispose();
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    for (const material of materials) material.dispose();
+  });
+}
+
+/**
+ * Camera-relative environmental dressing. These objects stay outside the
+ * playable course and own no colliders, event handlers, or gameplay state.
+ * Following the camera's broad position means an unlimited custom map cannot
+ * simply run past its sky after a few hundred metres.
+ */
+function SkyAmbience() {
+  const root = useRef<Group>(null);
+  const clouds = useRef<Group>(null);
+  const planeRef = useRef<Group>(null);
+  const birdRefs = useRef<Array<Group | null>>([]);
+  const cameraForward = useRef(new Vector3(0, 0, 1));
+  const planeModel = useMemo(() => createSkyPlaneModel(), []);
+  const birdModels = useMemo(
+    () => Array.from({ length: 5 }, () => createSkyBirdModel()),
+    [],
+  );
+
+  useEffect(
+    () => {
+      // These tiny distant silhouettes are atmosphere, not course geometry.
+      // Exempting them from distance fog prevents them dissolving into the
+      // near-identical sky colour before they ever enter the frame.
+      for (const model of [planeModel, ...birdModels]) {
+        model.traverse((child) => {
+          if (!(child instanceof Mesh)) return;
+          child.renderOrder = -5;
+          child.frustumCulled = false;
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          for (const material of materials) {
+            material.fog = false;
+            material.depthTest = false;
+            material.depthWrite = false;
+          }
+        });
+      }
+      return () => {
+        disposeGenerated(planeModel);
+        for (const bird of birdModels) disposeGenerated(bird);
+      };
+    },
+    [birdModels, planeModel],
+  );
+
+  useFrame(({ camera, clock }) => {
+    const group = root.current;
+    if (!group) return;
+    const elapsed = clock.getElapsedTime();
+    camera.getWorldDirection(cameraForward.current);
+    cameraForward.current.y = 0;
+    if (cameraForward.current.lengthSq() < 0.001) cameraForward.current.set(0, 0, 1);
+    else cameraForward.current.normalize();
+    group.position.set(
+      camera.position.x + cameraForward.current.x * 25,
+      0,
+      camera.position.z + cameraForward.current.z * 25,
+    );
+    group.rotation.y = Math.atan2(cameraForward.current.x, cameraForward.current.z);
+    if (clouds.current) {
+      clouds.current.position.x = Math.sin(elapsed * 0.035) * 2.4;
+      clouds.current.position.y = Math.sin(elapsed * 0.07) * 0.22;
+    }
+
+    // The plane spends most of a 46-second cycle off screen, then crosses once
+    // in roughly twelve seconds. It never flies over the deck itself.
+    const planePhase = (elapsed % 46) / 46;
+    const plane = planeRef.current;
+    if (plane) plane.visible = planePhase < 0.27;
+    if (plane?.visible) {
+      const crossing = planePhase / 0.27;
+      plane.position.set(-27 + crossing * 54, 7 + Math.sin(crossing * Math.PI) * 0.7, 3);
+      plane.rotation.set(0.03, 0, 0.02 * Math.sin(elapsed * 0.8));
+      const propeller = plane.getObjectByName("propeller__pivot");
+      if (propeller) propeller.rotation.x = elapsed * 28;
+    }
+
+    // A small flock crosses on a different rhythm. Each bird gets a phase and
+    // height offset so it reads as life in the distance rather than UI noise.
+    const flockPhase = (elapsed % 31) / 31;
+    for (let index = 0; index < birdRefs.current.length; index += 1) {
+      const bird = birdRefs.current[index];
+      if (!bird) continue;
+      bird.visible = flockPhase > 0.34 && flockPhase < 0.78;
+      if (!bird.visible) continue;
+      const crossing = (flockPhase - 0.34) / 0.44;
+      bird.position.set(
+        29 - crossing * 58 + index * 1.5,
+        7.6 + (index % 3) * 0.46 + Math.sin(elapsed * 1.4 + index) * 0.18,
+        -3 - index * 0.72,
+      );
+      bird.rotation.y = Math.PI;
+      const flap = Math.sin(elapsed * 7.2 + index * 0.75) * 0.62;
+      const left = bird.getObjectByName("wing-left__pivot");
+      const right = bird.getObjectByName("wing-right__pivot");
+      if (left) left.rotation.x = flap;
+      if (right) right.rotation.x = -flap;
+    }
+  });
+
+  return (
+    <group ref={root}>
+      <mesh position={[-9, 7.1, 3]} raycast={() => undefined} renderOrder={-5} frustumCulled={false}>
+        <sphereGeometry args={[1.95, 24, 16]} />
+        <meshBasicMaterial color="#fff1a8" fog={false} depthTest={false} depthWrite={false} />
+      </mesh>
+      <group ref={clouds}>
+        <Cloud position={[-13.5, 5.4, -4]} scale={1.7} />
+        <Cloud position={[10.5, 6.2, 1]} scale={1.35} />
+        <Cloud position={[-3.5, 8.4, 6]} scale={0.82} />
+        <Cloud position={[17, 5, 8]} scale={1.1} />
+        <Cloud position={[2.5, 9, -6]} scale={0.7} />
+      </group>
+      <primitive ref={planeRef} object={planeModel} />
+      {birdModels.map((bird, index) => (
+        <primitive
+          key={index}
+          ref={(value: Group | null) => { birdRefs.current[index] = value; }}
+          object={bird}
+        />
       ))}
     </group>
   );
@@ -116,10 +275,6 @@ export function Lighting({ interior = false }: { interior?: boolean }) {
       <directionalLight ref={sun} castShadow position={[...SUN_OFFSET]} intensity={interior ? 1.65 : 2.4} color="#fff0c5" shadow-mapSize={[2048, 2048]} shadow-bias={-0.00018} shadow-normalBias={0.03} shadow-camera-left={-12.2} shadow-camera-right={16.8} shadow-camera-top={14.7} shadow-camera-bottom={-9.4} />
       <primitive object={sunTarget} />
       <directionalLight position={[10, 8, 28]} intensity={0.6} color="#99c9ff" />
-      <mesh position={[-20, 17, 52]}>
-        <sphereGeometry args={[3.6, 24, 16]} />
-        <meshBasicMaterial color="#fff1a8" />
-      </mesh>
       <pointLight position={[-8, 8, 18]} color="#ffb8ad" intensity={5} distance={32} decay={2} />
       <pointLight position={[8, 7, 35]} color="#a9c8ff" intensity={5} distance={30} decay={2} />
       {!interior && (
@@ -132,9 +287,7 @@ export function Lighting({ interior = false }: { interior?: boolean }) {
               </mesh>
             ))}
           </group>
-          <Cloud position={[-13, 8, 10]} scale={1.5} />
-          <Cloud position={[12, 10, 25]} scale={1.1} />
-          <Cloud position={[-16, 7, 38]} scale={0.9} />
+          <SkyAmbience />
         </>
       )}
     </>

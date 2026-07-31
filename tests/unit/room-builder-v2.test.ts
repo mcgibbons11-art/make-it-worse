@@ -38,6 +38,9 @@ describe("unrestricted custom map builder", () => {
     expect(roomBuilderShortcutAction(event({ code: "KeyC", key: "c", metaKey: true }), false)).toBe("copy");
     expect(roomBuilderShortcutAction(event({ code: "KeyV", key: "v", ctrlKey: true }), false)).toBe("paste");
     expect(roomBuilderShortcutAction(event({ code: "KeyV", key: "v", metaKey: true }), false)).toBe("paste");
+    expect(roomBuilderShortcutAction(event({ code: "KeyZ", key: "z", ctrlKey: true }), false)).toBe("undo");
+    expect(roomBuilderShortcutAction(event({ code: "KeyZ", key: "z", ctrlKey: true, shiftKey: true }), false)).toBe("redo");
+    expect(roomBuilderShortcutAction(event({ code: "KeyY", key: "y", metaKey: true }), false)).toBe("redo");
     expect(roomBuilderShortcutAction(event({ code: "KeyC", key: "c" }), false)).toBeNull();
     expect(roomBuilderShortcutAction(event({ key: "Delete", repeat: true }), false)).toBeNull();
     expect(roomBuilderShortcutAction(event({ key: "Delete" }), true)).toBeNull();

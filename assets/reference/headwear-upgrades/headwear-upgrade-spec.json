@@ -1,0 +1,19 @@
+{
+  "pipeline": "img2threejs reference -> measured head-socket sculpt -> generated runtime factory",
+  "referenceSheet": "assets/reference/headwear-upgrades/headwear-face-eyewear-reference.png",
+  "items": [
+    "helmet",
+    "crown",
+    "cowboy",
+    "beret",
+    "grin",
+    "beard",
+    "mask",
+    "goggles",
+    "aviator",
+    "visorband"
+  ],
+  "fitBasis": "HEAD measurements and silhouette gates in createWardrobeModels.ts",
+  "frontAxis": "+Z",
+  "reviewStatus": "generated structural pass; multi-angle runtime review required"
+}

@@ -2,6 +2,27 @@
 
 Updated continuously from playtest feedback. New requests are added here before being closed.
 
+## Full polish pass — 2026-07-30
+
+- [x] Add a lightweight, broad sky setting to generated rooms: attractive layered clouds, a sun, distant birds, and an occasional passing plane. These elements are visual-only, non-interactable, restrained, and kept outside the playable course.
+- [x] Give every trap stronger personality and readable feedback through anticipation, reaction, particles, synchronized sound, impact readability, and restrained camera response without making every contact fatal.
+- [x] Finish movement and camera polish: ledge stutter/snagging, camera obstruction, continuous 360-degree rotation, spawn orientation, and seamless gameplay/placement/retry transitions.
+- [x] Complete a massive wearable quality pass: inventory and inspect every option on the actual runner from multiple angles; score fit, clipping, silhouette, material/readability, and personality; create a concrete rebuild plan; and substantially improve weak items through the required reference/img2threejs workflow. Add a dedicated hair category with about 20 clearly distinct procedural hairstyles and full custom color controls. Remove the baked-in base shirt and pants so `None` leaves the runner genuinely unclothed, extend/refit short tops and hoodies to meet the pants line when garments are worn, fix handheld alignment, and improve the running pose.
+- [x] Make the custom builder feel like a complete editor: undo/redo, clearer selection and placement previews, multi-select/group movement, copy/paste feedback, non-restrictive reachability warnings, Unity-style position/rotation/X-Y-Z scale controls for customizable blocks, a confirmed way for players to delete their own saved maps from My Maps, and a persistent Copy Code action for an already-published map without forcing a republish.
+- [x] Finish apartment decorating polish: selection and movement, undo/redo, floor/wall customization, materials, lighting, and lived-in environmental detail.
+- [x] Complete a user-centered controls and task-discovery pass across gameplay, custom builder, and apartment: every page must clearly expose what the player can do through concise contextual controls, opt-in tutorial modes, and useful help. Remember dismissed/completed guidance, never replay load-in coaching on Try Again, never stack duplicate tips, and keep help available without spamming or blocking play. Also polish emoji consistency, spacing, control states, panel sizing, loading, game-over/victory presentation, and responsive menu behavior.
+- [x] Perform a full audio-mix pass and add small original/procedural cues where the game needs feedback, while preserving source provenance for recorded audio.
+- [x] Strengthen replayability with meaningful room variation, better run statistics, personal-best feedback, room-scoped records, and clearer replay/add-a-trap motivation.
+- [ ] Verify sharing and publishing end to end: map codes, exact reproduction, child rounds, persistence, local map management, Trending behavior, and real processed-Portals session boundaries.
+- [ ] Optimize initial loading and steady-state runtime performance, including full-resolution frame pacing, shadows/draw calls, and avatar/apartment/builder transitions.
+- [ ] Complete the desktop, mobile, responsive, Portals-iframe, retry, long-chain, large-map, and reload-persistence regression matrix.
+- [x] After all implementation is complete, run ten genuine adversarial art/design review rounds against rendered builds using separate review agents. Every round must cover the apartment, avatar builder, custom game builder, and main clean-room play; retain evidence and actionable findings, fix material issues between rounds, and never count a fabricated or code-only review as a completed visual round.
+- [ ] Rebuild and commit `portals/dist`, push `main`, drive the authenticated Portals GitHub-source sync, and verify every major flow in the processed Portals editor build. Do not press the final Publish Game control; that remains the user's action.
+
+## Blocked on Portals platform support
+
+- [ ] Revisit a main-menu Shop tab for outfits/wearables and apartment furniture only after Portals exposes a documented, server-verifiable Credits balance, purchase, receipt, entitlement, and restore API. Never grant paid ownership from local storage, client-reported scores, or an unverified client callback; verified entitlements must survive migrations and partial-save recovery forever.
+
 ## Fix first
 
 - [x] Add emojis to all three post-code level intro actions: Beat their version, Edit/Make your runner, and Back to the main menu.

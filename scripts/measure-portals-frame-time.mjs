@@ -25,12 +25,15 @@ try {
   });
   console.error("opening", url);
   await page.goto(url, { waitUntil: "networkidle" });
+  const start = page.getByRole("button", { name: /Start game/i });
+  if (await start.isVisible().catch(() => false)) {
+    console.error("leaving the start splash");
+    await start.click();
+  }
   console.error("opening a clean course");
-  await page.getByRole("button", { name: "Play a clean level" }).click();
-  console.error("waiting for generated assets");
-  await page.getByRole("button", { name: /Beat it\. Add the first problem/i }).click();
-  console.error("starting gameplay");
-  await page.locator(".game-hud").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: /Play a clean level/i }).click();
+  console.error("waiting for the generated course to enter the runtime");
+  await page.locator(".game-canvas canvas").waitFor({ state: "visible" });
   await page.locator(".game-canvas canvas").click();
   await page.bringToFront();
   await page.waitForTimeout(3000);

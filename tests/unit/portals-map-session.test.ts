@@ -76,6 +76,10 @@ describe("Portals same-session map protocol", () => {
   it("rejects unknown, malformed, and over-8-KB messages", () => {
     expect(parseMapSessionMessage(null)).toBeNull();
     expect(parseMapSessionMessage({ kind: "miw-map-request", v: 2, versionId: "map-1" })).toBeNull();
+    expect(parseMapSessionMessage({ kind: "miw-latest-map-request", v: MAP_SESSION_PROTOCOL })).toEqual({
+      kind: "miw-latest-map-request",
+      v: MAP_SESSION_PROTOCOL,
+    });
     const oversized = { ...announcement(1), code: "x".repeat(MAP_SESSION_MAX_BYTES) };
     expect(mapSessionWireBytes(oversized)).toBeGreaterThan(MAP_SESSION_MAX_BYTES);
     expect(parseMapSessionMessage(oversized)).toBeNull();
@@ -90,6 +94,10 @@ describe("Portals same-session map protocol", () => {
     await Promise.resolve();
     expect(received).toEqual([lateMap.versionId]);
     if (result.status !== "ok") return;
+    expect(parseMapSessionMessage(host.sent[0])).toEqual({
+      kind: "miw-latest-map-request",
+      v: MAP_SESSION_PROTOCOL,
+    });
 
     const runtime = runtimeMap(generateRandomRoom(22), 22, 22);
     expect(result.connection.announce({ challenge: runtime.challenge, track: runtime.track, avatar: null, title: "Shared room" })).toBe("sent");
@@ -98,6 +106,12 @@ describe("Portals same-session map protocol", () => {
 
     host.handlers.message[0]?.({ kind: "miw-map-request", v: MAP_SESSION_PROTOCOL, versionId: runtime.challenge.slug }, "peer");
     expect(parseMapSessionMessage(host.sent.at(-1))).toMatchObject({ kind: "miw-map-response", versionId: runtime.challenge.slug });
+
+    host.handlers.message[0]?.({ kind: "miw-latest-map-request", v: MAP_SESSION_PROTOCOL }, "late-peer");
+    expect(parseMapSessionMessage(host.sent.at(-1))).toMatchObject({
+      kind: "miw-map-response",
+      versionId: runtime.challenge.slug,
+    });
 
     host.handlers.playerjoin[0]?.(
       { id: "late-peer", playerId: "late-player", displayName: "Late player", avatarUrl: null },
@@ -128,6 +142,24 @@ describe("Portals same-session map protocol", () => {
       kind: "miw-map-response",
       versionId: lateMap.versionId,
     });
+  });
+
+  it("requests and accepts the latest map without relying on a playerjoin event", async () => {
+    const host = installSdk();
+    const received = vi.fn();
+    const result = await connectMapSession(received);
+    expect(result.status).toBe("ok");
+    expect(parseMapSessionMessage(host.sent[0])).toEqual({
+      kind: "miw-latest-map-request",
+      v: MAP_SESSION_PROTOCOL,
+    });
+
+    const lateMap = { ...announcement(24), kind: "miw-map-response" as const };
+    host.handlers.message[0]?.(lateMap, "publisher");
+    await Promise.resolve();
+
+    expect(received).toHaveBeenCalledOnce();
+    expect(received.mock.calls[0]?.[0].challenge.slug).toBe(lateMap.versionId);
   });
 
   it("ignores corrupted announcements without poisoning the session", async () => {

@@ -34,7 +34,12 @@ interface MapRequest {
   versionId: string;
 }
 
-type MapWireMessage = MapAnnouncement | MapRequest;
+interface LatestMapRequest {
+  kind: "miw-latest-map-request";
+  v: typeof MAP_SESSION_PROTOCOL;
+}
+
+type MapWireMessage = MapAnnouncement | MapRequest | LatestMapRequest;
 
 export type MapSessionResult =
   | { status: "ok"; connection: MapSessionConnection }
@@ -73,6 +78,9 @@ export function parseMapSessionMessage(value: unknown): MapWireMessage | null {
   if (!value || typeof value !== "object" || byteLength(value) > MAP_SESSION_MAX_BYTES) return null;
   const message = value as Partial<MapWireMessage> & Record<string, unknown>;
   if (message.v !== MAP_SESSION_PROTOCOL) return null;
+  if (message.kind === "miw-latest-map-request") {
+    return { kind: "miw-latest-map-request", v: MAP_SESSION_PROTOCOL };
+  }
   if (message.kind === "miw-map-request") {
     return versionId(message.versionId)
       ? { kind: "miw-map-request", v: MAP_SESSION_PROTOCOL, versionId: message.versionId }
@@ -138,7 +146,11 @@ export async function connectMapSession(
 
     const accept = (value: unknown) => {
       const message = parseMapSessionMessage(value);
-      if (!message || message.kind === "miw-map-request") return;
+      if (
+        !message ||
+        message.kind === "miw-map-request" ||
+        message.kind === "miw-latest-map-request"
+      ) return;
       const decoded = decodeAnnouncement(message);
       if (!decoded || seen.has(message.versionId)) return;
       seen.add(message.versionId);
@@ -148,11 +160,17 @@ export async function connectMapSession(
     const messageHandler = (value: unknown) => {
       const message = parseMapSessionMessage(value);
       if (!message) return;
-      if (message.kind !== "miw-map-request") {
+      if (
+        message.kind !== "miw-map-request" &&
+        message.kind !== "miw-latest-map-request"
+      ) {
         accept(message);
         return;
       }
-      if (!latest || latest.versionId !== message.versionId) return;
+      if (
+        !latest ||
+        (message.kind === "miw-map-request" && latest.versionId !== message.versionId)
+      ) return;
       const response: MapAnnouncement = { ...latest, kind: "miw-map-response" };
       if (byteLength(response) <= MAP_SESSION_MAX_BYTES) net.send(response);
     };
@@ -176,6 +194,13 @@ export async function connectMapSession(
     net.on("state", stateHandler);
     net.on("playerjoin", playerJoinHandler);
     accept(joined.state[MAP_SESSION_STATE_KEY]);
+    // A fast iframe reload can replace one Portals connection with another
+    // without the surviving peer receiving a distinct `playerjoin` event.
+    // Ask the room directly after our handlers are live. Any peer that has a
+    // validated latest map answers through the same bounded response path.
+    // This tiny broadcast is safe on an empty room and removes the timing
+    // dependency from late-join recovery.
+    net.send({ kind: "miw-latest-map-request", v: MAP_SESSION_PROTOCOL });
 
     const connection: MapSessionConnection = {
       announce({ challenge, track, avatar, title, publishedAt }) {

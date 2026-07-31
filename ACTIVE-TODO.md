@@ -13,15 +13,16 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Complete a user-centered controls and task-discovery pass across gameplay, custom builder, and apartment: every page must clearly expose what the player can do through concise contextual controls, opt-in tutorial modes, and useful help. Remember dismissed/completed guidance, never replay load-in coaching on Try Again, never stack duplicate tips, and keep help available without spamming or blocking play. Also polish emoji consistency, spacing, control states, panel sizing, loading, game-over/victory presentation, and responsive menu behavior.
 - [x] Perform a full audio-mix pass and add small original/procedural cues where the game needs feedback, while preserving source provenance for recorded audio.
 - [x] Strengthen replayability with meaningful room variation, better run statistics, personal-best feedback, room-scoped records, and clearer replay/add-a-trap motivation.
-- [ ] Verify sharing and publishing end to end: map codes, exact reproduction, child rounds, persistence, local map management, Trending behavior, and real processed-Portals session boundaries.
+- [x] Verify sharing and publishing end to end: map codes, exact reproduction, child rounds, persistence, local map management, Trending behavior, and real processed-Portals session boundaries. The final processed 2p pass proved both an unjoined player receiving an existing publication and an already-joined player receiving a newly changed map version.
 - [x] Optimize initial loading and steady-state runtime performance, including initial chunk splitting, transition-time lazy loading, bounded Portals assets, shadow/draw-call review, and avatar/apartment/builder transition checks. The automated software-renderer number remains diagnostic only; the processed Portals editor is the hardware-backed acceptance run.
-- [x] Complete the desktop, mobile, responsive, Portals-iframe, retry, long-chain, large-map, and reload-persistence regression matrix. This includes 798 unit tests, the 21-case cross-browser Playwright suite, the 45-check device flow, exact two-profile map-code reproduction, and a processed-Portals major-flow pass.
+- [x] Complete the desktop, mobile, responsive, Portals-iframe, retry, long-chain, large-map, and reload-persistence regression matrix. This includes 800 passing unit/component tests, the 21-case cross-browser Playwright suite, the 45-check device flow, exact two-profile map-code reproduction, and a processed-Portals major-flow pass.
 - [x] After all implementation is complete, run ten genuine adversarial art/design review rounds against rendered builds using separate review agents. Every round must cover the apartment, avatar builder, custom game builder, and main clean-room play; retain evidence and actionable findings, fix material issues between rounds, and never count a fabricated or code-only review as a completed visual round.
-- [x] Rebuild and commit `portals/dist`, push `main`, drive the authenticated Portals GitHub-source sync, and verify every major flow in the processed Portals editor build. Synced commit `9e6ce19` and verified splash/menu, clean play, wardrobe and 20 hairstyles, apartment explore/decorate, builder/test mode, My Maps Copy Code, a real 1,732-character code import, and exact shared-map play. The final Publish Game control remains untouched for the user.
+- [x] Rebuild and commit `portals/dist`, push `main`, drive the authenticated Portals GitHub-source sync, and verify every major flow in the processed Portals editor build. Synced commit `736b440` and verified splash/menu, clean play, wardrobe and 20 hairstyles, apartment explore/decorate, builder/test mode, My Maps Copy Code, a real 1,732-character code import, exact shared-map play, true same-room late join, and a live changed-version update. The final Publish Game control remains untouched for the user.
 
 ## Blocked on Portals platform support
 
 - [ ] Revisit a main-menu Shop tab for outfits/wearables and apartment furniture only after Portals exposes a documented, server-verifiable Credits balance, purchase, receipt, entitlement, and restore API. Never grant paid ownership from local storage, client-reported scores, or an unverified client callback; verified entitlements must survive migrations and partial-save recovery forever.
+  - [x] Rechecked the official Portals SDK v1.4.0 and advanced-tooling documentation on 2026-07-31. No Credits commerce or durable entitlement API exists; the SDK explicitly says client-reported scores must never control currency, prizes, or access.
 
 ## Fix first
 
@@ -72,17 +73,17 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Flash a concise controls/hotkeys banner at the top whenever Build mode opens; auto-fade it and provide an immediate × dismissal.
 - [x] Remove the main-menu Global leaderboard and scope every leaderboard to the exact custom-built room or shared challenge version being played, so unrelated rooms and trap depths never share scores.
 - [x] Move code redemption out of Trending: add a dedicated main-menu Use map code action that pastes and immediately loads the exact published map or shared challenge without treating ordinary challenge codes as Trending publications.
-- [ ] Finish and prove the full Portals-native custom-game path: draft → publish to this device/session → durable map code → same-session automatic delivery or cross-session paste → Trending catalog → exact-version play → child rounds. This remains open until the processed Portals check below passes with different real players.
+- [x] Finish and prove the full Portals-native custom-game path: draft → publish to this device/session → durable map code → same-session automatic delivery or cross-session paste → Trending catalog → exact-version play → child rounds. Portals' official 2p preview supplied two distinct processed player connections and proved both late-join and live changed-version delivery.
 - [x] Resolve global backend feasibility for the Portals release: processed Portals games block every outside `fetch`, WebSocket, and WebRTC connection, and the SDK exposes no global user-content store. Use Portals session relay plus self-contained map codes instead of presenting local data as global Trending.
   - [x] Keep the completed Supabase schema/API/community browser as an optional standalone-web extension; it is not used by or required for the Portals release.
 - [x] Replace the assumed Portals invite URL with an SDK-supported sharing flow: session state for players together and a self-contained challenge code for players in different sessions.
   - [x] Make Copy map code → Use map code the primary Portals cross-session flow; retain old link imports only for backward compatibility.
   - [x] Persist authored geometry across reloads and every child round in the local repository.
   - [x] Add a bounded/versioned Portals.net announcement/request/response exchange with late-join shared state and an unavailable-host fallback.
-- [ ] Design and test the entire Portals share-game system end to end: create/share/import, same-room delivery, different-session map codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
+- [x] Design and test the entire Portals share-game system end to end: create/share/import, same-room delivery, different-session map codes, authored-room persistence, child rounds, payload limits, failure recovery, and recipient playthrough.
   - [x] Browser-test publish → local Trending catalog → raw-code recipient.
   - [x] Unit/integration-test payload limits, authored geometry round-trip, repository reload, and child persistence.
-  - [ ] Test same-room delivery inside a processed Portals multiplayer session.
+  - [x] Test same-room delivery inside a processed Portals multiplayer session. The 2026-07-31 2p pass proved `Mirror Late Join 0731` on join and changed version `Mirror Live Update 0731` while both players were active.
 - [x] Define and implement the full Portals-native custom-built-game sharing path.
   - [x] Document the Portals SDK boundary, same-session message path, required global backend, data model, ranking approach, and release test matrix in `CUSTOM-GAME-SHARING.md`.
   - [x] Ship immutable self-contained map codes, recipient import, local persistence, child-round inheritance, and published-map Trending registration.
@@ -93,7 +94,7 @@ Updated continuously from playtest feedback. New requests are added here before 
   - [x] Add reporting, moderation/quarantine states, private/unlisted visibility enforcement, and moderator rollback/removal controls.
   - [x] Add the bounded/versioned Portals.net announcement/request/response protocol for players already in the same processed Portals session.
   - [x] Test payload ceilings, corruption/replay, old-version immutability, browser restart, different-player code import, and two child rounds locally end to end.
-  - [ ] Test same-room late join in a processed Portals session.
+  - [x] Test same-room late join in a processed Portals session. Player 2 remained unjoined on the splash until after player 1 published, then received the existing map immediately after Start.
 - [x] Keep spawn and finish mandatory and undeletable, but freely placeable in 3D.
 - [x] Test builder vertical layouts, rotated jump footprints, conservative jump warnings, real-game Test mode, platform colors, trap base colors, overlap-safe dragging, and all 55 runtime trap assets.
 

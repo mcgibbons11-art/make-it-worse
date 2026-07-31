@@ -85,13 +85,13 @@ import {
   type MapSessionResult,
 } from "./map-session";
 import {
-  PUBLISHED_MAP_CODE_PREFIX,
   encodePublishedMapCode,
   listRememberedPublishedMaps,
   rememberPublishedMap,
   wrapPublishedMapCode,
   type PublishedMapRecord,
 } from "./published-map-catalog";
+import { extractSharedMapPayload } from "./map-code-input";
 const GameCanvas = lazy(() => import("@/components/game/GameCanvas"));
 const RoomBuilder = lazy(() =>
   import("@/components/game/RoomBuilder").then((module) => ({
@@ -660,25 +660,14 @@ export function PortalsApp() {
     }
   };
   const importSharedGame = async (rawCode: string) => {
-    const pasted = rawCode.trim();
-    if (!pasted) {
+    const payload = extractSharedMapPayload(rawCode);
+    if (!payload) {
       setNotice("Paste the complete map code first.");
       return;
     }
     setNotice("");
     try {
-      const urlText = pasted.split(/\s+/).find((part) => /^https?:\/\//i.test(part));
-      let payload = pasted;
-      if (urlText) payload = new URL(urlText).searchParams.get(CHALLENGE_LINK_PARAM) ?? "";
-      else {
-        try {
-          payload = new URL(pasted).searchParams.get(CHALLENGE_LINK_PARAM) ?? pasted;
-        } catch {
-          // A raw challenge code is the expected fallback when a host strips
-          // query strings, so failing URL parsing is not an error here.
-        }
-      }
-      if (payload.startsWith(PUBLISHED_MAP_CODE_PREFIX)) {
+      if (payload.startsWith("MIW-MAP-1.")) {
         const published = rememberPublishedMap(payload);
         const stored = await (
           repository.importChallenge?.(published.challenge, published.track) ??

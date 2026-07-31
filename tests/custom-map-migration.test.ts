@@ -5,6 +5,10 @@ const migration = readFileSync(
   new URL("../supabase/migrations/0021_custom_map_publishing.sql", import.meta.url),
   "utf8",
 );
+const authoredBounds = readFileSync(
+  new URL("../supabase/migrations/0022_authored_map_trap_bounds.sql", import.meta.url),
+  "utf8",
+);
 
 describe("custom map database trust boundary", () => {
   it("stores immutable versions under stable owned maps", () => {
@@ -34,6 +38,10 @@ describe("custom map database trust boundary", () => {
     expect(migration).toContain("v_payload->>0<>'5'");
     expect(migration).toContain("jsonb_array_length(v_payload->7->0) not between 1 and 96");
     expect(migration).toContain("encode(digest(p_code,'sha256'),'hex')");
+    expect(authoredBounds).toContain("check (trap_count >= 0)");
+    expect(authoredBounds).toContain("check (piece_count >= 1)");
+    expect(authoredBounds).toContain("char_length(p_code) not between 1 and 1000000");
+    expect(authoredBounds).not.toContain("jsonb_array_length(v_payload->6)>");
   });
 
   it("keeps old immutable versions playable, measurable, and reportable", () => {

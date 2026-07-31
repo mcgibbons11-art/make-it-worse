@@ -7,6 +7,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { useSettingsStore } from "@/stores/settings-store";
 import { CONTROLS } from "./shell-state";
+import { PASTED_MAP_INPUT_MAX_LENGTH } from "../map-code-input";
 
 const FOCUSABLE = [
   "a[href]",
@@ -143,7 +144,7 @@ export function MapCodePanel({
           id="portals-map-code-input"
           value={value}
           rows={7}
-          maxLength={12_000}
+          maxLength={PASTED_MAP_INPUT_MAX_LENGTH}
           spellCheck={false}
           autoCapitalize="none"
           autoCorrect="off"
@@ -358,7 +359,7 @@ export function ControlsPanel({
         </article>
         <article>
           <h3>📥 Open other maps</h3>
-          <p>Use Map Code loads the exact published or shared room encoded by another player. Trending contains published community maps; invite codes themselves do not affect Trending.</p>
+          <p>Use Map Code accepts the raw code or an older complete game link and loads the exact room encoded by another player. Trending contains published community maps; invite codes themselves do not affect Trending.</p>
         </article>
         <article>
           <h3>🏆 Room records</h3>

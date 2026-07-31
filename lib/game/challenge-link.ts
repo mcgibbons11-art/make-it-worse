@@ -34,11 +34,21 @@ import type { BuiltTrack } from "./track";
 import type { ChallengeDTO, PlacementZone, TrapInstance } from "./types";
 
 export const CHALLENGE_LINK_PARAM = "d";
-const MAX_PAYLOAD_LENGTH = 8_000;
+// Portals' multiplayer relay is 8 KB per message, but cross-session custom
+// maps travel by copy/paste and are not URLs. Keeping the old relay ceiling
+// here imposed a map-design limit on the builder for no reason. A generous
+// byte guard still protects the recipient parser from hostile pasted input;
+// same-session delivery independently falls back when it cannot relay a code.
+export const CHALLENGE_CODE_MAX_LENGTH = 1_000_000;
 const MAX_NAMES = 64;
 // Offsets are stored in grid steps so they survive as small integers.
 const GRID_STEPS_PER_UNIT = 4;
 const MAX_GRID_STEPS = 200;
+// A normal post-clear trap stays close to its placement surface. Authored-room
+// traps are deliberately free-placeable across the builder's 2,000-unit work
+// plane, so using that ordinary 50-unit bound made the sender create a code the
+// recipient decoder rejected. The runtime track itself remains bounded below.
+const MAX_AUTHORED_GRID_STEPS = 800_000;
 
 const SAFE_NAME = /^[\p{L}\p{N} '._-]+$/u;
 
@@ -53,28 +63,42 @@ const nameSchema = z
 
 // [typeIndex, zoneIndex, offsetXSteps, offsetZSteps, quarterTurns, nameIndex,
 //  ownerAvatarSeed, seed]
-const trapTupleSchema = z.tuple([
+function trapTupleSchema(maxGridSteps: number) {
+  return z.tuple([
   z.number().int().min(0).max(TRAP_TYPES.length - 1),
   // A composed track can expose more zones than the fixed course, so the real
   // bound is the decoded track's own zone count, checked below.
-  z.number().int().min(0).max(255),
-  z.number().int().min(-MAX_GRID_STEPS).max(MAX_GRID_STEPS),
-  z.number().int().min(-MAX_GRID_STEPS).max(MAX_GRID_STEPS),
+  z.number().int().nonnegative(),
+  z.number().int().min(-maxGridSteps).max(maxGridSteps),
+  z.number().int().min(-maxGridSteps).max(maxGridSteps),
   z.number().int().min(0).max(3),
   z.number().int().min(0).max(MAX_NAMES - 1),
   z.number().int(),
   z.number().int(),
-]);
+  ]);
+}
+
+const ordinaryTrapTupleSchema = trapTupleSchema(MAX_GRID_STEPS);
+const authoredTrapTupleSchema = trapTupleSchema(MAX_AUTHORED_GRID_STEPS);
 
 // Version 1 carried only traps on the fixed course. Version 2 appends the
 // track, so a custom course travels in the link too. Both still decode.
-const basePayload = [
+const basePayloadPrefix = [
   z.string().regex(/^[a-z0-9-]{6,24}$/),
   z.number().int(),
   z.number().int().min(0).max(MAX_NAMES - 1),
   z.number().int(),
   z.array(nameSchema).min(1).max(MAX_NAMES),
-  z.array(trapTupleSchema).max(20),
+] as const;
+
+const ordinaryBasePayload = [
+  ...basePayloadPrefix,
+  z.array(ordinaryTrapTupleSchema).max(20),
+] as const;
+
+const authoredBasePayload = [
+  ...basePayloadPrefix,
+  z.array(authoredTrapTupleSchema),
 ] as const;
 
 // [attempts, completions, bestTimeMs] of the challenge being sent. Zeroing
@@ -104,7 +128,7 @@ const trackSchema = z
   .min(1)
   .max(MAX_TRACK_SEGMENTS);
 
-const runtimeNumber = z.number().finite().min(-2_048).max(2_048);
+const runtimeNumber = z.number().finite().min(-100_000).max(100_000);
 const runtimePieceSchema = z.tuple([
   runtimeNumber, runtimeNumber, runtimeNumber,
   z.number().finite().min(0.02).max(2_048),
@@ -119,27 +143,27 @@ const runtimeZoneSchema = z.tuple([
   z.string().regex(/^[0-9a-f]{1,32}$/),
 ]);
 const runtimeTrackSchema = z.tuple([
-  z.array(runtimePieceSchema).min(1).max(96),
-  z.array(runtimeZoneSchema).min(1).max(96),
+  z.array(runtimePieceSchema).min(1),
+  z.array(runtimeZoneSchema).min(1),
   z.tuple([runtimeNumber, runtimeNumber, runtimeNumber]),
   z.tuple([runtimeNumber, runtimeNumber, runtimeNumber]),
-  z.number().finite().min(1).max(4_096),
+  z.number().finite().min(1).max(200_000),
 ]);
 
 const payloadSchema = z.union([
-  z.tuple([z.literal(1), ...basePayload]),
-  z.tuple([z.literal(2), ...basePayload, trackSchema]),
-  z.tuple([z.literal(3), ...basePayload, trackSchema, statsTuple]),
+  z.tuple([z.literal(1), ...ordinaryBasePayload]),
+  z.tuple([z.literal(2), ...ordinaryBasePayload, trackSchema]),
+  z.tuple([z.literal(3), ...ordinaryBasePayload, trackSchema, statsTuple]),
   z.tuple([
     z.literal(4),
-    ...basePayload,
+    ...ordinaryBasePayload,
     trackSchema,
     statsTuple,
     avatarTuple,
   ]),
   z.tuple([
     z.literal(5),
-    ...basePayload,
+    ...authoredBasePayload,
     runtimeTrackSchema,
     statsTuple,
     avatarTuple.nullable(),
@@ -316,8 +340,17 @@ export function encodeChallengeLink(
         avatar ? avatarToTuple(avatar) : null,
       ]),
     );
-    if (encoded.length > MAX_PAYLOAD_LENGTH)
+    if (encoded.length > CHALLENGE_CODE_MAX_LENGTH)
       throw new Error("CHALLENGE_LINK_UNENCODABLE: this room is too large for a challenge code");
+    // Never put a code on the clipboard that the receiving path will reject.
+    // This catches schema drift (counts, coordinates, names, or zones) at the
+    // builder, where the player can still correct the room.
+    try {
+      decodeChallengeLink(encoded);
+      if (!decodeChallengeRuntimeTrack(encoded)) throw new Error("missing authored room");
+    } catch {
+      throw new Error("CHALLENGE_LINK_UNENCODABLE: this authored room cannot be represented by a map code");
+    }
     return encoded;
   }
   if (!avatar) return toBase64Url(JSON.stringify([3, ...body, ...tail]));
@@ -332,7 +365,7 @@ export function encodeChallengeLink(
 }
 
 function parsePayload(payload: string): Payload {
-  if (!payload || payload.length > MAX_PAYLOAD_LENGTH)
+  if (!payload || payload.length > CHALLENGE_CODE_MAX_LENGTH)
     throw new Error("CHALLENGE_LINK_INVALID");
   let parsed: unknown;
   try {

@@ -1,4 +1,5 @@
 import {
+  CHALLENGE_CODE_MAX_LENGTH,
   decodeChallengeLink,
   decodeChallengeRuntimeTrack,
   encodeChallengeLink,
@@ -8,7 +9,7 @@ import type { ChallengeDTO } from "@/lib/game/types";
 import type { BuiltTrack } from "@/lib/game/track";
 
 export const PUBLISHED_MAP_CODE_PREFIX = "MIW-MAP-1.";
-export const PUBLISHED_MAP_CODE_MAX_LENGTH = 8_000;
+export const PUBLISHED_MAP_CODE_MAX_LENGTH = CHALLENGE_CODE_MAX_LENGTH + 2_048;
 export const PUBLISHED_MAP_CATALOG_KEY = "miw.portals-published-maps.v1";
 const MAX_REMEMBERED_MAPS = 48;
 

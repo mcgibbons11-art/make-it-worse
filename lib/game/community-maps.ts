@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  CHALLENGE_CODE_MAX_LENGTH,
   decodeChallengeAvatar,
   decodeChallengeLink,
   decodeChallengeRuntimeTrack,
@@ -9,7 +10,7 @@ import type { ChallengeDTO } from "./types";
 import type { BuiltTrack } from "./track";
 
 export const CUSTOM_MAP_SCHEMA_VERSION = 1;
-export const CUSTOM_MAP_CODE_MAX_LENGTH = 8_000;
+export const CUSTOM_MAP_CODE_MAX_LENGTH = CHALLENGE_CODE_MAX_LENGTH;
 export const CUSTOM_MAP_PAGE_SIZE = 12;
 
 export const customMapVisibilitySchema = z.enum(["public", "unlisted", "private"]);
@@ -55,8 +56,8 @@ export const customMapVersionSchema = z.object({
   schemaVersion: z.literal(CUSTOM_MAP_SCHEMA_VERSION),
   challengeSlug: challengeSlugSchema,
   payloadHash: z.string().regex(/^[0-9a-f]{64}$/),
-  pieceCount: z.number().int().min(1).max(96),
-  trapCount: z.number().int().min(0).max(20),
+  pieceCount: z.number().int().positive(),
+  trapCount: z.number().int().nonnegative(),
   playable: z.boolean(),
   createdAt: dateSchema,
 }).strict();
@@ -116,8 +117,8 @@ export const customMapPublishRequestSchema = z.object({
 }).strict().superRefine((input, context) => {
   try {
     const decoded = validateCustomMapCode(input.code);
-    if (!decoded.track.pieces.length || decoded.track.pieces.length > 96)
-      context.addIssue({ code: "custom", path: ["code"], message: "Map piece count is outside the supported range" });
+    if (!decoded.track.pieces.length)
+      context.addIssue({ code: "custom", path: ["code"], message: "Map must contain playable geometry" });
   } catch {
     context.addIssue({ code: "custom", path: ["code"], message: "Map code is invalid or is not an authored room" });
   }

@@ -4,6 +4,7 @@ import { optionalUserSupabase, rpc, userScopedSupabase } from "@/lib/api/auth";
 import { decodeMapCursor, encodeMapCursor } from "@/lib/api/map-cursor";
 import {
   customMapBrowseQuerySchema,
+  CUSTOM_MAP_CODE_MAX_LENGTH,
   customMapBrowseResponseSchema,
   customMapDetailSchema,
   customMapPublishRequestSchema,
@@ -48,7 +49,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = customMapPublishRequestSchema.parse(await parseJsonBody(request, 16_000));
+    const body = customMapPublishRequestSchema.parse(
+      await parseJsonBody(request, CUSTOM_MAP_CODE_MAX_LENGTH + 4_096),
+    );
     const decoded = validateCustomMapCode(body.code);
     const data = await rpc(
       userScopedSupabase(request),

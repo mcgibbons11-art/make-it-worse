@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateRandomRoom, runtimeMap } from "@/components/game/RoomBuilder";
+import { generateRandomRoom, runtimeMap, type RoomItem } from "@/components/game/RoomBuilder";
 import {
   decodeChallengeLink,
   decodeChallengeRuntimeTrack,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/game/challenge-link";
 import { encodeGhostTrace } from "@/lib/game/replay-codec";
 import { firstLegalPlacement } from "@/lib/game/trap-choice";
+import { TRAP_TYPES } from "@/lib/game/trap-catalog";
 import { DemoRepository } from "@/lib/repository/DemoRepository";
 import { MemoryDatabase } from "@/lib/repository/demo-db";
 
@@ -42,6 +43,43 @@ async function finishAndPublish(repository: DemoRepository, slug: string) {
 }
 
 describe("authored map cross-player chain", () => {
+  function roomWithTraps(count: number, farthestX = 0) {
+    const pieces = generateRandomRoom(7171).filter((item) => !item.asset.startsWith("trap:"));
+    const support = pieces.find((item) => item.asset === "platform")!;
+    const traps: RoomItem[] = Array.from({ length: count }, (_, index) => ({
+      uid: 10_000 + index,
+      asset: `trap:${TRAP_TYPES[index % TRAP_TYPES.length]!}` as const,
+      x: index === count - 1 && farthestX ? farthestX : support.x + (index % 8) * 0.25,
+      y: support.y,
+      z: support.z + Math.floor(index / 8) * 0.25,
+      rotation: (index % 4) * Math.PI / 2,
+      color: "#ff9f1c",
+    }));
+    return runtimeMap([...pieces, ...traps], 71, 7171, "Map Author");
+  }
+
+  it("round-trips a trap-heavy authored room beyond the ordinary 20-round limit", () => {
+    const authored = roomWithTraps(37);
+    const code = encodeChallengeLink(authored.challenge, null, authored.track);
+    const received = decodeChallengeLink(code);
+    expect(received.traps).toHaveLength(37);
+    expect(received.traps.map((trap) => trap.type)).toEqual(
+      authored.challenge.traps.map((trap) => trap.type),
+    );
+  });
+
+  it("round-trips a free-placed authored trap more than 50 units from support", () => {
+    const authored = roomWithTraps(1, 400);
+    const code = encodeChallengeLink(authored.challenge, null, authored.track);
+    expect(decodeChallengeLink(code).traps[0]?.position[0]).toBe(400);
+  });
+
+  it("does not impose an ordinary challenge-count cap on authored traps", () => {
+    const authored = roomWithTraps(97);
+    const code = encodeChallengeLink(authored.challenge, null, authored.track);
+    expect(decodeChallengeLink(code).traps).toHaveLength(97);
+  });
+
   it("survives different players, restarts, two child rounds, and immutable old links", async () => {
     const items = generateRandomRoom(4444).filter((item) => !item.asset.startsWith("trap:"));
     const authored = runtimeMap(items, 88, 4444, "Map Author");
@@ -85,17 +123,17 @@ describe("authored map cross-player chain", () => {
     expect(() => decodeChallengeLink(code.slice(0, -1) + replacement)).toThrow("CHALLENGE_LINK_INVALID");
   });
 
-  it("refuses authored rooms that exceed the bounded challenge-code channel", () => {
+  it("keeps only a generous pasted-data byte guard, not a map-piece count cap", () => {
     const items = generateRandomRoom(6666).filter((item) => !item.asset.startsWith("trap:"));
     const base = runtimeMap(items, 55, 6666, "Map Author");
-    const pieces = Array.from({ length: 96 }, (_, index) => ({
+    const pieces = Array.from({ length: 30_000 }, (_, index) => ({
       ...base.track.pieces[index % base.track.pieces.length]!,
       id: `huge-${index}`,
       center: [index * 2 + 0.123456789, index % 4 + 0.234567891, -index * 2 - 0.345678912] as const,
       size: [4.123456789, 0.654321987, 3.234567891] as const,
       color: `#${index.toString(16).padStart(6, "0")}`,
     }));
-    const zones = Array.from({ length: 96 }, (_, index) => ({
+    const zones = Array.from({ length: 30_000 }, (_, index) => ({
       id: `huge-zone-${index}`,
       label: `Huge surface ${index}`,
       minX: index + 0.123456789,

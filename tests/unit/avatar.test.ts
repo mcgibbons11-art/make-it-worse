@@ -338,8 +338,8 @@ describe("the picker", () => {
   it("offers a colour for every garment slot that takes one", () => {
     const container = open({
       ...DEFAULT_AVATAR,
-      top: "hoodie",
-      outerwear: "puffer",
+      top: "tee",
+      outerwear: "hoodie",
       legwear: "jeans",
       footwear: "boot",
       backpack: "daypack",

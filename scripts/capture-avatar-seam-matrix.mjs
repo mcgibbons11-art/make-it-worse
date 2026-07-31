@@ -8,13 +8,19 @@ const output = path.resolve(process.argv[3] ?? "artifacts/avatar-seam-matrix");
 await mkdir(output, { recursive: true });
 
 const outfits = [
-  { label: "Naked None state", top: "None", legs: "None" },
-  { label: "T-shirt + jeans", top: "T-shirt", legs: "Jeans" },
-  { label: "Tank top + shorts", top: "Tank top", legs: "Shorts" },
-  { label: "Hoodie + joggers", top: "Hoodie", legs: "Joggers" },
-  { label: "Stripes + cargo pants", top: "Stripes", legs: "Cargo pants" },
-  { label: "Jersey + kilt", top: "Jersey", legs: "Kilt" },
-  { label: "Turtleneck + tights", top: "Turtleneck", legs: "Tights" },
+  { label: "Naked None state", top: "None", legs: "None", outer: "None" },
+  { label: "T-shirt + jeans", top: "T-shirt", legs: "Jeans", outer: "None" },
+  { label: "Tank top + shorts", top: "Tank top", legs: "Shorts", outer: "None" },
+  { label: "Hoodie + joggers", top: "None", legs: "Joggers", outer: "Hoodie" },
+  { label: "Stripes + cargo pants", top: "Stripes", legs: "Cargo pants", outer: "None" },
+  { label: "Jersey + kilt", top: "Jersey", legs: "Kilt", outer: "None" },
+  { label: "Turtleneck + tights", top: "Turtleneck", legs: "Tights", outer: "None" },
+  { label: "T-shirt under jacket", top: "T-shirt", legs: "Jeans", outer: "Jacket" },
+  { label: "T-shirt under hoodie", top: "T-shirt", legs: "Jeans", outer: "Hoodie" },
+  { label: "T-shirt under puffer", top: "T-shirt", legs: "Joggers", outer: "Puffer" },
+  { label: "Tank under vest", top: "Tank top", legs: "Shorts", outer: "Vest" },
+  { label: "Turtleneck under poncho", top: "Turtleneck", legs: "Tights", outer: "Poncho" },
+  { label: "Stripes under harness", top: "Stripes", legs: "Cargo pants", outer: "Harness" },
 ];
 
 const browser = await chromium.launch({
@@ -57,6 +63,7 @@ try {
   for (const [index, outfit] of outfits.entries()) {
     await choose("Top", "avatar-top", outfit.top);
     await choose("Legs", "avatar-legwear", outfit.legs);
+    await choose("Outer layer", "avatar-outerwear", outfit.outer);
     await page.waitForTimeout(120);
     const front = `${String(index + 1).padStart(2, "0")}-front.png`;
     const side = `${String(index + 1).padStart(2, "0")}-side.png`;

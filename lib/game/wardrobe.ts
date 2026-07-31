@@ -122,7 +122,8 @@ export type AvatarOuterwearId =
   | "poncho"
   | "harness"
   | "wings"
-  | "scarf";
+  | "scarf"
+  | "hoodie";
 
 export type AvatarLegwearId =
   | "none"
@@ -251,6 +252,13 @@ export const AVATAR_TOPS: readonly WardrobeOption<AvatarTopId>[] = [
   { id: "racer", label: "Racer" },
 ];
 
+// `hoodie` remains in AVATAR_TOPS so existing saved runners and append-only
+// wardrobe codes keep their historical index. New picker choices classify it
+// as outerwear, where it can correctly layer over a T-shirt.
+export const AVATAR_SELECTABLE_TOPS = AVATAR_TOPS.filter(
+  (entry) => entry.id !== "hoodie",
+);
+
 export const AVATAR_OUTERWEAR: readonly WardrobeOption<AvatarOuterwearId>[] = [
   { id: "none", label: "None" },
   { id: "jacket", label: "Jacket" },
@@ -261,6 +269,8 @@ export const AVATAR_OUTERWEAR: readonly WardrobeOption<AvatarOuterwearId>[] = [
   { id: "harness", label: "Harness" },
   { id: "wings", label: "Wings" },
   { id: "scarf", label: "Scarf" },
+  // Appended: never reorder this codec-backed list.
+  { id: "hoodie", label: "Hoodie" },
 ];
 export const AVATAR_SELECTABLE_OUTERWEAR = AVATAR_OUTERWEAR.filter(
   (entry) => entry.id !== "cape" && entry.id !== "wings",
@@ -362,7 +372,7 @@ export const WARDROBE_SLOTS: readonly WardrobeSlot[] = [
     id: "top",
     label: "Top",
     note: "A shell over the torso. It twists with the torso, so the arms leave it where they already leave the body.",
-    options: AVATAR_TOPS,
+    options: AVATAR_SELECTABLE_TOPS,
     colorKey: "top",
     sockets: ["Torso__pivot", "Neck__pivot", "Shoulder cap left__pivot", "Shoulder cap right__pivot"],
   },

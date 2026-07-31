@@ -320,13 +320,11 @@ export function applyWardrobeSelection(
     if (next.headwear === "helmet" || next.headwear === "visor") clear("headwear");
     if (next.face === "mask") clear("face");
   } else if (slot === "top" && next.top !== "none") {
-    if (["puffer", "poncho", "harness"].includes(next.outerwear)) clear("outerwear");
     if (next.top === "overalls") clear("legwear");
   } else if (slot === "legwear" && next.legwear !== "none") {
     if (next.top === "overalls") clear("top");
   } else if (slot === "outerwear" && next.outerwear !== "none") {
     if (["puffer", "poncho", "harness"].includes(next.outerwear)) {
-      clear("top");
       clear("backpack");
     } else if (next.backpack === "cape" || next.backpack === "wings") {
       clear("backpack");
@@ -366,6 +364,12 @@ export function normalizeAvatar(
 ): AvatarConfig {
   const stored: Partial<AvatarConfig> = config ?? {};
   const colors: Partial<AvatarGarmentColors> = stored.colors ?? {};
+  // Hoodies shipped in the Top slot. Keep that id in the legacy codec, but
+  // migrate the old standalone state into Outer layer so new and old runners
+  // can put the hoodie over a shirt. Preserve its chosen top colour too.
+  const legacyTopHoodie = stored.top === "hoodie";
+  const migrateLegacyHoodie = legacyTopHoodie &&
+    (stored.outerwear === undefined || stored.outerwear === "none");
   return {
     body: knownColor(stored.body, DEFAULT_AVATAR.body),
     pack: knownColor(stored.pack, DEFAULT_AVATAR.pack),
@@ -373,8 +377,10 @@ export function normalizeAvatar(
     hair: known(AVATAR_HAIR, stored.hair, "classic"),
     face: known(AVATAR_FACES, stored.face, "plain"),
     eyewear: known(AVATAR_EYEWEAR, stored.eyewear, "none"),
-    top: known(AVATAR_TOPS, stored.top, "none"),
-    outerwear: known(AVATAR_OUTERWEAR, stored.outerwear, "none"),
+    top: legacyTopHoodie ? "none" : known(AVATAR_TOPS, stored.top, "none"),
+    outerwear: migrateLegacyHoodie
+      ? "hoodie"
+      : known(AVATAR_OUTERWEAR, stored.outerwear, "none"),
     legwear: known(AVATAR_LEGWEAR, stored.legwear, "none"),
     footwear: known(AVATAR_FOOTWEAR, stored.footwear, "none"),
     backpack: known(AVATAR_BACKPACKS, stored.backpack, "none"),
@@ -385,7 +391,9 @@ export function normalizeAvatar(
       face: knownColor(colors.face, DEFAULT_GARMENT_COLORS.face),
       eyewear: knownColor(colors.eyewear, DEFAULT_GARMENT_COLORS.eyewear),
       top: knownColor(colors.top, DEFAULT_GARMENT_COLORS.top),
-      outerwear: knownColor(colors.outerwear, DEFAULT_GARMENT_COLORS.outerwear),
+      outerwear: migrateLegacyHoodie
+        ? knownColor(colors.top, DEFAULT_GARMENT_COLORS.top)
+        : knownColor(colors.outerwear, DEFAULT_GARMENT_COLORS.outerwear),
       legwear: knownColor(colors.legwear, DEFAULT_GARMENT_COLORS.legwear),
       footwear: knownColor(colors.footwear, DEFAULT_GARMENT_COLORS.footwear),
       backpack: knownColor(colors.backpack, DEFAULT_GARMENT_COLORS.backpack),
@@ -824,6 +832,10 @@ function fieldOptions(field: CodeField): readonly string[] {
     return AVATAR_FACES.map((entry) => entry.id);
   if (field.kind === "item" && field.slot === "outerwear")
     return AVATAR_OUTERWEAR.map((entry) => entry.id);
+  // The visible Top picker no longer offers the legacy hoodie entry, but the
+  // append-only link codec must retain its old character index forever.
+  if (field.kind === "item" && field.slot === "top")
+    return AVATAR_TOPS.map((entry) => entry.id);
   if (field.kind === "item" && field.slot === "backpack")
     return AVATAR_BACKPACKS.map((entry) => entry.id);
   if (field.kind === "item")

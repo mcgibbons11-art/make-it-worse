@@ -1040,8 +1040,17 @@ function sleeve(
   cuff: readonly [depth: number, proud: number] = [0.06, 0.023],
   /** Where body hoops carry on across the sleeve, and how deep each is. */
   hoops: readonly (readonly [at: number, depth: number])[] = [],
+  /** Radial clearance over the bare arm; outer layers use a larger value. */
+  clearance = 0.015,
 ): THREE.Group {
-  const mesh = limbSleeve(ARM, side, 0.06, to, armRadius(0.06) + 0.015, armRadius(to) + 0.015);
+  const mesh = limbSleeve(
+    ARM,
+    side,
+    0.06,
+    to,
+    armRadius(0.06) + clearance,
+    armRadius(to) + clearance,
+  );
   mesh.userData["wardrobeTint"] = tint;
   // Every sleeve in the reference set ends in a band - rolled on the tee and
   // the jacket, ribbed on the hoodie - so the cuff is on the shared builder
@@ -1051,8 +1060,8 @@ function sleeve(
     side,
     to - cuff[0],
     to + 0.02,
-    armRadius(to) + cuff[1],
-    armRadius(to) + cuff[1],
+    armRadius(to) + Math.max(cuff[1], clearance + 0.008),
+    armRadius(to) + Math.max(cuff[1], clearance + 0.008),
   );
   band.userData["wardrobeTint"] = "trim";
   const result = group(mesh, band);
@@ -1318,6 +1327,11 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
   switch (id) {
     case "none":
       return [];
+    case "hoodie":
+      // The hoodie is authored by the same factory as the legacy Top version,
+      // but now rides the outer palette and clearance path so a T-shirt can
+      // remain underneath it.
+      return topShellParts("hoodie");
     case "jacket": {
       // wear-jacket.png: a denim jacket with a mint collar (on the neck socket
       // below), two flap chest pockets, a hem band and a row of light buttons
@@ -1506,7 +1520,11 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
 const OUTER_SLEEVES: Partial<Record<AvatarOuterwearId, number>> = {
   jacket: 0.96,
   puffer: 0.94,
+  hoodie: 0.98,
 };
+
+/** Outer garments that cover a shirt's shoulder cap as well as its sleeve. */
+const OUTER_SHOULDERS = new Set<AvatarOuterwearId>(["jacket", "puffer", "hoodie"]);
 
 /**
  * Outerwear that closes round the neck rather than round the ribcage.
@@ -1517,6 +1535,8 @@ const OUTER_SLEEVES: Partial<Record<AvatarOuterwearId, number>> = {
  */
 function outerCollarParts(id: AvatarOuterwearId): THREE.Object3D[] {
   switch (id) {
+    case "hoodie":
+      return collarParts("hoodie");
     case "puffer":
       return [part(tube(0.195, 0.205, 0.095, 18, true), "trim", { x: 0, y: 0.05, z: 0 })];
     case "scarf":
@@ -1687,19 +1707,31 @@ function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
   waistband.rotation.x = Math.PI / 2;
   waistband.scale.z = 0.8;
   if (id === "kilt") return [yoke, waistband, createWearableUpgradeModel("kilt")];
+  // The leg sleeves must stay separate so they can run, but trousers are not
+  // two disconnected tubes. This pelvis-mounted gusset overlaps the yoke and
+  // both upper thighs, closing the bright vertical slit that used to show
+  // through every pair of pants. It ends high enough that the legs still swing
+  // freely beneath it.
+  const crotch = part(roundedSlab(0.13, 0.15, 0.19), baseTint, {
+    x: 0,
+    y: -0.045,
+    z: 0,
+  });
+  crotch.name = "Trouser crotch bridge";
+  crotch.userData["wardrobeNoOutline"] = true;
   if (id === "tights") {
     const frontSeam = part(slab(0.012, 0.15, 0.012), "trim", {
       x: 0, y: 0.095, z: 0.216,
     });
     frontSeam.userData["wardrobeNoOutline"] = true;
-    return [yoke, waistband, frontSeam];
+    return [yoke, waistband, crotch, frontSeam];
   }
-  if (id !== "joggers") return [yoke, waistband];
+  if (id !== "joggers") return [yoke, waistband, crotch];
   const drawstring = (side: -1 | 1) =>
     part(tube(0.007, 0.007, 0.095, 7), "cream", {
       x: side * 0.035, y: 0.15, z: 0.212,
     });
-  return [yoke, waistband, drawstring(-1), drawstring(1)];
+  return [yoke, waistband, crotch, drawstring(-1), drawstring(1)];
 }
 
 function overallLowerParts(): THREE.Object3D[] {
@@ -1721,14 +1753,23 @@ function overallLowerParts(): THREE.Object3D[] {
  * reaches up behind the visible torso shell, and exists only for a selected
  * top (or a full torso outer layer when no top is worn).
  */
-function garmentWaistBridge(tint: WardrobeTint = "main"): THREE.Object3D[] {
+function garmentWaistBridge(
+  tint: WardrobeTint = "main",
+  radialClearance = 0,
+): THREE.Object3D[] {
   const bridge = part(
     // Keep the shirt outside the high-rise trouser yoke for the whole shared
     // height. The previous opposing tapers crossed through one another and
     // rasterized as a row of dark triangular "teeth" at the waist. This is a
     // visible shirt tail: it starts inside the torso shell, clears the pants,
     // and finishes just below their waistband.
-    new THREE.CylinderGeometry(0.282, 0.245, 0.14, 24, 3),
+    new THREE.CylinderGeometry(
+      0.282 + radialClearance,
+      0.245 + radialClearance,
+      0.14,
+      24,
+      3,
+    ),
     tint,
     { x: 0, y: 0.14, z: 0 },
   );
@@ -2242,17 +2283,25 @@ function specsFor(look: ResolvedAvatar): Spec[] {
     if (reach !== undefined)
       for (const [socket, side] of ARM_SOCKETS)
         add(socket, `outerSleeve:${look.outerwear}:${side}`, () => [
-          sleeve(side, reach, outerTint),
+          // A real second layer: 0.035u radial clearance versus a shirt's
+          // 0.015u, so the inner sleeve cannot flicker through at the elbow or
+          // cuff while the arm bends.
+          sleeve(side, reach, outerTint, undefined, undefined, 0.035),
         ]);
-    // Bulky full-torso layers may intentionally clear the Top slot. Give them
-    // the same selected-garment continuation, but never manufacture a shirt
-    // beneath a scarf or beneath an already-present top.
-    if (
-      look.top === "none" &&
-      ["jacket", "puffer", "vest", "poncho", "harness"].includes(look.outerwear)
-    ) add(SOCKETS.pelvis, `outerWaist:${look.outerwear}`, () =>
-      garmentWaistBridge(outerTint),
-    );
+    if (OUTER_SHOULDERS.has(look.outerwear))
+      for (const [socket] of SHOULDER_SOCKETS)
+        add(socket, `outerShoulder:${look.outerwear}`, () => [
+          shoulderPad(0.112, outerTint),
+        ]);
+    // Closed torso layers continue over the selected shirt at the waist too.
+    // Their bridge is wider than the shirt bridge; equal cylinders were the
+    // source of z-fighting and of inner shirts appearing on top. A harness and
+    // scarf remain honest open accessories rather than manufacturing a solid
+    // outer shirt beneath themselves.
+    if (["jacket", "puffer", "vest", "poncho", "hoodie"].includes(look.outerwear))
+      add(SOCKETS.pelvis, `outerWaist:${look.outerwear}`, () =>
+        garmentWaistBridge(outerTint, 0.025),
+      );
   }
 
   // Overalls own their lower half. Keep a separately selected legwear choice in
@@ -2403,6 +2452,23 @@ export function createWardrobeAttachments(look: ResolvedAvatar): WardrobeAttachm
       palettes.set(colorKey, palette);
     }
     const node = templateFor(spec).clone(true);
+    // Enforce the semantic layer order in geometry. A small horizontal
+    // clearance on the complete outer assembly keeps its panels, pockets and
+    // straps outside the inner top instead of relying on draw order between
+    // intersecting surfaces. Neck pieces get the same treatment separately
+    // because they ride another socket.
+    if (
+      spec.key.startsWith("outer:") &&
+      ["hoodie", "jacket", "puffer", "vest", "poncho", "harness"].some(
+        (id) => spec.key === `outer:${id}`,
+      )
+    ) {
+      node.scale.x *= 1.035;
+      node.scale.z *= 1.035;
+    } else if (spec.key.startsWith("outerCollar:")) {
+      node.scale.x *= 1.04;
+      node.scale.z *= 1.04;
+    }
     // Back-face ink shells are excellent around an outer silhouette, but an
     // open torso shell also exposes that enlarged back face at its lower rim.
     // On a faceted lathe it photographs as a row of black teeth between shirt

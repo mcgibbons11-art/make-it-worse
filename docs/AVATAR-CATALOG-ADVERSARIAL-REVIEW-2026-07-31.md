@@ -8,7 +8,7 @@ The failing baseline below is retained as the defect record, but its item verdic
 
 - All 86 non-empty selectable items have current-runtime front and side evidence.
 - The final 75 affected items were recaptured after the last geometry and framing corrections in `artifacts/avatar-catalog-acceptance-2026-07-31/`.
-- The reopened waist/feet finding was corrected and recertified across seven naked/dressed front-and-profile combinations in `artifacts/avatar-seam-acceptance-2026-07-31-pass6/`: `None` adds no clothing, shirts overlap pants without a body-colored bar or intersecting dark teeth, and the bare foot is a connected heel/instep/toe volume rather than a floating circle.
+- The reopened waist/feet/layering finding was corrected and recertified across 13 naked/dressed front-and-profile combinations in `artifacts/avatar-seam-acceptance-2026-07-31-pass8/`: `None` adds no clothing, shirts overlap pants without a body-colored bar or intersecting dark teeth, a real crotch gusset joins trouser legs, the bare foot is a connected heel/instep/toe volume, and five inner/outer combinations retain the inner garment beneath visibly proud outer geometry.
 - The unchanged eyewear and footwear acceptance sheets remain in `artifacts/avatar-catalog-final-2026-07-31/`.
 - The preview now fits the dressed runner without clipping the head or feet and supports drag, arrow-key, and on-screen rotation.
 - Hair is connected and seated; helmet, hats, facial hair, transparent eyewear, layered clothes, footwear, back items, and hand grips received dedicated geometry/material/attachment corrections.
@@ -123,7 +123,7 @@ This supersedes any earlier claim that the wearable quality pass was complete. T
 | T-shirt | Unverified blockout | Connect shoulders/sleeves; add cuff/seam structure. |
 | Tank top | Fail risk | Rebuild on torso profile with shaped armholes and continuous neckline. |
 | Stripes | Marginal fail | Continue stripes intentionally across sleeves or create a deliberate boundary. |
-| Hoodie | Fail risk | Sculpt a hollow/folded hood, pocket opening, drawstrings, and ribbing. |
+| Hoodie | Pass after remediation | Hollow folded hood, pocket opening, drawstrings and ribbing retained; reclassified as Outer layer so it can cover a T-shirt, with legacy saved runners migrated. |
 | Jersey | Fail risk | Continue repeated sleeve hoops and add real polo collar/placket. |
 | Overalls | Fail, immediate defect fixed | Lower half now always renders, selected pants no longer stack through it, and fake shoulder sleeves are removed; still needs visual certification. |
 | Turtleneck | Fail fidelity | Add knit response, body ribbing, and sculpted rolled collar. |
@@ -133,7 +133,7 @@ This supersedes any earlier claim that the wearable quality pass was complete. T
 | Puffer | Fail, first correction applied | Rounded baffle volumes now replace painted seam lines; still needs split panels, zipper hardware, materials, and rendered review. |
 | Vest | Fail, first correction applied | Rounded baffles now present; still needs shaped armholes/front panels/materials. |
 | Poncho | Fail risk | Add arm openings, drape folds, and a hollow hood. |
-| Harness | Fail | Conform straps to torso, add depth, enlarge buckle, and define compatible underlayers. |
+| Harness | Pass after remediation | Straps sit proud of the torso and retain the selected striped/T-shirt underlayer instead of deleting it. |
 | Scarf | Fail | Use curved/tapered knit tails and individual fringe strands. |
 
 ## Legs, feet, and back — all selectable states
@@ -155,7 +155,7 @@ This supersedes any earlier claim that the wearable quality pass was complete. T
 
 | Item | Verdict | Required change |
 |---|---|---|
-| None | Pass after remediation | One lofted heel-to-toe foot with raised instep and a tapered ankle bridge now intersects the calf cleanly; pass-6 front/profile evidence retained. |
+| None | Pass after remediation | One lofted heel-to-toe foot with raised instep and a tapered ankle bridge now intersects the calf cleanly; pass-8 front/profile evidence retained. |
 | High-tops | Fail | Add tongue, lace crossings, quarter panels, and rubber outsole. |
 | Boots | Fail | Replace stock sneaker layering with one complete boot and tread. |
 | Sandals | Fail | Refine foot outline/bed thickness and seat readable straps. |

@@ -363,6 +363,58 @@ describe("dressing a runner", () => {
     }
   });
 
+  it("closes the trouser crotch between the independently animated legs", () => {
+    for (const legwear of ["shorts", "joggers", "jeans", "cargo", "tights"] as const) {
+      const { model } = dressedRaw({ ...DEFAULT_AVATAR, legwear });
+      model.updateMatrixWorld(true);
+      const pelvis = model.getObjectByName(`Wardrobe legwearPelvis:${legwear}`)!;
+      const bridge = pelvis.getObjectByName("Trouser crotch bridge")!;
+      expect(bridge, `${legwear} is still two disconnected leg tubes`).toBeTruthy();
+      const bridgeBox = new THREE.Box3().setFromObject(bridge);
+      const leftThigh = new THREE.Box3().setFromObject(
+        model.getObjectByName(`Wardrobe legwear:${legwear}:-1`)!,
+      );
+      const rightThigh = new THREE.Box3().setFromObject(
+        model.getObjectByName(`Wardrobe legwear:${legwear}:1`)!,
+      );
+      expect(bridgeBox.min.x, `${legwear} bridge misses the left thigh`).toBeLessThan(-0.055);
+      expect(bridgeBox.max.x, `${legwear} bridge misses the right thigh`).toBeGreaterThan(0.055);
+      expect(bridgeBox.intersectsBox(leftThigh), `${legwear} leaves a left crotch slit`).toBe(true);
+      expect(bridgeBox.intersectsBox(rightThigh), `${legwear} leaves a right crotch slit`).toBe(true);
+    }
+  });
+
+  it("keeps jacket and puffer geometry outside an inner shirt at every shared socket", () => {
+    for (const outerwear of ["jacket", "puffer"] as const) {
+      const { model } = dressedRaw({
+        ...DEFAULT_AVATAR,
+        top: "tee",
+        outerwear,
+        legwear: "jeans",
+      });
+      model.updateMatrixWorld(true);
+      for (const side of [-1, 1] as const) {
+        const inner = new THREE.Box3().setFromObject(
+          model.getObjectByName(`Wardrobe topSleeve:tee:${side}`)!,
+        ).getSize(new THREE.Vector3());
+        const outer = new THREE.Box3().setFromObject(
+          model.getObjectByName(`Wardrobe outerSleeve:${outerwear}:${side}`)!,
+        ).getSize(new THREE.Vector3());
+        expect(outer.x, `${outerwear} sleeve clips through tee sleeve`).toBeGreaterThan(inner.x);
+        expect(outer.z, `${outerwear} sleeve clips through tee sleeve`).toBeGreaterThan(inner.z);
+      }
+      const shirtWaist = new THREE.Box3().setFromObject(
+        model.getObjectByName("Wardrobe topWaist:tee")!,
+      ).getSize(new THREE.Vector3());
+      const outerWaist = new THREE.Box3().setFromObject(
+        model.getObjectByName(`Wardrobe outerWaist:${outerwear}`)!,
+      ).getSize(new THREE.Vector3());
+      expect(outerWaist.x, `${outerwear} waist clips through tee`).toBeGreaterThan(shirtWaist.x);
+      expect(outerWaist.z, `${outerwear} rear waist clips through tee`).toBeGreaterThan(shirtWaist.z);
+      expect(model.getObjectByName(`Wardrobe outerShoulder:${outerwear}`)).toBeTruthy();
+    }
+  });
+
   it("keeps overalls coherent instead of stacking selected pants through them", () => {
     const { model } = dressedRaw({
       ...DEFAULT_AVATAR,
@@ -1094,6 +1146,36 @@ describe("outfits in a link", () => {
     expect(overalls.config.legwear).toBe("none");
     expect(applyWardrobeSelection(overalls.config, "legwear", "jeans").config.top)
       .toBe("none");
+
+    const layered = applyWardrobeSelection(
+      { ...DEFAULT_AVATAR, top: "tee", backpack: "daypack" },
+      "outerwear",
+      "puffer",
+    );
+    expect(layered.config.top).toBe("tee");
+    expect(layered.config.outerwear).toBe("puffer");
+    expect(layered.config.backpack).toBe("none");
+    expect(layered.cleared).toEqual(["backpack"]);
+  });
+
+  it("migrates the legacy top-slot hoodie into a real outer layer", () => {
+    const migrated = normalizeAvatar({
+      ...DEFAULT_AVATAR,
+      top: "hoodie",
+      outerwear: "none",
+      colors: { ...DEFAULT_AVATAR.colors, top: "blush", outerwear: "forest" },
+    });
+    expect(migrated.top).toBe("none");
+    expect(migrated.outerwear).toBe("hoodie");
+    expect(migrated.colors.outerwear).toBe("blush");
+
+    const layered = applyWardrobeSelection(
+      { ...migrated, top: "tee" },
+      "outerwear",
+      "hoodie",
+    );
+    expect(layered.config.top).toBe("tee");
+    expect(layered.config.outerwear).toBe("hoodie");
   });
 
   it("round-trips every slot through the code", () => {
@@ -1176,8 +1258,7 @@ describe("outfits in a link", () => {
         expect(config.eyewear).toBe("none");
       }
       if (config.face === "mask") expect(config.eyewear).toBe("none");
-      if (config.outerwear === "puffer" || config.outerwear === "poncho") {
-        expect(config.top).toBe("none");
+      if (["puffer", "poncho", "harness"].includes(config.outerwear)) {
         expect(config.backpack).toBe("none");
       }
       if (config.backpack === "cape" || config.backpack === "wings")

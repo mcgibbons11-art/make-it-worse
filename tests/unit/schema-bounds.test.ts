@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { MAX_TRAPS } from "@/lib/game/constants";
 import { challengeSchema } from "@/lib/game/schemas";
 import { DEFAULT_CUSTOM_TRACK, MAX_TRACK_SEGMENTS } from "@/lib/game/track";
 import { TRAP_TYPES } from "@/lib/game/trap-catalog";
@@ -8,9 +7,8 @@ import { TRAP_TYPES } from "@/lib/game/trap-catalog";
 // trap roster grew 8 -> 16 the enum here was left restating the old list, and
 // because publishChild writes without validating, a level published fine and
 // then threw forever on read - players bricked their own saves by playing
-// normally. Four numeric bounds had the same shape (MAX_TRAPS twice, plus
-// depthAdded, plus MAX_TRACK_SEGMENTS). These tests fail if any of them is
-// pinned back to a literal while the constant moves.
+// normally. Authored trap counts are byte-bounded at the map-code boundary,
+// not capped in storage; composed segment recipes retain their catalogue cap.
 
 function trap(index: number) {
   return {
@@ -54,13 +52,15 @@ function challenge(trapCount: number, track?: readonly string[]) {
 }
 
 describe("storage schema bounds track the gameplay limits", () => {
-  it("accepts a challenge carrying the full trap allowance", () => {
-    const result = challengeSchema.safeParse(challenge(MAX_TRAPS));
+  it("accepts a trap-heavy authored challenge beyond the old social-chain cap", () => {
+    const result = challengeSchema.safeParse(challenge(97));
     expect(result.success, JSON.stringify(result.error?.issues?.slice(0, 2))).toBe(true);
   });
 
-  it("rejects one trap past the allowance", () => {
-    expect(challengeSchema.safeParse(challenge(MAX_TRAPS + 1)).success).toBe(false);
+  it("still rejects a trap snapshot whose depth does not match", () => {
+    const mismatched = challenge(29);
+    mismatched.depth = 28;
+    expect(challengeSchema.safeParse(mismatched).success).toBe(false);
   });
 
   it("accepts a track of the maximum composable length", () => {

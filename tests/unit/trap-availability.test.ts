@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { MAX_TRAPS } from "@/lib/game/constants";
 import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
 import {
   CLASSIC_TRACK,
@@ -114,42 +113,28 @@ describe("trap availability", () => {
     expect(getAvailableTrapTypes(restricted, [])).toEqual([...TRAP_TYPES]);
   });
 
-  it("ends a full chain with no offer instead of three dead cards", () => {
-    for (const [name, segments] of [
-      ["classic", CLASSIC_TRACK],
-      ["default custom", DEFAULT_CUSTOM_TRACK],
-    ] as const) {
-      const track = buildTrack(segments);
-      const placed: TrapInstance[] = [];
-      let offers = chooseTraps("attempt-0", "chain", 7, placed, track);
-      let step = 0;
-      while (offers) {
-        for (const type of offers)
-          expect(
-            firstLegalPlacement(track, type, placed),
-            `${name} offered ${type} at depth ${placed.length} with nowhere to put it`,
-          ).not.toBeNull();
-        expect(add(track, offers[step % 3]!, placed)).toBe(true);
-        step += 1;
-        offers = chooseTraps(`attempt-${step}`, "chain", 7, placed, track);
-      }
-      expect(placed.length, `${name} ceiling`).toBeGreaterThan(14);
+  it("continues beyond the old depth cap without offering dead cards", () => {
+    const track = buildTrack(CLASSIC_TRACK);
+    const placed = fill(track, 20);
+    for (let step = 0; step < 3; step += 1) {
+      const offers = chooseTraps(`attempt-${step}`, "chain", 7, placed, track);
+      expect(offers, `no offer at depth ${placed.length}`).not.toBeNull();
+      for (const type of offers!)
+        expect(
+          firstLegalPlacement(track, type, placed),
+          `offered ${type} at depth ${placed.length} with nowhere to put it`,
+        ).not.toBeNull();
+      expect(add(track, offers![step % 3]!, placed)).toBe(true);
     }
+    expect(placed.length).toBe(23);
   });
 
-  // MAX_TRAPS is the published cap, and a cap nothing can reach is a lie. The
-  // classic course carries 22 legal placements, so the constant is what stops
-  // the chain there; a shorter composed course runs out of room first and ends
-  // through the same no-offer path.
-  it("keeps MAX_TRAPS reachable on the classic course", () => {
-    expect(fill(buildTrack(CLASSIC_TRACK)).length).toBeGreaterThanOrEqual(
-      MAX_TRAPS,
-    );
-    const capped = fill(buildTrack(CLASSIC_TRACK), MAX_TRAPS);
-    expect(capped.length).toBe(MAX_TRAPS);
+  it("does not treat twenty placed traps as a terminal chain", () => {
+    const capped = fill(buildTrack(CLASSIC_TRACK), 20);
+    expect(capped.length).toBe(20);
     expect(
       chooseTraps("attempt", "chain", 7, capped, buildTrack(CLASSIC_TRACK)),
-    ).toBeNull();
+    ).not.toBeNull();
   });
 
   it("does not aim a suggested trap at the exit", () => {

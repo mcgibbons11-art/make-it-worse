@@ -9,7 +9,6 @@ export const EXIT_POSITION = [0, 1.5, 40.25] as const;
 export const EXIT_SENSOR_SIZE = [2.2, 3, 0.7] as const;
 export const KILL_PLANE_Y = -10;
 export const ATTEMPT_LIMIT_MS = 60_000;
-export const MAX_TRAPS = 20;
 export const GRID_SIZE = 0.25;
 // Jump tuning. `gravityScale`, `linearDamping`, `jumpVelocity` and `moveSpeed`
 // are the four numbers track.ts solves for JUMP_HEIGHT and JUMP_DISTANCE, and

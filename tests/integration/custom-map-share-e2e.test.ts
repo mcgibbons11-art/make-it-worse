@@ -80,6 +80,39 @@ describe("authored map cross-player chain", () => {
     expect(decodeChallengeLink(code).traps).toHaveLength(97);
   });
 
+  it("round-trips hundreds of placed blocks without an item-count cap", () => {
+    const blocks: RoomItem[] = Array.from({ length: 300 }, (_, index) => ({
+      uid: 20_000 + index,
+      asset: "platform",
+      x: (index % 30) * 2,
+      y: Math.floor(index / 90) * 2,
+      z: Math.floor(index / 30) * -2,
+      rotation: 0,
+      color: "#ff9f1c",
+    }));
+    const authored = runtimeMap(blocks, 71, 7172, "Map Author");
+    const code = encodeChallengeLink(authored.challenge, null, authored.track);
+    expect(decodeChallengeRuntimeTrack(code)?.pieces).toHaveLength(300);
+    expect(decodeChallengeRuntimeTrack(code)?.zones).toHaveLength(300);
+  });
+
+  it("imports a 29-trap room and completes its next add-trap child round", async () => {
+    const authored = roomWithTraps(29);
+    const code = encodeChallengeLink(authored.challenge, null, authored.track);
+    const received = decodeChallengeLink(code);
+    const track = decodeChallengeRuntimeTrack(code)!;
+    const repository = new DemoRepository(new MemoryDatabase());
+    await repository.importChallenge(received, track);
+    await expect(repository.getChallenge(received.slug)).resolves.toMatchObject({
+      depth: 29,
+      traps: expect.arrayContaining([expect.objectContaining({ depthAdded: 29 })]),
+    });
+    const child = await finishAndPublish(repository, received.slug);
+    expect(child.challenge.depth).toBe(30);
+    const childCode = encodeChallengeLink(child.challenge, null, track);
+    expect(decodeChallengeLink(childCode).traps).toHaveLength(30);
+  });
+
   it("survives different players, restarts, two child rounds, and immutable old links", async () => {
     const items = generateRandomRoom(4444).filter((item) => !item.asset.startsWith("trap:"));
     const authored = runtimeMap(items, 88, 4444, "Map Author");

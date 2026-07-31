@@ -93,7 +93,7 @@ const basePayloadPrefix = [
 
 const ordinaryBasePayload = [
   ...basePayloadPrefix,
-  z.array(ordinaryTrapTupleSchema).max(20),
+  z.array(ordinaryTrapTupleSchema),
 ] as const;
 
 const authoredBasePayload = [

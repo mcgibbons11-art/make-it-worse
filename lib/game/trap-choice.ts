@@ -1,4 +1,4 @@
-import { GRID_SIZE, MAX_TRAPS } from "./constants";
+import { GRID_SIZE } from "./constants";
 import {
   placementSurfaces,
   validatePlacement,
@@ -168,9 +168,9 @@ function shuffled<T>(items: readonly T[], rng: () => number): T[] {
  * twenty-two was, so what those three are matters more than it used to. Two
  * things decide it, in this order.
  *
- * Anything already standing on the course goes to the back. A chain is up to
- * MAX_TRAPS deep and the roster is wider than that, so there is no reason to
- * spend a pick re-offering what the player has already watched somebody place;
+ * Anything already standing on the course goes to the back. The roster is
+ * wide, so there is no reason to spend a pick re-offering what the player has
+ * already watched somebody place;
  * putting unused traps first turns a chain into a tour of the roster instead of
  * a tour of whatever the first few rolls happened to like. It is an ordering
  * rather than a ban, because a course whose zones only accept a handful of
@@ -191,7 +191,6 @@ export function chooseTraps(
   existing: readonly TrapInstance[],
   track: BuiltTrack,
 ): readonly [TrapType, TrapType, TrapType] | null {
-  if (existing.length >= MAX_TRAPS) return null;
   const available = getAvailableTrapTypes(track, existing);
   if (available.length < OFFER_SIZE) return null;
   const rng = createSeededRandom(

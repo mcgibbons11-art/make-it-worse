@@ -8,6 +8,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Expand every ? help panel with complete room-specific guidance for the main game, custom build mode, and apartment explore/decorate modes.
 - [x] Turn custom-builder Browse maps into a clear My maps area where locally saved/published custom maps can be viewed, reopened for editing, or played in Test mode.
 - [x] Fix custom-built map shares producing recipient-side invalid-code errors without imposing editor asset-count limits: authored traps use free-build coordinate bounds, pasted links/codes are extracted robustly, and every generated code passes the recipient decoder before it can be copied.
+- [x] Remove the remaining placed-asset count caps: trap-heavy authored rooms import/play, offer another trap after completion, publish/share the child, and free-build maps round-trip hundreds of blocks without a block or trap count limit.
 - [x] Fix Try Again respawning the runner away from the map/spawn support and immediately dropping them into the void.
 - [x] Add emoji icons to every action on the Try Again failure card and the game-beaten victory popup.
 - [x] Remove snapping from every movable apartment object so furniture follows the pointer freely and does not stick to nearby furniture.

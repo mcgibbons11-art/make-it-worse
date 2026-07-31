@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import {
   CuboidCollider,
   Physics,
@@ -20,6 +20,7 @@ import {
   DEFAULT_APARTMENT_DECOR,
   DEFAULT_APARTMENT_STYLE,
   APARTMENT_DECOR_TYPES,
+  apartmentDecorShortcutAction,
   apartmentAnchorKind,
   loadApartmentDecor,
   loadApartmentStyle,
@@ -29,7 +30,13 @@ import {
   type ApartmentDecorType,
   type ApartmentStyle,
 } from "@/lib/game/apartment-decor";
-import { resetCameraYaw, resetInput, setKey } from "@/lib/game/input";
+import {
+  getCameraYaw,
+  resetCameraYaw,
+  resetInput,
+  setCameraYaw,
+  setKey,
+} from "@/lib/game/input";
 import { trackFacingYaw, type BuiltTrack } from "@/lib/game/track";
 import type { AvatarConfig } from "@/lib/game/avatar";
 import type { ApartmentVariant } from "@/components/game/environment/apartmentFurnishing";
@@ -38,9 +45,15 @@ const APARTMENT_WIDTH = 25.8;
 const APARTMENT_DEPTH = 17.2;
 const WALL_HEIGHT = 2.65;
 const WALL_THICKNESS = 0.18;
-const MAX_APARTMENT_ITEMS = 80;
 
 type ApartmentMode = "explore" | "decorate";
+
+function isApartmentTextEntry(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement
+    || target instanceof HTMLTextAreaElement
+    || target instanceof HTMLSelectElement
+    || target instanceof HTMLElement && target.isContentEditable;
+}
 
 interface WallSpec {
   id: string;
@@ -50,44 +63,11 @@ interface WallSpec {
   length: number;
 }
 
-const WALLS: readonly WallSpec[] = [
+const OUTER_WALLS: readonly WallSpec[] = [
   { id: "outer-north", axis: "x", x: 0, z: -8.6, length: 25.8 },
   { id: "outer-south", axis: "x", x: 0, z: 8.6, length: 25.8 },
   { id: "outer-west", axis: "z", x: -12.9, z: 0, length: 17.2 },
   { id: "outer-east", axis: "z", x: 12.9, z: 0, length: 17.2 },
-  { id: "west-hall-n2", axis: "z", x: -1.5, z: -2.25, length: 4.5 },
-  { id: "west-hall-s", axis: "z", x: -1.5, z: 1.5, length: 3 },
-  { id: "east-hall-n1", axis: "z", x: 1.5, z: -7.05, length: 3.1 },
-  { id: "east-hall-n2", axis: "z", x: 1.5, z: -2.75, length: 3.5 },
-  { id: "east-hall-mid", axis: "z", x: 1.5, z: 1.5, length: 3 },
-  { id: "west-room-split", axis: "x", x: -7.2, z: 0, length: 11.4 },
-  { id: "east-bedroom-split", axis: "x", x: 7.2, z: -2, length: 11.4 },
-  { id: "east-study-split", axis: "x", x: 7.2, z: 3, length: 11.4 },
-  { id: "foyer-west-a", axis: "z", x: -4, z: 3.7, length: 1.4 },
-  { id: "foyer-west-b", axis: "z", x: -4, z: 7.1, length: 3 },
-  { id: "foyer-east-a", axis: "z", x: 4, z: 3.7, length: 1.4 },
-  { id: "foyer-east-b", axis: "z", x: 4, z: 7.1, length: 3 },
-  { id: "foyer-shoulder-west", axis: "x", x: -2.75, z: 3, length: 2.5 },
-  { id: "foyer-shoulder-east", axis: "x", x: 2.75, z: 3, length: 2.5 },
-  { id: "bath-utility-a", axis: "z", x: 8.2, z: 4.05, length: 2.1 },
-  { id: "bath-utility-b", axis: "z", x: 8.2, z: 7.4, length: 2.4 },
-];
-
-interface DoorSpec {
-  id: string;
-  axis: "x" | "z";
-  x: number;
-  z: number;
-  hinge: -1 | 1;
-}
-
-const DOORS: readonly DoorSpec[] = [
-  { id: "living-door", axis: "z", x: -1.5, z: -5, hinge: -1 },
-  { id: "bedroom-door", axis: "z", x: 1.5, z: -5, hinge: 1 },
-  { id: "study-door", axis: "z", x: 1.5, z: -0.5, hinge: 1 },
-  { id: "kitchen-door", axis: "z", x: -4, z: 5.1, hinge: -1 },
-  { id: "bath-door", axis: "z", x: 4, z: 5.1, hinge: 1 },
-  { id: "utility-door", axis: "z", x: 8.2, z: 5.7, hinge: 1 },
 ];
 
 const APARTMENT_TRACK: BuiltTrack = {
@@ -244,6 +224,14 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     label: "Robot mop", emoji: "🧼", model: "mop", nodeIds: [],
     size: [0.8, 0.25, 0.8], solid: true, tintable: false,
   },
+  "wall-section": {
+    label: "Interior wall", emoji: "🧱", nodeIds: [],
+    size: [2.5, WALL_HEIGHT, WALL_THICKNESS], solid: true,
+  },
+  "door-frame": {
+    label: "Door frame", emoji: "🚪", nodeIds: [],
+    size: [0.35, 2.45, 1.35], solid: false,
+  },
 };
 
 const DECOR_GROUPS = [
@@ -253,6 +241,7 @@ const DECOR_GROUPS = [
   { id: "bedroom", label: "🛏️ Bedroom", types: ["bed", "bedside-table", "bedside-lamp", "wardrobe"] },
   { id: "study", label: "📚 Study", types: ["writing-desk", "desk-chair", "bookcase"] },
   { id: "wall", label: "🖼️ Wall", types: ["wall-art", "curtains", "radiator", "wall-shelf"] },
+  { id: "structure", label: "🧱 Structure", types: ["wall-section", "door-frame"] },
   { id: "utility", label: "🧹 Utility", types: ["toilet", "vacuum", "floor-fan", "robot-mop"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly ApartmentDecorType[] }[];
 
@@ -341,8 +330,107 @@ function normalizeFreeApartmentDecor(items: readonly ApartmentDecorItem[]): Apar
   });
 }
 
+function decorSize(item: ApartmentDecorItem): readonly [number, number, number] {
+  if (item.type === "wall-section") {
+    return [item.length ?? 2.5, WALL_HEIGHT, WALL_THICKNESS];
+  }
+  return DECOR[item.type].size;
+}
+
+function ModularWallVisual({
+  item,
+  trimColor,
+  player,
+}: {
+  item: ApartmentDecorItem;
+  trimColor: string;
+  player: React.RefObject<RapierRigidBody | null>;
+}) {
+  const wallMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const baseMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const capMaterial = useRef<THREE.MeshStandardMaterial>(null);
+  const length = item.length ?? 2.5;
+  const baseColor = useMemo(
+    () => new THREE.Color(item.color).lerp(new THREE.Color(trimColor), 0.72),
+    [item.color, trimColor],
+  );
+  const capColor = useMemo(
+    () => new THREE.Color(item.color).lerp(new THREE.Color(trimColor), 0.12),
+    [item.color, trimColor],
+  );
+
+  useFrame(({ camera }, delta) => {
+    const body = player.current;
+    if (!body) return;
+    const position = body.translation();
+    const toPlayerX = position.x - camera.position.x;
+    const toPlayerZ = position.z - camera.position.z;
+    const distance = Math.hypot(toPlayerX, toPlayerZ);
+    if (distance < 0.01) return;
+    const directionX = toPlayerX / distance;
+    const directionZ = toPlayerZ / distance;
+    const toWallX = item.x - camera.position.x;
+    const toWallZ = item.z - camera.position.z;
+    const projection = toWallX * directionX + toWallZ * directionZ;
+    const perpendicular = Math.abs(toWallX * directionZ - toWallZ * directionX);
+    const obstructs = projection > -0.2
+      && projection < distance + 1.2
+      && perpendicular < length / 2 + 1.2;
+    const targetOpacity = obstructs ? 0.07 : 1;
+    const blend = 1 - Math.exp(-12 * delta);
+    for (const material of [wallMaterial.current, baseMaterial.current, capMaterial.current]) {
+      if (!material) continue;
+      material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, blend);
+      material.transparent = material.opacity < 0.995;
+      material.depthWrite = material.opacity >= 0.995;
+    }
+  });
+
+  return (
+    <group>
+      <mesh position={[0, WALL_HEIGHT / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[length, WALL_HEIGHT, WALL_THICKNESS]} />
+        <meshStandardMaterial ref={wallMaterial} color={item.color} roughness={0.92} />
+      </mesh>
+      <mesh position={[0, 0.075, 0]} castShadow>
+        <boxGeometry args={[length, 0.1, WALL_THICKNESS + 0.035]} />
+        <meshStandardMaterial ref={baseMaterial} color={baseColor} roughness={0.7} />
+      </mesh>
+      <mesh position={[0, WALL_HEIGHT - 0.025, 0]} castShadow>
+        <boxGeometry args={[length, 0.045, WALL_THICKNESS + 0.018]} />
+        <meshStandardMaterial ref={capMaterial} color={capColor} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function ModularDoorFrameVisual({ color, trimColor }: { color: string; trimColor: string }) {
+  const width = 1.2;
+  const height = 2.28;
+  const frameColor = useMemo(
+    () => new THREE.Color(color).lerp(new THREE.Color(trimColor), 0.38),
+    [color, trimColor],
+  );
+  return (
+    <group>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[0, height / 2, side * width / 2]} castShadow>
+          <boxGeometry args={[0.28, height, 0.13]} />
+          <meshStandardMaterial color={frameColor} roughness={0.68} />
+        </mesh>
+      ))}
+      <mesh position={[0, height, 0]} castShadow>
+        <boxGeometry args={[0.28, 0.16, width + 0.13]} />
+        <meshStandardMaterial color={frameColor} roughness={0.68} />
+      </mesh>
+    </group>
+  );
+}
+
 function DecorItemView({
   item,
+  style,
+  player,
   mode,
   selected,
   onSelect,
@@ -350,6 +438,8 @@ function DecorItemView({
   onMove,
 }: {
   item: ApartmentDecorItem;
+  style: ApartmentStyle;
+  player: React.RefObject<RapierRigidBody | null>;
   mode: ApartmentMode;
   selected: boolean;
   onSelect(uid: string): void;
@@ -363,7 +453,9 @@ function DecorItemView({
   };
   const definition = DECOR[item.type];
   const visual = useMemo(
-    () => definition.model ? null : makeDecorVisual(item.type, item.color),
+    () => definition.model || item.type === "wall-section" || item.type === "door-frame"
+      ? null
+      : makeDecorVisual(item.type, item.color),
     [definition.model, item.color, item.type],
   );
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
@@ -382,9 +474,14 @@ function DecorItemView({
   }, [visual]);
 
   const elevation = definition.elevation ?? 0;
-  const visualNode = definition.model
-    ? <AssetModel model={definition.model} />
-    : <primitive object={visual!} />;
+  const size = decorSize(item);
+  const visualNode = item.type === "wall-section"
+    ? <ModularWallVisual item={item} trimColor={style.trimColor} player={player} />
+    : item.type === "door-frame"
+      ? <ModularDoorFrameVisual color={item.color} trimColor={style.trimColor} />
+      : definition.model
+        ? <AssetModel model={definition.model} />
+        : <primitive object={visual!} />;
 
   const down = (event: ThreeEvent<PointerEvent>) => {
     if (mode !== "decorate" || event.button !== 0) return;
@@ -430,8 +527,8 @@ function DecorItemView({
       <RigidBody type="fixed" colliders={false} position={[item.x, 0, item.z]} rotation={[0, item.rotation, 0]}>
         {definition.solid && (
           <CuboidCollider
-            args={[definition.size[0] / 2, definition.size[1] / 2, definition.size[2] / 2]}
-            position={[0, elevation + definition.size[1] / 2, 0]}
+            args={[size[0] / 2, size[1] / 2, size[2] / 2]}
+            position={[0, elevation + size[1] / 2, 0]}
           />
         )}
         <group position={[0, elevation, 0]}>{visualNode}</group>
@@ -439,7 +536,7 @@ function DecorItemView({
     );
   }
 
-  const radius = Math.max(0.55, Math.hypot(definition.size[0], definition.size[2]) * 0.3);
+  const radius = Math.max(0.55, Math.hypot(size[0], size[2]) * 0.3);
   return (
     <group
       position={[item.x, 0, item.z]}
@@ -452,8 +549,8 @@ function DecorItemView({
       onPointerLeave={() => setHovered(false)}
     >
       <group position={[0, elevation, 0]}>{visualNode}</group>
-      <mesh position={[0, elevation + definition.size[1] / 2, 0]}>
-        <boxGeometry args={definition.size} />
+      <mesh position={[0, elevation + size[1] / 2, 0]}>
+        <boxGeometry args={size} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       {(selected || hovered) && (
@@ -538,30 +635,6 @@ function WallRun({
       <mesh position={[0, WALL_HEIGHT - 0.025, 0]} castShadow>
         <boxGeometry args={topRail} />
         <meshStandardMaterial ref={capMaterial} color={capColor} roughness={0.8} />
-      </mesh>
-    </group>
-  );
-}
-
-function Doorway({ door, style }: { door: DoorSpec; style: ApartmentStyle }) {
-  const width = 1.2;
-  const height = 2.28;
-  const turn = door.axis === "x" ? Math.PI / 2 : 0;
-  const frameColor = useMemo(
-    () => new THREE.Color(style.wallColor).lerp(new THREE.Color(style.trimColor), 0.38),
-    [style.trimColor, style.wallColor],
-  );
-  return (
-    <group position={[door.x, 0, door.z]} rotation={[0, turn, 0]}>
-      {[-1, 1].map((side) => (
-        <mesh key={side} position={[0, height / 2, side * width / 2]} castShadow>
-          <boxGeometry args={[0.28, height, 0.13]} />
-          <meshStandardMaterial color={frameColor} roughness={0.68} />
-        </mesh>
-      ))}
-      <mesh position={[0, height, 0]} castShadow>
-        <boxGeometry args={[0.28, 0.16, width + 0.13]} />
-        <meshStandardMaterial color={frameColor} roughness={0.68} />
       </mesh>
     </group>
   );
@@ -700,8 +773,7 @@ function ApartmentWorld({
           </group>
         );
       })}
-      {WALLS.map((wall) => <WallRun key={wall.id} wall={wall} style={style} player={player} />)}
-      {DOORS.map((door) => <Doorway key={door.id} door={door} style={style} />)}
+      {OUTER_WALLS.map((wall) => <WallRun key={wall.id} wall={wall} style={style} player={player} />)}
       <WindowUnit axis="x" x={-8.6} z={-8.49} style={style} />
       <WindowUnit axis="x" x={0} z={-8.49} style={style} />
       <WindowUnit axis="x" x={7.4} z={-8.49} style={style} />
@@ -739,7 +811,7 @@ function ApartmentWorld({
       <pointLight position={[7.2, 2.35, 0.5]} color="#cfe9ff" intensity={0.58} distance={7} decay={2} />
       <RigidBody type="fixed" colliders={false}>
         <CuboidCollider args={[APARTMENT_WIDTH / 2, 0.1, APARTMENT_DEPTH / 2]} position={[0, -0.1, 0]} friction={0.9} />
-        {WALLS.map((wall) => (
+        {OUTER_WALLS.map((wall) => (
           <CuboidCollider
             key={wall.id}
             args={wall.axis === "x"
@@ -753,6 +825,8 @@ function ApartmentWorld({
         <DecorItemView
           key={item.uid}
           item={item}
+          style={style}
+          player={player}
           mode={mode}
           selected={selectedUid === item.uid}
           onSelect={onSelect}
@@ -762,6 +836,116 @@ function ApartmentWorld({
       ))}
     </>
   );
+}
+
+/** Free-flying decorate camera. Left drag belongs to furniture; right drag turns. */
+function ApartmentDecorCamera({ player }: { player: React.RefObject<RapierRigidBody | null> }) {
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
+  const keys = useRef(new Set<string>());
+  const target = useRef(new THREE.Vector3());
+  const yaw = useRef(getCameraYaw());
+  const pitch = useRef(0.58);
+  const distance = useRef(11.5);
+  const seeded = useRef(false);
+
+  useEffect(() => {
+    const element = gl.domElement;
+    const pressedKeys = keys.current;
+    let turning = false;
+    let lastX = 0;
+    let lastY = 0;
+    const movementCodes = new Set([
+      "KeyW", "KeyA", "KeyS", "KeyD",
+      "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight",
+      "KeyQ", "KeyE",
+    ]);
+    const down = (event: KeyboardEvent) => {
+      if (isApartmentTextEntry(event.target) || !movementCodes.has(event.code)) return;
+      event.preventDefault();
+      pressedKeys.add(event.code);
+    };
+    const up = (event: KeyboardEvent) => {
+      pressedKeys.delete(event.code);
+    };
+    const pointerDown = (event: PointerEvent) => {
+      if (event.button !== 2) return;
+      turning = true;
+      lastX = event.clientX;
+      lastY = event.clientY;
+    };
+    const pointerMove = (event: PointerEvent) => {
+      if (!turning) return;
+      const dx = event.clientX - lastX;
+      const dy = event.clientY - lastY;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      yaw.current = Math.atan2(
+        Math.sin(yaw.current - dx * 0.006),
+        Math.cos(yaw.current - dx * 0.006),
+      );
+      pitch.current = THREE.MathUtils.clamp(pitch.current + dy * 0.004, 0.2, 1.22);
+      setCameraYaw(yaw.current);
+    };
+    const pointerUp = () => { turning = false; };
+    const wheel = (event: WheelEvent) => {
+      event.preventDefault();
+      distance.current = THREE.MathUtils.clamp(distance.current + event.deltaY * 0.012, 5.5, 24);
+    };
+    const blur = () => {
+      pressedKeys.clear();
+      turning = false;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    element.addEventListener("pointerdown", pointerDown);
+    window.addEventListener("pointermove", pointerMove);
+    window.addEventListener("pointerup", pointerUp);
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      pressedKeys.clear();
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+      element.removeEventListener("pointerdown", pointerDown);
+      window.removeEventListener("pointermove", pointerMove);
+      window.removeEventListener("pointerup", pointerUp);
+      element.removeEventListener("wheel", wheel);
+    };
+  }, [gl]);
+
+  useFrame((_, deltaRaw) => {
+    if (!seeded.current) {
+      const position = player.current?.translation();
+      target.current.set(position?.x ?? 0, 0.2, position?.z ?? 0);
+      seeded.current = true;
+    }
+    const pressed = keys.current;
+    const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
+      - Number(pressed.has("KeyA") || pressed.has("ArrowLeft"));
+    const z = Number(pressed.has("KeyS") || pressed.has("ArrowDown"))
+      - Number(pressed.has("KeyW") || pressed.has("ArrowUp"));
+    const y = Number(pressed.has("KeyE")) - Number(pressed.has("KeyQ"));
+    const delta = Math.min(0.05, deltaRaw);
+    const speed = delta * Math.max(5.5, distance.current * 0.62);
+    target.current.x = clampX(
+      target.current.x + (x * Math.cos(yaw.current) + z * Math.sin(yaw.current)) * speed,
+    );
+    target.current.z = clampZ(
+      target.current.z + (z * Math.cos(yaw.current) - x * Math.sin(yaw.current)) * speed,
+    );
+    target.current.y = THREE.MathUtils.clamp(target.current.y + y * speed, 0, 8);
+    const horizontal = Math.cos(pitch.current) * distance.current;
+    camera.position.set(
+      target.current.x + Math.sin(yaw.current) * horizontal,
+      target.current.y + Math.sin(pitch.current) * distance.current,
+      target.current.z + Math.cos(yaw.current) * horizontal,
+    );
+    camera.lookAt(target.current);
+  });
+
+  return null;
 }
 
 function ApartmentRunner({
@@ -831,17 +1015,21 @@ function ApartmentRunner({
         onFinish={() => undefined}
         onFail={onFall}
       />
-      <CameraRig
-        player={player}
-        editorTarget={null}
-        lookEnabled
-        lookButton={mode === "decorate" ? 2 : 0}
-        chaseDistance={mode === "decorate" ? 10.6 : 8.2}
-        chaseHeight={mode === "decorate" ? 9.8 : 7.2}
-        chaseLookAhead={mode === "decorate" ? 1.2 : 2.2}
-        chaseTargetHeight={mode === "decorate" ? 0 : 0.25}
-        shakeUntilRef={shakeUntilRef}
-      />
+      {mode === "decorate" ? (
+        <ApartmentDecorCamera player={player} />
+      ) : (
+        <CameraRig
+          player={player}
+          editorTarget={null}
+          lookEnabled
+          lookButton={0}
+          chaseDistance={8.2}
+          chaseHeight={7.2}
+          chaseLookAhead={2.2}
+          chaseTargetHeight={0.25}
+          shakeUntilRef={shakeUntilRef}
+        />
+      )}
     </>
   );
 }
@@ -874,6 +1062,7 @@ export function AvatarApartment({
     typeof window === "undefined" ? { ...DEFAULT_APARTMENT_STYLE } : loadApartmentStyle(window.localStorage)
   ));
   const idSerial = useRef(0);
+  const copiedDecor = useRef<ApartmentDecorItem | null>(null);
   const guideButtonRef = useRef<HTMLButtonElement>(null);
 
   const persistNow = useCallback(() => {
@@ -910,7 +1099,7 @@ export function AvatarApartment({
   }, [closeApartment, closeGuide, guideOpen]);
 
   useEffect(() => {
-    if (mode === "decorate") resetInput();
+    resetInput();
   }, [mode]);
 
   useEffect(() => {
@@ -956,7 +1145,6 @@ export function AvatarApartment({
   }, []);
 
   const addItem = (type: ApartmentDecorType) => {
-    if (decor.length >= MAX_APARTMENT_ITEMS) return;
     let uid: string;
     do {
       idSerial.current += 1;
@@ -970,8 +1158,9 @@ export function AvatarApartment({
       x: clampX(runnerPosition.x + 2.6),
       z: clampZ(runnerPosition.z + offset),
       rotation: 0,
-      color: "#68b78a",
+      color: type === "wall-section" || type === "door-frame" ? style.wallColor : "#68b78a",
       anchorKind,
+      ...(type === "wall-section" ? { length: 2.5 } : {}),
     };
     rememberUndo();
     setDecor((current) => [...current, item]);
@@ -988,15 +1177,15 @@ export function AvatarApartment({
     updateItem(selected.uid, update);
   };
 
-  const removeSelected = () => {
+  const removeSelected = useCallback(() => {
     if (!selected) return;
     rememberUndo();
     setDecor((current) => current.filter((item) => item.uid !== selected.uid && item.parentUid !== selected.uid));
     setSelectedUid(null);
-  };
+  }, [rememberUndo, selected]);
 
   const duplicateSelected = () => {
-    if (!selected || decor.length >= MAX_APARTMENT_ITEMS) return;
+    if (!selected) return;
     let uid: string;
     do {
       idSerial.current += 1;
@@ -1013,6 +1202,52 @@ export function AvatarApartment({
     setDecor((current) => [...current, duplicate]);
     setSelectedUid(uid);
   };
+
+  const copySelected = useCallback(() => {
+    if (!selected) return;
+    copiedDecor.current = { ...selected };
+    AudioManager.click();
+  }, [selected]);
+
+  const pasteCopied = useCallback(() => {
+    const copied = copiedDecor.current;
+    if (!copied) return;
+    let uid: string;
+    do {
+      idSerial.current += 1;
+      uid = `user-${copied.type}-${idSerial.current}`;
+    } while (decor.some((item) => item.uid === uid));
+    const pasted: ApartmentDecorItem = {
+      ...copied,
+      uid,
+      x: clampX(copied.x + 0.8),
+      z: clampZ(copied.z + 0.8),
+    };
+    delete pasted.parentUid;
+    rememberUndo();
+    setDecor((current) => [...current, pasted]);
+    setSelectedUid(uid);
+    AudioManager.click();
+  }, [decor, rememberUndo]);
+
+  useEffect(() => {
+    if (mode !== "decorate") return;
+    const down = (event: KeyboardEvent) => {
+      const action = apartmentDecorShortcutAction(
+        event,
+        isApartmentTextEntry(event.target),
+        selected !== null,
+        copiedDecor.current !== null,
+      );
+      if (!action) return;
+      event.preventDefault();
+      if (action === "copy") copySelected();
+      else if (action === "paste") pasteCopied();
+      else removeSelected();
+    };
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [copySelected, mode, pasteCopied, removeSelected, selected]);
 
   const restoreStarter = () => {
     if (!window.confirm("Restore the starter apartment? Your current furniture layout will be replaced.")) return;
@@ -1092,17 +1327,25 @@ export function AvatarApartment({
               {DECOR[selected.type].tintable !== false && (
                 <label>Color <input type="color" value={selected.color} onChange={(event) => editSelected({ color: event.target.value })} /></label>
               )}
+              {selected.type === "wall-section" && (
+                <div className="avatar-apartment-wall-length">
+                  <strong>Length {selected.length ?? 2.5}m</strong>
+                  <button onClick={() => editSelected({ length: Math.max(0.5, (selected.length ?? 2.5) - 0.5) })}>↔ Shorter</button>
+                  <button onClick={() => editSelected({ length: Math.min(24, (selected.length ?? 2.5) + 0.5) })}>↔ Longer</button>
+                </div>
+              )}
               <div>
                 <button onClick={() => editSelected({ rotation: selected.rotation - Math.PI / 12 })}>↶ 15°</button>
                 <button onClick={() => editSelected({ rotation: selected.rotation + Math.PI / 12 })}>↷ 15°</button>
-                <button onClick={duplicateSelected} disabled={decor.length >= MAX_APARTMENT_ITEMS}>📄 Duplicate</button>
+                <button onClick={copySelected}>📋 Copy</button>
+                <button onClick={duplicateSelected}>📄 Duplicate</button>
                 <button className="danger" onClick={removeSelected}>🗑️ Remove</button>
               </div>
             </section>
           )}
           <div className="avatar-apartment-catalog-heading">
-            <span className="eyebrow">ADD FURNITURE</span>
-            <small>{decor.length}/{MAX_APARTMENT_ITEMS}</small>
+            <span className="eyebrow">ADD ITEMS</span>
+            <small>{decor.length} placed</small>
           </div>
           <div className="avatar-apartment-groups" aria-label="Furniture groups">
             {DECOR_GROUPS.map((group) => (
@@ -1117,7 +1360,7 @@ export function AvatarApartment({
             {activeGroup.types.map((type) => {
               const definition = DECOR[type];
               return (
-              <button key={type} onClick={() => addItem(type)} disabled={decor.length >= MAX_APARTMENT_ITEMS}>
+              <button key={type} onClick={() => addItem(type)}>
                 <span>{definition.emoji}</span>{definition.label}
               </button>
               );
@@ -1160,10 +1403,12 @@ export function AvatarApartment({
             <span className="eyebrow">APARTMENT CONTROLS</span>
             <h2>Make the place yours</h2>
             <p><b>🏃 Explore:</b> Move, jump, and interact with the same controls and physics as a real run. Hold left click and drag to turn the camera through a full 360°.</p>
-            <p><b>🛋️ Decorate:</b> Switch modes at the top. Left-click an item to select it and left-drag it freely. Right-drag turns the camera while you decorate.</p>
+            <p><b>🛋️ Decorate:</b> Switch modes at the top. Left-click an item to select it and left-drag it freely. WASD or the arrow keys move the build camera; Q/E lower or raise it, right-drag turns it, and the wheel zooms.</p>
             <p><b>🧲 No snapping:</b> Furniture never snaps to a grid, wall, or another item. Pieces can overlap, pass through one another while moving, and keep the exact position where you release them.</p>
-            <p><b>✨ Add furniture:</b> Choose a category and select an item from the tray. New items appear near the runner and become the current selection.</p>
+            <p><b>✨ Add items:</b> Choose a category and select an item from the tray. New items appear near the runner and become the current selection. There is no artificial item-count limit.</p>
+            <p><b>🧱 Rebuild the floor plan:</b> Every interior wall and doorway is an ordinary persistent item. Move, rotate, recolor, duplicate, remove, or add more from Structure. Selected walls can also be lengthened or shortened; the four exterior boundary walls remain fixed.</p>
             <p><b>🎨 Edit a selection:</b> Recolor tintable furniture, rotate it in 15° steps, duplicate it, or remove it. Wall decorations, lamps, and appliances are freely movable too.</p>
+            <p><b>⌨️ Clipboard hotkeys:</b> Ctrl/Cmd+C copies the selected item, Ctrl/Cmd+V pastes an offset copy, and Delete removes the selection. These work for walls and doorways as well as furniture.</p>
             <p><b>↶ Undo and restore:</b> Undo reverses the last layout edit. Restore starter layout replaces the current arrangement and apartment colors with the original home.</p>
             <p><b>🧱 Explore collisions:</b> In Explore mode, solid furniture becomes real collision geometry again, so test that hallways and doors remain walkable.</p>
             <p><b>💾 Permanent home:</b> Furniture positions and wall, trim, and floor colors save automatically on this device and return after reload.</p>

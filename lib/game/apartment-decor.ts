@@ -1,4 +1,4 @@
-export const APARTMENT_DECOR_STORAGE_KEY = "make-it-worse:apartment-decor:v2";
+export const APARTMENT_DECOR_STORAGE_KEY = "make-it-worse:apartment-decor:v3";
 
 export const APARTMENT_DECOR_TYPES = [
   "sofa",
@@ -27,6 +27,8 @@ export const APARTMENT_DECOR_TYPES = [
   "vacuum",
   "floor-fan",
   "robot-mop",
+  "wall-section",
+  "door-frame",
 ] as const;
 
 export type ApartmentDecorType = (typeof APARTMENT_DECOR_TYPES)[number];
@@ -39,6 +41,8 @@ export interface ApartmentDecorItem {
   z: number;
   rotation: number;
   color: string;
+  /** Only modular wall sections use this; other items keep their authored size. */
+  length?: number;
   anchorKind?: ApartmentAnchorKind;
   parentUid?: string;
 }
@@ -49,8 +53,25 @@ export interface ApartmentStyle {
   floorColor: string;
 }
 
+export type ApartmentDecorShortcutAction = "copy" | "paste" | "delete";
+
+export function apartmentDecorShortcutAction(
+  event: Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "key" | "metaKey" | "repeat" | "shiftKey">,
+  interfaceTarget: boolean,
+  hasSelection: boolean,
+  hasClipboard: boolean,
+): ApartmentDecorShortcutAction | null {
+  if (interfaceTarget || event.repeat || event.altKey || event.shiftKey) return null;
+  if ((event.key === "Delete" || event.code === "Delete") && hasSelection) return "delete";
+  const modifier = event.ctrlKey || event.metaKey;
+  if (modifier && event.code === "KeyC" && hasSelection) return "copy";
+  if (modifier && event.code === "KeyV" && hasClipboard) return "paste";
+  return null;
+}
+
 export const APARTMENT_STYLE_STORAGE_KEY = "make-it-worse:apartment-style:v1";
 const LEGACY_APARTMENT_DECOR_STORAGE_KEY = "make-it-worse:apartment-decor:v1";
+const PREVIOUS_APARTMENT_DECOR_STORAGE_KEY = "make-it-worse:apartment-decor:v2";
 export const DEFAULT_APARTMENT_STYLE: ApartmentStyle = {
   wallColor: "#fff4df",
   trimColor: "#24324a",
@@ -75,7 +96,41 @@ export function apartmentAnchorKind(type: ApartmentDecorType): ApartmentAnchorKi
   return "floor";
 }
 
+/**
+ * The exterior shell remains a safe permanent boundary. Every partition and
+ * doorway inside it is ordinary saved decor, so players can rebuild the floor
+ * plan instead of merely decorating somebody else's immutable plan.
+ */
+const RAW_DEFAULT_APARTMENT_PARTITIONS = [
+  { uid: "wall-west-hall-n2", type: "wall-section", x: -1.5, z: -2.25, rotation: Math.PI / 2, color: "#fff4df", length: 4.5 },
+  { uid: "wall-west-hall-s", type: "wall-section", x: -1.5, z: 1.5, rotation: Math.PI / 2, color: "#fff4df", length: 3 },
+  { uid: "wall-east-hall-n1", type: "wall-section", x: 1.5, z: -7.05, rotation: Math.PI / 2, color: "#fff4df", length: 3.1 },
+  { uid: "wall-east-hall-n2", type: "wall-section", x: 1.5, z: -2.75, rotation: Math.PI / 2, color: "#fff4df", length: 3.5 },
+  { uid: "wall-east-hall-mid", type: "wall-section", x: 1.5, z: 1.5, rotation: Math.PI / 2, color: "#fff4df", length: 3 },
+  { uid: "wall-west-room-split", type: "wall-section", x: -7.2, z: 0, rotation: 0, color: "#fff4df", length: 11.4 },
+  { uid: "wall-east-bedroom-split", type: "wall-section", x: 7.2, z: -2, rotation: 0, color: "#fff4df", length: 11.4 },
+  { uid: "wall-east-study-split", type: "wall-section", x: 7.2, z: 3, rotation: 0, color: "#fff4df", length: 11.4 },
+  { uid: "wall-foyer-west-a", type: "wall-section", x: -4, z: 3.7, rotation: Math.PI / 2, color: "#fff4df", length: 1.4 },
+  { uid: "wall-foyer-west-b", type: "wall-section", x: -4, z: 7.1, rotation: Math.PI / 2, color: "#fff4df", length: 3 },
+  { uid: "wall-foyer-east-a", type: "wall-section", x: 4, z: 3.7, rotation: Math.PI / 2, color: "#fff4df", length: 1.4 },
+  { uid: "wall-foyer-east-b", type: "wall-section", x: 4, z: 7.1, rotation: Math.PI / 2, color: "#fff4df", length: 3 },
+  { uid: "wall-foyer-shoulder-west", type: "wall-section", x: -2.75, z: 3, rotation: 0, color: "#fff4df", length: 2.5 },
+  { uid: "wall-foyer-shoulder-east", type: "wall-section", x: 2.75, z: 3, rotation: 0, color: "#fff4df", length: 2.5 },
+  { uid: "wall-bath-utility-a", type: "wall-section", x: 8.2, z: 4.05, rotation: Math.PI / 2, color: "#fff4df", length: 2.1 },
+  { uid: "wall-bath-utility-b", type: "wall-section", x: 8.2, z: 7.4, rotation: Math.PI / 2, color: "#fff4df", length: 2.4 },
+  { uid: "door-living", type: "door-frame", x: -1.5, z: -5, rotation: 0, color: "#fff4df" },
+  { uid: "door-bedroom", type: "door-frame", x: 1.5, z: -5, rotation: 0, color: "#fff4df" },
+  { uid: "door-study", type: "door-frame", x: 1.5, z: -0.5, rotation: 0, color: "#fff4df" },
+  { uid: "door-kitchen", type: "door-frame", x: -4, z: 5.1, rotation: 0, color: "#fff4df" },
+  { uid: "door-bath", type: "door-frame", x: 4, z: 5.1, rotation: 0, color: "#fff4df" },
+  { uid: "door-utility", type: "door-frame", x: 8.2, z: 5.7, rotation: 0, color: "#fff4df" },
+] as const satisfies readonly ApartmentDecorItem[];
+
+export const DEFAULT_APARTMENT_PARTITIONS: readonly ApartmentDecorItem[] =
+  RAW_DEFAULT_APARTMENT_PARTITIONS.map((item) => ({ ...item, anchorKind: "floor" as const }));
+
 const RAW_DEFAULT_APARTMENT_DECOR: readonly ApartmentDecorItem[] = [
+  ...DEFAULT_APARTMENT_PARTITIONS,
   { uid: "living-sofa", type: "sofa", x: -8.2, z: -6.7, rotation: 0, color: "#68b78a" },
   { uid: "living-rug", type: "rug", x: -8.1, z: -4.8, rotation: 0, color: "#ff7b6f" },
   { uid: "living-table", type: "side-table", x: -6.1, z: -6.5, rotation: 0, color: "#f2d49d" },
@@ -128,7 +183,7 @@ export function sanitizeApartmentDecor(value: unknown): ApartmentDecorItem[] {
   if (!Array.isArray(value)) return DEFAULT_APARTMENT_DECOR.map((item) => ({ ...item }));
   const result: ApartmentDecorItem[] = [];
   const seen = new Set<string>();
-  for (const entry of value.slice(0, 80)) {
+  for (const entry of value) {
     if (!entry || typeof entry !== "object") continue;
     const candidate = entry as Partial<ApartmentDecorItem>;
     if (typeof candidate.uid !== "string" || !candidate.uid || seen.has(candidate.uid)) continue;
@@ -141,14 +196,14 @@ export function sanitizeApartmentDecor(value: unknown): ApartmentDecorItem[] {
     if (typeof migratedType !== "string" || !TYPE_SET.has(migratedType)) continue;
     const color = typeof candidate.color === "string" && HEX_COLOR.test(candidate.color)
       ? candidate.color.toLowerCase()
-      : "#68b78a";
+      : migratedType === "wall-section" || migratedType === "door-frame" ? "#fff4df" : "#68b78a";
     const type = migratedType as ApartmentDecorType;
     const candidateAnchor = (entry as { anchorKind?: unknown }).anchorKind;
     const anchorKind = candidateAnchor === "floor" || candidateAnchor === "wall" || candidateAnchor === "surface"
       ? candidateAnchor
       : apartmentAnchorKind(type);
     seen.add(candidate.uid);
-    result.push({
+    const item: ApartmentDecorItem = {
       uid: candidate.uid.slice(0, 80),
       type,
       x: Math.max(-12.2, Math.min(12.2, finiteNumber(candidate.x, 0))),
@@ -156,7 +211,11 @@ export function sanitizeApartmentDecor(value: unknown): ApartmentDecorItem[] {
       rotation: finiteNumber(candidate.rotation, 0),
       color,
       anchorKind,
-    });
+    };
+    if (type === "wall-section") {
+      item.length = Math.max(0.5, Math.min(24, finiteNumber(candidate.length, 2.5)));
+    }
+    result.push(item);
   }
   return result;
 }
@@ -196,9 +255,17 @@ export function saveApartmentStyle(
 
 export function loadApartmentDecor(storage: Pick<Storage, "getItem">): ApartmentDecorItem[] {
   try {
-    const raw = storage.getItem(APARTMENT_DECOR_STORAGE_KEY)
+    const current = storage.getItem(APARTMENT_DECOR_STORAGE_KEY);
+    if (current) return sanitizeApartmentDecor(JSON.parse(current) as unknown);
+    const legacy = storage.getItem(PREVIOUS_APARTMENT_DECOR_STORAGE_KEY)
       ?? storage.getItem(LEGACY_APARTMENT_DECOR_STORAGE_KEY);
-    return raw ? sanitizeApartmentDecor(JSON.parse(raw) as unknown) : sanitizeApartmentDecor(null);
+    if (!legacy) return sanitizeApartmentDecor(null);
+    const migrated = sanitizeApartmentDecor(JSON.parse(legacy) as unknown);
+    const existing = new Set(migrated.map((item) => item.uid));
+    return [
+      ...DEFAULT_APARTMENT_PARTITIONS.filter((item) => !existing.has(item.uid)).map((item) => ({ ...item })),
+      ...migrated,
+    ];
   } catch {
     return sanitizeApartmentDecor(null);
   }

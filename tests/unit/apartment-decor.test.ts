@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   APARTMENT_DECOR_STORAGE_KEY,
   APARTMENT_STYLE_STORAGE_KEY,
+  apartmentDecorShortcutAction,
   DEFAULT_APARTMENT_DECOR,
+  DEFAULT_APARTMENT_PARTITIONS,
   DEFAULT_APARTMENT_STYLE,
   loadApartmentDecor,
   loadApartmentStyle,
@@ -13,12 +15,33 @@ import {
 } from "@/lib/game/apartment-decor";
 
 describe("apartment decor persistence", () => {
+  it("maps apartment Ctrl/Cmd+C/V and Delete without stealing interface input", () => {
+    const event = (change: Partial<Parameters<typeof apartmentDecorShortcutAction>[0]> = {}) => ({
+      altKey: false,
+      code: "",
+      ctrlKey: false,
+      key: "",
+      metaKey: false,
+      repeat: false,
+      shiftKey: false,
+      ...change,
+    });
+    expect(apartmentDecorShortcutAction(event({ key: "Delete" }), false, true, false)).toBe("delete");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyC", ctrlKey: true }), false, true, false)).toBe("copy");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyC", metaKey: true }), false, true, false)).toBe("copy");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyV", ctrlKey: true }), false, false, true)).toBe("paste");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyV", metaKey: true }), false, false, true)).toBe("paste");
+    expect(apartmentDecorShortcutAction(event({ code: "KeyV", ctrlKey: true }), true, false, true)).toBeNull();
+    expect(apartmentDecorShortcutAction(event({ key: "Delete", repeat: true }), false, true, false)).toBeNull();
+    expect(apartmentDecorShortcutAction(event({ key: "Delete" }), false, false, false)).toBeNull();
+  });
+
   it("restores the starter arrangement when storage is empty or corrupt", () => {
     expect(sanitizeApartmentDecor(null)).toEqual(DEFAULT_APARTMENT_DECOR);
     expect(loadApartmentDecor({ getItem: () => "not-json" })).toEqual(DEFAULT_APARTMENT_DECOR);
   });
 
-  it("bounds positions, colors, duplicate ids, and the maximum item count", () => {
+  it("bounds malformed fields without imposing an apartment item-count cap", () => {
     const items = Array.from({ length: 90 }, (_, index) => ({
       uid: index < 2 ? "duplicate" : `item-${index}`,
       type: index === 3 ? "not-furniture" : "sofa",
@@ -28,9 +51,30 @@ describe("apartment decor persistence", () => {
       color: index === 4 ? "yellow" : "#ABCDEF",
     }));
     const sanitized = sanitizeApartmentDecor(items);
-    expect(sanitized).toHaveLength(78);
+    expect(sanitized).toHaveLength(88);
     expect(sanitized[0]).toMatchObject({ uid: "duplicate", x: 12.2, z: -7.9, rotation: 0, color: "#abcdef" });
     expect(sanitized.find((item) => item.uid === "item-4")?.color).toBe("#68b78a");
+  });
+
+  it("stores every interior partition and doorway as modular starter decor", () => {
+    expect(DEFAULT_APARTMENT_PARTITIONS.filter((item) => item.type === "wall-section")).toHaveLength(16);
+    expect(DEFAULT_APARTMENT_PARTITIONS.filter((item) => item.type === "door-frame")).toHaveLength(6);
+    expect(DEFAULT_APARTMENT_DECOR).toEqual(expect.arrayContaining([...DEFAULT_APARTMENT_PARTITIONS]));
+  });
+
+  it("sanitizes modular wall lengths while preserving arbitrary wall counts", () => {
+    const walls = Array.from({ length: 240 }, (_, index) => ({
+      uid: `wall-${index}`,
+      type: "wall-section",
+      x: 0,
+      z: 0,
+      rotation: 0,
+      color: "#ABCDEF",
+      length: index === 0 ? 100 : 2.5,
+    }));
+    const sanitized = sanitizeApartmentDecor(walls);
+    expect(sanitized).toHaveLength(240);
+    expect(sanitized[0]).toMatchObject({ type: "wall-section", color: "#abcdef", length: 24 });
   });
 
   it("round-trips the saved arrangement through the versioned key", () => {
@@ -64,9 +108,21 @@ describe("apartment decor persistence", () => {
     const loaded = loadApartmentDecor({
       getItem: (key) => key === "make-it-worse:apartment-decor:v1" ? legacy : null,
     });
-    expect(loaded[0]).toMatchObject({ anchorKind: "wall" });
-    expect(loaded[1]).toMatchObject({ anchorKind: "surface", x: 3, z: 4 });
-    expect(loaded[1]).not.toHaveProperty("parentUid");
+    expect(loaded.find((item) => item.uid === "art")).toMatchObject({ anchorKind: "wall" });
+    expect(loaded.find((item) => item.uid === "bedroom-lamp")).toMatchObject({ anchorKind: "surface", x: 3, z: 4 });
+    expect(loaded.find((item) => item.uid === "bedroom-lamp")).not.toHaveProperty("parentUid");
+  });
+
+  it("adds modular partitions once when migrating a v2 furniture layout", () => {
+    const oldLayout = JSON.stringify([
+      { uid: "my-sofa", type: "sofa", x: 4, z: -2, rotation: 1, color: "#123456" },
+    ]);
+    const migrated = loadApartmentDecor({
+      getItem: (key) => key === "make-it-worse:apartment-decor:v2" ? oldLayout : null,
+    });
+    expect(migrated.find((item) => item.uid === "my-sofa")).toMatchObject({ x: 4, z: -2 });
+    expect(migrated.filter((item) => item.type === "wall-section")).toHaveLength(16);
+    expect(new Set(migrated.map((item) => item.uid)).size).toBe(migrated.length);
   });
 
   it("preserves continuous coordinates and strips old furniture attachments", () => {

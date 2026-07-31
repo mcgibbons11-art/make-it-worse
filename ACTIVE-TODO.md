@@ -75,6 +75,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Apartment
 
+- [x] Make every interior wall and doorway a persistent modular apartment item: freely move, rotate, resize, duplicate, remove, and add more from the catalog; add WASD free-camera movement plus Ctrl/Cmd+C, Ctrl/Cmd+V, and Delete hotkeys in Decorate mode.
 - [x] Rebuild the apartment completely from scratch as a believable permanent player home; do not line up preassembled corner-room chunks to fake a floor plan.
   - [x] Inventory and dismantle the existing apartment/corner-room assets into modular floors, wall runs, corners, doors, windows, trim, fixtures, and individual furniture/decor pieces.
   - [x] Design and assemble a coherent room-by-room apartment from those modular pieces with believable circulation, scale, sightlines, wall continuity, and distinct room purposes.

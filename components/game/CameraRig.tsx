@@ -23,6 +23,7 @@ const LOOK_SENSITIVITY = 0.006;
 export function CameraRig({
   player,
   editorTarget,
+  editorDragActive = false,
   lookEnabled = false,
   lookButton = 0,
   chaseDistance = 7.4,
@@ -33,6 +34,8 @@ export function CameraRig({
 }: {
   player: React.RefObject<RapierRigidBody | null>;
   editorTarget: Vec3Tuple | null;
+  /** Hold the exact placement view while a left-button trap drag is active. */
+  editorDragActive?: boolean;
   /** Whether a left-drag turns the view. Off while a trap is being placed. */
   lookEnabled?: boolean;
   /** Pointer button used to turn: left normally, right while an editor owns left-drag. */
@@ -112,6 +115,14 @@ export function CameraRig({
       // a single bad frame threw the camera off the map permanently. The frame
       // is skipped instead: the camera simply holds still, which is recoverable.
       if (!editorTarget.every(Number.isFinite)) return;
+
+      // Following the preview while the pointer was still held changed the
+      // world point underneath the same screen pixel. Once the camera caught
+      // an edge, moving the mouse back to screen centre still meant "that
+      // edge", so the trap felt magnetized there. Freeze the actual view for
+      // the duration of the drag; on release the ordinary close follow catches
+      // up immediately to the new placement.
+      if (editorDragActive) return;
 
       target.current.set(editorTarget[0], editorTarget[1], editorTarget[2]);
       desired.current.set(

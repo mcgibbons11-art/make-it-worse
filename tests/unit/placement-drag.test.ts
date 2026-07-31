@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { CLASSIC_TRACK, buildTrack } from "@/lib/game/track";
 import {
   nearestSurface,
@@ -33,6 +35,16 @@ function isFinitePlacement(input: { offsetX: number; offsetZ: number }): boolean
 }
 
 describe("dragging a trap over anything on the map", () => {
+  it("freezes the follow camera for the held drag and releases it on pointer-up", () => {
+    const scene = readFileSync(resolve(process.cwd(), "components/game/GameScene.tsx"), "utf8");
+    const zones = readFileSync(resolve(process.cwd(), "components/game/placement/PlacementZones.tsx"), "utf8");
+    const camera = readFileSync(resolve(process.cwd(), "components/game/CameraRig.tsx"), "utf8");
+    expect(scene).toContain("editorDragActive={placementDragging}");
+    expect(zones).toContain("onDragActiveChange(true)");
+    expect(zones).toContain("onDragActiveChange(false)");
+    expect(camera).toContain("if (editorDragActive) return;");
+  });
+
   it("never produces a non-finite offset, wherever the cursor goes", () => {
     // Deliberately swept well past the course on every side, because that is
     // exactly what a fast drag does before the pointer catches up.

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import type { RapierRigidBody } from "@react-three/rapier";
 import type {
   ChallengeDTO,
@@ -126,6 +126,7 @@ export function GameScene({
       (surface.minZ + surface.maxZ) / 2 + snapToGrid(placement.offsetZ),
     ] as const;
   }, [placement, validation, surfaces]);
+  const [placementDragging, setPlacementDragging] = useState(false);
   // A fresh attempt starts on the default chase view. Without this, dying with
   // the camera swung round starts the next run looking sideways, and the first
   // input of the attempt goes somewhere the player did not ask for.
@@ -257,6 +258,7 @@ export function GameScene({
           <CameraRig
             player={player}
             editorTarget={phase === "placing_trap" || phase === "publishing" ? previewPosition : null}
+            editorDragActive={placementDragging}
             lookEnabled={phase === "playing"}
             shakeUntilRef={shakeUntilRef}
           />
@@ -296,6 +298,7 @@ export function GameScene({
             heldRadius={TRAP_CATALOG[placement.type].placementRadius}
             onSelect={onSelectZone}
             onMove={onMovePlacement}
+            onDragActiveChange={setPlacementDragging}
           />
           {previewPosition && (
             <TrapPreview

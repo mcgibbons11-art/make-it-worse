@@ -2,7 +2,7 @@
 
 import { Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useMemo, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import {
   placementGrabOffset,
@@ -25,6 +25,7 @@ interface Props {
   heldRadius: number;
   onSelect(id: string): void;
   onMove(id: string, worldX: number, worldZ: number): void;
+  onDragActiveChange(active: boolean): void;
 }
 
 /**
@@ -66,6 +67,7 @@ function SurfacePatch({
   grabRef,
   onSelect,
   onMove,
+  onDragActiveChange,
 }: {
   surface: PlacementSurface;
   live: boolean;
@@ -78,6 +80,7 @@ function SurfacePatch({
   grabRef: MutableRefObject<readonly [number, number]>;
   onSelect(id: string): void;
   onMove(id: string, worldX: number, worldZ: number): void;
+  onDragActiveChange(active: boolean): void;
 }) {
   const width = surface.maxX - surface.minX;
   const depth = surface.maxZ - surface.minZ;
@@ -99,6 +102,7 @@ function SurfacePatch({
     if (activePointer.current !== event.pointerId) return;
     event.stopPropagation();
     activePointer.current = null;
+    onDragActiveChange(false);
     const target = capturedTarget.current;
     capturedTarget.current = null;
     if (target?.hasPointerCapture(event.pointerId)) {
@@ -118,6 +122,7 @@ function SurfacePatch({
         const point = pointOnDeck(event);
         if (!point) return;
         activePointer.current = event.pointerId;
+        onDragActiveChange(true);
         const target = event.target as PointerCaptureTarget | null;
         target?.setPointerCapture(event.pointerId);
         capturedTarget.current = target;
@@ -187,11 +192,16 @@ export function PlacementZones({
   heldRadius,
   onSelect,
   onMove,
+  onDragActiveChange,
 }: Props) {
   const surfaces = useMemo(() => placementSurfaces(track), [track]);
   // One ref for every patch, because a drag that crosses onto another surface
   // is still the same grab and has to keep the offset it started with.
   const grabRef = useRef<readonly [number, number]>([0, 0]);
+  useEffect(
+    () => () => onDragActiveChange(false),
+    [onDragActiveChange],
+  );
   const selected = surfaces.find((surface) => surface.id === selectedZoneId) ?? null;
   return (
     <>
@@ -206,6 +216,7 @@ export function PlacementZones({
           grabRef={grabRef}
           onSelect={onSelect}
           onMove={onMove}
+          onDragActiveChange={onDragActiveChange}
         />
       ))}
       {selected && (

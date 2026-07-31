@@ -4,7 +4,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
-- [x] Make trap dragging pointer-captured and raycast against a stable deck plane so it cannot lose the mouse and park on platform edges.
+- [x] Make trap dragging pointer-captured and raycast against a stable deck plane, and freeze the follow camera only while the button is held so camera recentering cannot pin the trap at an edge.
 - [x] Make Use map code fully work in the processed Portals iframe: open immediately and load through a sandbox-safe button instead of a blocked HTML form submission.
 - [x] Replace the blocked native prompt behind Use map code with an in-game paste panel that works inside the Portals iframe.
 - [x] Clear held keyboard/touch input at every run boundary so a new attempt can never inherit motion from the previous one.

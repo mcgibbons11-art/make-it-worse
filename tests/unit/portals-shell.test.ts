@@ -228,6 +228,8 @@ describe("map-code redemption", () => {
     });
     await act(async () => {
       const buttons = host.querySelectorAll("button[type='button']");
+      expect(buttons[0]?.textContent?.trim()).toBe("📥 Load this map");
+      expect(buttons[1]?.textContent?.trim()).toBe("↩️ Back");
       (buttons[0] as HTMLButtonElement).click();
       (buttons[1] as HTMLButtonElement).click();
     });

@@ -4,6 +4,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
+- [x] Add emojis to every button in the Use map code popup so its actions match the rest of the menu system.
 - [x] Add custom-builder hotkeys: Delete removes the selected item, Ctrl/Cmd+C copies it, and Ctrl/Cmd+V pastes it without affecting protected spawn/finish markers or focused form controls.
 - [x] Expand every ? help panel with complete room-specific guidance for the main game, custom build mode, and apartment explore/decorate modes.
 - [x] Turn custom-builder Browse maps into a clear My maps area where locally saved/published custom maps can be viewed, reopened for editing, or played in Test mode.

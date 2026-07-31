@@ -162,10 +162,10 @@ export function MapCodePanel({
           disabled={!value.trim()}
           onClick={onSubmit}
         >
-          Load this map
+          📥 Load this map
         </button>
         <button className="button secondary" type="button" onClick={onBack}>
-          Back
+          ↩️ Back
         </button>
       </div>
     </div>

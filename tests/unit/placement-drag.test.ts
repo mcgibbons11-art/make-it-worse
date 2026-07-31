@@ -59,7 +59,7 @@ describe("dragging a trap over anything on the map", () => {
     }
   });
 
-  it("parks the trap on the deck edge rather than off it", () => {
+  it("parks the whole trap base inside the deck rather than sticking its centre to the edge", () => {
     const surface = surfaces.find((entry) => entry.maxX - entry.minX > 1)!;
     const cz = (surface.minZ + surface.maxZ) / 2;
     // A cursor far off the right-hand lip of this deck.
@@ -69,11 +69,14 @@ describe("dragging a trap over anything on the map", () => {
     const home = surfaces.find((entry) => entry.id === input.zoneId)!;
     const landedX = (home.minX + home.maxX) / 2 + input.offsetX;
     const landedZ = (home.minZ + home.maxZ) / 2 + input.offsetZ;
-    // Within a grid step of the chosen surface, on both axes.
-    expect(landedX).toBeGreaterThanOrEqual(home.minX - 0.25);
-    expect(landedX).toBeLessThanOrEqual(home.maxX + 0.25);
-    expect(landedZ).toBeGreaterThanOrEqual(home.minZ - 0.25);
-    expect(landedZ).toBeLessThanOrEqual(home.maxZ + 0.25);
+    // Soap's placement radius is 0.9, and validation requires half of that
+    // footprint to stay supported. The resolved point must already satisfy the
+    // same rule instead of showing a refused preview on the lip.
+    const clearance = 0.45;
+    expect(landedX).toBeGreaterThanOrEqual(home.minX + clearance);
+    expect(landedX).toBeLessThanOrEqual(home.maxX - clearance);
+    expect(landedZ).toBeGreaterThanOrEqual(home.minZ + clearance);
+    expect(landedZ).toBeLessThanOrEqual(home.maxZ - clearance);
   });
 
   it("prefers the deck under the cursor to the nearest one", () => {

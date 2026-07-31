@@ -200,6 +200,14 @@ describe("map-code redemption", () => {
     expect(source).not.toContain("window.prompt");
     expect(source).toContain('view === "map-code"');
     expect(source).toContain("importSharedGame(mapCodeDraft)");
+    const openCall = source.indexOf('openView("map-code")');
+    expect(openCall).toBeGreaterThan(0);
+    const opener = source.slice(
+      source.lastIndexOf("<button", openCall),
+      source.indexOf("</button>", openCall),
+    );
+    expect(opener).toContain('openView("map-code")');
+    expect(opener).not.toContain("guard(");
   });
 
   it("submits the pasted code and provides a real back action", async () => {

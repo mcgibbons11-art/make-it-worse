@@ -241,9 +241,29 @@ export function placementFromWorld(type: TrapPlacementInput["type"], zoneId:stri
   // point ON the map, so the preview stays put and the camera has nowhere silly
   // to go. Overlap and dodge-room can still refuse a spot on their own merits,
   // which are refusals the player can see and act on.
-  const x=Math.min(surface.maxX,Math.max(surface.minX,worldX));
-  const z=Math.min(surface.maxZ,Math.max(surface.minZ,worldZ));
-  return {type,zoneId:surface.id,offsetX:snapToGrid(x-cx),offsetZ:snapToGrid(z-cz),rotationQuarterTurns};
+  // Clamp the trap's BASE into the usable interior, not its centre onto the
+  // platform's physical edge. validatePlacement requires half the placement
+  // radius to remain supported, so the old geometric clamp deliberately
+  // parked every off-deck drag at an invalid red edge. That felt like the mouse
+  // was stuck even after the pointer came back over the platform.
+  const clearance=TRAP_CATALOG[type].placementRadius*.5;
+  const clampOffset=(world:number,center:number,min:number,max:number):number=>{
+    const low=min+clearance-center; const high=max-clearance-center;
+    if(low>high) return 0;
+    // Bound the GRID value rather than bounding world first and snapping it
+    // back over the lip afterwards.
+    const gridLow=Math.ceil((low-1e-9)/GRID_SIZE)*GRID_SIZE;
+    const gridHigh=Math.floor((high+1e-9)/GRID_SIZE)*GRID_SIZE;
+    if(gridLow>gridHigh) return 0;
+    return Math.min(gridHigh,Math.max(gridLow,snapToGrid(world-center)));
+  };
+  return {
+    type,
+    zoneId:surface.id,
+    offsetX:clampOffset(worldX,cx,surface.minX,surface.maxX),
+    offsetZ:clampOffset(worldZ,cz,surface.minZ,surface.maxZ),
+    rotationQuarterTurns,
+  };
 }
 
 /** Kept for callers that still centre on an authored zone. */

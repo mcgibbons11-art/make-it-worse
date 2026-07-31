@@ -1,6 +1,7 @@
 "use client";
 
 import { Html } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import {
@@ -50,6 +51,12 @@ const FILL_IDLE = "#8b72ff";
 const FILL_LIVE = "#57dfa1";
 const FILL_REFUSED = "#ff5964";
 
+type PointerCaptureTarget = EventTarget & {
+  setPointerCapture(pointerId: number): void;
+  hasPointerCapture(pointerId: number): boolean;
+  releasePointerCapture(pointerId: number): void;
+};
+
 function SurfacePatch({
   surface,
   live,
@@ -76,15 +83,44 @@ function SurfacePatch({
   const depth = surface.maxZ - surface.minZ;
   const x = (surface.minX + surface.maxX) / 2;
   const z = (surface.minZ + surface.maxZ) / 2;
+  const dragY = surface.groundY + 0.105;
+  const dragPlane = useMemo(
+    () => new THREE.Plane(new THREE.Vector3(0, 1, 0), -dragY),
+    [dragY],
+  );
+  const dragPoint = useMemo(() => new THREE.Vector3(), []);
+  const activePointer = useRef<number | null>(null);
+  const capturedTarget = useRef<PointerCaptureTarget | null>(null);
+
+  const pointOnDeck = (event: ThreeEvent<PointerEvent>): THREE.Vector3 | null =>
+    event.ray.intersectPlane(dragPlane, dragPoint);
+
+  const endDrag = (event: ThreeEvent<PointerEvent>) => {
+    if (activePointer.current !== event.pointerId) return;
+    event.stopPropagation();
+    activePointer.current = null;
+    const target = capturedTarget.current;
+    capturedTarget.current = null;
+    if (target?.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+  };
   // The visible deck wash tops out at groundY + 0.075. The interaction plane
   // used to sit underneath it at +0.055, so the mouse struck the platform's
   // top/side seam before it struck the placeable surface. Lift the patch clear
   // of the artwork so the whole top face is one uninterrupted target.
   return (
     <group
-      position={[x, surface.groundY + 0.105, z]}
+      position={[x, dragY, z]}
       onPointerDown={(event) => {
+        if (event.button !== 0) return;
         event.stopPropagation();
+        const point = pointOnDeck(event);
+        if (!point) return;
+        activePointer.current = event.pointerId;
+        const target = event.target as PointerCaptureTarget | null;
+        target?.setPointerCapture(event.pointerId);
+        capturedTarget.current = target;
         onSelect(surface.id);
         // Grabbing the trap must not MOVE the trap.
         //
@@ -101,20 +137,26 @@ function SurfacePatch({
         // available for direct click-to-place.
         grabRef.current = placementGrabOffset(
           held,
-          event.point.x,
-          event.point.z,
+          point.x,
+          point.z,
           grabRadius,
         );
-        onMove(surface.id, event.point.x + grabRef.current[0], event.point.z + grabRef.current[1]);
+        onMove(surface.id, point.x + grabRef.current[0], point.z + grabRef.current[1]);
       }}
       onPointerMove={(event) => {
-        // No selected-surface check. Holding the button and sweeping across the
-        // course is the whole gesture, and gating it on where the drag began is
-        // exactly what made it stop at an invisible line.
-        if (event.buttons !== 1) return;
+        // The patch that received pointer-down owns the drag until pointer-up.
+        // R3F pointer capture keeps it receiving rays while the cursor is over
+        // a gap, another platform, or the preview prop itself. Intersecting the
+        // ray with a stable horizontal plane avoids using a box side/corner as
+        // the world point, which was the remaining source of edge sticking.
+        if (activePointer.current !== event.pointerId) return;
         event.stopPropagation();
-        onMove(surface.id, event.point.x + grabRef.current[0], event.point.z + grabRef.current[1]);
+        const point = pointOnDeck(event);
+        if (!point) return;
+        onMove(surface.id, point.x + grabRef.current[0], point.z + grabRef.current[1]);
       }}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
     >
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width, depth]} />

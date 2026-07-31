@@ -1121,20 +1121,16 @@ export function PortalsApp() {
         </button>
         <button
           className="button secondary"
-          onClick={() =>
-            guard(
-              () => {
-                setMapCodeDraft("");
-                setNotice("");
-                openView("map-code");
-              },
-              {
-                title: "Leave this run?",
-                body: "Loading a map code replaces the run you are on. This run does not come back.",
-                confirmLabel: "Use a map code",
-              },
-            )
-          }
+          onClick={() => {
+            // Opening a paste field is not destructive. The old run-discard
+            // guard could intercept this click with a confirmation panel,
+            // making Use map code appear dead in several menu states. A valid
+            // submitted code is what replaces the run, so always show the
+            // field immediately and let importSharedGame keep errors in it.
+            setMapCodeDraft("");
+            setNotice("");
+            openView("map-code");
+          }}
         >
           📥 Use map code
         </button>

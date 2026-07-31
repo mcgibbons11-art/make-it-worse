@@ -1,6 +1,6 @@
 // The wardrobe catalogue.
 //
-// Nine slots of code-authored clothing, held apart from avatar.ts because that
+// Ten slots of code-authored clothing, held apart from avatar.ts because that
 // file owns colour and legibility while this one owns "what can you wear".
 // Nothing here imports avatar.ts, so the dependency runs one way only.
 //

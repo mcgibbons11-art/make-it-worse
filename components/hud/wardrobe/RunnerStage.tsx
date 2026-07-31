@@ -34,10 +34,14 @@ function PreviewRunner({
     const centerY = (bounds.min.y + bounds.max.y) / 2;
     const verticalFov = THREE.MathUtils.degToRad(camera.fov);
     const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * Math.max(0.2, camera.aspect));
+    // Each term is already the camera distance needed to fit that extent.
+    // Adding radialExtent a second time left nearly half the preview box empty
+    // on ordinary outfits. A small common margin keeps hats/soles off the frame
+    // while letting the runner use the box the player is dressing them in.
     const distance = Math.max(
       dimensions.y / (2 * Math.tan(verticalFov / 2)),
       radialExtent / Math.tan(horizontalFov / 2),
-    ) * 1.12 + radialExtent;
+    ) * 1.1;
     camera.position.set(0, centerY, distance);
     camera.lookAt(0, centerY, 0);
     camera.updateProjectionMatrix();
@@ -61,10 +65,21 @@ export function RunnerStage({
   const pivot = useRef<THREE.Group | null>(null);
   const dragging = useRef(false);
   const lastPointerX = useRef(0);
+  const turn = (direction: -1 | 1) => {
+    if (pivot.current) pivot.current.rotation.y += direction * 0.24;
+  };
 
   return (
     <div
       className="avatar-figure-shell"
+      role="group"
+      tabIndex={0}
+      aria-label="Interactive runner preview. Drag horizontally or use the left and right arrow keys to rotate the runner."
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        turn(event.key === "ArrowLeft" ? -1 : 1);
+      }}
       onPointerDown={(event) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
         dragging.current = true;
@@ -101,6 +116,24 @@ export function RunnerStage({
         <directionalLight color="#99c9ff" intensity={0.6} position={[2.4, 1.6, 3.2]} />
         <PreviewRunner avatar={avatar} avatarSeed={avatarSeed} pivot={pivot} />
       </Canvas>
+      <div className="avatar-turn-controls" aria-label="Runner rotation controls">
+        <button
+          type="button"
+          aria-label="Turn runner left"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => turn(-1)}
+        >
+          ↶ Turn
+        </button>
+        <button
+          type="button"
+          aria-label="Turn runner right"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => turn(1)}
+        >
+          Turn ↷
+        </button>
+      </div>
     </div>
   );
 }

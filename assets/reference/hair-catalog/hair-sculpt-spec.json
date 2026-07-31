@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "asset": "runner-hair-catalog",
   "referenceImage": "hair-20-style-reference.png",
   "styleOrder": [
@@ -31,6 +31,9 @@
       "head-pivot attachment only",
       "single player-selected base color with derived shadow tone",
       "readable in wardrobe preview and chase camera",
+      "connected scalp-seated masses rather than floating primitives",
+      "front pieces stay above the eye line and long pieces stay outside the shoulders",
+      "open head accessories retain a clear band path around the skull",
       "no gameplay collider or raycast behavior"
     ]
   },
@@ -47,6 +50,24 @@
       "pass": "fast-mode reference comparison",
       "status": "continue",
       "note": "All twenty reference silhouettes were translated into bounded low-poly procedural families; formal multi-angle on-runner review remains part of the wearable audit."
+    },
+    {
+      "date": "2026-07-31",
+      "pass": "adversarial runtime catalog rebuild",
+      "status": "pass",
+      "note": "Replaced floating pellets, slabs, cones and overlong capsules with overlapping scalp-seated masses; all twenty styles passed a current-runtime front three-quarter wardrobe review. Rear and animated chase-camera review remain follow-up evidence."
+    },
+    {
+      "date": "2026-07-31",
+      "pass": "catalog sheet silhouette refinement",
+      "status": "pass",
+      "note": "Refined the second runtime sheet: scalp-hugging buzz and crew profiles, distinct continuous mohawk and compact fauxhawk, blended swept roots, larger rounded natural styles, stronger ponytails, eye-safe rounded shag fringe, perimeter locs, and an exposed swept-undercut side."
+    },
+    {
+      "date": "2026-07-31",
+      "pass": "final runtime evidence closure",
+      "status": "pass",
+      "note": "Filled the edge-on mohawk and fauxhawk profiles into solid crests, sealed the swept-undercut root while retaining a short shaded side, and moved both ponytail ties and tails onto the rear-centre plane."
     }
   ]
 }

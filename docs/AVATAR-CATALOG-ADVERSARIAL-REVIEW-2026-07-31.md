@@ -1,6 +1,22 @@
 # Build Your Runner adversarial catalog review — 2026-07-31
 
-Status: **FAIL — catalog is not presentation-ready.**
+Status: **PASS for the current idle catalog; animation/combo certification remains open.**
+
+## Remediation acceptance — 2026-07-31
+
+The failing baseline below is retained as the defect record, but its item verdicts are superseded for the current idle catalog by three generated remediation passes and a fresh runtime review. The source authoring scripts and generated factories now cover all 20 hairstyles plus the complete selectable head, face, eyewear, clothing, footwear, back, and held-item catalog.
+
+- All 86 non-empty selectable items have current-runtime front and side evidence.
+- The final 75 affected items were recaptured after the last geometry and framing corrections in `artifacts/avatar-catalog-acceptance-2026-07-31/`.
+- The unchanged eyewear and footwear acceptance sheets remain in `artifacts/avatar-catalog-final-2026-07-31/`.
+- The preview now fits the dressed runner without clipping the head or feet and supports drag, arrow-key, and on-screen rotation.
+- Hair is connected and seated; helmet, hats, facial hair, transparent eyewear, layered clothes, footwear, back items, and hand grips received dedicated geometry/material/attachment corrections.
+- Manual picking and Randomize now share one compatibility resolver; a newly selected item wins and the UI reports any cleared conflict.
+- `None` removes tops and pants, the waist bridge closes the groin gap when trousers are worn, and every authored color remains available.
+
+This is not a claim that every possible outfit combination is certified in every animation. Rear/profile run, jump, failure, and victory sheets plus representative cross-slot stress combinations remain the final evidence gate for full animation certification.
+
+## Original failing baseline (retained for traceability)
 
 This supersedes any earlier claim that the wearable quality pass was complete. Three independent reviews inspected source, tests, retained renders, current local runtime, every selectable hair/head/face/eyewear state, every held item from multiple angles, and the remaining clothing catalog. Geometry/socket tests are useful, but they are not visual sign-off.
 

@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   AVATAR_COLORS,
+  applyWardrobeSelection,
   DEFAULT_AVATAR,
   WARDROBE_SLOTS,
   colorRejection,
@@ -58,7 +59,7 @@ class RunnerPreviewBoundary extends Component<
             type="button"
             onClick={() => this.setState((state) => ({ failed: false, attempt: state.attempt + 1 }))}
           >
-            Retry preview
+            🔄 Retry preview
           </button>
         </div>
       );
@@ -132,7 +133,7 @@ function ColorRow({
  * runner in different places, and a panel that reached into one of them could
  * only ever work in that one. Everything it needs arrives as a prop.
  *
- * Nine slots would make eleven stacked groups of controls and a panel you scroll
+ * Ten slots would make twelve stacked groups of controls and a panel you scroll
  * to the bottom of to find out what is in it, so the slots are a strip of chips
  * and one slot's contents show at a time. Each chip carries what is currently in
  * its slot, which is also how the whole outfit stays readable at a glance while
@@ -156,6 +157,7 @@ export function WardrobePanel({
     avatar ? normalizeAvatar(avatar) : DEFAULT_AVATAR,
   );
   const [openSlot, setOpenSlot] = useState<WardrobeSlotId>("headwear");
+  const [selectionNotice, setSelectionNotice] = useState("");
   const [previewReady, setPreviewReady] = useState(false);
   const firstControl = useRef<HTMLInputElement>(null);
 
@@ -181,6 +183,21 @@ export function WardrobePanel({
   const chooseBody = useCallback((body: AvatarColorId) => {
     setDraft((current) => ({ ...current, body }));
   }, []);
+
+  const chooseItem = useCallback((slotId: WardrobeSlotId, optionId: string) => {
+    const result = applyWardrobeSelection(draft, slotId, optionId);
+    setDraft(result.config);
+    if (result.cleared.length === 0) {
+      setSelectionNotice("");
+      return;
+    }
+    const labels = result.cleared.map(
+      (cleared) => WARDROBE_SLOTS.find((entry) => entry.id === cleared)!.label.toLowerCase(),
+    );
+    setSelectionNotice(
+      `Removed ${labels.join(" and ")} so the new item stays completely visible.`,
+    );
+  }, [draft]);
 
   const slot = WARDROBE_SLOTS.find((entry) => entry.id === openSlot)!;
   const bodyReading = deckContrast(AVATAR_COLORS.find((e) => e.id === draft.body)!.hex);
@@ -243,13 +260,13 @@ export function WardrobePanel({
               </div>
             </div>
           )}
-          {previewEnabled && <small className="avatar-turn-hint">Drag the runner to turn them</small>}
+          {previewEnabled && <small className="avatar-turn-hint">Drag or use arrow keys to turn them</small>}
           <p className="avatar-reading">
             All avatar colors available
           </p>
         </div>
         {/* A grid item defaults to min-height:auto, which is tall enough for
-            all nine slots' worth of controls and drags the row - and with it
+            all ten slots' worth of controls and drags the row - and with it
             the stage beside it - past the panel's own max-height. Letting this
             column shrink is what puts its overflow-y back in charge.
 
@@ -328,20 +345,15 @@ export function WardrobePanel({
                     type="radio"
                     name={`avatar-${slot.id}`}
                     checked={draft[slot.id] === option.id}
-                    onChange={() =>
-                      // The value came out of this slot's own option list, so
-                      // the cast restores what indexing by a slot id had to
-                      // widen away. Same argument avatarFromCode makes.
-                      setDraft((current) => ({
-                        ...current,
-                        [slot.id]: option.id,
-                      }) as AvatarConfig)
-                    }
+                    onChange={() => chooseItem(slot.id, option.id)}
                   />
                   <span>{option.label}</span>
                 </label>
               ))}
             </div>
+            <p className="avatar-compatibility-note" role="status" aria-live="polite">
+              {selectionNotice}
+            </p>
             <p className="avatar-note">{slot.note}</p>
             {colorKey && isSlotFilled(draft, slot.id) && (
               <ColorRow
@@ -376,7 +388,7 @@ export function WardrobePanel({
               disabled={!isReadableAvatar(draft)}
               onClick={() => onSave(draft)}
             >
-              This one is mine
+              ✅ This one is mine
             </button>
             <button
               type="button"
@@ -386,7 +398,7 @@ export function WardrobePanel({
             >
               🎲 Randomize
             </button>
-            <button className="text-button" onClick={onClose}>Cancel</button>
+            <button className="text-button" onClick={onClose}>✖ Cancel</button>
           </div>
         </div>
       </section>

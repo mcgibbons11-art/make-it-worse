@@ -17,7 +17,6 @@ import { buildRunnerForTest, dressRunner } from "@/components/game/PlayerVisual"
 import { createMAKEITWORSERunnerModel } from "@/components/game/models/createRunnerModel";
 import {
   HAT_FACE_MIN_Y,
-  HELD_MIN_X,
   LEG_MAX_RADIUS,
   MAX_HALF_WIDTH,
   SOCKETS,
@@ -30,6 +29,7 @@ import {
   DEFAULT_AVATAR,
   MIN_DANGER_DISTANCE,
   WARDROBE_SLOTS,
+  applyWardrobeSelection,
   avatarFromCode,
   avatarToCode,
   colorDistance,
@@ -838,19 +838,28 @@ describe("garments through the run cycle", () => {
     }
   });
 
-  it("keeps a carried item outboard of the skull it swings past", () => {
-    // The victory pose lifts the hand to the side of the head. The hand itself
-    // clears the skull by 0.011u; anything in it has to clear it too, and
-    // because the swing is about X alone, clearing it once clears it always.
+  it("keeps every carried item's authored grip inside the palm", () => {
+    // Clearing the skull by pushing the whole prop outboard made every handle
+    // visibly hover beside the fist. The invariant that matters at assembly is
+    // the opposite: the exact authored grip point (the attachment group's
+    // origin) must remain inside the real hand mesh. Pose clearance is reviewed
+    // on the rendered victory sheet, where depth as well as X can separate the
+    // prop from the head.
     for (const { slot, item } of NON_EMPTY) {
       if (slot !== "held") continue;
       const { model } = dressedRaw(only(slot, item));
-      const box = boxOf(wardrobeMeshes(model, SOCKETS.handRight));
-      const inner = Math.min(Math.abs(box.min.x), Math.abs(box.max.x));
+      const hand = model.getObjectByName("Hand right");
+      const grip = model.getObjectByName(`Held grip ${item}`);
+      expect(hand, "the runner's right hand is missing").toBeTruthy();
+      expect(grip, `held/${item} has no named grip`).toBeTruthy();
+      model.updateMatrixWorld(true);
+      const palm = new THREE.Box3().setFromObject(hand!).expandByScalar(0.002);
+      const point = new THREE.Vector3();
+      grip!.getWorldPosition(point);
       expect(
-        inner,
-        `held/${item} reaches in to ${inner.toFixed(3)}u, inside the 0.325u skull`,
-      ).toBeGreaterThanOrEqual(HELD_MIN_X);
+        palm.containsPoint(point),
+        `held/${item} grips at ${point.toArray().map((value) => value.toFixed(3)).join(", ")}, outside the palm`,
+      ).toBe(true);
     }
   });
 
@@ -922,6 +931,28 @@ describe("garments through the run cycle", () => {
 });
 
 describe("colour rules", () => {
+  it("renders optical surfaces as translucent glass rather than opaque steel", () => {
+    for (const config of [
+      { ...DEFAULT_AVATAR, eyewear: "round" as const },
+      { ...DEFAULT_AVATAR, eyewear: "goggles" as const },
+      { ...DEFAULT_AVATAR, eyewear: "visorband" as const },
+      { ...DEFAULT_AVATAR, headwear: "helmet" as const },
+    ]) {
+      const { model } = dressedRaw(config);
+      const glass = wardrobeMeshes(model).filter(
+        (mesh) => mesh.userData["wardrobeTint"] === "glass",
+      );
+      expect(glass.length).toBeGreaterThan(0);
+      for (const mesh of glass) {
+        const material = mesh.material as THREE.MeshPhysicalMaterial;
+        expect(material.isMeshPhysicalMaterial).toBe(true);
+        expect(material.transparent).toBe(true);
+        expect(material.opacity).toBeLessThan(0.7);
+        expect(material.depthWrite).toBe(false);
+      }
+    }
+  });
+
   it("holds every offered colour off the reserved hazard red", () => {
     for (const entry of AVATAR_COLORS) {
       expect(entry.hex).not.toBe(PALETTE.danger);
@@ -963,6 +994,33 @@ describe("colour rules", () => {
 });
 
 describe("outfits in a link", () => {
+  it("makes the newest manual choice win instead of silently hiding an item", () => {
+    const helmet = applyWardrobeSelection(
+      { ...DEFAULT_AVATAR, hair: "locs", face: "beard", eyewear: "round" },
+      "headwear",
+      "helmet",
+    );
+    expect(helmet.config.headwear).toBe("helmet");
+    expect(helmet.config.hair).toBe("none");
+    expect(helmet.config.face).toBe("plain");
+    expect(helmet.config.eyewear).toBe("none");
+    expect(helmet.cleared).toEqual(["hair", "face", "eyewear"]);
+
+    const hairWins = applyWardrobeSelection(helmet.config, "hair", "afro");
+    expect(hairWins.config.hair).toBe("afro");
+    expect(hairWins.config.headwear).toBe("hair");
+    expect(hairWins.cleared).toEqual(["headwear"]);
+
+    const overalls = applyWardrobeSelection(
+      { ...DEFAULT_AVATAR, legwear: "cargo" },
+      "top",
+      "overalls",
+    );
+    expect(overalls.config.legwear).toBe("none");
+    expect(applyWardrobeSelection(overalls.config, "legwear", "jeans").config.top)
+      .toBe("none");
+  });
+
   it("round-trips every slot through the code", () => {
     for (const { slot, item } of NON_EMPTY) {
       const config = normalizeAvatar(only(slot, item));

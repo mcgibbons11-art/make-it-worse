@@ -140,15 +140,13 @@ export function dressRunner(
   const rightStockSole = clone.getObjectByName("Sole right");
   if (leftStockSole) leftStockSole.visible = false;
   if (rightStockSole) rightStockSole.visible = false;
-  // Sandals are complete replacements with an authored foot, footbed and
-  // straps. Leaving the baked closed sneaker underneath made them closed shoes
-  // with bars laid over the top.
-  if (["none", "sandal", "socks"].includes(look.footwear)) {
-    const leftStockShoe = clone.getObjectByName("Sneaker left");
-    const rightStockShoe = clone.getObjectByName("Sneaker right");
-    if (leftStockShoe) leftStockShoe.visible = false;
-    if (rightStockShoe) rightStockShoe.visible = false;
-  }
+  // Every footwear option now authors a complete foot or shoe. Keeping the
+  // baked sneaker underneath made boots, skates and high-tops look like parts
+  // stacked on a permanent base shoe, and it leaked through at oblique angles.
+  const leftStockShoe = clone.getObjectByName("Sneaker left");
+  const rightStockShoe = clone.getObjectByName("Sneaker right");
+  if (leftStockShoe) leftStockShoe.visible = false;
+  if (rightStockShoe) rightStockShoe.visible = false;
   // The ghost must never land on the player's own colour - the two share
   // createdByAvatarSeed - and must read as "the ghost" on every replay, so it
   // takes one fixed hue rather than a second seed-derived pick.
@@ -247,7 +245,12 @@ function addInkOutline(root: THREE.Object3D) {
   const meshes: THREE.Mesh[] = [];
   root.traverse((node) => {
     const mesh = node as THREE.Mesh;
-    if (mesh.isMesh && mesh.visible && !mesh.name.endsWith("__ink-outline"))
+    if (
+      mesh.isMesh &&
+      mesh.visible &&
+      !mesh.userData["wardrobeNoOutline"] &&
+      !mesh.name.endsWith("__ink-outline")
+    )
       meshes.push(mesh);
   });
   for (const mesh of meshes) {

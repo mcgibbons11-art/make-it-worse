@@ -33,158 +33,291 @@ function add(
   return part;
 }
 
-const sphere = () => new THREE.SphereGeometry(1, 10, 7);
-const cone = () => new THREE.ConeGeometry(1, 1, 7);
-const capsule = () => new THREE.CapsuleGeometry(1, 1, 4, 8);
+const sphere = () => new THREE.SphereGeometry(1, 14, 9);
 
 function cap(root: THREE.Group, main: THREE.MeshStandardMaterial, scale: [number, number, number] = [0.35, 0.24, 0.35], y = 0.12) {
   add(root, sphere(), main, [0, y, -0.015], [0, 0, 0], scale, "hair-cap");
 }
 
-function tuft(root: THREE.Group, main: THREE.MeshStandardMaterial, x: number, y: number, z: number, size = 0.1, tilt = 0) {
-  add(root, cone(), main, [x, y, z], [0, 0, tilt], [size, size * 1.8, size], "hair-tuft");
+function lobe(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  position: [number, number, number],
+  scale: [number, number, number],
+  rotation: [number, number, number] = [0, 0, 0],
+  name = "hair-lobe",
+) {
+  return add(root, sphere(), material, position, rotation, scale, name);
 }
 
-function curl(root: THREE.Group, main: THREE.MeshStandardMaterial, x: number, y: number, z: number, size = 0.095) {
-  add(root, sphere(), main, [x, y, z], [0, 0, 0], [size, size, size], "hair-curl");
+function capsuleBetween(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  start: readonly [number, number, number],
+  end: readonly [number, number, number],
+  radius: number,
+  name = "hair-strand",
+) {
+  const a = new THREE.Vector3(...start);
+  const b = new THREE.Vector3(...end);
+  const direction = b.clone().sub(a);
+  const length = direction.length();
+  const part = add(
+    root,
+    new THREE.CapsuleGeometry(radius, Math.max(0.001, length - radius * 2), 5, 10),
+    material,
+    a.add(b).multiplyScalar(0.5).toArray() as [number, number, number],
+    [0, 0, 0],
+    [1, 1, 1],
+    name,
+  );
+  part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  return part;
 }
 
-function braid(root: THREE.Group, main: THREE.MeshStandardMaterial, x: number, z: number) {
-  for (let index = 0; index < 5; index += 1) {
-    const y = -0.02 - index * 0.095;
-    add(root, sphere(), main, [x + Math.sin(index * 1.7) * 0.012, y, z], [0, 0, 0], [0.065, 0.078, 0.06], "hair-braid-segment");
+function taperedLock(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  start: readonly [number, number, number],
+  end: readonly [number, number, number],
+  radius: number,
+  name = "hair-taper",
+) {
+  const a = new THREE.Vector3(...start);
+  const b = new THREE.Vector3(...end);
+  const direction = b.clone().sub(a);
+  const part = add(
+    root,
+    new THREE.ConeGeometry(radius, direction.length(), 8),
+    material,
+    a.clone().add(b).multiplyScalar(0.5).toArray() as [number, number, number],
+    [0, 0, 0],
+    [1, 1, 1],
+    name,
+  );
+  part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  return part;
+}
+
+function mohawkFin(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  tall: boolean,
+) {
+  const outline = new THREE.Shape();
+  if (tall) {
+    outline.moveTo(-0.275, 0.18);
+    outline.lineTo(-0.225, 0.37);
+    outline.lineTo(-0.13, 0.48);
+    outline.lineTo(-0.035, 0.43);
+    outline.lineTo(0.075, 0.51);
+    outline.lineTo(0.17, 0.42);
+    outline.lineTo(0.275, 0.31);
+    outline.lineTo(0.275, 0.18);
+  } else {
+    outline.moveTo(-0.22, 0.255);
+    outline.lineTo(-0.14, 0.35);
+    outline.lineTo(-0.035, 0.38);
+    outline.lineTo(0.075, 0.36);
+    outline.lineTo(0.22, 0.3);
+    outline.lineTo(0.22, 0.255);
   }
-  tuft(root, main, x, -0.51, z, 0.05, Math.PI);
+  outline.closePath();
+  const depth = tall ? 0.095 : 0.075;
+  const geometry = new THREE.ExtrudeGeometry(outline, {
+    depth,
+    bevelEnabled: true,
+    bevelSize: 0.012,
+    bevelThickness: 0.008,
+    bevelSegments: 2,
+    curveSegments: 4,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  add(root, geometry, material, [0, 0, -0.015], [0, Math.PI / 2, 0], [1, 1, 1], tall ? "mohawk-fin" : "fauxhawk-fin");
+}
+
+function curl(root: THREE.Group, material: THREE.MeshStandardMaterial, x: number, y: number, z: number, size = 0.085) {
+  lobe(root, material, [x, y, z], [size, size * 0.94, size], [0, 0, 0], "hair-curl");
+}
+
+function braid(root: THREE.Group, main: THREE.MeshStandardMaterial, shadow: THREE.MeshStandardMaterial, x: number) {
+  const points: [number, number, number][] = [
+    [x, 0.055, 0.105],
+    [x * 1.035, -0.035, 0.12],
+    [x * 0.98, -0.125, 0.115],
+    [x * 1.04, -0.215, 0.105],
+    [x, -0.295, 0.095],
+  ];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    capsuleBetween(root, index % 2 ? shadow : main, points[index]!, points[index + 1]!, 0.052, "hair-braid-segment");
+  }
+  taperedLock(root, main, points.at(-1)!, [x, -0.37, 0.09], 0.05, "hair-braid-tip");
 }
 
 export function createHairStyleModel(id: string, color: string): THREE.Group {
   const root = new THREE.Group();
   root.name = `hair:${id}`;
   const main = surface(color);
-  const shadow = surface(color, 0.62);
+  const shadow = surface(color, 0.72);
 
   switch (id) {
     case "classic":
-      cap(root, main);
-      // A shallow, eyebrow-safe fringe replaces the old downward cones whose
-      // tips passed through both eyes and the nose.
-      for (const [x, y, sx, tilt] of [
-        [-0.22, 0.025, 0.105, -0.18],
-        [-0.08, 0.012, 0.12, -0.06],
-        [0.08, 0.012, 0.12, 0.06],
-        [0.22, 0.025, 0.105, 0.18],
-      ] as const) {
-        add(root, sphere(), main, [x, y, 0.285], [0, 0, tilt], [sx, 0.055, 0.075], "classic-fringe");
-      }
+      cap(root, main, [0.345, 0.235, 0.345], 0.115);
+      lobe(root, main, [0, 0.075, 0.267], [0.305, 0.09, 0.092], [0.08, 0, 0], "classic-fringe-band");
+      lobe(root, main, [-0.18, 0.045, 0.294], [0.115, 0.055, 0.065], [0, 0, -0.22], "classic-fringe-left");
+      lobe(root, main, [0, 0.035, 0.302], [0.13, 0.06, 0.065], [0, 0, 0.05], "classic-fringe-centre");
+      lobe(root, main, [0.18, 0.048, 0.294], [0.115, 0.055, 0.065], [0, 0, 0.22], "classic-fringe-right");
       break;
     case "buzz":
-      cap(root, main, [0.337, 0.205, 0.337], 0.105);
-      for (let ring = 0; ring < 3; ring += 1) for (let index = 0; index < 8; index += 1) {
-        const angle = (index / 8) * Math.PI * 2 + ring * 0.25;
-        curl(root, shadow, Math.sin(angle) * (0.17 + ring * 0.06), 0.16 + ring * 0.07, Math.cos(angle) * (0.17 + ring * 0.06) - 0.02, 0.025);
-      }
+      cap(root, main, [0.326, 0.19, 0.326], 0.135);
       break;
     case "crew":
-      cap(root, main, [0.34, 0.2, 0.34], 0.09);
-      add(root, new THREE.CylinderGeometry(0.27, 0.31, 0.13, 12), main, [0, 0.3, -0.02], [0, 0, 0], [1, 1, 1], "crew-flat-top");
+      cap(root, main, [0.33, 0.195, 0.33], 0.125);
+      add(root, new THREE.CylinderGeometry(0.215, 0.295, 0.165, 16), main, [0, 0.245, -0.02], [0, 0, 0], [1, 1, 0.94], "crew-tapered-top");
+      lobe(root, shadow, [0, 0.327, -0.02], [0.205, 0.012, 0.19], [0, 0, 0], "crew-top-plane");
       break;
     case "spikes":
-      cap(root, shadow, [0.33, 0.16, 0.33], 0.07);
-      for (let index = 0; index < 12; index += 1) {
-        const angle = (index / 12) * Math.PI * 2;
-        tuft(root, main, Math.sin(angle) * 0.23, 0.27 + (index % 3) * 0.04, Math.cos(angle) * 0.23 - 0.02, 0.09, -Math.sin(angle) * 0.45);
-      }
-      tuft(root, main, 0, 0.42, -0.02, 0.11);
+      cap(root, shadow, [0.34, 0.215, 0.34], 0.105);
+      for (const [base, tip, radius] of [
+        [[-0.2, 0.23, 0.15], [-0.29, 0.39, 0.2], 0.085],
+        [[0, 0.29, 0.17], [0, 0.5, 0.22], 0.105],
+        [[0.2, 0.23, 0.15], [0.29, 0.41, 0.19], 0.085],
+        [[-0.17, 0.31, -0.06], [-0.23, 0.49, -0.08], 0.09],
+        [[0.15, 0.31, -0.06], [0.2, 0.48, -0.1], 0.09],
+        [[-0.12, 0.22, -0.23], [-0.16, 0.39, -0.3], 0.075],
+        [[0.13, 0.22, -0.23], [0.18, 0.4, -0.3], 0.075],
+      ] as const) taperedLock(root, main, base, tip, radius, "chunky-spike");
       break;
     case "mohawk":
-      cap(root, shadow, [0.31, 0.13, 0.31], 0.04);
-      for (let index = 0; index < 7; index += 1) tuft(root, main, 0, 0.26 + Math.sin(index / 6 * Math.PI) * 0.12, 0.27 - index * 0.095, 0.105);
+      cap(root, shadow, [0.332, 0.22, 0.332], 0.12);
+      lobe(root, main, [0, 0.3, -0.015], [0.115, 0.15, 0.3], [0, 0, 0], "mohawk-solid-core");
+      mohawkFin(root, main, true);
       break;
     case "fauxhawk":
-      cap(root, main, [0.34, 0.18, 0.34], 0.08);
-      for (let index = 0; index < 5; index += 1) tuft(root, shadow, 0, 0.31 + Math.sin(index / 4 * Math.PI) * 0.06, 0.2 - index * 0.1, 0.07);
+      cap(root, main, [0.34, 0.22, 0.34], 0.13);
+      lobe(root, main, [0, 0.275, -0.015], [0.09, 0.1, 0.28], [0, 0, 0], "fauxhawk-solid-ridge");
+      mohawkFin(root, shadow, false);
       break;
     case "quiff":
-      cap(root, main, [0.34, 0.18, 0.34], 0.08);
-      for (const [x, y, s] of [[-0.16, 0.31, 0.13], [0, 0.4, 0.16], [0.16, 0.35, 0.14]] as const)
-        add(root, sphere(), main, [x, y, 0.2], [0, 0, -x], [s, s * 1.15, s * 1.35], "quiff-roll");
+      cap(root, main, [0.34, 0.205, 0.34], 0.105);
+      lobe(root, main, [0, 0.265, 0.135], [0.3, 0.105, 0.19], [-0.12, 0, 0.06], "quiff-root");
+      lobe(root, main, [-0.1, 0.3, 0.18], [0.19, 0.105, 0.17], [-0.18, 0.08, 0.18], "quiff-sweep-left");
+      lobe(root, main, [0.08, 0.32, 0.16], [0.22, 0.11, 0.17], [-0.22, -0.06, -0.12], "quiff-sweep-right");
+      capsuleBetween(root, shadow, [-0.16, 0.285, 0.27], [0.16, 0.31, 0.255], 0.018, "quiff-fold");
       break;
     case "pompadour":
-      cap(root, shadow, [0.34, 0.18, 0.34], 0.08);
-      for (let index = 0; index < 4; index += 1) {
-        const x = -0.21 + index * 0.14;
-        add(root, sphere(), main, [x, 0.39 + (index === 1 || index === 2 ? 0.05 : 0), 0.18], [0, 0, 0], [0.13, 0.17, 0.18], "pompadour-roll");
-      }
+      cap(root, shadow, [0.34, 0.205, 0.34], 0.105);
+      lobe(root, main, [0, 0.27, 0.11], [0.3, 0.105, 0.2], [-0.08, 0, 0], "pompadour-root");
+      lobe(root, main, [0, 0.325, 0.17], [0.315, 0.13, 0.18], [-0.1, 0, 0], "pompadour-roll");
+      lobe(root, main, [-0.2, 0.295, 0.12], [0.135, 0.105, 0.15], [0, 0.08, 0.18], "pompadour-left");
+      lobe(root, main, [0.2, 0.295, 0.12], [0.135, 0.105, 0.15], [0, -0.08, -0.18], "pompadour-right");
+      capsuleBetween(root, shadow, [-0.2, 0.292, 0.265], [0.2, 0.305, 0.255], 0.017, "pompadour-fold");
       break;
     case "sidepart":
-      cap(root, main);
-      add(root, sphere(), main, [-0.1, 0.31, 0.08], [0, 0, 0.28], [0.28, 0.12, 0.28], "side-sweep");
-      add(root, new THREE.BoxGeometry(0.012, 0.18, 0.42), shadow, [0.12, 0.25, 0.02], [0, 0, -0.42], [1, 1, 1], "side-part-line");
+      cap(root, main, [0.345, 0.23, 0.345], 0.115);
+      lobe(root, main, [-0.085, 0.265, 0.08], [0.295, 0.115, 0.255], [-0.08, 0.08, 0.22], "side-sweep");
+      capsuleBetween(root, shadow, [0.105, 0.13, 0.287], [0.155, 0.29, 0.065], 0.014, "side-part-groove");
       break;
     case "slickback":
-      cap(root, main, [0.34, 0.2, 0.36], 0.12);
-      for (const x of [-0.2, -0.07, 0.07, 0.2]) add(root, capsule(), shadow, [x, 0.25, -0.05], [Math.PI / 2.2, 0, 0], [0.025, 0.13, 0.025], "slick-ridge");
+      cap(root, main, [0.34, 0.215, 0.355], 0.12);
       break;
     case "bob":
-      cap(root, main, [0.36, 0.28, 0.36], 0.08);
-      add(root, sphere(), main, [-0.29, -0.08, 0.02], [0, 0, -0.1], [0.12, 0.31, 0.25], "bob-left");
-      add(root, sphere(), main, [0.29, -0.08, 0.02], [0, 0, 0.1], [0.12, 0.31, 0.25], "bob-right");
+      cap(root, main, [0.35, 0.275, 0.35], 0.095);
+      capsuleBetween(root, main, [-0.285, 0.11, 0.02], [-0.275, -0.22, 0.065], 0.105, "bob-left");
+      capsuleBetween(root, main, [0.285, 0.11, 0.02], [0.275, -0.22, 0.065], 0.105, "bob-right");
+      lobe(root, main, [-0.15, 0.065, 0.276], [0.15, 0.07, 0.075], [0, 0, -0.12], "bob-fringe-left");
+      lobe(root, main, [0.08, 0.055, 0.285], [0.17, 0.072, 0.075], [0, 0, 0.12], "bob-fringe-right");
       break;
     case "curlybob":
-      cap(root, shadow, [0.34, 0.22, 0.34], 0.1);
-      for (const side of [-1, 1]) for (let index = 0; index < 6; index += 1) curl(root, main, side * (0.27 + (index % 2) * 0.05), 0.15 - index * 0.09, 0.12 - (index % 3) * 0.12, 0.105);
+      cap(root, main, [0.345, 0.235, 0.345], 0.105);
+      for (const side of [-1, 1] as const) {
+        for (let index = 0; index < 5; index += 1) {
+          const y = 0.15 - index * 0.078;
+          const x = side * (0.27 + (index % 2) * 0.018);
+          curl(root, index % 2 ? shadow : main, x, y, 0.08 - (index % 2) * 0.035, 0.083);
+        }
+      }
+      for (const x of [-0.18, -0.06, 0.06, 0.18] as const) curl(root, main, x, 0.075, 0.278, 0.074);
       break;
     case "afro":
-      for (let yRing = 0; yRing < 3; yRing += 1) for (let index = 0; index < 10; index += 1) {
-        const angle = index / 10 * Math.PI * 2;
-        const radius = 0.27 + (1 - yRing) * 0.035;
-        curl(root, index % 2 ? main : shadow, Math.sin(angle) * radius, 0.08 + yRing * 0.14, Math.cos(angle) * radius - 0.03, 0.13);
+      cap(root, main, [0.375, 0.335, 0.375], 0.185);
+      for (let ring = 0; ring < 2; ring += 1) for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * Math.PI * 2 + ring * 0.14;
+        const radius = ring === 0 ? 0.295 : 0.225;
+        const y = ring === 0 ? 0.19 : 0.385;
+        curl(root, (index + ring) % 4 === 0 ? shadow : main, Math.sin(angle) * radius, y + Math.cos(angle) * 0.055, Math.cos(angle) * radius - 0.025, ring === 0 ? 0.11 : 0.102);
       }
-      curl(root, main, 0, 0.48, -0.03, 0.16);
+      curl(root, main, 0, 0.525, -0.025, 0.14);
       break;
     case "puffs":
-      cap(root, main, [0.34, 0.2, 0.34], 0.08);
-      for (const side of [-1, 1]) {
-        curl(root, shadow, side * 0.335, 0.3, -0.03, 0.12);
-        for (let index = 0; index < 5; index += 1) {
-          const angle = index / 5 * Math.PI * 2;
-          curl(root, main, side * 0.335 + Math.sin(angle) * 0.055, 0.3 + Math.cos(angle) * 0.055, -0.03, 0.052);
+      cap(root, main, [0.34, 0.215, 0.34], 0.105);
+      for (const side of [-1, 1] as const) {
+        capsuleBetween(root, shadow, [side * 0.235, 0.27, -0.02], [side * 0.295, 0.335, -0.025], 0.07, "puff-root");
+        curl(root, shadow, side * 0.315, 0.37, -0.025, 0.135);
+        for (let index = 0; index < 7; index += 1) {
+          const angle = (index / 7) * Math.PI * 2;
+          curl(root, main, side * 0.315 + Math.sin(angle) * 0.07, 0.37 + Math.cos(angle) * 0.064, -0.025, 0.065);
         }
       }
       break;
     case "ponytail":
-      cap(root, main);
-      add(root, new THREE.TorusGeometry(0.075, 0.025, 6, 12), shadow, [0, 0.08, -0.35], [Math.PI / 2, 0, 0], [1, 1, 1], "pony-tie");
-      add(root, capsule(), main, [0, -0.08, -0.48], [0.28, 0, 0], [0.1, 0.22, 0.1], "low-ponytail");
+      cap(root, main, [0.345, 0.235, 0.345], 0.115);
+      add(root, new THREE.TorusGeometry(0.06, 0.021, 7, 14), shadow, [0, 0.075, -0.35], [Math.PI / 2, 0, 0], [1, 1, 1], "pony-tie");
+      capsuleBetween(root, main, [0, 0.08, -0.345], [0, -0.18, -0.43], 0.075, "low-pony-upper");
+      capsuleBetween(root, main, [0, -0.18, -0.43], [0, -0.39, -0.39], 0.062, "low-pony-lower");
+      lobe(root, main, [0, -0.405, -0.375], [0.062, 0.085, 0.06], [0, 0, 0], "low-pony-rounded-tip");
       break;
     case "highpony":
-      cap(root, main);
-      add(root, new THREE.TorusGeometry(0.075, 0.025, 6, 12), shadow, [0, 0.34, -0.25], [Math.PI / 2, 0, 0], [1, 1, 1], "pony-tie");
-      for (let index = 0; index < 3; index += 1) add(root, capsule(), main, [0, 0.28 - index * 0.15, -0.4 - index * 0.07], [0.35, 0, 0], [0.105 - index * 0.012, 0.15, 0.105 - index * 0.012], "high-pony-segment");
+      cap(root, main, [0.345, 0.235, 0.345], 0.115);
+      capsuleBetween(root, main, [0, 0.25, -0.23], [0, 0.39, -0.34], 0.085, "high-pony-root");
+      add(root, new THREE.TorusGeometry(0.064, 0.022, 7, 14), shadow, [0, 0.39, -0.35], [Math.PI / 2, 0, 0], [1, 1, 1], "high-pony-tie");
+      capsuleBetween(root, main, [0, 0.39, -0.355], [0, 0.17, -0.45], 0.08, "high-pony-upper");
+      capsuleBetween(root, main, [0, 0.17, -0.45], [0, -0.1, -0.4], 0.066, "high-pony-lower");
+      lobe(root, main, [0, -0.125, -0.385], [0.066, 0.09, 0.062], [0, 0, 0], "high-pony-rounded-tip");
       break;
     case "braids":
-      cap(root, main, [0.34, 0.2, 0.34], 0.08);
-      braid(root, main, -0.28, 0.08);
-      braid(root, main, 0.28, 0.08);
+      cap(root, main, [0.345, 0.22, 0.345], 0.105);
+      braid(root, main, shadow, -0.265);
+      braid(root, main, shadow, 0.265);
       break;
     case "locs":
-      cap(root, main, [0.35, 0.21, 0.35], 0.08);
-      for (let index = 0; index < 10; index += 1) {
-        const angle = index / 10 * Math.PI * 2;
-        add(root, capsule(), index % 2 ? main : shadow, [Math.sin(angle) * 0.3, -0.08 - (index % 3) * 0.035, Math.cos(angle) * 0.24], [0, 0, Math.sin(angle) * 0.12], [0.045, 0.22 + (index % 2) * 0.05, 0.045], "loc");
-      }
+      cap(root, main, [0.35, 0.225, 0.35], 0.105);
+      for (const [start, end, material] of [
+        [[-0.285, 0.13, 0.055], [-0.32, -0.2, 0.04], main],
+        [[0.285, 0.13, 0.055], [0.32, -0.2, 0.04], shadow],
+        [[-0.335, 0.17, -0.055], [-0.35, -0.19, -0.075], shadow],
+        [[0.335, 0.17, -0.055], [0.35, -0.19, -0.075], main],
+        [[-0.275, 0.2, -0.2], [-0.295, -0.17, -0.245], main],
+        [[0.275, 0.2, -0.2], [0.295, -0.17, -0.245], shadow],
+        [[-0.13, 0.225, -0.31], [-0.145, -0.15, -0.365], shadow],
+        [[0.13, 0.225, -0.31], [0.145, -0.15, -0.365], main],
+        [[-0.02, 0.235, -0.335], [-0.035, -0.12, -0.39], main],
+      ] as const) capsuleBetween(root, material, start, end, 0.043, "rounded-loc");
       break;
     case "shag":
-      cap(root, main, [0.36, 0.24, 0.36], 0.08);
-      for (let index = 0; index < 12; index += 1) {
-        const angle = index / 12 * Math.PI * 2;
-        tuft(root, index % 2 ? main : shadow, Math.sin(angle) * 0.29, -0.02 + (index % 3) * 0.07, Math.cos(angle) * 0.27 - 0.02, 0.075, -Math.sin(angle) * 0.35);
-      }
+      cap(root, main, [0.36, 0.245, 0.36], 0.095);
+      for (const [start, end, material] of [
+        [[-0.22, 0.12, 0.27], [-0.255, 0.04, 0.292], main],
+        [[-0.07, 0.12, 0.3], [-0.09, 0.035, 0.312], shadow],
+        [[0.08, 0.12, 0.3], [0.09, 0.04, 0.312], main],
+        [[0.22, 0.12, 0.27], [0.255, 0.045, 0.292], shadow],
+      ] as const) capsuleBetween(root, material, start, end, 0.06, "rounded-shag-fringe");
+      for (const [start, end, material] of [
+        [[-0.31, 0.12, 0.08], [-0.34, -0.14, 0.07], main],
+        [[0.31, 0.12, 0.08], [0.34, -0.14, 0.07], main],
+        [[-0.27, 0.13, -0.18], [-0.3, -0.17, -0.22], shadow],
+        [[0.27, 0.13, -0.18], [0.3, -0.17, -0.22], shadow],
+        [[-0.1, 0.15, -0.31], [-0.12, -0.19, -0.36], main],
+        [[0.1, 0.15, -0.31], [0.12, -0.2, -0.36], main],
+      ] as const) taperedLock(root, material, start, end, 0.075, "shag-layer");
       break;
     case "undercut":
-      cap(root, shadow, [0.325, 0.15, 0.325], 0.04);
-      add(root, sphere(), main, [-0.1, 0.32, 0.08], [0, 0, 0.32], [0.31, 0.14, 0.29], "undercut-sweep");
-      for (let index = 0; index < 4; index += 1) tuft(root, main, -0.18 + index * 0.1, 0.34 + index * 0.02, 0.21 - index * 0.025, 0.075, -0.35);
+      cap(root, shadow, [0.326, 0.2, 0.326], 0.13);
+      lobe(root, shadow, [-0.075, 0.165, 0.265], [0.255, 0.07, 0.075], [0.02, 0, 0.08], "undercut-sealed-root");
+      lobe(root, main, [-0.135, 0.255, 0.075], [0.225, 0.095, 0.22], [-0.1, 0.06, 0.3], "undercut-sweep-base");
+      lobe(root, main, [-0.215, 0.305, 0.13], [0.155, 0.085, 0.15], [-0.16, 0.12, 0.34], "undercut-sweep-crown");
+      capsuleBetween(root, main, [-0.27, 0.285, 0.18], [0.055, 0.32, 0.15], 0.055, "undercut-swept-lock");
+      capsuleBetween(root, main, [-0.29, 0.235, 0.22], [-0.02, 0.27, 0.235], 0.048, "undercut-front-lock");
       break;
     default:
       cap(root, main);

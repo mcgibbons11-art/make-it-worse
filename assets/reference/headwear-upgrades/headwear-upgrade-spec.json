@@ -15,5 +15,12 @@
   ],
   "fitBasis": "HEAD measurements and silhouette gates in createWardrobeModels.ts",
   "frontAxis": "+Z",
-  "reviewStatus": "generated structural pass; multi-angle runtime review required"
+  "materialRoles": {
+    "glass": "translucent visor and lens surfaces",
+    "main": "player-selected shell, cloth, hair, and frame colour",
+    "trim": "derived high-contrast edging and soft-goods detail",
+    "steel": "hinges and hard frame hardware"
+  },
+  "visualReview": "artifacts/avatar-catalog-final-2026-07-31 head-hair and face-clothes front/side sheets",
+  "reviewStatus": "third runtime-evidence refinement generated; multi-angle runtime review required"
 }

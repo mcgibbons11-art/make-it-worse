@@ -123,3 +123,41 @@ test("a clean course can be cleared with real keyboard input", async ({ page }) 
   await page.keyboard.up("w");
   await expect.poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().phase), { timeout: 6_000 }).toBe("finished");
 });
+
+test("a jump that catches a ridge lip never pins the runner to its face", async ({ page }) => {
+  await page.goto(cleanKeyboardCourseUrl());
+  const start = page.getByRole("button", { name: /beat it/i });
+  await expect(start).toBeEnabled({ timeout: 30_000 });
+  await start.click();
+  await expect.poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().phase)).toBe("playing");
+  await expect.poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().grounded)).toBe(true);
+
+  await page.keyboard.down("w");
+  const positions: number[] = [];
+  for (let frame = 0; frame < 90; frame += 1) {
+    const state = await page.evaluate(() => window.__MIW_TEST__?.getState());
+    if (!state || state.phase === "finished") break;
+    expect(state.phase, JSON.stringify(state)).toBe("playing");
+    positions.push(state.playerZ);
+    // A real key edge at each landing deliberately produces late catches on
+    // the three 0.5u washboard crests instead of scripting a perfect arc.
+    if (state.grounded) await page.keyboard.press("Space");
+    await page.waitForTimeout(100);
+  }
+  await page.keyboard.up("w");
+  await expect.poll(() => page.evaluate(() => window.__MIW_TEST__?.getState().phase), { timeout: 6_000 }).toBe("finished");
+
+  // Fifteen-hertz telemetry can repeat for one sample. Seven repeats is almost
+  // half a second visibly parked against one lip, which is the sticky ledge
+  // failure this path exists to guard; ordinary run motion covers ~0.48u per
+  // sample at full speed.
+  let longestStall = 0;
+  let stall = 0;
+  for (let index = 1; index < positions.length; index += 1) {
+    if (Math.abs(positions[index]! - positions[index - 1]!) < 0.03) {
+      stall += 1;
+      longestStall = Math.max(longestStall, stall);
+    } else stall = 0;
+  }
+  expect(longestStall, `runner telemetry stalled at ${positions.join(", ")}`).toBeLessThan(7);
+});

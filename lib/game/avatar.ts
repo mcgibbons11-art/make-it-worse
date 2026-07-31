@@ -245,6 +245,100 @@ export function isSlotFilled(config: AvatarConfig, slot: WardrobeSlotId): boolea
   return config[slot] !== emptyOption(slot);
 }
 
+export interface WardrobeSelectionResult {
+  readonly config: AvatarConfig;
+  /** Existing slots removed because the newly selected item would hide them. */
+  readonly cleared: readonly WardrobeSlotId[];
+}
+
+const OPEN_HAIR_HEADWEAR: readonly AvatarHeadwearId[] = [
+  "hair",
+  "band",
+  "visor",
+  "earmuffs",
+  "headphones",
+];
+
+/**
+ * Apply one wardrobe choice with the newest choice winning every collision.
+ *
+ * The picker used to allow players to select several valid-looking chips even
+ * though one item completely hid another. Randomize had a separate, smaller
+ * set of fixes, so manual and randomized outfits behaved differently. This is
+ * now the single compatibility authority used by both paths.
+ */
+export function applyWardrobeSelection(
+  current: AvatarConfig,
+  slot: WardrobeSlotId,
+  id: string,
+): WardrobeSelectionResult {
+  const next: AvatarConfig = { ...current, colors: { ...current.colors } };
+  const assign = (target: WardrobeSlotId, value: string) => {
+    switch (target) {
+      case "headwear": next.headwear = value as AvatarHeadwearId; break;
+      case "hair": next.hair = value as AvatarHairId; break;
+      case "face": next.face = value as AvatarFaceId; break;
+      case "eyewear": next.eyewear = value as AvatarEyewearId; break;
+      case "top": next.top = value as AvatarTopId; break;
+      case "outerwear": next.outerwear = value as AvatarOuterwearId; break;
+      case "legwear": next.legwear = value as AvatarLegwearId; break;
+      case "footwear": next.footwear = value as AvatarFootwearId; break;
+      case "backpack": next.backpack = value as AvatarBackpackId; break;
+      case "held": next.held = value as AvatarHeldId; break;
+    }
+  };
+  assign(slot, id);
+
+  const cleared: WardrobeSlotId[] = [];
+  const clear = (target: WardrobeSlotId) => {
+    const empty = emptyOption(target);
+    if (next[target] === empty) return;
+    assign(target, empty);
+    cleared.push(target);
+  };
+
+  if (slot === "headwear") {
+    if (next.headwear === "helmet") {
+      clear("hair");
+      clear("face");
+      clear("eyewear");
+    } else if (next.headwear === "visor") {
+      clear("face");
+      clear("eyewear");
+    } else if (!OPEN_HAIR_HEADWEAR.includes(next.headwear)) {
+      clear("hair");
+    }
+  } else if (slot === "hair" && next.hair !== "none") {
+    if (!OPEN_HAIR_HEADWEAR.includes(next.headwear)) clear("headwear");
+  } else if (slot === "face" && next.face !== "plain") {
+    if (next.headwear === "helmet" || next.headwear === "visor") clear("headwear");
+    if (next.face === "mask") {
+      clear("eyewear");
+      if (!OPEN_HAIR_HEADWEAR.includes(next.headwear)) clear("headwear");
+    }
+  } else if (slot === "eyewear" && next.eyewear !== "none") {
+    if (next.headwear === "helmet" || next.headwear === "visor") clear("headwear");
+    if (next.face === "mask") clear("face");
+  } else if (slot === "top" && next.top !== "none") {
+    if (["puffer", "poncho", "harness"].includes(next.outerwear)) clear("outerwear");
+    if (next.top === "overalls") clear("legwear");
+  } else if (slot === "legwear" && next.legwear !== "none") {
+    if (next.top === "overalls") clear("top");
+  } else if (slot === "outerwear" && next.outerwear !== "none") {
+    if (["puffer", "poncho", "harness"].includes(next.outerwear)) {
+      clear("top");
+      clear("backpack");
+    } else if (next.backpack === "cape" || next.backpack === "wings") {
+      clear("backpack");
+    }
+  } else if (slot === "backpack" && next.backpack !== "none") {
+    if (next.backpack === "cape" || next.backpack === "wings") clear("outerwear");
+    else if (["puffer", "poncho", "harness"].includes(next.outerwear)) clear("outerwear");
+  }
+
+  return { config: next, cleared };
+}
+
 function known<Id extends string>(
   options: readonly { id: Id }[],
   value: unknown,
@@ -590,61 +684,22 @@ export function randomAvatar(random: () => number = Math.random): AvatarConfig {
   const body = pick(usableColors("body", "violet")).id;
   const garment = (key: WardrobeColorKey): AvatarColorId =>
     pick(usableColors(key, body)).id;
-  const headwear = wardrobePick<AvatarHeadwearId>("headwear");
-  let hair = wardrobePick<AvatarHairId>("hair");
-  let face = wardrobePick<AvatarFaceId>("face");
-  let eyewear = wardrobePick<AvatarEyewearId>("eyewear");
-  let top = wardrobePick<AvatarTopId>("top");
-  let outerwear = wardrobePick<AvatarOuterwearId>("outerwear");
-  let backpack = wardrobePick<AvatarBackpackId>("backpack");
-  // Randomize is a presentation shortcut, so it should produce a curated
-  // outfit rather than blindly stacking mutually occluding face layers. A
-  // manually built avatar may keep those serialized choices; the renderer
-  // hides them naturally behind a full-face helmet.
-  if (headwear === "helmet") {
-    hair = "none";
-    face = "plain";
-    eyewear = "none";
-  } else if (headwear === "visor") {
-    // The visor is already a face-wide lens. A second face layer or glasses
-    // underneath turns the random preview into a stack of intersecting slabs.
-    // Players can still deliberately build that combination themselves.
-    face = "plain";
-    eyewear = "none";
-  } else if (face === "mask") {
-    eyewear = "none";
-    if (headwear !== "hair" && headwear !== "band") face = "plain";
-  }
-  const openHairHeadwear = ["hair", "band", "visor", "earmuffs", "headphones"];
-  if (!openHairHeadwear.includes(headwear)) hair = "none";
-  const bulkyOuter = outerwear === "puffer" || outerwear === "poncho";
-  if (bulkyOuter) {
-    // These are complete torso silhouettes. Randomly adding a shirt and pack
-    // beneath/behind them produces visual noise without showing either item.
-    top = "none";
-    backpack = "none";
-  } else if (outerwear === "harness") {
-    // Harness straps need a quiet field behind them to remain recognizable in
-    // the compact preview. Patterned tops and packs can still be chosen by
-    // hand, but Randomize presents the harness over the runner's body.
-    top = "none";
-    backpack = "none";
-  }
-  if ((backpack === "cape" || backpack === "wings") && outerwear !== "none")
-    outerwear = "none";
-  return {
-    body,
-    pack: pick(usableColors("pack", body)).id,
-    headwear,
-    hair,
-    face,
-    eyewear,
-    top,
-    outerwear,
+  const choices: Record<WardrobeSlotId, string> = {
+    headwear: wardrobePick<AvatarHeadwearId>("headwear"),
+    hair: wardrobePick<AvatarHairId>("hair"),
+    face: wardrobePick<AvatarFaceId>("face"),
+    eyewear: wardrobePick<AvatarEyewearId>("eyewear"),
+    top: wardrobePick<AvatarTopId>("top"),
+    outerwear: wardrobePick<AvatarOuterwearId>("outerwear"),
     legwear: wardrobePick<AvatarLegwearId>("legwear"),
     footwear: wardrobePick<AvatarFootwearId>("footwear"),
-    backpack,
+    backpack: wardrobePick<AvatarBackpackId>("backpack"),
     held: wardrobePick<AvatarHeldId>("held"),
+  };
+  let result: AvatarConfig = {
+    ...DEFAULT_AVATAR,
+    body,
+    pack: pick(usableColors("pack", body)).id,
     colors: {
       headwear: garment("headwear"),
       hair: garment("hair"),
@@ -658,6 +713,17 @@ export function randomAvatar(random: () => number = Math.random): AvatarConfig {
       held: garment("held"),
     },
   };
+  // Face layers establish themselves first, then complete torso silhouettes,
+  // then hats. That produces coherent outfits while still giving each random
+  // category a chance to be the visible winner. The same resolver powers the
+  // manual picker, so Randomize cannot invent combinations players cannot.
+  const compatibilityOrder: readonly WardrobeSlotId[] = [
+    "hair", "face", "eyewear", "top", "legwear", "footwear", "backpack",
+    "held", "outerwear", "headwear",
+  ];
+  for (const slot of compatibilityOrder)
+    result = applyWardrobeSelection(result, slot, choices[slot]).config;
+  return result;
 }
 
 // --- Link encoding ----------------------------------------------------------

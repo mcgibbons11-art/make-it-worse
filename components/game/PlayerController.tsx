@@ -41,17 +41,33 @@ import type { AvatarConfig } from "@/lib/game/avatar";
 const FOOTSTEP_STRIDE = 1.9;
 const FOOTSTEP_MIN_SPEED = 0.6;
 /**
- * How far past the runner's own footprint the ground query reaches when it is
- * deciding what they are standing on. Wide enough that a step off the edge is
- * still grounded for a frame, which is what coyote time is measured from.
+ * How far inside a platform footprint the runner's centre must be before the
+ * controller treats the platform as ground.
+ *
+ * The old positive margin extended invisible support past the visible edge;
+ * the capsule could then rub its rounded side against the vertical face while
+ * the controller cancelled gravity, producing the reported ledge stutter.
+ * Coyote time already preserves late jumps, so support can end inside the deck
+ * and let the body cleanly fall.
  */
-// Stop calling the runner grounded just before their centre leaves the deck.
-// The old positive margin extended the invisible support past the edge; the
-// capsule could then rub its rounded side against the vertical face while the
-// controller kept cancelling gravity, producing the reported ledge stutter.
-// Coyote time already preserves late jumps, so support can end slightly inside
-// the visible edge and let the body cleanly fall.
-const GROUND_MARGIN = -0.04;
+// A centre only four centimetres inside a slab could still be reported as
+// supported while almost the entire capsule was hanging outside it. Rapier's
+// rounded lower hemisphere then supplied an upward contact against the corner,
+// while the controller cancelled the downward velocity: the familiar sticky
+// half-step on a ledge. Require the same deliberate landing inset used by the
+// step probe. A marginal catch now keeps falling, while a real landing still
+// has most of a foot of usable deck around it.
+const GROUND_MARGIN = -0.12;
+
+/**
+ * First-frame drop when a runner walks off real support.
+ *
+ * Gravity would reach this speed in roughly two fixed physics frames. Applying
+ * it immediately prevents the capsule's round bottom from spending those two
+ * frames riding the outside corner. Coyote time remains intact because a
+ * buffered jump is resolved before this release and replaces the drop.
+ */
+const LEDGE_RELEASE_SPEED = 1.2;
 /**
  * How far in front of the runner the step assist looks, and how far forward it
  * places them when it fires.
@@ -368,10 +384,13 @@ export const PlayerController = forwardRef<
         jumpCutArmed.current = false;
       }
     }
+    const justLeftGround = motion.current.grounded && !grounded;
     // Landing kept the descent velocity on the body, so the capsule's own
     // restitution answered a hard drop with a small hop the player did not ask
     // for. Sticking the landing is what makes a platform read as solid.
     if (grounded && nextY < 0) nextY = 0;
+    else if (justLeftGround && nextY <= 0)
+      nextY = Math.min(nextY, -LEDGE_RELEASE_SPEED);
     nextY = Math.max(-PLAYER.maxFallSpeed, nextY);
     // Step assist.
     //
@@ -585,11 +604,12 @@ export const PlayerController = forwardRef<
       <CapsuleCollider
         args={[PLAYER.capsuleHalfHeight, PLAYER.capsuleRadius]}
         mass={PLAYER.mass}
-        // Low side friction prevents the rounded capsule catching on a ledge's
-        // vertical face. Horizontal stopping is controller-driven, so this does
-        // not make ordinary running drift; soap still reduces acceleration.
-        friction={0.15}
-        restitution={0.05}
+        // Zero contact friction prevents the rounded capsule catching on a
+        // ledge's vertical face. Horizontal stopping is controller-driven, so
+        // this does not make ordinary running drift; soap still reduces that
+        // acceleration in the controller above.
+        friction={0}
+        restitution={0}
       />
       <PlayerVisual avatarSeed={avatarSeed} avatar={avatar} visible={visualVisible} pose={pose} motion={motion} />
     </RigidBody>

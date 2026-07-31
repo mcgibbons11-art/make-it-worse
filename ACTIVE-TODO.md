@@ -7,7 +7,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Add a lightweight, broad sky setting to generated rooms: attractive layered clouds, a sun, distant birds, and an occasional passing plane. These elements are visual-only, non-interactable, restrained, and kept outside the playable course.
 - [x] Give every trap stronger personality and readable feedback through anticipation, reaction, particles, synchronized sound, impact readability, and restrained camera response without making every contact fatal.
 - [x] Finish movement and camera polish: ledge stutter/snagging, camera obstruction, continuous 360-degree rotation, spawn orientation, and seamless gameplay/placement/retry transitions.
-- [ ] Complete a massive wearable quality pass: the 2026-07-31 adversarial catalog audit revoked the earlier sign-off and is retained in `docs/AVATAR-CATALOG-ADVERSARIAL-REVIEW-2026-07-31.md`. Rebuild every failed/mid option through the required reference/img2threejs workflow, then retain multi-angle and animation evidence before checking this off. The 20-style hair category, full custom colors, genuinely unclothed `None` states, waist bridge, held alignment, and running pose remain required.
+- [ ] Complete a massive wearable quality pass: all 86 non-empty choices have now been rebuilt/reviewed in current-runtime idle front/side evidence, including 20 hairstyles, full colors, genuinely unclothed `None` states, waist bridge, held alignment, and improved preview framing. The retained audit is `docs/AVATAR-CATALOG-ADVERSARIAL-REVIEW-2026-07-31.md`. Do not check this off until representative outfit combinations also have retained rear/profile run, jump, failure, and victory evidence.
 - [x] Make the custom builder feel like a complete editor: undo/redo, clearer selection and placement previews, multi-select/group movement, copy/paste feedback, non-restrictive reachability warnings, Unity-style position/rotation/X-Y-Z scale controls for customizable blocks, a confirmed way for players to delete their own saved maps from My Maps, and a persistent Copy Code action for an already-published map without forcing a republish.
 - [x] Finish apartment decorating polish: selection and movement, undo/redo, floor/wall customization, materials, lighting, and lived-in environmental detail.
 - [x] Complete a user-centered controls and task-discovery pass across gameplay, custom builder, and apartment: every page must clearly expose what the player can do through concise contextual controls, opt-in tutorial modes, and useful help. Remember dismissed/completed guidance, never replay load-in coaching on Try Again, never stack duplicate tips, and keep help available without spamming or blocking play. Also polish emoji consistency, spacing, control states, panel sizing, loading, game-over/victory presentation, and responsive menu behavior.
@@ -32,7 +32,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Restore every authored avatar color to every body and wearable color picker and shared-code path; never disable or filter swatches for resembling course colors. Preserve readability with an invariant ink silhouette instead.
 - [x] Close the catalog-wide waist/groin seam: pants rise over the pelvis join and same-color waist geometry replaces the exposed floating bar.
 - [x] Run and retain a new adversarial, item-by-item Build Your Runner review covering every hair style and wearable, with unverified views recorded honestly in `docs/AVATAR-CATALOG-ADVERSARIAL-REVIEW-2026-07-31.md`.
-- [ ] Rebuild and visually recertify every weak/mid item identified by that audit; presence in the catalog and geometry-only tests do not count as art sign-off.
+- [x] Rebuild and visually recertify every weak/mid item identified by that audit in the current idle catalog; all 86 non-empty items now have current-runtime front/side evidence, and the final 75 affected items were recaptured after the last remediation pass.
 - [x] Add emojis to all three post-code level intro actions: Beat their version, Edit/Make your runner, and Back to the main menu.
 - [x] Add emojis to every button in the Use map code popup so its actions match the rest of the menu system.
 - [x] Add custom-builder hotkeys: Delete removes the selected item, Ctrl/Cmd+C copies it, and Ctrl/Cmd+V pastes it without affecting protected spawn/finish markers or focused form controls.
@@ -72,7 +72,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Make Mattress Rebound launch the runner much harder.
 - [x] Increase trap disruption globally: knockback, bounce, slow, and slip.
 - [x] Audit every trap for a meaningful effect and visible animation; remove passive filler behavior.
-- [x] Fix ledge physics so the runner falls instead of snagging.
+- [x] Fix ledge physics so the runner falls instead of snagging: floor support now requires deliberate deck overlap, a lost edge contact releases downward immediately, coyote jumps still win over the release, and a real WebGL/Rapier washboard test guards against visible lip stalls.
 - [x] Improve the run cycle with more knee bend and arm swing.
 
 ## Builder and sharing

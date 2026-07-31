@@ -3,7 +3,7 @@
 import * as THREE from "three";
 
 export type WearableUpgradeId = "tank" | "puffer" | "vest" | "barefoot" | "sandal" | "kilt" | "bedroll" | "cape" | "wings" | "flag" | "balloon";
-type Tint = "main" | "trim" | "cream" | "skin";
+type Tint = "main" | "trim" | "cream" | "skin" | "knit" | "rubber" | "plastic" | "metal" | "glass";
 
 const placeholder = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 function mesh(geometry: THREE.BufferGeometry, tint: Tint, name: string, position: [number, number, number] = [0, 0, 0]) {
@@ -32,6 +32,53 @@ function box(x: number, y: number, z: number, bevel = 0.012) {
   return geometry;
 }
 function add(root: THREE.Group, ...parts: THREE.Object3D[]) { root.add(...parts); }
+function pathTube(points: readonly [number, number, number][], radius: number, tint: Tint, name: string, closed = false) {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), closed, "centripetal");
+  return mesh(new THREE.TubeGeometry(curve, Math.max(10, points.length * 5), radius, 7, closed), tint, name);
+}
+function thickShape(points: readonly [number, number][], depth = 0.018) {
+  const shape = new THREE.Shape();
+  shape.moveTo(points[0]![0], points[0]![1]);
+  for (const point of points.slice(1)) shape.lineTo(point[0], point[1]);
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: true,
+    bevelSize: Math.min(0.006, depth * 0.3),
+    bevelThickness: Math.min(0.004, depth * 0.22),
+    bevelSegments: 2,
+    curveSegments: 8,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+function wavedShape(points: readonly [number, number][], depth = 0.018, amplitude = 0.02) {
+  const contour = points.map(([x, y]) => new THREE.Vector2(x, y));
+  const triangles = THREE.ShapeUtils.triangulateShape(contour, []);
+  const xs = points.map(([x]) => x);
+  const minX = Math.min(...xs), span = Math.max(0.001, Math.max(...xs) - minX);
+  const positions: number[] = [];
+  for (const side of [-1, 1] as const)
+    for (const [x, y] of points) {
+      const phase = ((x - minX) / span) * Math.PI * 1.7;
+      positions.push(x, y, Math.sin(phase) * amplitude + side * depth / 2);
+    }
+  const count = points.length;
+  const indices: number[] = [];
+  for (const triangle of triangles) {
+    const a = triangle[0]!, b = triangle[1]!, c = triangle[2]!;
+    indices.push(a, b, c, count + c, count + b, count + a);
+  }
+  for (let index = 0; index < count; index += 1) {
+    const next = (index + 1) % count;
+    indices.push(index, next, count + next, index, count + next, count + index);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
 function ring(radius: number, tube: number, tint: Tint, name: string, y: number, zScale = 0.8) {
   const value = mesh(new THREE.TorusGeometry(radius, tube, 7, 24), tint, name, [0, y, 0]);
   value.rotation.x = Math.PI / 2;
@@ -40,156 +87,263 @@ function ring(radius: number, tube: number, tint: Tint, name: string, y: number,
 }
 
 function tank(root: THREE.Group) {
-  // Lower shell plus separate shoulder straps leaves a real scoop neck and
-  // cut armholes instead of closing the garment with a generic sleeve cap.
-  const lower = mesh(new THREE.CylinderGeometry(0.235, 0.265, 0.30, 24, 2, true), "main", "tank-lower", [0, -0.028, 0]);
+  // A continuous knit shell follows the runner from waist to neck. The earlier
+  // flat front/back yokes photographed as two detached boards in side view;
+  // tapering the whole shell into a narrow neck keeps the sleeveless silhouette
+  // while every surface remains seated on the torso.
+  const profile = [
+    new THREE.Vector2(0.263, -0.175),
+    new THREE.Vector2(0.268, -0.12),
+    new THREE.Vector2(0.254, -0.015),
+    new THREE.Vector2(0.235, 0.105),
+    new THREE.Vector2(0.208, 0.205),
+    new THREE.Vector2(0.178, 0.292),
+  ];
+  const lower = mesh(new THREE.LatheGeometry(profile, 28), "main", "tank-profile-shell");
   lower.scale.z = 0.8;
-  const back = mesh(box(0.39, 0.22, 0.035, 0.025), "main", "tank-back", [0, 0.205, -0.205]);
-  for (const side of [-1, 1]) {
-    const strap = mesh(box(0.085, 0.235, 0.055, 0.025), "main", `tank-strap-${side}`, [side * 0.155, 0.205, 0.17]);
-    strap.rotation.z = -side * 0.08;
-    const binding = mesh(box(0.022, 0.23, 0.061, 0.01), "cream", `tank-binding-${side}`, [side * 0.112, 0.202, 0.173]);
-    binding.rotation.z = -side * 0.18;
-    add(root, strap, binding);
+  add(root, lower, ring(0.254, 0.013, "knit", "tank-hem-binding", -0.164, 0.8));
+  const neck = ring(0.178, 0.014, "knit", "tank-neck-binding", 0.292, 0.8);
+  neck.userData["wardrobeNoOutline"] = true;
+  add(root, neck);
+  // Short shoulder seams make the tank construction legible without fake
+  // panels floating beyond the runner's front and back planes.
+  for (const side of [-1, 1] as const) {
+    const seam = pathTube([
+      [side * 0.105, 0.286, 0.145], [side * 0.145, 0.294, 0],
+      [side * 0.105, 0.286, -0.145],
+    ], 0.012, "knit", `tank-shoulder-seam-${side}`);
+    seam.userData["wardrobeNoOutline"] = true;
+    add(root, seam);
   }
-  add(root, lower, back, ring(0.248, 0.014, "cream", "tank-hem", -0.164));
 }
 
 function quilted(root: THREE.Group, vest: boolean) {
-  // A continuous under-shell prevents open gaps, while rounded torus volumes
-  // create the padded silhouette. Hair-thin seam rings on a smooth cylinder
-  // read as an ordinary vest with lines painted on it, not quilted outerwear.
-  const shell = mesh(new THREE.CylinderGeometry(0.255, 0.285, 0.49, 24, 5, true), "main", vest ? "vest-shell" : "puffer-shell", [0, 0.069, 0]);
-  shell.scale.z = vest ? 0.82 : 0.86;
+  const prefix = vest ? "vest" : "puffer";
+  // One softly inflated shell carries shallow horizontal quilt ribs. The old
+  // split front/back/side pad for every row gave every baffle its own ink
+  // outline, turning the garment into a stack of black tires at picker scale.
+  const shell = mesh(new THREE.CylinderGeometry(0.246, 0.272, 0.44, 28, 4, true), "main", `${prefix}-under-shell`, [0, 0.045, 0]);
+  shell.scale.z = vest ? 0.79 : 0.84;
   add(root, shell);
-  const baffleYs = [-0.13, -0.035, 0.06, 0.155, 0.25];
+  const baffleYs = [-0.125, -0.045, 0.035, 0.115, 0.195];
   for (const [index, y] of baffleYs.entries()) {
-    if (vest && index === 4) continue;
-    add(root, ring(0.248 - index * 0.004, 0.034, "main", `${vest ? "vest" : "puffer"}-baffle-${index}`, y, vest ? 0.82 : 0.86));
-    if (index < baffleYs.length - 1)
-      add(root, ring(0.262 - index * 0.004, 0.006, "trim", `${vest ? "vest" : "puffer"}-seam-${index}`, y + 0.0475, vest ? 0.82 : 0.86));
+    const radius = 0.268 - index * 0.003;
+    const rib = ring(radius, 0.006, "main", `${prefix}-baffle-rib-${index}`, y, vest ? 0.79 : 0.84);
+    rib.userData["wardrobeNoOutline"] = true;
+    add(root, rib);
   }
-  const zipper = mesh(box(0.028, 0.455, 0.03, 0.008), "trim", `${vest ? "vest" : "puffer"}-zip`, [0, 0.06, 0.235]);
-  add(root, zipper);
+
+  // Raised zipper tape, individual teeth, stop boxes and a readable pull.
+  const zipZ = 0.274;
+  add(root, mesh(box(0.052, 0.432, 0.018, 0.008), "trim", `${prefix}-zip-tape`, [0, 0.045, zipZ]));
+  for (let index = 0; index < 11; index += 1) {
+    const y = -0.145 + index * 0.038;
+    for (const side of [-1, 1] as const)
+      add(root, mesh(box(0.012, 0.019, 0.026, 0.004), "metal", `${prefix}-zip-tooth-${index}-${side}`, [side * 0.009, y, zipZ + 0.013]));
+  }
+  const slider = mesh(box(0.046, 0.055, 0.032, 0.01), "metal", `${prefix}-zip-slider`, [0, 0.19, zipZ + 0.025]);
+  const pull = mesh(new THREE.TorusGeometry(0.022, 0.006, 6, 14), "metal", `${prefix}-zip-pull`, [0, 0.225, zipZ + 0.03]);
+  add(root, slider, pull);
+
+  if (vest) {
+    // Proud piping traces the open side of each armhole. There is no torso pad
+    // behind these curves, so the negative space is real from front and side.
+    for (const side of [-1, 1] as const)
+      add(root, pathTube([
+        [side * 0.23, 0.08, 0.17], [side * 0.255, 0.14, 0.105],
+        [side * 0.255, 0.225, 0], [side * 0.225, 0.285, -0.11],
+      ], 0.011, "knit", `vest-armhole-binding-${side}`));
+  }
 }
 
 function barefoot(root: THREE.Group) {
-  // The stock sneaker is a rectangular shoe even with its sole hidden. A
-  // rounded foot gives Footwear: None an actual unclothed anatomy silhouette.
-  const foot = mesh(ball(0.105, 0.07, 0.17), "skin", "bare-foot", [0, 0.015, 0.035]);
-  const toe = mesh(ball(0.098, 0.055, 0.09), "skin", "bare-toes", [0, 0.002, 0.145]);
-  add(root, foot, toe);
+  // One continuous top-down outline produces heel, waist and toe box without
+  // the seam/two-lobed silhouette created by overlapping ellipsoids.
+  const foot = mesh(new THREE.CapsuleGeometry(0.075, 0.16, 8, 18), "skin", "bare-foot", [0, 0.014, 0.035]);
+  foot.rotation.x = Math.PI / 2;
+  foot.scale.set(1.24, 1, 0.82);
+  add(root, foot);
 }
 
 function sandal(root: THREE.Group) {
-  // Keep the sole inside the bare-foot silhouette. The former rectangular
-  // footbed was wide and long enough to read as a floating snowboard in the
-  // wardrobe preview, especially when both feet were side by side.
-  const foot = mesh(ball(0.092, 0.062, 0.155), "skin", "sandal-foot", [0, 0.014, 0.035]);
-  const bed = mesh(box(0.178, 0.025, 0.285, 0.024), "cream", "sandal-footbed", [0, -0.052, 0.035]);
-  const heel = mesh(box(0.17, 0.025, 0.095, 0.018), "trim", "sandal-heel", [0, -0.066, -0.06]);
-  add(root, foot, bed, heel);
-  for (const side of [-1, 1]) {
-    const strap = mesh(box(0.042, 0.025, 0.145, 0.012), "main", `sandal-cross-${side}`, [side * 0.027, 0.058, 0.058]);
-    strap.rotation.y = side * 0.55;
-    add(root, strap);
-  }
-  const sling = mesh(new THREE.TorusGeometry(0.082, 0.013, 6, 18, Math.PI), "main", "sandal-sling", [0, 0.052, -0.075]);
-  sling.rotation.x = Math.PI / 2;
-  add(root, sling);
+  const footOutline: readonly [number, number][] = [
+    [-0.062, -0.12], [0.062, -0.12], [0.084, -0.055], [0.094, 0.055],
+    [0.086, 0.145], [0.058, 0.185], [-0.058, 0.185], [-0.086, 0.145],
+    [-0.094, 0.055], [-0.084, -0.055],
+  ];
+  const bedOutline: readonly [number, number][] = footOutline.map(([x, z]) => [x * 1.08, z + (z > 0.14 ? 0.012 : -0.004)] as [number, number]);
+  const bed = mesh(thickShape(bedOutline, 0.034), "rubber", "sandal-fitted-bed", [0, -0.052, 0.018]);
+  bed.rotation.x = Math.PI / 2;
+  const foot = mesh(thickShape(footOutline, 0.09), "skin", "sandal-shaped-foot", [0, 0.006, 0.02]);
+  foot.rotation.x = Math.PI / 2;
+  add(root, bed, foot);
+
+  // Curved tubes hug the instep instead of hovering as flat diagonal planks.
+  for (const side of [-1, 1] as const)
+    add(root, pathTube([
+      [side * 0.082, 0.035, -0.002], [side * 0.052, 0.072, 0.045],
+      [0, 0.085, 0.085], [-side * 0.052, 0.072, 0.125],
+    ], 0.018, "main", `sandal-cross-strap-${side}`));
+  add(root, pathTube([
+    [-0.073, 0.026, -0.072], [-0.085, 0.07, -0.105], [0, 0.092, -0.13],
+    [0.085, 0.07, -0.105], [0.073, 0.026, -0.072],
+  ], 0.014, "main", "sandal-heel-sling"));
 }
 
 function kilt(root: THREE.Group) {
   // CylinderGeometry takes top radius first. The old order made the kilt taper
   // inward toward its hem; the wider second radius gives it the expected flare.
-  const skirt = mesh(new THREE.CylinderGeometry(0.205, 0.275, 0.255, 24, 3, true), "main", "kilt-skirt", [0, -0.0025, 0]);
+  const skirt = mesh(new THREE.CylinderGeometry(0.205, 0.245, 0.29, 24, 3, true), "main", "kilt-skirt", [0, -0.02, 0]);
   skirt.scale.z = 0.78;
-  add(root, skirt, ring(0.205, 0.018, "trim", "kilt-waist", 0.125, 0.78));
-  for (let index = 0; index < 8; index += 1) {
-    const x = -0.19 + index * 0.054;
-    const pleat = mesh(box(0.014, 0.205, 0.018, 0.006), index % 2 ? "trim" : "main", `kilt-pleat-${index}`, [x, -0.01, 0.208]);
-    pleat.rotation.z = (index - 3.5) * 0.02;
+  add(root, skirt, ring(0.205, 0.018, "knit", "kilt-waist", 0.125, 0.78));
+  // Pleats wrap through both profiles and the rear, so turning the runner no
+  // longer turns a detailed front into a smooth lampshade.
+  const pleatCount = 12;
+  for (let index = 0; index < pleatCount; index += 1) {
+    const angle = (index / pleatCount) * Math.PI * 2;
+    const radius = 0.222;
+    const pleat = mesh(
+      box(0.008, 0.225, 0.012, 0.003),
+      index % 3 === 0 ? "trim" : "main",
+      `kilt-pleat-${index}`,
+      [Math.sin(angle) * radius, -0.01, Math.cos(angle) * radius * 0.78],
+    );
+    pleat.rotation.y = angle;
+    pleat.rotation.z = Math.sin(angle) * 0.035;
+    pleat.userData["wardrobeNoOutline"] = true;
     add(root, pleat);
   }
+  add(root, ring(0.238, 0.009, "knit", "kilt-rolled-hem", -0.165, 0.78));
 }
 
 function bedroll(root: THREE.Group) {
-  const roll = mesh(new THREE.CylinderGeometry(0.105, 0.105, 0.38, 20), "main", "bedroll-body", [0, 0.09, -0.29]);
+  const roll = mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 20), "main", "bedroll-body", [0, 0.09, -0.29]);
   roll.rotation.z = Math.PI / 2;
   add(root, roll);
   for (const side of [-1, 1]) {
-    const end = mesh(new THREE.TorusGeometry(0.072, 0.018, 7, 20, Math.PI * 1.8), "trim", `bedroll-spiral-${side}`, [side * 0.194, 0.09, -0.29]);
+    const end = mesh(new THREE.TorusGeometry(0.075, 0.018, 7, 20, Math.PI * 1.8), "trim", `bedroll-spiral-${side}`, [side * 0.254, 0.09, -0.29]);
     end.rotation.y = Math.PI / 2;
     add(root, end);
   }
-  for (const x of [-0.105, 0.105]) {
-    const strap = mesh(new THREE.TorusGeometry(0.112, 0.014, 6, 18), "cream", `bedroll-strap-${x}`, [x, 0.09, -0.29]);
+  for (const x of [-0.145, 0.145]) {
+    const strap = mesh(new THREE.TorusGeometry(0.117, 0.014, 6, 18), "knit", `bedroll-strap-${x}`, [x, 0.09, -0.29]);
     strap.rotation.z = Math.PI / 2;
     add(root, strap);
+    const buckle = mesh(box(0.042, 0.052, 0.018, 0.008), "metal", `bedroll-buckle-${x}`, [x, 0.19, -0.2]);
+    add(root, buckle);
   }
+  // A rigid carrier keeps the roll attached to the back instead of floating as
+  // an isolated cylinder. Short tie loops visually connect roll, frame and rig.
+  for (const x of [-0.215, 0.215])
+    add(root, mesh(box(0.026, 0.30, 0.028, 0.008), "metal", `bedroll-frame-rail-${x}`, [x, 0.075, -0.215]));
+  add(root,
+    mesh(box(0.45, 0.026, 0.028, 0.008), "metal", "bedroll-frame-top", [0, 0.22, -0.215]),
+    mesh(box(0.45, 0.026, 0.028, 0.008), "metal", "bedroll-frame-bottom", [0, -0.07, -0.215]),
+    pathTube([[-0.16, -0.055, -0.202], [-0.12, -0.115, -0.225], [0, -0.135, -0.245], [0.12, -0.115, -0.225], [0.16, -0.055, -0.202]], 0.009, "knit", "bedroll-carrier-tie"),
+  );
 }
 
-function clothShape(points: readonly [number, number][]) {
-  const shape = new THREE.Shape();
-  shape.moveTo(points[0]![0], points[0]![1]);
-  for (const point of points.slice(1)) shape.lineTo(point[0], point[1]);
-  shape.closePath();
-  return new THREE.ShapeGeometry(shape, 10);
-}
 function cape(root: THREE.Group) {
-  root.position.y = 0.005;
-  const cloth = mesh(clothShape([[-0.16, 0.27], [0.16, 0.27], [0.34, -0.15], [0.19, -0.18], [0.06, -0.15], [-0.06, -0.18], [-0.19, -0.15], [-0.34, -0.17]]), "main", "cape-cloth", [0, 0, -0.25]);
-  const foldLeft = mesh(box(0.018, 0.40, 0.02, 0.006), "trim", "cape-fold-left", [-0.12, 0.03, -0.263]);
-  const foldRight = foldLeft.clone(); foldRight.name = "upgrade:cape-fold-right"; foldRight.position.x = 0.12;
-  const clasp = mesh(new THREE.TorusGeometry(0.035, 0.012, 7, 18), "cream", "cape-clasp", [0, 0.27, -0.265]);
-  add(root, cloth, foldLeft, foldRight, clasp);
+  root.position.y = 0.02;
+  root.scale.set(1.08, 1.04, 1);
+  // Three overlapping thick panels bow around the back. The side panels sit
+  // forward and turn toward the ribs; the centre panel sits furthest back,
+  // producing curvature and real overlap instead of one paper-thin plane.
+  const centre = mesh(thickShape([
+    [-0.17, 0.27], [0.17, 0.27], [0.235, -0.13], [0.15, -0.17],
+    [0.055, -0.145], [-0.055, -0.175], [-0.15, -0.145], [-0.235, -0.17],
+  ], 0.026), "main", "cape-centre-panel", [0, 0, -0.278]);
+  add(root, centre);
+  for (const side of [-1, 1] as const) {
+    const panel = mesh(thickShape([
+      [0, 0.245], [side * 0.17, 0.255], [side * 0.39, -0.115],
+      [side * 0.345, -0.17], [side * 0.255, -0.145], [side * 0.18, -0.175],
+      [side * 0.105, -0.14],
+    ], 0.024), "main", `cape-side-panel-${side}`, [0, 0, -0.245]);
+    panel.rotation.y = side * 0.08;
+    add(root, panel);
+    add(root, pathTube([
+      [side * 0.075, 0.245, -0.267], [side * 0.12, 0.11, -0.285],
+      [side * 0.17, -0.02, -0.292], [side * 0.22, -0.145, -0.27],
+    ], 0.011, "trim", `cape-raised-fold-${side}`));
+  }
+  add(root, pathTube([
+    [-0.385, -0.13, -0.235], [-0.345, -0.17, -0.245], [-0.255, -0.145, -0.264],
+    [-0.18, -0.175, -0.278], [-0.055, -0.175, -0.292], [0.055, -0.145, -0.292],
+    [0.18, -0.175, -0.278], [0.255, -0.145, -0.264], [0.345, -0.17, -0.245], [0.385, -0.13, -0.235],
+  ], 0.012, "knit", "cape-scalloped-hem"));
+
+  // The yoke and dual mount tabs explain how the cape stays on the runner.
+  add(root,
+    pathTube([[-0.18, 0.245, -0.225], [-0.09, 0.292, -0.205], [0, 0.275, -0.198], [0.09, 0.292, -0.205], [0.18, 0.245, -0.225]], 0.022, "knit", "cape-neck-yoke"),
+    mesh(box(0.055, 0.085, 0.032, 0.012), "plastic", "cape-mount-left", [-0.105, 0.245, -0.194]),
+    mesh(box(0.055, 0.085, 0.032, 0.012), "plastic", "cape-mount-right", [0.105, 0.245, -0.194]),
+    mesh(new THREE.TorusGeometry(0.034, 0.011, 7, 18), "cream", "cape-clasp", [0, 0.273, -0.186]),
+  );
 }
 
 function wings(root: THREE.Group) {
+  root.scale.set(1.08, 1.1, 1);
   const outline: readonly [number, number][] = [[0.035, 0.09], [0.14, 0.32], [0.29, 0.40], [0.39, 0.30], [0.32, 0.15], [0.40, 0.09], [0.32, 0.01], [0.28, -0.11], [0.17, -0.07], [0.07, -0.02]];
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1] as const) {
     const points = outline.map(([x, y]) => [x * side, y] as [number, number]);
-    const panel = mesh(clothShape(points), "main", `wing-panel-${side}`, [0, 0, -0.255]);
+    const panel = mesh(thickShape(points, 0.024), "main", `wing-thick-membrane-${side}`, [0, 0, -0.255]);
     add(root, panel);
-    const feathers = [
-      [0.18, 0.18, 0.19, -0.44],
-      [0.27, 0.11, 0.17, -0.66],
-      [0.21, 0.02, 0.13, -0.38],
-    ] as const;
-    for (const [index, [x, y, length, angle]] of feathers.entries()) {
-      const feather = mesh(ball(0.062, length, 0.022), "main", `wing-feather-${side}-${index}`, [side * x, y, -0.268]);
-      feather.rotation.z = side * angle;
-      add(root, feather);
-    }
-    const spar = mesh(box(0.014, 0.29, 0.014, 0.005), "cream", `wing-spar-${side}`, [side * 0.11, 0.11, -0.274]);
-    spar.rotation.z = side * -0.32;
-    add(root, spar);
+    add(root, pathTube(points.map(([x, y]) => [x, y, -0.238] as [number, number, number]), 0.012, "cream", `wing-perimeter-frame-${side}`, true));
+    const rootPoint: [number, number, number] = [side * 0.055, 0.075, -0.232];
+    for (const [index, target] of ([
+      [side * 0.29, 0.37, -0.232],
+      [side * 0.34, 0.17, -0.232],
+      [side * 0.31, 0.015, -0.232],
+      [side * 0.25, -0.08, -0.232],
+    ] as const).entries())
+      add(root, pathTube([rootPoint, [side * 0.16, (rootPoint[1] + target[1]) * 0.55, -0.225], [target[0], target[1], target[2]]], 0.009, "cream", `wing-vein-${side}-${index}`));
   }
-  add(root, mesh(ball(0.045, 0.055, 0.028), "cream", "wing-knot", [0, 0.075, -0.27]));
+  add(root,
+    mesh(box(0.15, 0.20, 0.042, 0.025), "plastic", "wing-back-mount", [0, 0.08, -0.205]),
+    pathTube([[-0.11, 0.17, -0.188], [0, 0.21, -0.178], [0.11, 0.17, -0.188]], 0.014, "metal", "wing-upper-brace"),
+    pathTube([[-0.11, -0.005, -0.188], [0, -0.035, -0.178], [0.11, -0.005, -0.188]], 0.014, "metal", "wing-lower-brace"),
+    mesh(ball(0.052, 0.06, 0.034), "cream", "wing-centre-knot", [0, 0.075, -0.226]),
+  );
 }
 
 function flag(root: THREE.Group) {
-  const pole = mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.38, 10), "trim", "flag-pole", [0.05, 0.1, 0]);
-  const cloth = mesh(clothShape([[0, 0.13], [0.22, 0.115], [0.205, 0], [0.235, -0.105], [0, -0.09]]), "main", "flag-cloth", [0.052, 0.23, 0.012]);
-  const seam = mesh(box(0.018, 0.235, 0.014, 0.006), "cream", "flag-seam", [0.064, 0.242, 0]);
-  add(root, pole, cloth, seam);
+  // The authored presentation tilt leans tall props toward the skull. A small
+  // whole-prop outboard bias keeps the finial and waving tip clear in victory.
+  root.position.x = 0.015;
+  const pole = mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.48, 10), "metal", "flag-pole", [0.05, 0.11, 0]);
+  const clothPoints: readonly [number, number][] = [
+    [0, 0.13], [0.08, 0.145], [0.165, 0.12], [0.225, 0.085],
+    [0.172, -0.005], [0.235, -0.105], [0.15, -0.07], [0.065, -0.09], [0, -0.075],
+  ];
+  const cloth = mesh(wavedShape(clothPoints, 0.022, 0.026), "main", "flag-waved-swallowtail", [0.052, 0.22, 0.012]);
+  const seam = mesh(box(0.021, 0.225, 0.022, 0.007), "knit", "flag-reinforced-seam", [0.064, 0.245, 0.01]);
+  const finial = mesh(ball(0.018, 0.018, 0.018), "plastic", "flag-finial", [0.068, 0.365, 0]);
+  const grip = mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.105, 10), "rubber", "flag-grip", [0.068, -0.055, 0]);
+  add(root, pole, cloth, seam, finial, grip,
+    pathTube([[0.062, 0.347, 0.02], [0.13, 0.36, 0.036], [0.21, 0.325, 0.02], [0.275, 0.305, 0.005]], 0.008, "knit", "flag-top-piping"),
+  );
 }
 
 function balloon(root: THREE.Group) {
   // The string starts in the palm and bows outward before reaching the
   // balloon. Keeping the balloon above the hand but outside the head's
   // silhouette makes it visibly held without covering the runner's face.
-  const balloon = mesh(ball(0.068, 0.10, 0.082), "main", "balloon-body", [0.31, 0.48, -0.12]);
-  const knot = mesh(new THREE.ConeGeometry(0.02, 0.036, 8), "trim", "balloon-knot", [0.31, 0.365, -0.12]);
+  const balloon = mesh(ball(0.075, 0.105, 0.085), "main", "balloon-body", [0.20, 0.39, -0.06]);
+  const knot = mesh(new THREE.ConeGeometry(0.022, 0.038, 8), "main", "balloon-knot", [0.20, 0.267, -0.06]);
   knot.rotation.z = Math.PI;
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0.048, 0.01, 0),
-    new THREE.Vector3(0.11, 0.13, -0.04),
-    new THREE.Vector3(0.21, 0.24, -0.08),
-    new THREE.Vector3(0.31, 0.365, -0.12),
+    new THREE.Vector3(0.085, 0.105, -0.018),
+    new THREE.Vector3(0.145, 0.19, -0.045),
+    new THREE.Vector3(0.20, 0.267, -0.06),
   ]);
-  const string = mesh(new THREE.TubeGeometry(curve, 20, 0.006, 6, false), "trim", "balloon-string");
-  add(root, balloon, knot, string);
+  const string = mesh(new THREE.TubeGeometry(curve, 20, 0.005, 6, false), "trim", "balloon-string");
+  const retention = mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 18), "rubber", "balloon-retention-loop", [0.045, -0.005, 0]);
+  retention.rotation.x = Math.PI / 2;
+  const highlight = mesh(ball(0.018, 0.034, 0.009), "glass", "balloon-highlight", [0.175, 0.425, 0.017]);
+  highlight.rotation.z = -0.35;
+  add(root, balloon, knot, string, retention, highlight);
 }
 
 export function createWearableUpgradeModel(id: WearableUpgradeId): THREE.Group {

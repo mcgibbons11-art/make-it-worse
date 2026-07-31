@@ -74,6 +74,7 @@ interface SerializableTestState {
   jumpAppliedSequence: number;
   playerX: number;
   playerY: number;
+  playerZ: number;
   grounded: boolean;
   holdingObject: boolean;
   releasedObjectSpeed: number;
@@ -793,6 +794,7 @@ export default function GameClient({ slug }: { slug: string }) {
         jumpAppliedSequence: getInput().jumpAppliedSequence,
         playerX: samples.current.at(-1)?.x ?? 0,
         playerY: samples.current.at(-1)?.y ?? 0,
+        playerZ: samples.current.at(-1)?.z ?? 0,
         grounded: Boolean((samples.current.at(-1)?.flags ?? 0) & 1),
         holdingObject: interaction.current.holdingObject,
         releasedObjectSpeed: interaction.current.releasedObjectSpeed,

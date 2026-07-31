@@ -1,5 +1,6 @@
 {
   "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
+  "revision": "retained-audit-factory-pass-3-runtime-sheets",
   "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
   "sourceReferences": [
     "assets/reference/wear-tank.png",
@@ -24,5 +25,60 @@
     "balloon"
   ],
   "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts",
-  "reviewStatus": "generated structural pass; multi-angle runtime review required"
+  "features": {
+    "tank": [
+      "torso profile",
+      "open armholes",
+      "neck and arm binding"
+    ],
+    "puffer": [
+      "split padded panels",
+      "zip track, teeth and pull",
+      "sleeve-safe armholes"
+    ],
+    "vest": [
+      "split padded panels",
+      "deep shaped armholes",
+      "zip track, teeth and pull"
+    ],
+    "barefoot": [
+      "single continuous asymmetric foot volume"
+    ],
+    "sandal": [
+      "fitted shaped bed",
+      "cross straps",
+      "heel sling"
+    ],
+    "kilt": [
+      "front, side and rear pleat rhythm",
+      "flared hem"
+    ],
+    "bedroll": [
+      "carrier frame",
+      "compression straps",
+      "buckles and tie bridge"
+    ],
+    "cape": [
+      "thick curved panels",
+      "folds",
+      "scalloped hem",
+      "neck yoke and clasps"
+    ],
+    "wings": [
+      "thick membranes",
+      "perimeter frame",
+      "veins",
+      "back mounting plate"
+    ],
+    "flag": [
+      "waved thick cloth",
+      "asymmetric swallow tail",
+      "separate pole, seam and finial"
+    ],
+    "balloon": [
+      "compact rotation-safe reach",
+      "knot, tether and wrist retention loop"
+    ]
+  },
+  "reviewStatus": "generated retained-audit pass; targeted runtime tests required"
 }

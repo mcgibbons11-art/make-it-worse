@@ -365,6 +365,10 @@ export function ControlsPanel({
           <h3>🏆 Room records</h3>
           <p>Each room has its own fastest-times board. Test mode and apartment exploration use the same runner controls, physics, and held-camera turning as a finished room.</p>
         </article>
+        <article>
+          <h3>🧍 Build your runner</h3>
+          <p>Choose any color and dress the live runner in ten slots. Drag the preview, press its turn buttons, or use the arrow keys to inspect every side. If a new item would completely hide an old one, the newest choice wins and the picker tells you what it removed.</p>
+        </article>
       </div>
       <button className="button primary huge" onClick={onBack}>
         ✅ Done

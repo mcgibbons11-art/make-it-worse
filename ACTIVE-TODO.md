@@ -4,6 +4,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
+- [x] Add emojis to all three post-code level intro actions: Beat their version, Edit/Make your runner, and Back to the main menu.
 - [x] Add emojis to every button in the Use map code popup so its actions match the rest of the menu system.
 - [x] Add custom-builder hotkeys: Delete removes the selected item, Ctrl/Cmd+C copies it, and Ctrl/Cmd+V pastes it without affecting protected spawn/finish markers or focused form controls.
 - [x] Expand every ? help panel with complete room-specific guidance for the main game, custom build mode, and apartment explore/decorate modes.
@@ -47,6 +48,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Builder and sharing
 
+- [x] Flash a concise controls/hotkeys banner at the top whenever Build mode opens; auto-fade it and provide an immediate × dismissal.
 - [x] Remove the main-menu Global leaderboard and scope every leaderboard to the exact custom-built room or shared challenge version being played, so unrelated rooms and trap depths never share scores.
 - [x] Move code redemption out of Trending: add a dedicated main-menu Use map code action that pastes and immediately loads the exact published map or shared challenge without treating ordinary challenge codes as Trending publications.
 - [ ] Finish and prove the full Portals-native custom-game path: draft → publish to this device/session → durable map code → same-session automatic delivery or cross-session paste → Trending catalog → exact-version play → child rounds. This remains open until the processed Portals check below passes with different real players.
@@ -76,6 +78,8 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Apartment
 
+- [x] Make the apartment shell floor continuous wood throughout and move tile sections plus several rugs into a movable, colorable, persistent Floors catalog.
+- [x] Give the Decorate panel a visible vertical scrollbar and let either Backspace or Delete remove the selected apartment item without stealing text-input keys.
 - [x] Make every interior wall and doorway a persistent modular apartment item: freely move, rotate, resize, duplicate, remove, and add more from the catalog; add WASD free-camera movement plus Ctrl/Cmd+C, Ctrl/Cmd+V, and Delete hotkeys in Decorate mode.
 - [x] Rebuild the apartment completely from scratch as a believable permanent player home; do not line up preassembled corner-room chunks to fake a floor plan.
   - [x] Inventory and dismantle the existing apartment/corner-room assets into modular floors, wall runs, corners, doors, windows, trim, fixtures, and individual furniture/decor pieces.

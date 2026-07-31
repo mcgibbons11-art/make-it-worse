@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { generateRandomRoom, roomBuilderShareFormats, roomBuilderShortcutAction, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
 import { TRAP_TYPES } from "@/lib/game/trap-catalog";
@@ -8,6 +10,18 @@ const item = (uid: number, asset: RoomItem["asset"], x: number, y: number, z: nu
 });
 
 describe("unrestricted custom map builder", () => {
+  it("shows a timed dismissible controls and hotkeys banner whenever Build mode opens", () => {
+    const source = readFileSync(resolve(process.cwd(), "components/game/RoomBuilder.tsx"), "utf8");
+    const css = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+    expect(source).toContain('aria-label="Builder controls and hotkeys"');
+    expect(source).toContain('aria-label="Dismiss builder controls"');
+    expect(source).toContain('useState(initialMode === "build" ? 1 : 0)');
+    expect(source).toContain("setDismissedControlsHintEpoch(controlsHintEpoch), 7000");
+    expect(source).toContain("Ctrl/Cmd+C/V");
+    expect(css).toContain("@keyframes room-builder-controls-life");
+    expect(css).toContain("@keyframes room-builder-controls-flash");
+  });
+
   it("maps Delete and Ctrl/Cmd+C/V without firing while editing or key-repeat", () => {
     const event = (change: Partial<Parameters<typeof roomBuilderShortcutAction>[0]> = {}) => ({
       altKey: false,

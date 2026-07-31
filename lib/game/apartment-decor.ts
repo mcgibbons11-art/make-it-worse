@@ -6,6 +6,9 @@ export const APARTMENT_DECOR_TYPES = [
   "dining-table",
   "dining-chair",
   "rug",
+  "round-rug",
+  "runner-rug",
+  "tile-floor",
   "plant",
   "kitchen-counter",
   "wall-cabinet",
@@ -62,7 +65,10 @@ export function apartmentDecorShortcutAction(
   hasClipboard: boolean,
 ): ApartmentDecorShortcutAction | null {
   if (interfaceTarget || event.repeat || event.altKey || event.shiftKey) return null;
-  if ((event.key === "Delete" || event.code === "Delete") && hasSelection) return "delete";
+  if (
+    (event.key === "Delete" || event.code === "Delete" || event.key === "Backspace" || event.code === "Backspace")
+    && hasSelection
+  ) return "delete";
   const modifier = event.ctrlKey || event.metaKey;
   if (modifier && event.code === "KeyC" && hasSelection) return "copy";
   if (modifier && event.code === "KeyV" && hasClipboard) return "paste";

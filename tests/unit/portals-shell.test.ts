@@ -192,6 +192,19 @@ describe("the controls reference", () => {
 });
 
 describe("map-code redemption", () => {
+  it("gives every shared-level intro action an emoji", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "portals/src/PortalsApp.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('"🏃 Beat their version"');
+    expect(source).toContain('"🏁 Beat it. Add the first problem."');
+    expect(source).toContain('"⏳ Loading the apartment…"');
+    expect(source).toContain('"🎨 Edit your runner"');
+    expect(source).toContain('"🎨 Make your runner"');
+    expect(source).toContain("🏠 Back to the main menu");
+  });
+
   it("uses an in-game paste form instead of a blocked native prompt", () => {
     const source = readFileSync(
       resolve(process.cwd(), "portals/src/PortalsApp.tsx"),

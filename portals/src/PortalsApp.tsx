@@ -1493,10 +1493,10 @@ export function PortalsApp() {
             disabled={!assetsReady}
           >
             {!assetsReady
-              ? "Loading the apartment…"
+              ? "⏳ Loading the apartment…"
               : challenge.addedTrap
-              ? "Beat their version"
-              : "Beat it. Add the first problem."}
+              ? "🏃 Beat their version"
+              : "🏁 Beat it. Add the first problem."}
           </button>
           <div className="portals-buttons">
             {/* The wardrobe was built, tested and mounted in the Next edition
@@ -1509,10 +1509,10 @@ export function PortalsApp() {
                 className="avatar-launcher-chip"
                 style={{ background: resolveAvatar(settings.avatar, challenge.createdByAvatarSeed).bodyColor }}
               />
-              {settings.avatar ? "Edit your runner" : "Make your runner"}
+              {settings.avatar ? "🎨 Edit your runner" : "🎨 Make your runner"}
             </button>
             <button className="button secondary" onClick={quitToTitle}>
-              Back to the main menu
+              🏠 Back to the main menu
             </button>
           </div>
         </Overlay>

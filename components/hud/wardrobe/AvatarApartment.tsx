@@ -136,6 +136,18 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     label: "Rug", emoji: "🟧", variant: "living", nodeIds: ["rug-border", "rug-field"],
     size: [2.7, 0.05, 1.85], solid: false,
   },
+  "round-rug": {
+    label: "Round rug", emoji: "🟠", nodeIds: [],
+    size: [2.4, 0.05, 2.4], solid: false,
+  },
+  "runner-rug": {
+    label: "Runner rug", emoji: "🧶", nodeIds: [],
+    size: [1.2, 0.05, 3.4], solid: false,
+  },
+  "tile-floor": {
+    label: "Floor tiles", emoji: "🟦", nodeIds: [],
+    size: [3, 0.04, 3], solid: false,
+  },
   plant: {
     label: "Plant", emoji: "🪴", variant: "living", nodeIds: ["sill-pot", "sill-plant"],
     size: [1.05, 1.35, 1.05], scale: [3, 3, 3], solid: true,
@@ -236,7 +248,8 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
 
 const DECOR_GROUPS = [
   { id: "all", label: "✨ All", types: APARTMENT_DECOR_TYPES },
-  { id: "living", label: "🛋️ Living", types: ["sofa", "side-table", "dining-table", "dining-chair", "rug", "plant"] },
+  { id: "living", label: "🛋️ Living", types: ["sofa", "side-table", "dining-table", "dining-chair", "plant"] },
+  { id: "floor", label: "🧶 Floors", types: ["rug", "round-rug", "runner-rug", "tile-floor"] },
   { id: "kitchen", label: "🍳 Kitchen", types: ["kitchen-counter", "wall-cabinet", "refrigerator", "toaster", "bathroom-vanity"] },
   { id: "bedroom", label: "🛏️ Bedroom", types: ["bed", "bedside-table", "bedside-lamp", "wardrobe"] },
   { id: "study", label: "📚 Study", types: ["writing-desk", "desk-chair", "bookcase"] },
@@ -244,6 +257,8 @@ const DECOR_GROUPS = [
   { id: "structure", label: "🧱 Structure", types: ["wall-section", "door-frame"] },
   { id: "utility", label: "🧹 Utility", types: ["toilet", "vacuum", "floor-fan", "robot-mop"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly ApartmentDecorType[] }[];
+
+const PROCEDURAL_FLOOR_COVERS = new Set<ApartmentDecorType>(["round-rug", "runner-rug", "tile-floor"]);
 
 function decorPrototype(type: ApartmentDecorType): THREE.Group {
   const cached = decorPrototypes.get(type);
@@ -427,6 +442,55 @@ function ModularDoorFrameVisual({ color, trimColor }: { color: string; trimColor
   );
 }
 
+function ProceduralFloorCoverVisual({ type, color }: { type: ApartmentDecorType; color: string }) {
+  const accent = useMemo(() => new THREE.Color(color).lerp(new THREE.Color("#fff8e8"), 0.34), [color]);
+  const edge = useMemo(() => new THREE.Color(color).lerp(new THREE.Color("#24324a"), 0.22), [color]);
+  if (type === "tile-floor") {
+    return (
+      <group position={[0, 0.022, 0]}>
+        {[-2, -1, 0, 1, 2].flatMap((column) => [-2, -1, 0, 1, 2].map((row) => (
+          <mesh key={`${column}:${row}`} position={[column * 0.58, 0, row * 0.58]} receiveShadow>
+            <boxGeometry args={[0.54, 0.035, 0.54]} />
+            <meshStandardMaterial color={(column + row) % 2 === 0 ? color : accent} roughness={0.62} />
+          </mesh>
+        )))}
+      </group>
+    );
+  }
+  if (type === "round-rug") {
+    return (
+      <group position={[0, 0.025, 0]}>
+        <mesh receiveShadow>
+          <cylinderGeometry args={[1.2, 1.2, 0.04, 64]} />
+          <meshStandardMaterial color={edge} roughness={0.98} />
+        </mesh>
+        <mesh position={[0, 0.022, 0]} receiveShadow>
+          <cylinderGeometry args={[1.03, 1.03, 0.035, 64]} />
+          <meshStandardMaterial color={color} roughness={0.98} />
+        </mesh>
+      </group>
+    );
+  }
+  return (
+    <group position={[0, 0.025, 0]}>
+      <mesh receiveShadow>
+        <boxGeometry args={[1.2, 0.04, 3.4]} />
+        <meshStandardMaterial color={edge} roughness={0.98} />
+      </mesh>
+      <mesh position={[0, 0.022, 0]} receiveShadow>
+        <boxGeometry args={[1.03, 0.035, 3.18]} />
+        <meshStandardMaterial color={color} roughness={0.98} />
+      </mesh>
+      {[-1.48, 1.48].flatMap((z) => [-0.38, -0.19, 0, 0.19, 0.38].map((x) => (
+        <mesh key={`${x}:${z}`} position={[x, 0.048, z]}>
+          <boxGeometry args={[0.035, 0.018, 0.18]} />
+          <meshBasicMaterial color={accent} />
+        </mesh>
+      )))}
+    </group>
+  );
+}
+
 function DecorItemView({
   item,
   style,
@@ -453,7 +517,7 @@ function DecorItemView({
   };
   const definition = DECOR[item.type];
   const visual = useMemo(
-    () => definition.model || item.type === "wall-section" || item.type === "door-frame"
+    () => definition.model || item.type === "wall-section" || item.type === "door-frame" || PROCEDURAL_FLOOR_COVERS.has(item.type)
       ? null
       : makeDecorVisual(item.type, item.color),
     [definition.model, item.color, item.type],
@@ -479,6 +543,8 @@ function DecorItemView({
     ? <ModularWallVisual item={item} trimColor={style.trimColor} player={player} />
     : item.type === "door-frame"
       ? <ModularDoorFrameVisual color={item.color} trimColor={style.trimColor} />
+      : PROCEDURAL_FLOOR_COVERS.has(item.type)
+        ? <ProceduralFloorCoverVisual type={item.type} color={item.color} />
       : definition.model
         ? <AssetModel model={definition.model} />
         : <primitive object={visual!} />;
@@ -686,49 +752,38 @@ function WindowUnit({
   );
 }
 
-const FLOOR_ZONES = [
-  { id: "living", center: [-7.2, -4.3], size: [11.2, 8.4], tint: 0x8a5b38, blend: 0.12, pattern: "wood" },
-  { id: "kitchen", center: [-8.45, 4.3], size: [8.7, 8.4], tint: 0xf2d5a0, blend: 0.34, pattern: "tile" },
-  { id: "hall", center: [0, 0], size: [2.8, 6], tint: 0xb8854f, blend: 0.1, pattern: "wood" },
-  { id: "foyer", center: [0, 5.8], size: [7.8, 5.5], tint: 0xc18e54, blend: 0.1, pattern: "wood" },
-  { id: "bedroom", center: [7.2, -5.3], size: [11.2, 6.4], tint: 0xa86c62, blend: 0.11, pattern: "wood" },
-  { id: "study", center: [7.2, 0.5], size: [11.2, 4.8], tint: 0x745a43, blend: 0.14, pattern: "wood" },
-  { id: "bathroom", center: [6.1, 5.8], size: [4, 5.5], tint: 0xb9e8ee, blend: 0.72, pattern: "tile" },
-  { id: "utility", center: [10.5, 5.8], size: [4.4, 5.5], tint: 0x9ba1ad, blend: 0.58, pattern: "tile" },
-] as const;
+const WOOD_ROW_SPACING = 0.62;
+const WOOD_ROWS = Array.from({ length: Math.floor(APARTMENT_DEPTH / WOOD_ROW_SPACING) }, (_, row) => ({
+  row,
+  z: -APARTMENT_DEPTH / 2 + (row + 1) * WOOD_ROW_SPACING,
+}));
 
-function FloorPattern({ zone }: { zone: (typeof FLOOR_ZONES)[number] }) {
-  const seamColor = zone.pattern === "wood" ? "#8e633f" : "#fff8e8";
-  const lines = zone.pattern === "wood"
-    ? Array.from({ length: Math.floor(zone.size[0] / 0.72) }, (_, index) => ({
-        key: `wood-${index}`,
-        x: -zone.size[0] / 2 + (index + 1) * 0.72,
-        z: 0,
-        width: 0.018,
-        depth: zone.size[1],
-      }))
-    : [
-        ...Array.from({ length: Math.floor(zone.size[0] / 1.05) }, (_, index) => ({
-          key: `tile-x-${index}`,
-          x: -zone.size[0] / 2 + (index + 1) * 1.05,
-          z: 0,
-          width: 0.024,
-          depth: zone.size[1],
-        })),
-        ...Array.from({ length: Math.floor(zone.size[1] / 1.05) }, (_, index) => ({
-          key: `tile-z-${index}`,
-          x: 0,
-          z: -zone.size[1] / 2 + (index + 1) * 1.05,
-          width: zone.size[0],
-          depth: 0.024,
-        })),
-      ];
+function WoodFloorPattern() {
+  const seamColor = "#6f492f";
   return (
-    <group position={[zone.center[0], 0.024, zone.center[1]]}>
-      {lines.map((line) => (
-        <mesh key={line.key} position={[line.x, 0, line.z]} raycast={() => null}>
-          <boxGeometry args={[line.width, 0.009, line.depth]} />
-          <meshBasicMaterial color={seamColor} transparent opacity={zone.pattern === "wood" ? 0.34 : 0.58} />
+    <group position={[0, 0.016, 0]}>
+      {WOOD_ROWS.map(({ row, z }) => (
+        <group key={row}>
+          <mesh position={[0, 0, z]} raycast={() => null}>
+            <boxGeometry args={[APARTMENT_WIDTH, 0.009, 0.018]} />
+            <meshBasicMaterial color={seamColor} transparent opacity={0.42} />
+          </mesh>
+          {Array.from({ length: 6 }, (_, joint) => {
+            const x = -APARTMENT_WIDTH / 2 + (row % 2 ? 2.15 : 0) + (joint + 1) * 4.3;
+            if (x >= APARTMENT_WIDTH / 2) return null;
+            return (
+              <mesh key={joint} position={[x, 0, z - WOOD_ROW_SPACING / 2]} raycast={() => null}>
+                <boxGeometry args={[0.018, 0.009, WOOD_ROW_SPACING]} />
+                <meshBasicMaterial color={seamColor} transparent opacity={0.34} />
+              </mesh>
+            );
+          })}
+        </group>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[0, 0.002, side * (APARTMENT_DEPTH / 2 - 0.08)]} raycast={() => null}>
+          <boxGeometry args={[APARTMENT_WIDTH - 0.16, 0.012, 0.05]} />
+          <meshBasicMaterial color={seamColor} transparent opacity={0.3} />
         </mesh>
       ))}
     </group>
@@ -759,20 +814,9 @@ function ApartmentWorld({
       <color attach="background" args={["#bfeaff"]} />
       <mesh position={[0, -0.12, 0]} receiveShadow onPointerDown={() => mode === "decorate" && onSelect(null)}>
         <boxGeometry args={[APARTMENT_WIDTH, 0.24, APARTMENT_DEPTH]} />
-        <meshStandardMaterial color={style.floorColor} roughness={0.9} />
+        <meshStandardMaterial color={style.floorColor} roughness={0.78} />
       </mesh>
-      {FLOOR_ZONES.map((zone) => {
-        const color = new THREE.Color(style.floorColor).lerp(new THREE.Color(zone.tint), zone.blend);
-        return (
-          <group key={zone.id}>
-            <mesh position={[zone.center[0], 0.006, zone.center[1]]} receiveShadow>
-              <boxGeometry args={[zone.size[0], 0.025, zone.size[1]]} />
-              <meshStandardMaterial color={color} roughness={0.86} />
-            </mesh>
-            <FloorPattern zone={zone} />
-          </group>
-        );
-      })}
+      <WoodFloorPattern />
       {OUTER_WALLS.map((wall) => <WallRun key={wall.id} wall={wall} style={style} player={player} />)}
       <WindowUnit axis="x" x={-8.6} z={-8.49} style={style} />
       <WindowUnit axis="x" x={0} z={-8.49} style={style} />
@@ -1371,7 +1415,7 @@ export function AvatarApartment({
             <section className="avatar-apartment-selection">
               <label>Walls <input type="color" value={style.wallColor} onChange={(event) => setStyle((current) => ({ ...current, wallColor: event.target.value }))} /></label>
               <label>Trim <input type="color" value={style.trimColor} onChange={(event) => setStyle((current) => ({ ...current, trimColor: event.target.value }))} /></label>
-              <label>Floors <input type="color" value={style.floorColor} onChange={(event) => setStyle((current) => ({ ...current, floorColor: event.target.value }))} /></label>
+              <label>Wood floor <input type="color" value={style.floorColor} onChange={(event) => setStyle((current) => ({ ...current, floorColor: event.target.value }))} /></label>
             </section>
           </details>
           <button className="avatar-apartment-reset" onClick={restoreStarter}>↺ Restore starter layout</button>
@@ -1407,11 +1451,12 @@ export function AvatarApartment({
             <p><b>🧲 No snapping:</b> Furniture never snaps to a grid, wall, or another item. Pieces can overlap, pass through one another while moving, and keep the exact position where you release them.</p>
             <p><b>✨ Add items:</b> Choose a category and select an item from the tray. New items appear near the runner and become the current selection. There is no artificial item-count limit.</p>
             <p><b>🧱 Rebuild the floor plan:</b> Every interior wall and doorway is an ordinary persistent item. Move, rotate, recolor, duplicate, remove, or add more from Structure. Selected walls can also be lengthened or shortened; the four exterior boundary walls remain fixed.</p>
+            <p><b>🧶 Floor coverings:</b> The apartment shell is continuous wood throughout. Open Floors to add movable rectangular, round, or runner rugs and tile sections; they can be dragged, rotated, copied, recolored, removed, and saved like furniture.</p>
             <p><b>🎨 Edit a selection:</b> Recolor tintable furniture, rotate it in 15° steps, duplicate it, or remove it. Wall decorations, lamps, and appliances are freely movable too.</p>
-            <p><b>⌨️ Clipboard hotkeys:</b> Ctrl/Cmd+C copies the selected item, Ctrl/Cmd+V pastes an offset copy, and Delete removes the selection. These work for walls and doorways as well as furniture.</p>
+            <p><b>⌨️ Clipboard hotkeys:</b> Ctrl/Cmd+C copies the selected item, Ctrl/Cmd+V pastes an offset copy, and Backspace or Delete removes the selection. These work for walls and doorways as well as furniture.</p>
             <p><b>↶ Undo and restore:</b> Undo reverses the last layout edit. Restore starter layout replaces the current arrangement and apartment colors with the original home.</p>
             <p><b>🧱 Explore collisions:</b> In Explore mode, solid furniture becomes real collision geometry again, so test that hallways and doors remain walkable.</p>
-            <p><b>💾 Permanent home:</b> Furniture positions and wall, trim, and floor colors save automatically on this device and return after reload.</p>
+            <p><b>💾 Permanent home:</b> Furniture, floor coverings, partitions, and wall, trim, and wood colors save automatically on this device and return after reload.</p>
             <button className="button primary" onClick={closeGuide}>✅ Got it</button>
           </section>
         </div>

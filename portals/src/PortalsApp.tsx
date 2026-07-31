@@ -185,7 +185,7 @@ function LeaderboardPanel({
       </div>
       {submitStatus?.status === "sign_in_required" && (
         <button className="button secondary" onClick={onSignIn}>
-          Sign in to post your time
+          🔐 Sign in to post your time
         </button>
       )}
       {submitStatus?.status === "error" && (
@@ -203,7 +203,7 @@ function LeaderboardPanel({
         <p className="leaderboard-note">
           {board.message}{" "}
           <button className="text-button" onClick={onRetry}>
-            Retry
+            🔄 Retry
           </button>
         </p>
       )}
@@ -1598,11 +1598,11 @@ export function PortalsApp() {
           <RunProgressNote percent={runProgress} />
           <DeathNote contact={deathCause} />
           <button className="button danger huge" onClick={() => void start()}>
-            Try again
+            🔁 Try again
           </button>
           <div className="portals-buttons">
             <button className="button secondary" onClick={() => openView("menu")}>
-              Main menu
+              🏠 Main menu
             </button>
           </div>
         </Overlay>
@@ -1631,16 +1631,16 @@ export function PortalsApp() {
             className="button primary huge"
             onClick={() => offered ? setPhase("choosing_trap") : void copyChallengeCode()}
           >
-            {offered ? "Make it worse" : "Copy final challenge code"}
+            {offered ? "🪤 Make it worse" : "📋 Copy final challenge code"}
           </button>
           <div className="portals-buttons">
             {!offered && (
               <button className="button secondary" onClick={() => void fresh()}>
-                Start a new disaster
+                🎲 Start a new disaster
               </button>
             )}
             <button className="button secondary" onClick={() => openView("menu")}>
-              Main menu
+              🏠 Main menu
             </button>
           </div>
         </Overlay>

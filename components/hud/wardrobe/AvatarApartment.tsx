@@ -38,7 +38,6 @@ const APARTMENT_WIDTH = 25.8;
 const APARTMENT_DEPTH = 17.2;
 const WALL_HEIGHT = 2.65;
 const WALL_THICKNESS = 0.18;
-const POSITION_STEP = 0.1;
 const MAX_APARTMENT_ITEMS = 80;
 
 type ApartmentMode = "explore" | "decorate";
@@ -257,14 +256,6 @@ const DECOR_GROUPS = [
   { id: "utility", label: "🧹 Utility", types: ["toilet", "vacuum", "floor-fan", "robot-mop"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly ApartmentDecorType[] }[];
 
-const SURFACE_SUPPORT_TYPES = new Set<ApartmentDecorType>([
-  "side-table",
-  "kitchen-counter",
-  "bathroom-vanity",
-  "bedside-table",
-  "writing-desk",
-]);
-
 function decorPrototype(type: ApartmentDecorType): THREE.Group {
   const cached = decorPrototypes.get(type);
   if (cached) return cached;
@@ -340,99 +331,13 @@ function clampZ(value: number): number {
   return Math.max(-APARTMENT_DEPTH / 2 + 0.65, Math.min(APARTMENT_DEPTH / 2 - 0.65, value));
 }
 
-function snap(value: number): number {
-  return Math.round(value / POSITION_STEP) * POSITION_STEP;
-}
-
-function distanceToWall(wall: WallSpec, x: number, z: number): number {
-  if (wall.axis === "x") {
-    const nearestX = THREE.MathUtils.clamp(x, wall.x - wall.length / 2, wall.x + wall.length / 2);
-    return Math.hypot(x - nearestX, z - wall.z);
-  }
-  const nearestZ = THREE.MathUtils.clamp(z, wall.z - wall.length / 2, wall.z + wall.length / 2);
-  return Math.hypot(x - wall.x, z - nearestZ);
-}
-
-function snapWallItem(item: ApartmentDecorItem, x = item.x, z = item.z): ApartmentDecorItem {
-  let nearest = WALLS[0]!;
-  let nearestDistance = Infinity;
-  for (const wall of WALLS) {
-    const distance = distanceToWall(wall, x, z);
-    if (distance < nearestDistance) {
-      nearest = wall;
-      nearestDistance = distance;
-    }
-  }
-  const offset = WALL_THICKNESS / 2 + 0.13;
-  if (nearest.axis === "x") {
-    const side = Math.sign(z - nearest.z) || Math.sign(-nearest.z) || 1;
-    return {
-      ...item,
-      x: snap(THREE.MathUtils.clamp(x, nearest.x - nearest.length / 2 + 0.3, nearest.x + nearest.length / 2 - 0.3)),
-      z: snap(nearest.z + side * offset),
-      rotation: side > 0 ? 0 : Math.PI,
-      anchorKind: "wall",
-    };
-  }
-  const side = Math.sign(x - nearest.x) || Math.sign(-nearest.x) || 1;
-  return {
-    ...item,
-    x: snap(nearest.x + side * offset),
-    z: snap(THREE.MathUtils.clamp(z, nearest.z - nearest.length / 2 + 0.3, nearest.z + nearest.length / 2 - 0.3)),
-    rotation: side > 0 ? Math.PI / 2 : -Math.PI / 2,
-    anchorKind: "wall",
-  };
-}
-
-function normalizeApartmentAnchors(items: readonly ApartmentDecorItem[]): ApartmentDecorItem[] {
-  const wallSnapped = items.map((item) => item.anchorKind === "wall" ? snapWallItem(item) : { ...item });
-  const byId = new Map(wallSnapped.map((item) => [item.uid, item]));
-  return wallSnapped.map((item) => {
-    if (item.anchorKind !== "surface" || !item.parentUid) return item;
-    const parent = byId.get(item.parentUid);
-    if (parent) return { ...item, x: parent.x, z: parent.z };
-    const withoutParent = { ...item };
-    delete withoutParent.parentUid;
-    return withoutParent;
-  });
-}
-
-function nearestSurfaceSupport(
-  items: readonly ApartmentDecorItem[],
-  x: number,
-  z: number,
-): ApartmentDecorItem | null {
-  let nearest: ApartmentDecorItem | null = null;
-  let nearestDistance = Infinity;
-  for (const item of items) {
-    if (!SURFACE_SUPPORT_TYPES.has(item.type)) continue;
-    const distance = Math.hypot(item.x - x, item.z - z);
-    if (distance < nearestDistance) {
-      nearest = item;
-      nearestDistance = distance;
-    }
-  }
-  return nearestDistance <= 4 ? nearest : null;
-}
-
-function validFloorPlacement(
-  item: ApartmentDecorItem,
-  x: number,
-  z: number,
-  items: readonly ApartmentDecorItem[],
-  runner: { x: number; z: number },
-): boolean {
-  const definition = DECOR[item.type];
-  if (item.anchorKind !== "floor" || !definition.solid) return true;
-  const radius = Math.max(definition.size[0], definition.size[2]) * 0.42;
-  if (WALLS.some((wall) => distanceToWall(wall, x, z) < radius + WALL_THICKNESS / 2)) return false;
-  if (Math.hypot(x - runner.x, z - runner.z) < radius + 0.72) return false;
-  return !items.some((other) => {
-    if (other.uid === item.uid || other.anchorKind !== "floor") return false;
-    const otherDefinition = DECOR[other.type];
-    if (!otherDefinition.solid) return false;
-    const otherRadius = Math.max(otherDefinition.size[0], otherDefinition.size[2]) * 0.42;
-    return Math.hypot(x - other.x, z - other.z) < radius + otherRadius;
+function normalizeFreeApartmentDecor(items: readonly ApartmentDecorItem[]): ApartmentDecorItem[] {
+  return items.map((item) => {
+    const free = { ...item };
+    // Older saves attached lamps/toasters to a parent and snapped wall decor
+    // during every load. Free placement deliberately has no parent relationship.
+    delete free.parentUid;
+    return free;
   });
 }
 
@@ -440,20 +345,16 @@ function DecorItemView({
   item,
   mode,
   selected,
-  invalid,
   onSelect,
   onMoveStart,
   onMove,
-  onMoveEnd,
 }: {
   item: ApartmentDecorItem;
   mode: ApartmentMode;
   selected: boolean;
-  invalid: boolean;
   onSelect(uid: string): void;
   onMoveStart(uid: string): void;
   onMove(uid: string, x: number, z: number): void;
-  onMoveEnd(uid: string): void;
 }) {
   type PointerCaptureTarget = EventTarget & {
     setPointerCapture(pointerId: number): void;
@@ -467,6 +368,7 @@ function DecorItemView({
   );
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const point = useMemo(() => new THREE.Vector3(), []);
+  const grabOffset = useRef<readonly [number, number]>([0, 0]);
   const activePointer = useRef<number | null>(null);
   const capturedTarget = useRef<PointerCaptureTarget | null>(null);
   const [hovered, setHovered] = useState(false);
@@ -490,6 +392,14 @@ function DecorItemView({
     AudioManager.click();
     onSelect(item.uid);
     onMoveStart(item.uid);
+    // Keep the exact point that was grabbed under the cursor. Without this,
+    // the first pointer-move teleported the object's centre to the mouse and
+    // felt like another form of snapping even after grid snapping was removed.
+    if (event.ray.intersectPlane(plane, point)) {
+      grabOffset.current = [item.x - point.x, item.z - point.z];
+    } else {
+      grabOffset.current = [0, 0];
+    }
     activePointer.current = event.pointerId;
     const target = event.target as PointerCaptureTarget | null;
     target?.setPointerCapture(event.pointerId);
@@ -499,7 +409,11 @@ function DecorItemView({
     if (mode !== "decorate" || activePointer.current !== event.pointerId) return;
     event.stopPropagation();
     if (event.ray.intersectPlane(plane, point)) {
-      onMove(item.uid, clampX(snap(point.x)), clampZ(snap(point.z)));
+      onMove(
+        item.uid,
+        clampX(point.x + grabOffset.current[0]),
+        clampZ(point.z + grabOffset.current[1]),
+      );
     }
   };
   const end = (event: ThreeEvent<PointerEvent>) => {
@@ -509,7 +423,6 @@ function DecorItemView({
     const target = capturedTarget.current;
     capturedTarget.current = null;
     if (target?.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
-    onMoveEnd(item.uid);
   };
 
   if (mode === "explore") {
@@ -543,10 +456,10 @@ function DecorItemView({
         <boxGeometry args={definition.size} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      {(selected || hovered || invalid) && (
+      {(selected || hovered) && (
         <mesh position={[0, 0.055, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[radius, radius + 0.08, 40]} />
-          <meshBasicMaterial color={invalid ? "#ff4f64" : hovered && !selected ? "#79aee8" : "#57dfa1"} depthTest={false} />
+          <meshBasicMaterial color={hovered && !selected ? "#79aee8" : "#57dfa1"} depthTest={false} />
         </mesh>
       )}
     </group>
@@ -754,22 +667,18 @@ function ApartmentWorld({
   style,
   mode,
   selectedUid,
-  invalidUid,
   onSelect,
   onMoveStart,
   onMove,
-  onMoveEnd,
   player,
 }: {
   decor: readonly ApartmentDecorItem[];
   style: ApartmentStyle;
   mode: ApartmentMode;
   selectedUid: string | null;
-  invalidUid: string | null;
   onSelect(uid: string | null): void;
   onMoveStart(uid: string): void;
   onMove(uid: string, x: number, z: number): void;
-  onMoveEnd(uid: string): void;
   player: React.RefObject<RapierRigidBody | null>;
 }) {
   return (
@@ -846,11 +755,9 @@ function ApartmentWorld({
           item={item}
           mode={mode}
           selected={selectedUid === item.uid}
-          invalid={invalidUid === item.uid}
           onSelect={onSelect}
           onMoveStart={onMoveStart}
           onMove={onMove}
-          onMoveEnd={onMoveEnd}
         />
       ))}
     </>
@@ -865,11 +772,9 @@ function ApartmentRunner({
   decor,
   style,
   selectedUid,
-  invalidUid,
   onSelect,
   onMoveDecorStart,
   onMoveDecor,
-  onMoveDecorEnd,
   onMoveRunner,
   onFall,
 }: {
@@ -880,11 +785,9 @@ function ApartmentRunner({
   decor: readonly ApartmentDecorItem[];
   style: ApartmentStyle;
   selectedUid: string | null;
-  invalidUid: string | null;
   onSelect(uid: string | null): void;
   onMoveDecorStart(uid: string): void;
   onMoveDecor(uid: string, x: number, z: number): void;
-  onMoveDecorEnd(uid: string): void;
   onMoveRunner(x: number, z: number): void;
   onFall(): void;
 }) {
@@ -903,11 +806,9 @@ function ApartmentRunner({
         style={style}
         mode={mode}
         selectedUid={selectedUid}
-        invalidUid={invalidUid}
         onSelect={onSelect}
         onMoveStart={onMoveDecorStart}
         onMove={onMoveDecor}
-        onMoveEnd={onMoveDecorEnd}
         player={player}
       />
       <PlayerController
@@ -960,13 +861,12 @@ export function AvatarApartment({
   const [attemptSerial, setAttemptSerial] = useState(1);
   const [runnerPosition, setRunnerPosition] = useState({ x: 0, z: 0 });
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
-  const [invalidUid, setInvalidUid] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [catalogGroup, setCatalogGroup] = useState<(typeof DECOR_GROUPS)[number]["id"]>("all");
   const [undoDecor, setUndoDecor] = useState<ApartmentDecorItem[] | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [decor, setDecor] = useState<ApartmentDecorItem[]>(() => (
-    normalizeApartmentAnchors(typeof window === "undefined"
+    normalizeFreeApartmentDecor(typeof window === "undefined"
       ? DEFAULT_APARTMENT_DECOR.map((item) => ({ ...item }))
       : loadApartmentDecor(window.localStorage))
   ));
@@ -1036,15 +936,7 @@ export function AvatarApartment({
     setDecor((current) => {
       const original = current.find((item) => item.uid === uid);
       if (!original) return current;
-      const next = { ...original, ...update };
-      const dx = next.x - original.x;
-      const dz = next.z - original.z;
-      return current.map((item) => {
-        if (item.uid === uid) return next;
-        return item.parentUid === uid && (dx !== 0 || dz !== 0)
-          ? { ...item, x: item.x + dx, z: item.z + dz }
-          : item;
-      });
+      return current.map((item) => item.uid === uid ? { ...original, ...update } : item);
     });
   }, []);
 
@@ -1053,40 +945,15 @@ export function AvatarApartment({
   }, [decor]);
 
   const moveDecor = useCallback((uid: string, x: number, z: number) => {
-    setDecor((current) => {
-      const item = current.find((candidate) => candidate.uid === uid);
-      if (!item) return current;
-      if (item.anchorKind === "wall") {
-        setInvalidUid(null);
-        const snapped = snapWallItem(item, x, z);
-        return current.map((candidate) => candidate.uid === uid ? snapped : candidate);
-      }
-      if (item.anchorKind === "surface") {
-        const support = nearestSurfaceSupport(current.filter((candidate) => candidate.uid !== uid), x, z);
-        if (!support) {
-          setInvalidUid(uid);
-          return current;
-        }
-        setInvalidUid(null);
-        return current.map((candidate) => candidate.uid === uid
-          ? { ...candidate, x: support.x, z: support.z, parentUid: support.uid }
-          : candidate);
-      }
-      if (!validFloorPlacement(item, x, z, current, runnerPosition)) {
-        setInvalidUid(uid);
-        return current;
-      }
-      setInvalidUid(null);
-      const dx = x - item.x;
-      const dz = z - item.z;
-      return current.map((candidate) => {
-        if (candidate.uid === uid) return { ...candidate, x, z };
-        return candidate.parentUid === uid
-          ? { ...candidate, x: candidate.x + dx, z: candidate.z + dz }
-          : candidate;
-      });
-    });
-  }, [runnerPosition]);
+    setDecor((current) => current.map((candidate) => {
+      if (candidate.uid !== uid) return candidate;
+      const moved = { ...candidate, x, z };
+      // Nothing in decorate mode owns anything else now. Pieces can overlap,
+      // cross one another, and remain exactly where the player drags them.
+      delete moved.parentUid;
+      return moved;
+    }));
+  }, []);
 
   const addItem = (type: ApartmentDecorType) => {
     if (decor.length >= MAX_APARTMENT_ITEMS) return;
@@ -1097,33 +964,18 @@ export function AvatarApartment({
     } while (decor.some((item) => item.uid === uid));
     const anchorKind = apartmentAnchorKind(type);
     const offset = ((decor.length + idSerial.current) % 5 - 2) * 0.5;
-    let item: ApartmentDecorItem = {
+    const item: ApartmentDecorItem = {
       uid,
       type,
-      x: clampX(snap(runnerPosition.x + 2.6)),
-      z: clampZ(snap(runnerPosition.z + offset)),
+      x: clampX(runnerPosition.x + 2.6),
+      z: clampZ(runnerPosition.z + offset),
       rotation: 0,
       color: "#68b78a",
       anchorKind,
     };
-    if (anchorKind === "wall") item = snapWallItem(item);
-    if (anchorKind === "surface") {
-      const support = nearestSurfaceSupport(decor, item.x, item.z);
-      if (support) item = { ...item, x: support.x, z: support.z, parentUid: support.uid };
-    }
-    if (anchorKind === "floor" && DECOR[type].solid) {
-      const candidates = Array.from({ length: 18 }, (_, index) => {
-        const angle = index * Math.PI * 0.62;
-        const radius = 2.4 + Math.floor(index / 6) * 1.25;
-        return { x: clampX(snap(runnerPosition.x + Math.cos(angle) * radius)), z: clampZ(snap(runnerPosition.z + Math.sin(angle) * radius)) };
-      });
-      const open = candidates.find((candidate) => validFloorPlacement(item, candidate.x, candidate.z, decor, runnerPosition));
-      if (open) item = { ...item, ...open };
-    }
     rememberUndo();
     setDecor((current) => [...current, item]);
     setSelectedUid(item.uid);
-    setInvalidUid(null);
   };
 
   const selected = decor.find((item) => item.uid === selectedUid) ?? null;
@@ -1150,13 +1002,13 @@ export function AvatarApartment({
       idSerial.current += 1;
       uid = `user-${selected.type}-${idSerial.current}`;
     } while (decor.some((item) => item.uid === uid));
-    let duplicate: ApartmentDecorItem = {
+    const duplicate: ApartmentDecorItem = {
       ...selected,
       uid,
-      x: clampX(snap(selected.x + 0.8)),
-      z: clampZ(snap(selected.z + 0.8)),
+      x: clampX(selected.x + 0.8),
+      z: clampZ(selected.z + 0.8),
     };
-    if (duplicate.anchorKind === "wall") duplicate = snapWallItem(duplicate);
+    delete duplicate.parentUid;
     rememberUndo();
     setDecor((current) => [...current, duplicate]);
     setSelectedUid(uid);
@@ -1165,7 +1017,7 @@ export function AvatarApartment({
   const restoreStarter = () => {
     if (!window.confirm("Restore the starter apartment? Your current furniture layout will be replaced.")) return;
     rememberUndo();
-    setDecor(normalizeApartmentAnchors(DEFAULT_APARTMENT_DECOR));
+    setDecor(normalizeFreeApartmentDecor(DEFAULT_APARTMENT_DECOR));
     setStyle({ ...DEFAULT_APARTMENT_STYLE });
     setSelectedUid(null);
   };
@@ -1175,7 +1027,6 @@ export function AvatarApartment({
     setDecor(undoDecor.map((item) => ({ ...item })));
     setUndoDecor(null);
     setSelectedUid(null);
-    setInvalidUid(null);
   };
 
   return (
@@ -1202,14 +1053,11 @@ export function AvatarApartment({
               decor={decor}
               style={style}
               selectedUid={selectedUid}
-              invalidUid={invalidUid}
               onSelect={setSelectedUid}
               onMoveDecorStart={() => {
                 rememberUndo();
-                setInvalidUid(null);
               }}
               onMoveDecor={moveDecor}
-              onMoveDecorEnd={() => setInvalidUid(null)}
               onMoveRunner={onMoveRunner}
               onFall={() => setAttemptSerial((serial) => serial + 1)}
             />
@@ -1240,13 +1088,13 @@ export function AvatarApartment({
           {selected && (
             <section className="avatar-apartment-selection avatar-apartment-selection-sticky">
               <strong>{DECOR[selected.type].emoji} {DECOR[selected.type].label}</strong>
-              <small>{selected.anchorKind === "wall" ? "Snaps to walls" : selected.anchorKind === "surface" ? "Attached to furniture" : "Floor item"}</small>
+              <small>Free placement</small>
               {DECOR[selected.type].tintable !== false && (
                 <label>Color <input type="color" value={selected.color} onChange={(event) => editSelected({ color: event.target.value })} /></label>
               )}
               <div>
-                <button disabled={selected.anchorKind === "wall"} onClick={() => editSelected({ rotation: selected.rotation - Math.PI / 12 })}>↶ 15°</button>
-                <button disabled={selected.anchorKind === "wall"} onClick={() => editSelected({ rotation: selected.rotation + Math.PI / 12 })}>↷ 15°</button>
+                <button onClick={() => editSelected({ rotation: selected.rotation - Math.PI / 12 })}>↶ 15°</button>
+                <button onClick={() => editSelected({ rotation: selected.rotation + Math.PI / 12 })}>↷ 15°</button>
                 <button onClick={duplicateSelected} disabled={decor.length >= MAX_APARTMENT_ITEMS}>📄 Duplicate</button>
                 <button className="danger" onClick={removeSelected}>🗑️ Remove</button>
               </div>
@@ -1312,8 +1160,8 @@ export function AvatarApartment({
             <span className="eyebrow">APARTMENT CONTROLS</span>
             <h2>Make the place yours</h2>
             <p><b>Explore:</b> Run with the finished game controls. Hold left click and drag for a full 360° camera turn.</p>
-            <p><b>Decorate:</b> Left-drag floor items. Wall decor snaps to the nearest wall, and lamps or the toaster attach to supporting furniture. Right-drag turns the camera.</p>
-            <p><b>Organize:</b> Select any piece to recolor, turn, duplicate, or remove it. Invalid floor drops show red and keep the last clear position.</p>
+            <p><b>Decorate:</b> Left-drag any item freely. Nothing snaps to a grid, wall, or another piece of furniture. Right-drag turns the camera.</p>
+            <p><b>Organize:</b> Pieces can overlap and pass one another. Select any piece to recolor, turn, duplicate, or remove it.</p>
             <p><b>Permanent home:</b> Furniture positions and apartment colors save automatically on this device.</p>
             <button className="button primary" onClick={closeGuide}>Got it</button>
           </section>

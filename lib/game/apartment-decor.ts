@@ -75,13 +75,6 @@ export function apartmentAnchorKind(type: ApartmentDecorType): ApartmentAnchorKi
   return "floor";
 }
 
-function starterParent(uid: string): string | undefined {
-  if (uid === "kitchen-toaster") return "kitchen-counter";
-  if (uid === "bedroom-lamp") return "bedroom-table";
-  if (uid === "bedroom-lamp-b") return "bedroom-table-b";
-  return undefined;
-}
-
 const RAW_DEFAULT_APARTMENT_DECOR: readonly ApartmentDecorItem[] = [
   { uid: "living-sofa", type: "sofa", x: -8.2, z: -6.7, rotation: 0, color: "#68b78a" },
   { uid: "living-rug", type: "rug", x: -8.1, z: -4.8, rotation: 0, color: "#ff7b6f" },
@@ -122,12 +115,10 @@ const RAW_DEFAULT_APARTMENT_DECOR: readonly ApartmentDecorItem[] = [
   { uid: "utility-storage", type: "wall-cabinet", x: 10.2, z: 4.1, rotation: 0, color: "#eab65d" },
 ];
 
-export const DEFAULT_APARTMENT_DECOR: readonly ApartmentDecorItem[] = RAW_DEFAULT_APARTMENT_DECOR.map((item) => {
-  const parentUid = starterParent(item.uid);
-  return parentUid
-    ? { ...item, anchorKind: apartmentAnchorKind(item.type), parentUid }
-    : { ...item, anchorKind: apartmentAnchorKind(item.type) };
-});
+export const DEFAULT_APARTMENT_DECOR: readonly ApartmentDecorItem[] = RAW_DEFAULT_APARTMENT_DECOR.map((item) => ({
+  ...item,
+  anchorKind: apartmentAnchorKind(item.type),
+}));
 
 function finiteNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -156,10 +147,6 @@ export function sanitizeApartmentDecor(value: unknown): ApartmentDecorItem[] {
     const anchorKind = candidateAnchor === "floor" || candidateAnchor === "wall" || candidateAnchor === "surface"
       ? candidateAnchor
       : apartmentAnchorKind(type);
-    const candidateParent = (entry as { parentUid?: unknown }).parentUid;
-    const parentUid = typeof candidateParent === "string" && candidateParent
-      ? candidateParent.slice(0, 80)
-      : starterParent(candidate.uid);
     seen.add(candidate.uid);
     result.push({
       uid: candidate.uid.slice(0, 80),
@@ -169,16 +156,9 @@ export function sanitizeApartmentDecor(value: unknown): ApartmentDecorItem[] {
       rotation: finiteNumber(candidate.rotation, 0),
       color,
       anchorKind,
-      ...(anchorKind === "surface" && parentUid ? { parentUid } : {}),
     });
   }
-  const ids = new Set(result.map((item) => item.uid));
-  return result.map((item) => {
-    if (!item.parentUid || ids.has(item.parentUid)) return item;
-    const withoutParent = { ...item };
-    delete withoutParent.parentUid;
-    return withoutParent;
-  });
+  return result;
 }
 
 export function sanitizeApartmentStyle(value: unknown): ApartmentStyle {

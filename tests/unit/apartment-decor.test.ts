@@ -55,7 +55,7 @@ describe("apartment decor persistence", () => {
     ]);
   });
 
-  it("infers wall and surface anchors while migrating the v1 storage key", () => {
+  it("keeps legacy wall and surface pieces free while migrating the v1 storage key", () => {
     const legacy = JSON.stringify([
       { uid: "art", type: "wall-art", x: 1, z: 2, rotation: 0, color: "#abcdef" },
       { uid: "bedroom-lamp", type: "bedside-lamp", x: 3, z: 4, rotation: 0, color: "#fedcba" },
@@ -65,7 +65,29 @@ describe("apartment decor persistence", () => {
       getItem: (key) => key === "make-it-worse:apartment-decor:v1" ? legacy : null,
     });
     expect(loaded[0]).toMatchObject({ anchorKind: "wall" });
-    expect(loaded[1]).toMatchObject({ anchorKind: "surface", parentUid: "bedroom-table" });
+    expect(loaded[1]).toMatchObject({ anchorKind: "surface", x: 3, z: 4 });
+    expect(loaded[1]).not.toHaveProperty("parentUid");
+  });
+
+  it("preserves continuous coordinates and strips old furniture attachments", () => {
+    expect(sanitizeApartmentDecor([{
+      uid: "free-lamp",
+      type: "bedside-lamp",
+      x: 1.234567,
+      z: -2.345678,
+      rotation: 0,
+      color: "#fedcba",
+      anchorKind: "surface",
+      parentUid: "old-table",
+    }])).toEqual([{
+      uid: "free-lamp",
+      type: "bedside-lamp",
+      x: 1.234567,
+      z: -2.345678,
+      rotation: 0,
+      color: "#fedcba",
+      anchorKind: "surface",
+    }]);
   });
 
   it("sanitizes and persists apartment shell colors", () => {

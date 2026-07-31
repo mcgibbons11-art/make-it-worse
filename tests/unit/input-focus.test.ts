@@ -88,4 +88,12 @@ describe("keyboard survives a mouse-started run", () => {
       expect(source, filePath).toMatch(/attemptSerial[^\]]*phase|phase[^\]]*attemptSerial/);
     }
   });
+
+  it("rebuilds the runner physics body at spawn for every retry", () => {
+    const source = read("components/game/PlayerController.tsx");
+    expect(source).toContain('key={`runner-attempt-${attemptSerial}`}');
+    expect(source).toContain("{ x: spawn[0], y: spawn[1], z: spawn[2] }");
+    expect(source).toContain("rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);");
+    expect(source).toContain("rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);");
+  });
 });

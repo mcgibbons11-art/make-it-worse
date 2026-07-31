@@ -258,6 +258,7 @@ export const PlayerController = forwardRef<
         true,
       );
       rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true);
       rigidBody.resetForces(true);
       rigidBody.resetTorques(true);
       rigidBody.setEnabledRotations(false, false, false, true);
@@ -556,6 +557,11 @@ export const PlayerController = forwardRef<
   }, -100);
   return (
     <RigidBody
+      // A retry gets a genuinely new physics body at the safe spawn. Reusing
+      // the ragdolled body made the reset depend on repairing every bit of
+      // Rapier state left by the death frame; any missed state could carry the
+      // runner straight off the spawn before the player received input.
+      key={`runner-attempt-${attemptSerial}`}
       ref={setBodyRef}
       userData={{ kind: "player" }}
       colliders={false}

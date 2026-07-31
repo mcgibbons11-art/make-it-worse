@@ -4,6 +4,9 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
+- [x] Fix Try Again respawning the runner away from the map/spawn support and immediately dropping them into the void.
+- [x] Add emoji icons to every action on the Try Again failure card and the game-beaten victory popup.
+- [x] Remove snapping from every movable apartment object so furniture follows the pointer freely and does not stick to nearby furniture.
 - [x] Make trap dragging pointer-captured and raycast against a stable deck plane, and freeze the follow camera only while the button is held so camera recentering cannot pin the trap at an edge.
 - [x] Make Use map code fully work in the processed Portals iframe: open immediately and load through a sandbox-safe button instead of a blocked HTML form submission.
 - [x] Replace the blocked native prompt behind Use map code with an in-game paste panel that works inside the Portals iframe.

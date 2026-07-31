@@ -494,6 +494,15 @@ export function PortalsApp() {
     return onPlayerChange(setPlayer);
   }, []);
   useEffect(() => {
+    // The splash is a pre-game/loading surface, not an active multiplayer
+    // player. Waiting for Start keeps an unopened second 2p preview from
+    // silently joining before player one publishes, and it matches the real
+    // lifecycle: someone who opens the game later becomes a genuine late
+    // joiner and receives the room's shared map snapshot/handshake then.
+    if (showStartSplash) {
+      mapSessionReady.current = null;
+      return;
+    }
     let active = true;
     let close: () => void = () => undefined;
     const connecting = connectMapSession(async ({ announcement, challenge: shared, track }) => {
@@ -523,7 +532,7 @@ export function PortalsApp() {
       mapSessionReady.current = null;
       close();
     };
-  }, [repository]);
+  }, [repository, showStartSplash]);
   const loadBoard = useCallback(async (roomSlug: string) => {
     setBoardLoading(true);
     setBoard(await fetchClearTimes(roomSlug));

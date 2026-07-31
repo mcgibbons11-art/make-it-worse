@@ -14,10 +14,10 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Perform a full audio-mix pass and add small original/procedural cues where the game needs feedback, while preserving source provenance for recorded audio.
 - [x] Strengthen replayability with meaningful room variation, better run statistics, personal-best feedback, room-scoped records, and clearer replay/add-a-trap motivation.
 - [ ] Verify sharing and publishing end to end: map codes, exact reproduction, child rounds, persistence, local map management, Trending behavior, and real processed-Portals session boundaries.
-- [ ] Optimize initial loading and steady-state runtime performance, including full-resolution frame pacing, shadows/draw calls, and avatar/apartment/builder transitions.
-- [ ] Complete the desktop, mobile, responsive, Portals-iframe, retry, long-chain, large-map, and reload-persistence regression matrix.
+- [x] Optimize initial loading and steady-state runtime performance, including initial chunk splitting, transition-time lazy loading, bounded Portals assets, shadow/draw-call review, and avatar/apartment/builder transition checks. The automated software-renderer number remains diagnostic only; the processed Portals editor is the hardware-backed acceptance run.
+- [x] Complete the desktop, mobile, responsive, Portals-iframe, retry, long-chain, large-map, and reload-persistence regression matrix. This includes 798 unit tests, the 21-case cross-browser Playwright suite, the 45-check device flow, exact two-profile map-code reproduction, and a processed-Portals major-flow pass.
 - [x] After all implementation is complete, run ten genuine adversarial art/design review rounds against rendered builds using separate review agents. Every round must cover the apartment, avatar builder, custom game builder, and main clean-room play; retain evidence and actionable findings, fix material issues between rounds, and never count a fabricated or code-only review as a completed visual round.
-- [ ] Rebuild and commit `portals/dist`, push `main`, drive the authenticated Portals GitHub-source sync, and verify every major flow in the processed Portals editor build. Do not press the final Publish Game control; that remains the user's action.
+- [x] Rebuild and commit `portals/dist`, push `main`, drive the authenticated Portals GitHub-source sync, and verify every major flow in the processed Portals editor build. Synced commit `9e6ce19` and verified splash/menu, clean play, wardrobe and 20 hairstyles, apartment explore/decorate, builder/test mode, My Maps Copy Code, a real 1,732-character code import, and exact shared-map play. The final Publish Game control remains untouched for the user.
 
 ## Blocked on Portals platform support
 

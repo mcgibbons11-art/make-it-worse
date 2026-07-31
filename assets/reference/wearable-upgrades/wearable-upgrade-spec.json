@@ -1,6 +1,6 @@
 {
   "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
-  "revision": "retained-audit-factory-pass-3-runtime-sheets",
+  "revision": "retained-audit-factory-pass-5-anatomical-feet",
   "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
   "sourceReferences": [
     "assets/reference/wear-tank.png",
@@ -42,7 +42,9 @@
       "zip track, teeth and pull"
     ],
     "barefoot": [
-      "single continuous asymmetric foot volume"
+      "single continuous asymmetric foot volume",
+      "tapered ankle and instep bridge",
+      "heel-to-toe silhouette rather than an oval capsule"
     ],
     "sandal": [
       "fitted shaped bed",

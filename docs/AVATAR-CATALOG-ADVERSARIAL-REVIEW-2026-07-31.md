@@ -8,11 +8,12 @@ The failing baseline below is retained as the defect record, but its item verdic
 
 - All 86 non-empty selectable items have current-runtime front and side evidence.
 - The final 75 affected items were recaptured after the last geometry and framing corrections in `artifacts/avatar-catalog-acceptance-2026-07-31/`.
+- The reopened waist/feet finding was corrected and recertified across seven naked/dressed front-and-profile combinations in `artifacts/avatar-seam-acceptance-2026-07-31-pass6/`: `None` adds no clothing, shirts overlap pants without a body-colored bar or intersecting dark teeth, and the bare foot is a connected heel/instep/toe volume rather than a floating circle.
 - The unchanged eyewear and footwear acceptance sheets remain in `artifacts/avatar-catalog-final-2026-07-31/`.
 - The preview now fits the dressed runner without clipping the head or feet and supports drag, arrow-key, and on-screen rotation.
 - Hair is connected and seated; helmet, hats, facial hair, transparent eyewear, layered clothes, footwear, back items, and hand grips received dedicated geometry/material/attachment corrections.
 - Manual picking and Randomize now share one compatibility resolver; a newly selected item wins and the UI reports any cleared conflict.
-- `None` removes tops and pants, the waist bridge closes the groin gap when trousers are worn, and every authored color remains available.
+- `None` removes tops and pants, a selected shirt tail overlaps the selected raised waistband without manufacturing base clothes, and every authored color remains available.
 
 This is not a claim that every possible outfit combination is certified in every animation. Rear/profile run, jump, failure, and victory sheets plus representative cross-slot stress combinations remain the final evidence gate for full animation certification.
 
@@ -154,7 +155,7 @@ This supersedes any earlier claim that the wearable quality pass was complete. T
 
 | Item | Verdict | Required change |
 |---|---|---|
-| None | Fail silhouette | Replace overlapping slipper/hoof ellipsoids with one shaped foot. |
+| None | Pass after remediation | One lofted heel-to-toe foot with raised instep and a tapered ankle bridge now intersects the calf cleanly; pass-6 front/profile evidence retained. |
 | High-tops | Fail | Add tongue, lace crossings, quarter panels, and rubber outsole. |
 | Boots | Fail | Replace stock sneaker layering with one complete boot and tread. |
 | Sandals | Fail | Refine foot outline/bed thickness and seat readable straps. |

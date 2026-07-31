@@ -1541,17 +1541,6 @@ function outerCollarParts(id: AvatarOuterwearId): THREE.Object3D[] {
 
 // --- Legwear ----------------------------------------------------------------
 
-/**
- * A low-profile waistband carried by each leg. Its geometry still gives the
- * trouser a readable gathered edge, but it uses the trouser color instead of a
- * bright cream stripe that looked like exposed skin/a gap at the groin.
- */
-function waistband(side: -1 | 1, tint: WardrobeTint = "main"): THREE.Mesh {
-  const band = limbSleeve(LEG, side, -0.02, 0.09, legRadius(0) + 0.019, legRadius(0.09) + 0.019);
-  band.userData["wardrobeTint"] = tint;
-  return band;
-}
-
 function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
   const trouser = (to: number, radiusTo: number) =>
     limbSleeve(LEG, side, -0.02, to, legRadius(0) + 0.012, radiusTo);
@@ -1560,16 +1549,16 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       return [];
     case "shorts": {
       // wear-shorts.png: a cream ribbed waistband, a contrast stripe down the
-      // outer seam, and a rolled cuff at the hem. The waistband shares the
-      // trouser's own top rather than reaching above it, so adding it cannot
-      // lift the waist into the shirt hem.
+      // outer seam and a rolled cuff at the hem. The continuous pelvis yoke
+      // owns the waistband; duplicating one on each animated leg produced a
+      // pair of black triangular teeth under the shirt.
       const leg = trouser(0.44, legRadius(0.44) + 0.022);
       const cuff = limbSleeve(LEG, side, 0.4, 0.46, legRadius(0.44) + 0.028, legRadius(0.44) + 0.028);
       cuff.userData["wardrobeTint"] = "trim";
       const stripe = part(slab(0.014, 0.19, 0.05), "trim");
       stripe.position.copy(limbPoint(LEG, side, 0.24));
       stripe.position.x += side * (legRadius(0.24) + 0.018);
-      return [leg, waistband(side), cuff, stripe];
+      return [leg, cuff, stripe];
     }
     case "joggers": {
       // wear-joggers.png: a cream ribbed waistband with a drawstring, tapering
@@ -1577,7 +1566,7 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       const leg = trouser(0.97, legRadius(0.97) + 0.014);
       const cuff = limbSleeve(LEG, side, 0.9, 1.0, legRadius(0.95) + 0.02, legRadius(0.95) + 0.016);
       cuff.userData["wardrobeTint"] = "trim";
-      return [leg, waistband(side), cuff];
+      return [leg, cuff];
     }
     case "jeans": {
       // wear-jeans.png came back folded flat. It settles the palette and the
@@ -1596,7 +1585,7 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       const seam = part(slab(0.008, 0.5, 0.026), "trim");
       seam.position.copy(limbPoint(LEG, side, 0.45));
       seam.position.x += side * (legRadius(0.45) + 0.016);
-      return [leg, waistband(side, "denim"), seam];
+      return [leg, seam];
     }
     case "cargo": {
       // wear-cargo.png: the trouser, its waistband, its thigh pockets and its
@@ -1610,7 +1599,6 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       // detail, and legwear is built once per leg off that leg's own pivot, so
       // it would come out either doubled or riding up with the stride.
       const leg = trouser(1.03, legRadius(0.9) + 0.02);
-      const band = limbSleeve(LEG, side, -0.02, 0.09, legRadius(0) + 0.019, legRadius(0.09) + 0.019);
       const cuff = limbSleeve(LEG, side, 0.92, 1.04, legRadius(0.95) + 0.027, legRadius(1) + 0.027);
       const pocket = part(roundedSlab(0.026, 0.115, 0.085), "main");
       pocket.position.copy(limbPoint(LEG, side, 0.52));
@@ -1621,7 +1609,7 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       const button = part(ball(0.01, 0.013, 0.013), "cream");
       button.position.copy(limbPoint(LEG, side, 0.44));
       button.position.x += side * (legRadius(0.44) + 0.032);
-      return [leg, band, cuff, pocket, flap, button];
+      return [leg, cuff, pocket, flap, button];
     }
     case "kneepads": {
       const pad = part(ball(0.092, 0.085, 0.078), "rubber");
@@ -1653,11 +1641,6 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       const seam = part(slab(0.009, 0.31, 0.02), "trim");
       seam.position.copy(limbPoint(LEG, side, 0.46));
       seam.position.x += side * (legRadius(0.46) + 0.01);
-      // The same 0.019 the shared waistband stands at, and for the same
-      // reason: the legs are 0.21 apart and a band 0.002 fatter than this has
-      // the two sides meeting at the crotch. The test measured it at 0.0023.
-      const waist = limbSleeve(LEG, side, -0.02, 0.1, legRadius(0) + 0.019, legRadius(0.1) + 0.019);
-      waist.userData["wardrobeTint"] = "trim";
       const ankle = limbSleeve(
         LEG,
         side,
@@ -1667,7 +1650,7 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
         legRadius(1.05) + 0.019,
       );
       ankle.userData["wardrobeTint"] = "trim";
-      return [leg, seam, waist, ankle];
+      return [leg, seam, ankle];
     }
   }
 }
@@ -1681,45 +1664,40 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
  */
 function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
   if (id === "kneepads" || id === "none") return [];
-  if (id === "kilt") {
-    return [createWearableUpgradeModel("kilt")];
-  }
-  if (id === "tights") {
-    const fitted = part(new THREE.CylinderGeometry(0.176, 0.19, 0.17, 24), "main", {
-      x: 0,
-      y: 0.085,
-      z: 0,
-    });
-    fitted.scale.z = 0.75;
-    const band = part(new THREE.TorusGeometry(0.179, 0.01, 5, 24), "trim", {
-      x: 0,
-      y: 0.17,
-      z: 0,
-    });
-    band.userData["wardrobeTint"] = "main";
-    band.rotation.x = Math.PI / 2;
-    band.scale.z = 0.75;
-    return [fitted, band];
-  }
   const baseTint: WardrobeTint = id === "jeans" ? "denim" : "main";
-  const yoke = part(new THREE.CylinderGeometry(0.176, 0.205, 0.18, 20), baseTint, {
+  // The old top radius was only 0.176u: narrower than the runner's bare torso
+  // at the same height. The pants technically overlapped the shirt in Y, but
+  // sat behind the body in X/Z, leaving a visible body-coloured band. This
+  // high-rise yoke meets the actual torso silhouette and overlaps the selected
+  // garment bridge above from every viewing angle.
+  const yoke = part(new THREE.CylinderGeometry(0.265, 0.21, 0.21, 24, 3), baseTint, {
     x: 0,
-    y: 0.09,
+    y: 0.105,
     z: 0,
   });
-  yoke.scale.z = 0.78;
-  const waistband = part(new THREE.TorusGeometry(0.19, 0.016, 6, 20), "trim", {
+  yoke.scale.z = 0.8;
+  yoke.userData["wardrobeNoOutline"] = true;
+  const waistband = part(new THREE.TorusGeometry(0.257, 0.014, 6, 24), "trim", {
     x: 0,
-    y: 0.18,
+    y: 0.205,
     z: 0,
   });
   waistband.userData["wardrobeTint"] = baseTint;
+  waistband.userData["wardrobeNoOutline"] = true;
   waistband.rotation.x = Math.PI / 2;
-  waistband.scale.z = 0.78;
+  waistband.scale.z = 0.8;
+  if (id === "kilt") return [yoke, waistband, createWearableUpgradeModel("kilt")];
+  if (id === "tights") {
+    const frontSeam = part(slab(0.012, 0.15, 0.012), "trim", {
+      x: 0, y: 0.095, z: 0.216,
+    });
+    frontSeam.userData["wardrobeNoOutline"] = true;
+    return [yoke, waistband, frontSeam];
+  }
   if (id !== "joggers") return [yoke, waistband];
   const drawstring = (side: -1 | 1) =>
     part(tube(0.007, 0.007, 0.095, 7), "cream", {
-      x: side * 0.035, y: 0.13, z: 0.162,
+      x: side * 0.035, y: 0.15, z: 0.212,
     });
   return [yoke, waistband, drawstring(-1), drawstring(1)];
 }
@@ -1733,6 +1711,32 @@ function overallLowerParts(): THREE.Object3D[] {
   yoke.scale.z = 0.8;
   const pocket = part(slab(0.11, 0.07, 0.025), "trim", { x: 0, y: 0.08, z: 0.165 });
   return [yoke, pocket];
+}
+
+/**
+ * A selected torso garment continues onto the pelvis instead of stopping
+ * above it. The torso and pelvis counter-rotate in the run cycle, so a shell
+ * attached only to the torso can expose a body-coloured belt even when its
+ * static bounds overlap the trousers. This quiet under-panel rides the pelvis,
+ * reaches up behind the visible torso shell, and exists only for a selected
+ * top (or a full torso outer layer when no top is worn).
+ */
+function garmentWaistBridge(tint: WardrobeTint = "main"): THREE.Object3D[] {
+  const bridge = part(
+    // Keep the shirt outside the high-rise trouser yoke for the whole shared
+    // height. The previous opposing tapers crossed through one another and
+    // rasterized as a row of dark triangular "teeth" at the waist. This is a
+    // visible shirt tail: it starts inside the torso shell, clears the pants,
+    // and finishes just below their waistband.
+    new THREE.CylinderGeometry(0.282, 0.245, 0.14, 24, 3),
+    tint,
+    { x: 0, y: 0.14, z: 0 },
+  );
+  bridge.scale.z = 0.8;
+  // This is an overlap panel, not a belt. Giving it an independent ink shell
+  // draws the exact dark horizontal bar players read as the old waist gap.
+  bridge.userData["wardrobeNoOutline"] = true;
+  return [bridge];
 }
 
 // --- Footwear ---------------------------------------------------------------
@@ -2224,7 +2228,7 @@ function specsFor(look: ResolvedAvatar): Spec[] {
           leg.userData["wardrobeTint"] = "denim";
           return [leg];
         });
-    }
+    } else add(SOCKETS.pelvis, `topWaist:${look.top}`, garmentWaistBridge);
   }
 
   if (look.outerwear !== "none") {
@@ -2240,6 +2244,15 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         add(socket, `outerSleeve:${look.outerwear}:${side}`, () => [
           sleeve(side, reach, outerTint),
         ]);
+    // Bulky full-torso layers may intentionally clear the Top slot. Give them
+    // the same selected-garment continuation, but never manufacture a shirt
+    // beneath a scarf or beneath an already-present top.
+    if (
+      look.top === "none" &&
+      ["jacket", "puffer", "vest", "poncho", "harness"].includes(look.outerwear)
+    ) add(SOCKETS.pelvis, `outerWaist:${look.outerwear}`, () =>
+      garmentWaistBridge(outerTint),
+    );
   }
 
   // Overalls own their lower half. Keep a separately selected legwear choice in
@@ -2301,12 +2314,14 @@ function paletteKeyFor(key: string): keyof ResolvedAvatar["garmentColors"] {
       return "eyewear";
     case "top":
     case "topPelvis":
+    case "topWaist":
     case "topOverallLeg":
     case "topSleeve":
     case "topShoulder":
     case "topCollar":
       return "top";
     case "outer":
+    case "outerWaist":
     case "outerSleeve":
     case "outerCollar":
       return "outerwear";
@@ -2388,6 +2403,22 @@ export function createWardrobeAttachments(look: ResolvedAvatar): WardrobeAttachm
       palettes.set(colorKey, palette);
     }
     const node = templateFor(spec).clone(true);
+    // Back-face ink shells are excellent around an outer silhouette, but an
+    // open torso shell also exposes that enlarged back face at its lower rim.
+    // On a faceted lathe it photographs as a row of black teeth between shirt
+    // and pants—the same visual read as a waist gap. Suppress the independent
+    // outline only on torso-layer pieces that actually reach the hem; sleeves,
+    // collars and the runner's overall silhouette keep their ink treatment.
+    if (spec.key.startsWith("top:") || spec.key.startsWith("outer:")) {
+      node.updateMatrixWorld(true);
+      node.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const bounds = new THREE.Box3().setFromObject(mesh);
+        if (bounds.min.y <= HEM + 0.035)
+          mesh.userData["wardrobeNoOutline"] = true;
+      });
+    }
     node.traverse((child) => {
       const mesh = child as THREE.Mesh;
       if (!mesh.isMesh) return;

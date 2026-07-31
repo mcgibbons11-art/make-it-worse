@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 
 SPEC = {
     "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
-    "revision": "retained-audit-factory-pass-3-runtime-sheets",
+    "revision": "retained-audit-factory-pass-5-anatomical-feet",
     "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
     "sourceReferences": [
         "assets/reference/wear-tank.png",
@@ -30,7 +30,11 @@ SPEC = {
         "tank": ["torso profile", "open armholes", "neck and arm binding"],
         "puffer": ["split padded panels", "zip track, teeth and pull", "sleeve-safe armholes"],
         "vest": ["split padded panels", "deep shaped armholes", "zip track, teeth and pull"],
-        "barefoot": ["single continuous asymmetric foot volume"],
+        "barefoot": [
+            "single continuous asymmetric foot volume",
+            "tapered ankle and instep bridge",
+            "heel-to-toe silhouette rather than an oval capsule",
+        ],
         "sandal": ["fitted shaped bed", "cross straps", "heel sling"],
         "kilt": ["front, side and rear pleat rhythm", "flared hem"],
         "bedroll": ["carrier frame", "compression straps", "buckles and tie bridge"],
@@ -94,6 +98,59 @@ function thickShape(points: readonly [number, number][], depth = 0.018) {
     curveSegments: 8,
   });
   geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+function footLast() {
+  // A small anatomical last lofted from heel to toe. Each station has its own
+  // width and vertical profile, which gives the bare foot a raised instep,
+  // planted sole, broad forefoot and tapered toe instead of a flat extruded
+  // puck. The back stations sink into the ankle bridge below.
+  const stations = [
+    { z: -0.145, width: 0.064, bottom: -0.052, top: 0.06 },
+    { z: -0.085, width: 0.078, bottom: -0.058, top: 0.122 },
+    { z: 0.0, width: 0.09, bottom: -0.06, top: 0.158 },
+    { z: 0.105, width: 0.108, bottom: -0.055, top: 0.112 },
+    { z: 0.185, width: 0.094, bottom: -0.047, top: 0.078 },
+    { z: 0.225, width: 0.052, bottom: -0.032, top: 0.045 },
+  ] as const;
+  const radialSegments = 12;
+  const positions: number[] = [];
+  for (const station of stations) {
+    const cy = (station.top + station.bottom) / 2;
+    const ry = (station.top - station.bottom) / 2;
+    for (let index = 0; index < radialSegments; index += 1) {
+      const angle = (index / radialSegments) * Math.PI * 2;
+      positions.push(
+        Math.cos(angle) * station.width,
+        cy + Math.sin(angle) * ry,
+        station.z,
+      );
+    }
+  }
+  const indices: number[] = [];
+  for (let station = 0; station < stations.length - 1; station += 1) {
+    const here = station * radialSegments;
+    const next = (station + 1) * radialSegments;
+    for (let index = 0; index < radialSegments; index += 1) {
+      const after = (index + 1) % radialSegments;
+      indices.push(here + index, next + after, next + index);
+      indices.push(here + index, here + after, next + after);
+    }
+  }
+  const heelCenter = positions.length / 3;
+  positions.push(0, 0.004, stations[0]!.z);
+  const toeCenter = positions.length / 3;
+  positions.push(0, 0.006, stations[stations.length - 1]!.z);
+  for (let index = 0; index < radialSegments; index += 1) {
+    const after = (index + 1) % radialSegments;
+    indices.push(heelCenter, after, index);
+    const toeStart = (stations.length - 1) * radialSegments;
+    indices.push(toeCenter, toeStart + index, toeStart + after);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   return geometry;
 }
 function wavedShape(points: readonly [number, number][], depth = 0.018, amplitude = 0.02) {
@@ -201,12 +258,20 @@ function quilted(root: THREE.Group, vest: boolean) {
 }
 
 function barefoot(root: THREE.Group) {
-  // One continuous top-down outline produces heel, waist and toe box without
-  // the seam/two-lobed silhouette created by overlapping ellipsoids.
-  const foot = mesh(new THREE.CapsuleGeometry(0.075, 0.16, 8, 18), "skin", "bare-foot", [0, 0.014, 0.035]);
-  foot.rotation.x = Math.PI / 2;
-  foot.scale.set(1.24, 1, 0.82);
-  add(root, foot);
+  const foot = mesh(footLast(), "skin", "bare-foot", [0, 0.008, 0.02]);
+
+  // The shoe socket is the ankle. A tapered bridge rises through the bottom
+  // of the calf and sinks into the heel/instep below, so there is no daylight
+  // between leg and foot during heel strike, toe-off or the victory pose.
+  const ankle = mesh(
+    new THREE.CylinderGeometry(0.076, 0.09, 0.23, 18, 3),
+    "skin",
+    "bare-foot-ankle-bridge",
+    [0, 0.11, -0.06],
+  );
+  ankle.scale.z = 0.82;
+  ankle.userData["wardrobeNoOutline"] = true;
+  add(root, foot, ankle);
 }
 
 function sandal(root: THREE.Group) {

@@ -30,7 +30,8 @@ Updated continuously from playtest feedback. New requests are added here before 
 - [x] Replace the trap-placement world popup with accurate left-drag and click-then-WASD movement guidance; make the START-to-GOAL progress bar substantially larger and top-centered.
 - [x] Remove the obsolete colored-circle glyph from every Edit/Make your runner action now that those buttons use emojis.
 - [x] Restore every authored avatar color to every body and wearable color picker and shared-code path; never disable or filter swatches for resembling course colors. Preserve readability with an invariant ink silhouette instead.
-- [x] Close the catalog-wide waist/groin seam: pants rise over the pelvis join and same-color waist geometry replaces the exposed floating bar.
+- [x] Close the catalog-wide waist/groin seam without inventing base clothes: `None` remains naked, selected shirts visibly overlap the raised selected-pants waist, and the seven-outfit front/profile acceptance matrix in `artifacts/avatar-seam-acceptance-2026-07-31-pass6/` shows no body-colored gap or intersecting black teeth.
+- [x] Replace the disconnected circular bare feet with one continuous heel-to-toe foot last plus a tapered ankle/instep bridge; retain the front/profile naked and dressed evidence in the same pass-6 acceptance matrix.
 - [x] Run and retain a new adversarial, item-by-item Build Your Runner review covering every hair style and wearable, with unverified views recorded honestly in `docs/AVATAR-CATALOG-ADVERSARIAL-REVIEW-2026-07-31.md`.
 - [x] Rebuild and visually recertify every weak/mid item identified by that audit in the current idle catalog; all 86 non-empty items now have current-runtime front/side evidence, and the final 75 affected items were recaptured after the last remediation pass.
 - [x] Add emojis to all three post-code level intro actions: Beat their version, Edit/Make your runner, and Back to the main menu.

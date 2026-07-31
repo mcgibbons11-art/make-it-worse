@@ -288,6 +288,81 @@ describe("dressing a runner", () => {
     expect(model.getObjectByName("upgrade:bare-foot")).toBeTruthy();
   });
 
+  it("keeps clothing None naked while attaching an anatomical bare foot", () => {
+    const { model } = dressedRaw({
+      ...DEFAULT_AVATAR,
+      hair: "none",
+      top: "none",
+      outerwear: "none",
+      legwear: "none",
+      footwear: "none",
+    });
+    expect(model.getObjectByName("Wardrobe top:none")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe topWaist:none")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe legwearPelvis:none")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe legwear:none:-1")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe legwear:none:1")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe bareFoot:none")).toBeTruthy();
+  });
+
+  it("joins each shaped bare foot to its calf instead of floating as a circle", () => {
+    const { model } = dressedRaw({ ...DEFAULT_AVATAR, footwear: "none" });
+    for (const [socketName, legName] of [
+      [SOCKETS.shoeLeft, "Leg left"],
+      [SOCKETS.shoeRight, "Leg right"],
+    ] as const) {
+      const socket = model.getObjectByName(socketName)!;
+      const footRoot = model.getObjectByName(`Wardrobe on ${socketName}`)!;
+      const ankleBridge = footRoot.getObjectByName("upgrade:bare-foot-ankle-bridge");
+      const leg = model.getObjectByName(legName)!;
+      expect(socket).toBeTruthy();
+      expect(footRoot).toBeTruthy();
+      expect(ankleBridge, `${socketName} has no anatomical ankle bridge`).toBeTruthy();
+      expect(leg).toBeTruthy();
+      model.updateMatrixWorld(true);
+      const foot = new THREE.Box3().setFromObject(footRoot);
+      const calf = new THREE.Box3().setFromObject(leg);
+      const size = foot.getSize(new THREE.Vector3());
+      const ankle = socket.getWorldPosition(new THREE.Vector3());
+      expect(size.z, `${socketName} still reads as a round blob`).toBeGreaterThan(size.x * 1.45);
+      expect(foot.max.y, `${socketName} does not rise into the calf`).toBeGreaterThan(ankle.y + 0.13);
+      expect(foot.intersectsBox(calf), `${socketName} leaves daylight below ${legName}`).toBe(true);
+    }
+  });
+
+  it("overlaps every real shirt with every real waistband around the full waist", () => {
+    const tops = WARDROBE_SLOTS.find((slot) => slot.id === "top")!.options
+      .map((option) => option.id)
+      .filter((id) => id !== "none" && id !== "overalls") as AvatarConfig["top"][];
+    const pants = WARDROBE_SLOTS.find((slot) => slot.id === "legwear")!.options
+      .map((option) => option.id)
+      .filter((id) => id !== "none" && id !== "kneepads") as AvatarConfig["legwear"][];
+    for (const top of tops) {
+      for (const legwear of pants) {
+        const { model } = dressedRaw({ ...DEFAULT_AVATAR, top, legwear });
+        const torsoShell = boxOf(wardrobeMeshes(model, SOCKETS.torso));
+        const shirtWaist = new THREE.Box3().setFromObject(
+          model.getObjectByName(`Wardrobe topWaist:${top}`)!,
+        );
+        const pantsWaist = new THREE.Box3().setFromObject(
+          model.getObjectByName(`Wardrobe legwearPelvis:${legwear}`)!,
+        );
+        const shirtJoin = Math.min(torsoShell.max.y, shirtWaist.max.y) -
+          Math.max(torsoShell.min.y, shirtWaist.min.y);
+        const pantsJoin = Math.min(shirtWaist.max.y, pantsWaist.max.y) -
+          Math.max(shirtWaist.min.y, pantsWaist.min.y);
+        const pantsSize = pantsWaist.getSize(new THREE.Vector3());
+        expect(shirtJoin, `${top} stops above its selected waist panel`).toBeGreaterThan(0.06);
+        // 0.14u is the full visible shirt-tail depth. Requiring more than that
+        // forced the overlap panel down into a tunic even though 0.11u already
+        // exceeds the animated torso/pelvis separation by a wide margin.
+        expect(pantsJoin, `${top}/${legwear} exposes a body-coloured waist gap`).toBeGreaterThan(0.11);
+        expect(pantsSize.x, `${legwear} waistband is narrower than the torso`).toBeGreaterThan(0.52);
+        expect(pantsSize.z, `${legwear} waistband does not cover the rear waist`).toBeGreaterThan(0.4);
+      }
+    }
+  });
+
   it("keeps overalls coherent instead of stacking selected pants through them", () => {
     const { model } = dressedRaw({
       ...DEFAULT_AVATAR,

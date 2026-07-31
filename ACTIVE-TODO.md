@@ -5,7 +5,7 @@ Updated continuously from playtest feedback. New requests are added here before 
 ## Fix first
 
 - [x] Make trap dragging pointer-captured and raycast against a stable deck plane so it cannot lose the mouse and park on platform edges.
-- [x] Make Use map code open its paste panel immediately in every menu state, with no run-discard guard intercepting the button.
+- [x] Make Use map code fully work in the processed Portals iframe: open immediately and load through a sandbox-safe button instead of a blocked HTML form submission.
 - [x] Replace the blocked native prompt behind Use map code with an in-game paste panel that works inside the Portals iframe.
 - [x] Clear held keyboard/touch input at every run boundary so a new attempt can never inherit motion from the previous one.
 - [x] Resolve every runtime spawn onto safe supporting geometry so imported/authored maps cannot drop the runner straight into the void.

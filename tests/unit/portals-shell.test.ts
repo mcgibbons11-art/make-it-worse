@@ -210,7 +210,7 @@ describe("map-code redemption", () => {
     expect(opener).not.toContain("guard(");
   });
 
-  it("submits the pasted code and provides a real back action", async () => {
+  it("loads through sandbox-safe buttons and provides a real back action", async () => {
     const host = document.createElement("div");
     const root = createRoot(host);
     const submit = vi.fn();
@@ -227,11 +227,11 @@ describe("map-code redemption", () => {
       );
     });
     await act(async () => {
-      host.querySelector("form")?.dispatchEvent(
-        new Event("submit", { bubbles: true, cancelable: true }),
-      );
-      (host.querySelector("button[type='button']") as HTMLButtonElement).click();
+      const buttons = host.querySelectorAll("button[type='button']");
+      (buttons[0] as HTMLButtonElement).click();
+      (buttons[1] as HTMLButtonElement).click();
     });
+    expect(host.querySelector("form")).toBeNull();
     expect(submit).toHaveBeenCalledOnce();
     expect(back).toHaveBeenCalledOnce();
     await act(async () => root.unmount());

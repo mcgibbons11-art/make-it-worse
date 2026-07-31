@@ -126,12 +126,11 @@ export function MapCodePanel({
   readonly onBack: () => void;
 }) {
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit();
-      }}
-    >
+    // Portals' processed game iframe intentionally omits `allow-forms`.
+    // Even a React form whose submit handler calls preventDefault is blocked
+    // by Chromium there before the loader can run. This is an in-game action,
+    // not navigation, so use a plain container and an ordinary click instead.
+    <div>
       <div className="eyebrow">PLAY A SHARED ROOM</div>
       <h2 id="portals-map-code-title">Use map code</h2>
       <p className="portals-lede">
@@ -156,14 +155,19 @@ export function MapCodePanel({
         {notice}
       </p>
       <div className="portals-buttons">
-        <button className="button primary" type="submit" disabled={!value.trim()}>
+        <button
+          className="button primary"
+          type="button"
+          disabled={!value.trim()}
+          onClick={onSubmit}
+        >
           Load this map
         </button>
         <button className="button secondary" type="button" onClick={onBack}>
           Back
         </button>
       </div>
-    </form>
+    </div>
   );
 }
 

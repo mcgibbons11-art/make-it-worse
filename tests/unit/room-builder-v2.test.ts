@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateRandomRoom, roomBuilderShareFormats, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
+import { generateRandomRoom, roomBuilderShareFormats, roomBuilderShortcutAction, runtimeMap, unreachablePlatformIds, type RoomItem } from "@/components/game/RoomBuilder";
 import { TRAP_TYPES } from "@/lib/game/trap-catalog";
 import { PLAYER } from "@/lib/game/constants";
 
@@ -8,6 +8,27 @@ const item = (uid: number, asset: RoomItem["asset"], x: number, y: number, z: nu
 });
 
 describe("unrestricted custom map builder", () => {
+  it("maps Delete and Ctrl/Cmd+C/V without firing while editing or key-repeat", () => {
+    const event = (change: Partial<Parameters<typeof roomBuilderShortcutAction>[0]> = {}) => ({
+      altKey: false,
+      code: "",
+      ctrlKey: false,
+      key: "",
+      metaKey: false,
+      repeat: false,
+      shiftKey: false,
+      ...change,
+    });
+    expect(roomBuilderShortcutAction(event({ key: "Delete" }), false)).toBe("delete");
+    expect(roomBuilderShortcutAction(event({ code: "KeyC", key: "c", ctrlKey: true }), false)).toBe("copy");
+    expect(roomBuilderShortcutAction(event({ code: "KeyC", key: "c", metaKey: true }), false)).toBe("copy");
+    expect(roomBuilderShortcutAction(event({ code: "KeyV", key: "v", ctrlKey: true }), false)).toBe("paste");
+    expect(roomBuilderShortcutAction(event({ code: "KeyV", key: "v", metaKey: true }), false)).toBe("paste");
+    expect(roomBuilderShortcutAction(event({ code: "KeyC", key: "c" }), false)).toBeNull();
+    expect(roomBuilderShortcutAction(event({ key: "Delete", repeat: true }), false)).toBeNull();
+    expect(roomBuilderShortcutAction(event({ key: "Delete" }), true)).toBeNull();
+  });
+
   it("offers codes without links in the Portals sharing mode", () => {
     expect(roomBuilderShareFormats("codes-only")).toEqual(["code"]);
     expect(roomBuilderShareFormats("links-and-codes")).toEqual(["link", "code"]);

@@ -347,8 +347,26 @@ export function ControlsPanel({
               </div>
             ))}
       </dl>
+      <div className="portals-help-sections">
+        <article>
+          <h3>🏁 Finish the room</h3>
+          <p>Reach the EXIT before the clock expires. Falling into the void ends the attempt; Try Again always starts a fresh runner at the room&apos;s spawn.</p>
+        </article>
+        <article>
+          <h3>🪤 Make it worse</h3>
+          <p>Beat a room to choose one trap. Drag it anywhere on a real block, rotate it if needed, and add it only when the placement message is green. Traps keep their authored colors.</p>
+        </article>
+        <article>
+          <h3>📥 Open other maps</h3>
+          <p>Use Map Code loads the exact published or shared room encoded by another player. Trending contains published community maps; invite codes themselves do not affect Trending.</p>
+        </article>
+        <article>
+          <h3>🏆 Room records</h3>
+          <p>Each room has its own fastest-times board. Test mode and apartment exploration use the same runner controls, physics, and held-camera turning as a finished room.</p>
+        </article>
+      </div>
       <button className="button primary huge" onClick={onBack}>
-        Done
+        ✅ Done
       </button>
     </>
   );

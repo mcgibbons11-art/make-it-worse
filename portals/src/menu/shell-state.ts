@@ -162,6 +162,7 @@ export const CONTROLS: readonly {
   readonly action: string;
 }[] = [
   { keys: ["W", "A", "S", "D"], action: "Move. The arrow keys do the same." },
+  { keys: ["Left mouse"], action: "Hold and drag to turn the camera through a full 360°." },
   { keys: ["Space"], action: "Jump." },
   { keys: ["E"], action: "Hold to carry a loose prop, release to throw it forward." },
   { keys: ["R"], action: "Give up the attempt and take the restart." },

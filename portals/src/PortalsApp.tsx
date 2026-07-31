@@ -1216,7 +1216,7 @@ export function PortalsApp() {
       {view === "controls" && (
         <Overlay
           labelledBy="portals-controls-title"
-          panelClassName="portals-settings"
+          panelClassName="portals-settings portals-controls-panel"
         >
           <ControlsPanel onBack={closeView} touchControls={touchControls} />
         </Overlay>

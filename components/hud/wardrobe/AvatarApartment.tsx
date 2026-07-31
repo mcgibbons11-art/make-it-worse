@@ -1159,11 +1159,15 @@ export function AvatarApartment({
           <section>
             <span className="eyebrow">APARTMENT CONTROLS</span>
             <h2>Make the place yours</h2>
-            <p><b>Explore:</b> Run with the finished game controls. Hold left click and drag for a full 360° camera turn.</p>
-            <p><b>Decorate:</b> Left-drag any item freely. Nothing snaps to a grid, wall, or another piece of furniture. Right-drag turns the camera.</p>
-            <p><b>Organize:</b> Pieces can overlap and pass one another. Select any piece to recolor, turn, duplicate, or remove it.</p>
-            <p><b>Permanent home:</b> Furniture positions and apartment colors save automatically on this device.</p>
-            <button className="button primary" onClick={closeGuide}>Got it</button>
+            <p><b>🏃 Explore:</b> Move, jump, and interact with the same controls and physics as a real run. Hold left click and drag to turn the camera through a full 360°.</p>
+            <p><b>🛋️ Decorate:</b> Switch modes at the top. Left-click an item to select it and left-drag it freely. Right-drag turns the camera while you decorate.</p>
+            <p><b>🧲 No snapping:</b> Furniture never snaps to a grid, wall, or another item. Pieces can overlap, pass through one another while moving, and keep the exact position where you release them.</p>
+            <p><b>✨ Add furniture:</b> Choose a category and select an item from the tray. New items appear near the runner and become the current selection.</p>
+            <p><b>🎨 Edit a selection:</b> Recolor tintable furniture, rotate it in 15° steps, duplicate it, or remove it. Wall decorations, lamps, and appliances are freely movable too.</p>
+            <p><b>↶ Undo and restore:</b> Undo reverses the last layout edit. Restore starter layout replaces the current arrangement and apartment colors with the original home.</p>
+            <p><b>🧱 Explore collisions:</b> In Explore mode, solid furniture becomes real collision geometry again, so test that hallways and doors remain walkable.</p>
+            <p><b>💾 Permanent home:</b> Furniture positions and wall, trim, and floor colors save automatically on this device and return after reload.</p>
+            <button className="button primary" onClick={closeGuide}>✅ Got it</button>
           </section>
         </div>
       )}

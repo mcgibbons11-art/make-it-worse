@@ -4,6 +4,9 @@ Updated continuously from playtest feedback. New requests are added here before 
 
 ## Fix first
 
+- [x] Add custom-builder hotkeys: Delete removes the selected item, Ctrl/Cmd+C copies it, and Ctrl/Cmd+V pastes it without affecting protected spawn/finish markers or focused form controls.
+- [x] Expand every ? help panel with complete room-specific guidance for the main game, custom build mode, and apartment explore/decorate modes.
+- [x] Turn custom-builder Browse maps into a clear My maps area where locally saved/published custom maps can be viewed, reopened for editing, or played in Test mode.
 - [x] Fix Try Again respawning the runner away from the map/spawn support and immediately dropping them into the void.
 - [x] Add emoji icons to every action on the Try Again failure card and the game-beaten victory popup.
 - [x] Remove snapping from every movable apartment object so furniture follows the pointer freely and does not stick to nearby furniture.

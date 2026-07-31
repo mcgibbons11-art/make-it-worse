@@ -776,6 +776,40 @@ summary:focus-visible {
   font-size: 1rem;
   font-weight: 900;
 }
+.portals-overlay .portals-controls-panel {
+  width: min(760px, 100%);
+}
+.portals-help-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.portals-help-sections article {
+  padding: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: rgba(121, 213, 255, 0.16);
+}
+.portals-help-sections h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.portals-help-sections p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+@media (max-width: 620px) {
+  .portals-help-sections {
+    grid-template-columns: 1fr;
+  }
+  .portals-control {
+    grid-template-columns: 118px 1fr;
+  }
+}
 .portals-map span {
   color: var(--muted);
   font-size: 0.84rem;

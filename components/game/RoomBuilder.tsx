@@ -55,6 +55,34 @@ const PIECES: readonly { asset: BuilderPieceKind; emoji: string; label: string; 
 const BUILDABLE_PIECES = PIECES.filter((entry) => entry.asset !== "spawn" && entry.asset !== "finish");
 const isRequiredEndpoint = (asset: BuilderAsset) => asset === "spawn" || asset === "finish";
 
+export function roomBuilderShortcutAction(
+  event: Pick<KeyboardEvent, "altKey" | "code" | "ctrlKey" | "key" | "metaKey" | "repeat" | "shiftKey">,
+  blocked: boolean,
+): "delete" | "copy" | "paste" | null {
+  if (blocked || event.repeat) return null;
+  if (event.key === "Delete") return "delete";
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.code === "KeyC"
+  ) return "copy";
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.code === "KeyV"
+  ) return "paste";
+  return null;
+}
+
+function isBuilderTextEntry(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable);
+}
+
 const pieceInfo = (asset: BuilderPieceKind) => PIECES.find((entry) => entry.asset === asset)!;
 const defaultColor = (asset: BuilderAsset) => isTrapAsset(asset) ? PALETTE.orange : pieceInfo(asset).color;
 const assetLabel = (asset: BuilderAsset) => isTrapAsset(asset) ? TRAP_CATALOG[trapTypeOf(asset)].displayName : pieceInfo(asset).label;
@@ -455,6 +483,7 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
   const [notice, setNotice] = useState(generated ? "Fresh generated map. Reach the end gate." : "");
   const [testSerial, setTestSerial] = useState(1);
   const [testStartedAt, setTestStartedAt] = useState(() => performance.now());
+  const copiedItem = useRef<RoomItem | null>(null);
   // A custom room has no segment recipe to identify it, so its geometry is the
   // identity. This keeps a published room stable across reloads while making a
   // real edit a new version instead of silently overwriting an older share.
@@ -504,6 +533,51 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     setSelectedUid(null);
   };
   const duplicate = () => { if (!selected || isRequiredEndpoint(selected.asset)) return; const copy = { ...selected, uid: nextUid(), x: selected.x + 0.75, z: selected.z + 0.75 }; save([...items, copy]); setSelectedUid(copy.uid); };
+  useEffect(() => {
+    const onBuilderShortcut = (event: KeyboardEvent) => {
+      if (mode !== "build") return;
+      const action = roomBuilderShortcutAction(event, isBuilderTextEntry(event.target));
+      if (action === "delete") {
+        if (!selected || isRequiredEndpoint(selected.asset)) return;
+        event.preventDefault();
+        AudioManager.click();
+        const next = items.filter((item) => item.uid !== selected.uid);
+        setItems(next);
+        if (!generated) window.localStorage.setItem(STORE_KEY, JSON.stringify(next));
+        setSelectedUid(null);
+        setNotice(`Deleted ${assetLabel(selected.asset)}.`);
+        return;
+      }
+      if (action === "copy") {
+        if (!selected || isRequiredEndpoint(selected.asset)) return;
+        event.preventDefault();
+        AudioManager.click();
+        copiedItem.current = { ...selected };
+        setNotice(`Copied ${assetLabel(selected.asset)}. Press Ctrl/Cmd+V to paste.`);
+        return;
+      }
+      if (action === "paste") {
+        const source = copiedItem.current;
+        if (!source) return;
+        event.preventDefault();
+        AudioManager.click();
+        const copy = {
+          ...source,
+          uid: Math.max(0, ...items.map((item) => item.uid)) + 1,
+          x: source.x + 0.75,
+          z: source.z + 0.75,
+        };
+        const next = [...items, copy];
+        setItems(next);
+        if (!generated) window.localStorage.setItem(STORE_KEY, JSON.stringify(next));
+        copiedItem.current = { ...copy };
+        setSelectedUid(copy.uid);
+        setNotice(`Pasted ${assetLabel(copy.asset)}.`);
+      }
+    };
+    window.addEventListener("keydown", onBuilderShortcut);
+    return () => window.removeEventListener("keydown", onBuilderShortcut);
+  }, [generated, items, mode, selected]);
   const moveItem = (uid: number, x: number, z: number) => {
     const moving = items.find((item) => item.uid === uid);
     if (!moving) return;
@@ -548,6 +622,19 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     const sharedNotice = await onShare(runtime, format, publishedDetails ?? undefined);
     if (sharedNotice) setNotice(sharedNotice);
   };
+  const openSavedMap = (map: PublishedMap, nextMode: "build" | "test", nextStartedAt = 0) => {
+    save(ensureRequiredEndpoints(map.items));
+    setSelectedUid(null);
+    setBrowseOpen(false);
+    setMode(nextMode);
+    if (nextMode === "test") {
+      setTestSerial((value) => value + 1);
+      setTestStartedAt(nextStartedAt);
+      setNotice(`Testing “${map.name}”.`);
+    } else {
+      setNotice(`Editing “${map.name}”. Publish when you want to save a new version.`);
+    }
+  };
   const trapMatches = TRAP_TYPES.filter((type) => TRAP_CATALOG[type].displayName.toLowerCase().includes(query.toLowerCase()));
   return <main className="room-builder">
     {mode === "build" ? <Canvas shadows camera={{ fov: 48, near: 0.05, far: 5000 }} onPointerMissed={() => setSelectedUid(null)}>
@@ -572,10 +659,10 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     {cleanPlay && !cleanReady && <div className="canvas-loading"><span />{cleanError || "Starting clean run…"}</div>}
     {!cleanPlay && <header><div><span className="eyebrow">BUILD YOUR GAME</span></div><nav><button className="button secondary" aria-label="Open free build guide" onClick={() => setGuideOpen(true)}>?</button><button className="button secondary" onClick={onClose}>← Menu</button></nav></header>}
     {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
-    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>🌐 Browse maps</button>{onShare && roomBuilderShareFormats(shareMode).map((format) => <button key={format} disabled={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug} aria-label={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug ? "Copy published map code; publish this version first" : undefined} onClick={() => void share(format)}>{format === "code" ? (shareMode === "codes-only" ? "📋 Copy published map code" : "📋 Copy map code") : "🔗 Copy map link"}</button>)}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
+    {!cleanPlay && <section className="room-builder-tools"><b>{selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={duplicate}>⧉ Copy</button><button disabled={!selected || mode !== "build" || isRequiredEndpoint(selected.asset)} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>📁 My maps</button>{onShare && roomBuilderShareFormats(shareMode).map((format) => <button key={format} disabled={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug} aria-label={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug ? "Copy published map code; publish this version first" : undefined} onClick={() => void share(format)}>{format === "code" ? (shareMode === "codes-only" ? "📋 Copy published map code" : "📋 Copy map code") : "🔗 Copy map link"}</button>)}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
     {!cleanPlay && <p className="room-builder-notice" role="status">{notice}</p>}
-    {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>Place:</b> Pick a game block or trap from the left tray.</p><p><b>Move:</b> Left-drag any placed piece. Spawn and finish can go anywhere and can be moved vertically with Lift/Lower.</p><p><b>Look:</b> Right-drag to turn the camera. Use the mouse wheel to zoom.</p><p><b>Travel:</b> WASD pans the build camera. Q and E move it vertically.</p><p><b>Edit:</b> Select a piece to color, rotate, lift, lower, copy, or remove it. Spawn and finish remain mandatory, so they cannot be copied or removed.</p><p><b>Jump check:</b> A block turns red when the runner cannot reach it from the connected course.</p><p><b>Play it:</b> Choose Test map to run the room with the finished game controls and physics.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>Got it</button></section></div>}
-    {!cleanPlay && browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">COMMUNITY MAPS</div><h2>Browse maps</h2>{published.length === 0 ? <p>No maps have been published in this build yet.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><button onClick={() => { save(ensureRequiredEndpoints(map.items)); setMode("test"); setBrowseOpen(false); setNotice(`Testing “${map.name}”.`); }}>Play</button></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
+    {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>🏁 Required markers:</b> Every map always has one spawn marker and one end gate. Drag or lift them wherever you want; they are visible only while building and cannot be copied or deleted.</p><p><b>🧱 Add assets:</b> Choose a main-game block or any trap from the left tray. Blocks can use custom colors. Traps always keep their authored base colors.</p><p><b>🖱️ Select and move:</b> Left-click an object to select it, then left-drag it through the room. Moving one object never selects or moves an object underneath it.</p><p><b>🎥 Camera:</b> Right-drag to turn the build camera and use the mouse wheel to zoom. WASD pans across the room; Q/E move the camera vertically.</p><p><b>↕️ Build vertically:</b> Lift and Lower move the selected object in 0.25-unit steps. Rotate turns it 90°. You can stack routes and build above or below the starting floor.</p><p><b>📋 Copy and delete:</b> Ctrl/Cmd+C copies the selected object; Ctrl/Cmd+V pastes a new offset copy. Delete removes the selection. The on-screen Copy and Remove buttons do the same jobs.</p><p><b>⚠️ Jump check:</b> A block turns red when the conservative reach check says it is too far or too high from the connected route. The warning is intentionally about 20% stricter than the theoretical maximum jump.</p><p><b>▶ Test map:</b> Test mode hides the spawn marker and runs the map with the finished game&apos;s movement, camera, physics, traps, falls, and end gate. Choose Keep building to return without losing the draft.</p><p><b>📁 My maps:</b> Open a map you published on this device. Edit loads it into the current draft; Play opens it directly in Test mode.</p><p><b>📤 Publish and share:</b> Publish saves an exact named version. In Portals, copy its map code and give that code to another player; public published maps are eligible for Trending and keep their own room leaderboard.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>✅ Got it</button></section></div>}
+    {!cleanPlay && browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">YOUR CUSTOM MAPS</div><h2>My maps</h2><p>Maps you published on this device. Edit loads one into your current draft; publish again when you want to save the changed version.</p>{published.length === 0 ? <p>No saved maps yet. Publish your current draft to add it here.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}</small></div><div className="room-builder-map-actions"><button onClick={() => openSavedMap(map, "build")}>✏️ Edit</button><button onClick={() => openSavedMap(map, "test", performance.now())}>▶ Play</button></div></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}
     {!cleanPlay && publishOpen && <div className="room-builder-browser"><section className="room-builder-publish" role="dialog" aria-modal="true" aria-labelledby="builder-publish-title"><div className="eyebrow">PUBLISH MAP</div><h2 id="builder-publish-title">Share this version</h2><label>Title<input value={publishTitle} maxLength={80} onChange={(event) => setPublishTitle(event.target.value)} autoFocus /></label><label>Description<textarea value={publishDescription} maxLength={280} rows={3} onChange={(event) => setPublishDescription(event.target.value)} placeholder="What kind of disaster is this?" /></label>{shareMode === "codes-only" ? <p>Publishing saves this exact version, shares it with the current Portals session, and copies its map code for players in another session.</p> : <label>Who can open it?<select value={publishVisibility} onChange={(event) => setPublishVisibility(event.target.value as BuilderPublishDetails["visibility"])}><option value="public">Public · eligible for Trending</option><option value="unlisted">Unlisted · link only</option><option value="private">Private · only me</option></select></label>}<div className="room-builder-publish-actions"><button className="button secondary" disabled={publishBusy} onClick={() => setPublishOpen(false)}>Cancel</button><button className="button primary" disabled={publishBusy || publishTitle.trim().length < 2} onClick={() => void publish()}>{publishBusy ? "Publishing…" : shareMode === "codes-only" ? "Publish & copy code" : "Publish version"}</button></div></section></div>}
   </main>;
 }

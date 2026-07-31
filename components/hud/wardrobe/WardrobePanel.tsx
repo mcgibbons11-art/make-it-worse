@@ -20,7 +20,6 @@ import {
   isSlotFilled,
   normalizeAvatar,
   randomAvatar,
-  usableColors,
 } from "@/lib/game/avatar";
 import type {
   AvatarColorId,
@@ -207,8 +206,8 @@ export function WardrobePanel({
         aria-modal="true"
         aria-labelledby="avatar-title"
       >
-        {/* Stood on the exact deck colour that hides runners best, so the
-            measured ratio below it is something you can also just look at. */}
+          {/* Keep the course-like preview ground as useful visual context, but
+              never use it to restrict the player's colour choices. */}
         <div className="avatar-stage" style={{ background: bodyReading.worstDeck }}>
           {previewEnabled ? (
             <RunnerPreviewBoundary>
@@ -246,7 +245,7 @@ export function WardrobePanel({
           )}
           {previewEnabled && <small className="avatar-turn-hint">Drag the runner to turn them</small>}
           <p className="avatar-reading">
-            {bodyReading.min < 3 ? "Low contrast on pale floors" : "Readable on pale floors"}
+            All avatar colors available
           </p>
         </div>
         {/* A grid item defaults to min-height:auto, which is tall enough for
@@ -275,7 +274,7 @@ export function WardrobePanel({
           <div className="panel-kicker">THIS ONE IS YOURS</div>
           <h2 id="avatar-title">Build your runner</h2>
           <p className="avatar-lede">
-            Whoever you send this to plays as your runner. Nine slots and{" "}
+            Whoever you send this to plays as your runner. Ten slots and{" "}
             {WARDROBE_ITEM_COUNT} garments, all of them on the figure beside you
             as you pick them.
           </p>
@@ -293,8 +292,7 @@ export function WardrobePanel({
               focusFirst={firstControl}
             />
             <p className="avatar-note">
-              Bright swatches that would disappear against the course are
-              unavailable. Pick any outlined colour and your runner stays easy to see.
+              Every color is available. Pick the runner you actually want.
             </p>
           </fieldset>
 
@@ -346,13 +344,9 @@ export function WardrobePanel({
             </div>
             <p className="avatar-note">{slot.note}</p>
             {colorKey && isSlotFilled(draft, slot.id) && (
-              // Only the colours this slot can legibly take, unlike the body
-              // above, which shows its refusals with the ratio that caused
-              // them. The rule is worth showing once; showing it again in all
-              // seven garment slots would just be seven dead swatches.
               <ColorRow
                 name={`avatar-${slot.id}-color`}
-                offered={usableColors(colorKey, draft.body)}
+                offered={AVATAR_COLORS}
                 chosen={draft.colors[colorKey]}
                 against="the floor"
                 body={draft.body}

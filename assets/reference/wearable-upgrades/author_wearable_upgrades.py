@@ -86,15 +86,18 @@ function tank(root: THREE.Group) {
 }
 
 function quilted(root: THREE.Group, vest: boolean) {
-  // A continuous under-shell prevents the old open gaps between baffles.
+  // A continuous under-shell prevents open gaps, while rounded torus volumes
+  // create the padded silhouette. Hair-thin seam rings on a smooth cylinder
+  // read as an ordinary vest with lines painted on it, not quilted outerwear.
   const shell = mesh(new THREE.CylinderGeometry(0.255, 0.285, 0.49, 24, 5, true), "main", vest ? "vest-shell" : "puffer-shell", [0, 0.069, 0]);
   shell.scale.z = vest ? 0.82 : 0.86;
   add(root, shell);
-  for (const [index, y] of [-0.13, -0.035, 0.06, 0.155, 0.25].entries()) {
+  const baffleYs = [-0.13, -0.035, 0.06, 0.155, 0.25];
+  for (const [index, y] of baffleYs.entries()) {
     if (vest && index === 4) continue;
-    // Fine piping reads as stitched baffles without turning the torso into a
-    // stack of detached hoops at gameplay scale.
-    add(root, ring(0.270 - index * 0.005, 0.0045, "trim", `${vest ? "vest" : "puffer"}-seam-${index}`, y, vest ? 0.82 : 0.86));
+    add(root, ring(0.248 - index * 0.004, 0.034, "main", `${vest ? "vest" : "puffer"}-baffle-${index}`, y, vest ? 0.82 : 0.86));
+    if (index < baffleYs.length - 1)
+      add(root, ring(0.262 - index * 0.004, 0.006, "trim", `${vest ? "vest" : "puffer"}-seam-${index}`, y + 0.0475, vest ? 0.82 : 0.86));
   }
   const zipper = mesh(box(0.028, 0.455, 0.03, 0.008), "trim", `${vest ? "vest" : "puffer"}-zip`, [0, 0.06, 0.235]);
   add(root, zipper);
@@ -127,7 +130,9 @@ function sandal(root: THREE.Group) {
 }
 
 function kilt(root: THREE.Group) {
-  const skirt = mesh(new THREE.CylinderGeometry(0.275, 0.205, 0.255, 24, 3, true), "main", "kilt-skirt", [0, -0.0025, 0]);
+  // CylinderGeometry takes top radius first. The old order made the kilt taper
+  // inward toward its hem; the wider second radius gives it the expected flare.
+  const skirt = mesh(new THREE.CylinderGeometry(0.205, 0.275, 0.255, 24, 3, true), "main", "kilt-skirt", [0, -0.0025, 0]);
   skirt.scale.z = 0.78;
   add(root, skirt, ring(0.205, 0.018, "trim", "kilt-waist", 0.125, 0.78));
   for (let index = 0; index < 8; index += 1) {

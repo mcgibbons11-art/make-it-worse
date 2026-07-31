@@ -8,7 +8,11 @@ import type {
   HazardContact,
   TrapPlacementInput,
 } from "@/lib/game/types";
-import { placementSurfaces, validatePlacement } from "@/lib/game/placement";
+import {
+  placementSurfaces,
+  surfaceSupportYAt,
+  validatePlacement,
+} from "@/lib/game/placement";
 import { GRID_SIZE } from "@/lib/game/constants";
 import { isInterfaceTarget, resetCameraYaw } from "@/lib/game/input";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
@@ -120,10 +124,17 @@ export function GameScene({
     if (validation?.valid) return validation.canonicalPosition;
     const surface = surfaces.find((entry) => entry.id === placement.zoneId);
     if (!surface) return null;
+    const x = (surface.minX + surface.maxX) / 2 + snapToGrid(placement.offsetX);
+    const z = (surface.minZ + surface.maxZ) / 2 + snapToGrid(placement.offsetZ);
     return [
-      (surface.minX + surface.maxX) / 2 + snapToGrid(placement.offsetX),
-      surface.groundY,
-      (surface.minZ + surface.maxZ) / 2 + snapToGrid(placement.offsetZ),
+      x,
+      surfaceSupportYAt(
+        surface,
+        x,
+        z,
+        TRAP_CATALOG[placement.type].placementRadius * 0.5,
+      ),
+      z,
     ] as const;
   }, [placement, validation, surfaces]);
   const [placementDragging, setPlacementDragging] = useState(false);
@@ -291,7 +302,6 @@ export function GameScene({
         <>
           <PlacementZones
             selectedZoneId={placement.zoneId}
-            traps={challenge.traps}
             track={track}
             refusal={validation && !validation.valid ? validation.message : null}
             held={previewPosition}

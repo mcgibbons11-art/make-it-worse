@@ -70,7 +70,6 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { useProgressionStore } from "@/stores/progression-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import { musicSceneForPhase } from "@/lib/audio/music";
-import { resolveAvatar } from "@/lib/game/avatar";
 import {
   connect,
   fetchClearTimes,
@@ -1559,10 +1558,6 @@ export function PortalsApp() {
                 of them. WardrobePanel deliberately knows nothing about either
                 app's stores, so it mounts here on this edition's own state. */}
             <button className="button secondary" onClick={() => setWardrobeOpen(true)}>
-              <span
-                className="avatar-launcher-chip"
-                style={{ background: resolveAvatar(settings.avatar, challenge.createdByAvatarSeed).bodyColor }}
-              />
               {settings.avatar ? "🎨 Edit your runner" : "🎨 Make your runner"}
             </button>
             <button className="button secondary" onClick={quitToTitle}>

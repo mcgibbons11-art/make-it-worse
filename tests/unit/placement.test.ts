@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { placementFromWorld, placementSurfaces, snapToGrid, surfaceAt, validatePlacement } from "@/lib/game/placement";
+import {
+  placementFromWorld,
+  placementSurfaces,
+  snapToGrid,
+  surfaceAt,
+  surfaceGroundYAt,
+  validatePlacement,
+} from "@/lib/game/placement";
 import { PLAYER } from "@/lib/game/constants";
 import { ZONE_MAP, zoneCenter } from "@/lib/game/level-definition";
 import type { TrapInstance } from "@/lib/game/types";
+import type { BuiltTrack } from "@/lib/game/track";
 
 // Standing on the middle of runway_front, which is where a zero-offset
 // placement lands. Derived rather than written out: this was the literal
@@ -65,6 +73,41 @@ describe("placement", () => {
     // zone id, so this exact call returned outside_zone before.
     expect(validatePlacement({ type: "soap_slick", zoneId: "bridge", offsetX: 0, offsetZ: 0, rotationQuarterTurns: 0 }, []))
       .toMatchObject({ valid: true });
+  });
+
+  it("seats an upright trap above the real top plane of a ramp", () => {
+    const track: BuiltTrack = {
+      pieces: [{
+        id: "test-ramp",
+        center: [0, 0, 5],
+        size: [4, 0.6, 4],
+        rotationX: -0.2,
+        color: "#ffd84d",
+      }],
+      zones: [],
+      spawn: [20, 2, 20],
+      exit: [-20, 2, -20],
+      length: 10,
+    };
+    const surface = placementSurfaces(track)[0]!;
+    const centerZ = (surface.minZ + surface.maxZ) / 2;
+    const low = validatePlacement(
+      { type: "soap_slick", zoneId: surface.id, offsetX: 0, offsetZ: -1, rotationQuarterTurns: 0 },
+      [],
+      track,
+    );
+    const high = validatePlacement(
+      { type: "soap_slick", zoneId: surface.id, offsetX: 0, offsetZ: 1, rotationQuarterTurns: 0 },
+      [],
+      track,
+    );
+    expect(low.valid).toBe(true);
+    expect(high.valid).toBe(true);
+    if (!low.valid || !high.valid) return;
+    expect(high.canonicalPosition[1]).toBeGreaterThan(low.canonicalPosition[1]);
+    expect(high.canonicalPosition[1]).toBeGreaterThan(
+      surfaceGroundYAt(surface, high.canonicalPosition[0], centerZ + 1),
+    );
   });
 
   it("measures dodge room for a sweep instead of reading the surface's name", () => {

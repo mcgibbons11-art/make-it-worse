@@ -7,14 +7,13 @@ import * as THREE from "three";
 import {
   placementGrabOffset,
   placementSurfaces,
+  surfaceGroundYAt,
   type PlacementSurface,
 } from "@/lib/game/placement";
 import type { BuiltTrack } from "@/lib/game/track";
-import type { TrapInstance } from "@/lib/game/types";
 
 interface Props {
   selectedZoneId: string | null;
-  traps: readonly TrapInstance[];
   /** The challenge's own course, so every piece of it is placeable. */
   track: BuiltTrack;
   /** Why the spot under the cursor is refused, or null while it is fine. */
@@ -82,14 +81,29 @@ function SurfacePatch({
   onMove(id: string, worldX: number, worldZ: number): void;
   onDragActiveChange(active: boolean): void;
 }) {
-  const width = surface.maxX - surface.minX;
-  const depth = surface.maxZ - surface.minZ;
-  const x = (surface.minX + surface.maxX) / 2;
-  const z = (surface.minZ + surface.maxZ) / 2;
-  const dragY = surface.groundY + 0.105;
+  const width = surface.topFace?.size[0] ?? surface.maxX - surface.minX;
+  const depth = surface.topFace?.size[1] ?? surface.maxZ - surface.minZ;
+  const x = surface.topFace?.center[0] ?? (surface.minX + surface.maxX) / 2;
+  const z = surface.topFace?.center[2] ?? (surface.minZ + surface.maxZ) / 2;
+  const normal = useMemo(
+    () => surface.plane?.normal ?? ([0, 1, 0] as const),
+    [surface.plane],
+  );
+  const deckY = surface.topFace?.center[1] ?? surface.groundY;
+  const dragPosition = useMemo(
+    () => [
+      x + normal[0] * 0.105,
+      deckY + normal[1] * 0.105,
+      z + normal[2] * 0.105,
+    ] as const,
+    [deckY, normal, x, z],
+  );
   const dragPlane = useMemo(
-    () => new THREE.Plane(new THREE.Vector3(0, 1, 0), -dragY),
-    [dragY],
+    () => new THREE.Plane().setFromNormalAndCoplanarPoint(
+      new THREE.Vector3(...normal),
+      new THREE.Vector3(...dragPosition),
+    ),
+    [dragPosition, normal],
   );
   const dragPoint = useMemo(() => new THREE.Vector3(), []);
   const activePointer = useRef<number | null>(null);
@@ -115,7 +129,8 @@ function SurfacePatch({
   // of the artwork so the whole top face is one uninterrupted target.
   return (
     <group
-      position={[x, dragY, z]}
+      position={dragPosition}
+      rotation={surface.topFace?.rotation ?? [0, 0, 0]}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         event.stopPropagation();
@@ -185,7 +200,6 @@ function SurfacePatch({
 
 export function PlacementZones({
   selectedZoneId,
-  traps,
   track,
   refusal,
   held,
@@ -223,7 +237,11 @@ export function PlacementZones({
         <group
           position={[
             (selected.minX + selected.maxX) / 2,
-            selected.groundY + 0.055,
+            surfaceGroundYAt(
+              selected,
+              (selected.minX + selected.maxX) / 2,
+              (selected.minZ + selected.maxZ) / 2,
+            ) + 0.055,
             (selected.minZ + selected.maxZ) / 2,
           ]}
         >
@@ -233,7 +251,7 @@ export function PlacementZones({
               thing they need to know to move it somewhere better. */}
           <Html position={[0, 2.35, 0]} center style={{ pointerEvents: "none" }}>
             <span className={refusal ? "zone-label is-refused" : "zone-label"}>
-              {refusal ?? `${traps.length} placed · drop it anywhere on the floor`}
+              {refusal ?? "Left-click + drag to move · click, then WASD to nudge"}
             </span>
           </Html>
         </group>

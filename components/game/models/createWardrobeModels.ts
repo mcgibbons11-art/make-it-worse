@@ -214,20 +214,15 @@ function trimOf(main: string): THREE.Color {
  * Where a garment's colours come from, which is not where a prop's come from.
  *
  * `main` arrives already resolved from AVATAR_COLORS in avatar.ts, and that is
- * the authority for anything worn. It is not a stale copy of PALETTE: a garment
- * is judged against the pale wash of the deck the runner stands on - the floor
- * is washed 62% toward cream - and every saturated palette hue is under the 3:1
- * that gate demands, blue at 2.22 and green at 1.16. So a garment colour may
- * never be reached for out of PALETTE, however well the name matches. The note
- * above AVATAR_COLORS carries the measurements and avatar.test.ts pins them.
+ * the authority for anything worn. Every swatch is allowed; the runner's ink
+ * silhouette supplies gameplay readability without changing the chosen hue.
  *
  * PALETTE is still right for the fixed roles below, because ink and cream are
  * shared by both lists and neither is a colour a player can choose.
  *
- * The boundary is the contrast gate, not whether a part is cloth. The jetpack's
- * body and the boot's sole look like props strapped to a runner, but they sit
- * in gated slots, so they take the wearer's colour rather than the dark navy
- * the hand-authored props use.
+ * The jetpack's body and the boot's sole look like props strapped to a runner,
+ * but they sit in player-coloured slots, so they take the wearer's colour
+ * rather than the dark navy the hand-authored props use.
  */
 function makePalette(main: string, skinColor: string): Record<WardrobeTint, THREE.Material> {
   const cloth = (color: THREE.ColorRepresentation) =>
@@ -1424,14 +1419,13 @@ function outerCollarParts(id: AvatarOuterwearId): THREE.Object3D[] {
 // --- Legwear ----------------------------------------------------------------
 
 /**
- * The cream waistband the shorts, joggers and jeans references all share.
- *
- * It shares the trouser's own top rather than reaching above it, so adding one
- * can never lift the waist into the shirt hem.
+ * A low-profile waistband carried by each leg. Its geometry still gives the
+ * trouser a readable gathered edge, but it uses the trouser color instead of a
+ * bright cream stripe that looked like exposed skin/a gap at the groin.
  */
 function waistband(side: -1 | 1): THREE.Mesh {
   const band = limbSleeve(LEG, side, -0.02, 0.09, legRadius(0) + 0.019, legRadius(0.09) + 0.019);
-  band.userData["wardrobeTint"] = "cream";
+  band.userData["wardrobeTint"] = "main";
   return band;
 }
 
@@ -1548,7 +1542,9 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
 /**
  * A shared waist joins the two animated leg shells into one believable pair
  * of trousers. It rides the pelvis, not either leg, so it stays centred while
- * the stride swings underneath it and overlaps the shirt hem by 0.018u.
+ * the stride swings underneath it. The deeper overlap is intentional: the old
+ * shallow yoke exposed a horizontal body-colored bar between many tops and
+ * pants once the animated torso and pelvis twisted in opposite directions.
  */
 function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
   if (id === "kneepads" || id === "none") return [];
@@ -1556,41 +1552,43 @@ function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
     return [createWearableUpgradeModel("kilt")];
   }
   if (id === "tights") {
-    const fitted = part(new THREE.CylinderGeometry(0.178, 0.19, 0.105, 24), "main", {
+    const fitted = part(new THREE.CylinderGeometry(0.176, 0.19, 0.17, 24), "main", {
       x: 0,
-      y: 0.0525,
+      y: 0.085,
       z: 0,
     });
     fitted.scale.z = 0.75;
     const band = part(new THREE.TorusGeometry(0.179, 0.01, 5, 24), "trim", {
       x: 0,
-      y: 0.108,
+      y: 0.17,
       z: 0,
     });
+    band.userData["wardrobeTint"] = "main";
     band.rotation.x = Math.PI / 2;
     band.scale.z = 0.75;
     return [fitted, band];
   }
-  const yoke = part(new THREE.CylinderGeometry(0.19, 0.205, 0.13, 20), "main", {
+  const yoke = part(new THREE.CylinderGeometry(0.176, 0.205, 0.18, 20), "main", {
     x: 0,
-    y: 0.065,
+    y: 0.09,
     z: 0,
   });
   yoke.scale.z = 0.78;
   const waistband = part(new THREE.TorusGeometry(0.19, 0.016, 6, 20), "trim", {
     x: 0,
-    y: 0.13,
+    y: 0.18,
     z: 0,
   });
+  waistband.userData["wardrobeTint"] = "main";
   waistband.rotation.x = Math.PI / 2;
   waistband.scale.z = 0.78;
   return [yoke, waistband];
 }
 
 function overallLowerParts(): THREE.Object3D[] {
-  const yoke = part(new THREE.CylinderGeometry(0.195, 0.205, 0.14, 20), "main", {
+  const yoke = part(new THREE.CylinderGeometry(0.176, 0.205, 0.18, 20), "main", {
     x: 0,
-    y: 0.06,
+    y: 0.09,
     z: 0,
   });
   yoke.scale.z = 0.8;
@@ -1734,7 +1732,15 @@ function footwearFootParts(id: AvatarFootwearId): THREE.Object3D[] {
       return [sole, ...wheels];
     }
     case "socks":
-      return [];
+      // Socks replace the shoe. Repaint the rounded bare-foot geometry into the
+      // selected sock color so this is a covered foot, not a sole-less stock
+      // sneaker left under a calf sleeve.
+      const sockFoot = createWearableUpgradeModel("barefoot");
+      sockFoot.traverse((node) => {
+        if (node.userData["wardrobeTint"] === "skin")
+          node.userData["wardrobeTint"] = "main";
+      });
+      return [sockFoot];
   }
 }
 
@@ -1988,12 +1994,12 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         ]);
     // A tank top has cut armholes by definition. The generic shoulder caps
     // turned it back into a T-shirt and were the source of its floating hoop.
-    if (look.top !== "tank")
+    if (look.top !== "tank" && look.top !== "overalls")
       for (const [socket] of SHOULDER_SOCKETS)
         add(socket, `topShoulder:${look.top}`, () => [
           shoulderPad(0.092, "main", SHOULDER_BANDS[look.top]),
         ]);
-    if (look.top === "overalls" && look.legwear === "none") {
+    if (look.top === "overalls") {
       add(SOCKETS.pelvis, "topPelvis:overalls", overallLowerParts);
       for (const [socket, side] of LEG_SOCKETS)
         add(socket, `topOverallLeg:overalls:${side}`, () => [
@@ -2016,7 +2022,9 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         ]);
   }
 
-  if (look.legwear !== "none") {
+  // Overalls own their lower half. Keep a separately selected legwear choice in
+  // the serialized avatar, but do not stack it through the overall trousers.
+  if (look.legwear !== "none" && look.top !== "overalls") {
     add(SOCKETS.pelvis, `legwearPelvis:${look.legwear}`, () => pelvisLegwearParts(look.legwear));
     if (look.legwear !== "kilt")
       for (const [socket, side] of LEG_SOCKETS)

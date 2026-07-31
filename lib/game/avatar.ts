@@ -6,18 +6,15 @@
 // level, then send it on", the runner your friend watches is the one thing
 // worth owning, and it was the one thing nobody could pick.
 //
-// It is now a wardrobe: nine slots of code-authored garments, catalogued in
+// It is now a wardrobe: ten slots of code-authored garments, catalogued in
 // wardrobe.ts, dressed onto the runner rig by createWardrobeModels.ts, and
 // coloured from the palette below. This file owns the parts that have to be
-// right rather than merely present - which colours are legible, which
-// combinations are refused, and how a whole outfit survives a URL.
+// right rather than merely present - including how every authored colour and a
+// whole outfit survive a URL.
 //
-// Legibility is measured, not asserted. LevelGeometry paints each platform's
-// walking surface as that platform's own colour washed 62% toward cream, so the
-// deck is a pale tint of whatever hue the segment uses. A mid-tone runner on a
-// pale tint of its own hue is a runner you cannot see, and every one of the four
-// legacy colours lands there: green measures 1.16:1 against the palest deck.
-// The palette below is the same hues taken deep enough to clear 3:1.
+// Every authored colour is selectable. Player expression is never rejected
+// because it resembles a level surface; PlayerVisual supplies an invariant ink
+// outline so pale choices still have a readable silhouette during a run.
 
 import { PALETTE } from "./constants";
 import { TRACK_SEGMENTS } from "./track";
@@ -168,30 +165,11 @@ export interface AvatarSwatch {
   hex: string;
 }
 
-// Deep enough to clear MIN_CONTRAST against every walking surface in the game,
-// and still far enough from the ink outline capsule that the figure keeps
-// internal form rather than reading as one dark blob.
-//
 // Order is append-only: a challenge link stores a colour as its index here, so
 // the first nine entries are the original palette in its original order and
 // every later addition goes on the end.
-//
-// Deep red is absent by rule rather than by taste. PALETTE.danger marks ground
-// a hazard can reach, and a runner wearing it would unteach the one colour in
-// the game that means "this hurts". MIN_DANGER_DISTANCE below turns that from
-// an intention into something a test can fail on.
-//
-// This list is deliberately NOT PALETTE, and the difference is not an oversight
-// to be tidied away. PALETTE's hues are picked to sit on a level under sky; a
-// garment is judged against the pale wash of the floor the runner is standing
-// on, which is a stricter bar, and every saturated palette hue fails it:
-// blue measures 2.22:1, purple 2.44, red 2.08, orange 1.45 and green 1.16,
-// against the 3.0 of MIN_CONTRAST. Only ink, cream, butter and slate are shared
-// with PALETTE, and cream and butter are carried here refused, for the straps.
-// So a swatch cannot be repainted to "the palette version" of its name without
-// the contrast gate then refusing it - which for cobalt, the default top,
-// would strip the top off every runner who never opened the wardrobe.
-// avatar.test.ts measures this rather than trusting the paragraph.
+// This list remains deliberately separate from PALETTE: these are stable player
+// choices encoded in saved runners and challenge links, not environment roles.
 export const AVATAR_COLORS: readonly AvatarSwatch[] = [
   { id: "violet", label: "Violet", hex: "#7963df" },
   { id: "cobalt", label: "Cobalt", hex: "#3e74d3" },
@@ -215,10 +193,7 @@ export const AVATAR_COLORS: readonly AvatarSwatch[] = [
   { id: "blush", label: "Blush", hex: "#d98aa0" },
 ];
 
-// Cream, butter and blush are in the list for the straps, where the torso frames
-// them. They are offered everywhere else too, and refused there with the
-// measured ratio, because "you would disappear into the floor" is worth showing
-// once rather than hiding behind a shorter list.
+// No entry is gated by body, garment, or course colour.
 
 const COLOR_MAP = new Map(AVATAR_COLORS.map((entry) => [entry.id, entry]));
 
@@ -537,45 +512,17 @@ export interface AvatarRejection {
 }
 
 /**
- * Why a colour cannot fill a slot, or null when it can.
- *
- * Everything the floor sees is measured against the walking surfaces: the body,
- * and every garment that paints a contiguous region of the runner. That is the
- * silhouette a player tracks while judging a gap, and a backpack is in it too,
- * because the chase camera sits behind the runner and the pack is the nearest
- * thing to it.
- *
- * The straps are the exception, and are measured against the body instead. They
- * are two 0.06-wide cords on the FRONT of a 0.52-wide torso, so from the chase
- * camera the torso hides them from the floor entirely. Which slot a colour
- * suits therefore depends on the body already chosen, and the strap list
- * changes as the body changes.
+ * Kept as an API boundary for old decoders and diagnostics. Avatar colours are
+ * now player expression, not a gameplay restriction: every authored swatch is
+ * valid in every slot, even when it resembles a course surface or another part.
  */
 export function colorRejection(
-  slot: ColorSlot,
-  id: AvatarColorId,
-  body: AvatarColorId,
-): AvatarRejection | null {
-  const hex = avatarColor(id);
-  // Hair is a small high-mounted detail rather than part of the silhouette a
-  // player tracks against the deck, so every authored swatch remains
-  // available. This is the one wardrobe slot intended as unrestricted color
-  // expression rather than a gameplay-readability surface.
-  if (slot === "hair") return null;
-  if (slot === "pack") {
-    const bodyHex = avatarColor(body);
-    const ratio = contrastRatio(hex, bodyHex);
-    if (ratio >= MIN_CONTRAST) return null;
-    return {
-      slot,
-      ratio,
-      against: bodyHex,
-      reason: "vanishes into the body",
-    };
-  }
-  const { min, worstDeck } = deckContrast(hex);
-  if (min >= MIN_CONTRAST) return null;
-  return { slot, ratio: min, against: worstDeck, reason: "vanishes into the floor" };
+  _slot: ColorSlot,
+  _id: AvatarColorId,
+  _body: AvatarColorId,
+): AvatarRejection | null;
+export function colorRejection(): AvatarRejection | null {
+  return null;
 }
 
 /**
@@ -596,13 +543,7 @@ export function colorRejection(
  * restyled to force it through - and AVATAR_COLORS keeps its order, so the
  * index a challenge link encodes still means the same colour.
  */
-export const PACK_COLORS: readonly AvatarSwatch[] = AVATAR_COLORS.filter((pack) =>
-  AVATAR_COLORS.some(
-    (body) =>
-      !colorRejection("body", body.id, body.id) &&
-      !colorRejection("pack", pack.id, body.id),
-  ),
-);
+export const PACK_COLORS: readonly AvatarSwatch[] = AVATAR_COLORS;
 
 /**
  * The first thing wrong with a whole outfit, or null when it is wearable.
@@ -612,22 +553,9 @@ export const PACK_COLORS: readonly AvatarSwatch[] = AVATAR_COLORS.filter((pack) 
  * with no visible cause.
  */
 export function avatarRejection(
-  config: Partial<AvatarConfig> | null | undefined,
-): AvatarRejection | null {
-  const full = normalizeAvatar(config);
-  const body = colorRejection("body", full.body, full.body);
-  if (body) return body;
-  const pack = colorRejection("pack", full.pack, full.body);
-  if (pack) return pack;
-  for (const slot of WARDROBE_SLOTS) {
-    if (!slot.colorKey || !isSlotFilled(full, slot.id)) continue;
-    const rejection = colorRejection(
-      slot.colorKey,
-      full.colors[slot.colorKey],
-      full.body,
-    );
-    if (rejection) return rejection;
-  }
+  _config: Partial<AvatarConfig> | null | undefined,
+): AvatarRejection | null;
+export function avatarRejection(): AvatarRejection | null {
   return null;
 }
 
@@ -640,10 +568,11 @@ export function isReadableAvatar(
 
 /** Every colour that can fill a slot, given the body already chosen. */
 export function usableColors(
-  slot: ColorSlot,
-  body: AvatarColorId,
-): readonly AvatarSwatch[] {
-  return AVATAR_COLORS.filter((entry) => !colorRejection(slot, entry.id, body));
+  _slot: ColorSlot,
+  _body: AvatarColorId,
+): readonly AvatarSwatch[];
+export function usableColors(): readonly AvatarSwatch[] {
+  return AVATAR_COLORS;
 }
 
 /**

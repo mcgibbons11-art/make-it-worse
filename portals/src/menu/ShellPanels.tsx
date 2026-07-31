@@ -355,7 +355,7 @@ export function ControlsPanel({
         </article>
         <article>
           <h3>🪤 Make it worse</h3>
-          <p>Beat a room to choose one trap. Drag it anywhere on a real block, rotate it if needed, and add it only when the placement message is green. Traps keep their authored colors.</p>
+          <p>Beat a room to choose one trap. Left-click and drag it anywhere on a real block, or click it and use WASD/arrow keys for precise nudges. Rotate it if needed and add it only when the placement message is green. Traps keep their authored colors.</p>
         </article>
         <article>
           <h3>📥 Open other maps</h3>

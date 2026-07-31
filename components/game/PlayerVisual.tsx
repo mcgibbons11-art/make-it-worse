@@ -126,7 +126,10 @@ export function dressRunner(
   // outfit hiding below every wardrobe option.
   clone.getObjectByName("Shoulder cap left__pivot")?.removeFromParent();
   clone.getObjectByName("Shoulder cap right__pivot")?.removeFromParent();
-  const showPackStraps = look.backpack !== "none";
+  // The baked shoulder straps belong to the daypack, not to every object that
+  // happens to occupy the Back slot. They looked like unrelated base gear over
+  // capes, wings, bedrolls, and jetpacks.
+  const showPackStraps = look.backpack === "daypack";
   const leftPackStrap = clone.getObjectByName("Backpack strap left__pivot");
   const rightPackStrap = clone.getObjectByName("Backpack strap right__pivot");
   if (leftPackStrap) leftPackStrap.visible = showPackStraps;
@@ -140,7 +143,7 @@ export function dressRunner(
   // Sandals are complete replacements with an authored foot, footbed and
   // straps. Leaving the baked closed sneaker underneath made them closed shoes
   // with bars laid over the top.
-  if (look.footwear === "none" || look.footwear === "sandal") {
+  if (["none", "sandal", "socks"].includes(look.footwear)) {
     const leftStockShoe = clone.getObjectByName("Sneaker left");
     const rightStockShoe = clone.getObjectByName("Sneaker right");
     if (leftStockShoe) leftStockShoe.visible = false;
@@ -178,6 +181,7 @@ export function dressRunner(
       next.depthWrite = false;
       mesh.material = next;
     });
+  else addInkOutline(clone);
   return clone;
 }
 
@@ -227,6 +231,35 @@ const SIDES = [0, 1] as const;
  */
 const BODY_MATERIAL = "torso-purple";
 const PACK_MATERIAL = "strap-coral";
+
+const RUNNER_OUTLINE_MATERIAL = new THREE.MeshBasicMaterial({
+  color: PALETTE.ink,
+  side: THREE.BackSide,
+  toneMapped: false,
+});
+
+/**
+ * Every player color remains selectable, including Cream and Butter. A thin
+ * invariant ink shell keeps those pale bodies and garments readable against a
+ * similarly pale course without taking the colors away from the player.
+ */
+function addInkOutline(root: THREE.Object3D) {
+  const meshes: THREE.Mesh[] = [];
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (mesh.isMesh && mesh.visible && !mesh.name.endsWith("__ink-outline"))
+      meshes.push(mesh);
+  });
+  for (const mesh of meshes) {
+    const outline = new THREE.Mesh(mesh.geometry, RUNNER_OUTLINE_MATERIAL);
+    outline.name = `${mesh.name || "runner-part"}__ink-outline`;
+    outline.scale.setScalar(1.035);
+    outline.raycast = () => undefined;
+    outline.castShadow = false;
+    outline.receiveShadow = false;
+    mesh.add(outline);
+  }
+}
 
 function materialId(material: THREE.Material): string | null {
   const sculpt = (material.userData as { sculptMaterial?: { id?: string } } | undefined)

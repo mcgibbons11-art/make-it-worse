@@ -28,14 +28,12 @@ import {
 import {
   AVATAR_COLORS,
   DEFAULT_AVATAR,
-  MIN_CONTRAST,
   MIN_DANGER_DISTANCE,
   WARDROBE_SLOTS,
   avatarFromCode,
   avatarToCode,
   colorDistance,
   colorRejection,
-  deckContrast,
   normalizeAvatar,
   randomAvatar,
   resolveAvatar,
@@ -247,6 +245,85 @@ describe("dressing a runner", () => {
       .toBeGreaterThan(0);
     expect(dressRunner({ ...DEFAULT_AVATAR, headwear: "cap" }, 1)
       .getObjectByName("Hair cap__pivot")?.visible).toBe(false);
+  });
+
+  it("keeps every player color readable with an invariant ink silhouette", () => {
+    const cream = dressRunner({ ...DEFAULT_AVATAR, body: "cream" }, 1);
+    const outlines: THREE.Mesh[] = [];
+    cream.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.isMesh && mesh.name.endsWith("__ink-outline")) outlines.push(mesh);
+    });
+    expect(outlines.length).toBeGreaterThan(10);
+    for (const outline of outlines) {
+      expect((outline.material as THREE.MeshBasicMaterial).side).toBe(THREE.BackSide);
+      expect((outline.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+        PALETTE.ink.slice(1),
+      );
+    }
+  });
+
+  it("uses stock backpack straps only for the daypack", () => {
+    for (const [backpack, expected] of [
+      ["none", false],
+      ["daypack", true],
+      ["bedroll", false],
+      ["jetpack", false],
+      ["cape", false],
+      ["wings", false],
+    ] as const) {
+      const model = dressRunner({ ...DEFAULT_AVATAR, backpack }, 1);
+      expect(
+        model.getObjectByName("Backpack strap left__pivot")?.visible,
+        backpack,
+      ).toBe(expected);
+      expect(model.getObjectByName("Backpack strap right__pivot")?.visible).toBe(expected);
+    }
+  });
+
+  it("replaces the stock sneaker with a sock-covered foot", () => {
+    const model = dressRunner({ ...DEFAULT_AVATAR, footwear: "socks" }, 1);
+    expect(model.getObjectByName("Sneaker left")?.visible).toBe(false);
+    expect(model.getObjectByName("Sneaker right")?.visible).toBe(false);
+    expect(model.getObjectByName("upgrade:bare-foot")).toBeTruthy();
+  });
+
+  it("keeps overalls coherent instead of stacking selected pants through them", () => {
+    const { model } = dressedRaw({
+      ...DEFAULT_AVATAR,
+      top: "overalls",
+      legwear: "jeans",
+    });
+    expect(model.getObjectByName("Wardrobe topPelvis:overalls")).toBeTruthy();
+    expect(model.getObjectByName("Wardrobe topOverallLeg:overalls:-1")).toBeTruthy();
+    expect(model.getObjectByName("Wardrobe topShoulder:overalls:-1")).toBeFalsy();
+    expect(model.getObjectByName("Wardrobe legwearPelvis:jeans")).toBeFalsy();
+  });
+
+  it("gives puffer pieces a padded silhouette and flares the kilt toward its hem", () => {
+    const puffer = dressedRaw({ ...DEFAULT_AVATAR, outerwear: "puffer" }).model;
+    expect(
+      wardrobeMeshes(puffer).filter((mesh) => mesh.name.includes("puffer-baffle")).length,
+    ).toBeGreaterThanOrEqual(5);
+
+    const kilt = dressedRaw({ ...DEFAULT_AVATAR, legwear: "kilt" }).model;
+    const skirt = kilt.getObjectByName("upgrade:kilt-skirt") as THREE.Mesh;
+    expect(skirt).toBeTruthy();
+    const position = skirt.geometry.getAttribute("position");
+    let topY = -Infinity;
+    let bottomY = Infinity;
+    for (let index = 0; index < position.count; index += 1) {
+      topY = Math.max(topY, position.getY(index));
+      bottomY = Math.min(bottomY, position.getY(index));
+    }
+    const radiusAt = (y: number) => {
+      let radius = 0;
+      for (let index = 0; index < position.count; index += 1)
+        if (Math.abs(position.getY(index) - y) < 1e-4)
+          radius = Math.max(radius, Math.abs(position.getX(index)));
+      return radius;
+    };
+    expect(radiusAt(bottomY)).toBeGreaterThan(radiusAt(topY));
   });
 
   it("finds a socket for every garment in the catalogue", () => {
@@ -855,19 +932,11 @@ describe("colour rules", () => {
     }
   });
 
-  it("gates every garment that paints a region of the runner", () => {
+  it("offers every authored colour in every garment slot", () => {
     for (const slot of WARDROBE_SLOTS) {
       if (!slot.colorKey) continue;
-      for (const entry of AVATAR_COLORS) {
-        const rejected = Boolean(colorRejection(slot.colorKey, entry.id, "violet"));
-        if (slot.colorKey === "hair") {
-          expect(rejected, `hair/${entry.id}`).toBe(false);
-          continue;
-        }
-        expect(rejected, `${slot.colorKey}/${entry.id}`).toBe(
-          deckContrast(entry.hex).min < MIN_CONTRAST,
-        );
-      }
+      for (const entry of AVATAR_COLORS)
+        expect(colorRejection(slot.colorKey, entry.id, "violet"), `${slot.colorKey}/${entry.id}`).toBeNull();
     }
   });
 
@@ -881,14 +950,12 @@ describe("colour rules", () => {
     }
   });
 
-  it("only judges a garment colour when the garment is worn", () => {
-    // Refusing a runner over the colour of a jacket they are not wearing would
-    // be a dead end with nothing on screen to explain it.
+  it("keeps a selected colour whether or not the garment is currently worn", () => {
     const unwornCream: AvatarConfig = {
       ...DEFAULT_AVATAR,
       colors: { ...DEFAULT_AVATAR.colors, outerwear: "cream" },
     };
-    expect(colorRejection("outerwear", "cream", "violet")).not.toBeNull();
+    expect(colorRejection("outerwear", "cream", "violet")).toBeNull();
     expect(resolveAvatar(unwornCream, 1).outerwear).toBe("none");
     const worn: AvatarConfig = { ...unwornCream, outerwear: "jacket" };
     expect(worn.colors.outerwear).toBe("cream");

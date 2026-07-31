@@ -131,19 +131,10 @@ describe("contrast helper", () => {
 });
 
 describe("avatar palette", () => {
-  it("keeps every offered body colour above the bar", () => {
-    // The point of the whole exercise: adding an unreadable body colour has to
-    // fail here rather than on someone's phone halfway across a bridge.
-    for (const entry of AVATAR_COLORS) {
-      const rejected = Boolean(colorRejection("body", entry.id, entry.id));
-      expect(rejected).toBe(deckContrast(entry.hex).min < MIN_CONTRAST);
-    }
-    const usable = AVATAR_COLORS.filter(
-      (entry) => !colorRejection("body", entry.id, entry.id),
-    );
-    expect(usable.length).toBeGreaterThanOrEqual(6);
-    for (const entry of usable)
-      expect(deckContrast(entry.hex).min).toBeGreaterThanOrEqual(MIN_CONTRAST);
+  it("offers every authored body colour without a gameplay palette gate", () => {
+    for (const entry of AVATAR_COLORS)
+      expect(colorRejection("body", entry.id, entry.id), entry.id).toBeNull();
+    expect(usableColors("body", DEFAULT_AVATAR.body)).toEqual(AVATAR_COLORS);
   });
 
   it("shows why the swatches are not just PALETTE", () => {
@@ -166,23 +157,17 @@ describe("avatar palette", () => {
     expect(colorRejection("top", "cobalt", DEFAULT_AVATAR.body)).toBeNull();
   });
 
-  it("refuses the colours that vanish into the floor", () => {
-    // Cream and butter are offered for the pack, where the torso frames them,
-    // and refused for the body with the measured reason.
+  it("keeps pale colours available even when they resemble the floor", () => {
     for (const id of ["cream", "butter"] as const) {
-      const rejection = colorRejection("body", id, id);
-      expect(rejection).not.toBeNull();
-      expect(rejection!.ratio).toBeLessThan(1.1);
-      expect(rejection!.reason).toContain("floor");
+      expect(deckContrast(avatarColor(id)).min).toBeLessThan(1.1);
+      expect(colorRejection("body", id, id)).toBeNull();
     }
   });
 
-  it("refuses a pack that disappears into the body", () => {
+  it("allows every pack colour on every body colour", () => {
     for (const entry of AVATAR_COLORS)
-      expect(colorRejection("pack", entry.id, entry.id)).not.toBeNull();
-    const violetPack = colorRejection("pack", "violet", "cobalt");
-    expect(violetPack).not.toBeNull();
-    expect(violetPack!.ratio).toBeLessThan(MIN_CONTRAST);
+      expect(colorRejection("pack", entry.id, entry.id)).toBeNull();
+    expect(PACK_COLORS).toEqual(AVATAR_COLORS);
   });
 
   it("leaves every pack colour reachable through some body", () => {
@@ -205,10 +190,10 @@ describe("avatar palette", () => {
     expect(isReadableAvatar(DEFAULT_AVATAR)).toBe(true);
     expect(
       isReadableAvatar({ ...DEFAULT_AVATAR, body: "cream" }),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isReadableAvatar({ ...DEFAULT_AVATAR, pack: DEFAULT_AVATAR.body }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
@@ -397,14 +382,11 @@ describe("the picker", () => {
     ).toHaveLength(0);
   });
 
-  it("shows the measured ratio on the swatches it refuses", () => {
+  it("shows every color as available", () => {
     const html = open(DEFAULT_AVATAR).innerHTML;
-    const cream = colorRejection("body", "cream", DEFAULT_AVATAR.body)!;
-    expect(html).toContain(`${cream.ratio.toFixed(1)}:1`);
-    expect(html).toContain("disabled");
-    // The chosen body's own reading is on screen next to the figure.
-    expect(deckContrast(avatarColor(DEFAULT_AVATAR.body)).min).toBeGreaterThanOrEqual(3);
-    expect(html).toContain("Readable on pale floors");
+    expect(html).not.toContain("disabled");
+    expect(html).toContain("All avatar colors available");
+    expect(html).toContain("Every color is available");
   });
 });
 
@@ -488,18 +470,12 @@ describe("avatars in challenge links", () => {
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
-  it("refuses a runner nobody could see", () => {
-    // The recipient plays as the sender's runner, so a hand-edited link with an
-    // invisible figure would make the level unplayable for them.
-    const invisible: AvatarConfig = { ...mine, body: "cream" };
-    expect(() => encodeChallengeLink(challenge(), invisible)).toThrow(
-      /CHALLENGE_LINK_UNENCODABLE/,
-    );
-    const forged = forge(avatarToTuple(invisible));
-    expect(() => decodeChallengeLink(forged)).toThrow("CHALLENGE_LINK_INVALID");
-    expect(() => decodeChallengeAvatar(forged)).toThrow(
-      "CHALLENGE_LINK_INVALID",
-    );
+  it("round-trips a pale runner instead of rejecting player expression", () => {
+    const pale: AvatarConfig = { ...mine, body: "cream" };
+    const code = encodeChallengeLink(challenge(), pale);
+    expect(decodeChallengeAvatar(code)?.body).toBe("cream");
+    const forged = forge(avatarToTuple(pale));
+    expect(decodeChallengeAvatar(forged)?.body).toBe("cream");
   });
 
   it("refuses an index the palette does not have", () => {

@@ -24,15 +24,22 @@ function PreviewRunner({
     const bounds = new THREE.Box3().setFromObject(runner);
     if (bounds.isEmpty()) return;
     const dimensions = bounds.getSize(new THREE.Vector3());
-    const center = bounds.getCenter(new THREE.Vector3());
+    // The player turns around the runner root, not around this first view's
+    // axis-aligned box. Fit the largest X/Z radius about that pivot so a long
+    // balloon, flag, or umbrella remains framed through the full 360 degrees.
+    let radialExtent = 0;
+    for (const x of [bounds.min.x, bounds.max.x])
+      for (const z of [bounds.min.z, bounds.max.z])
+        radialExtent = Math.max(radialExtent, Math.hypot(x, z));
+    const centerY = (bounds.min.y + bounds.max.y) / 2;
     const verticalFov = THREE.MathUtils.degToRad(camera.fov);
     const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * Math.max(0.2, camera.aspect));
     const distance = Math.max(
       dimensions.y / (2 * Math.tan(verticalFov / 2)),
-      dimensions.x / (2 * Math.tan(horizontalFov / 2)),
-    ) * 1.06 + dimensions.z / 2;
-    camera.position.set(center.x, center.y, center.z + distance);
-    camera.lookAt(center);
+      radialExtent / Math.tan(horizontalFov / 2),
+    ) * 1.12 + radialExtent;
+    camera.position.set(0, centerY, distance);
+    camera.lookAt(0, centerY, 0);
     camera.updateProjectionMatrix();
   }, [camera, runner, size.height, size.width]);
 

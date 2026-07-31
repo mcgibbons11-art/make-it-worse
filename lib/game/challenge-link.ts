@@ -20,7 +20,11 @@ import {
   isReadableAvatar,
 } from "./avatar";
 import { zoneCenter } from "./level-definition";
-import { placementSurfaces, validatePlacement } from "./placement";
+import {
+  placementSurfaces,
+  surfaceSupportYAt,
+  validatePlacement,
+} from "./placement";
 import { seededId } from "./seed";
 import {
   CLASSIC_TRACK,
@@ -481,13 +485,22 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
     // and invalid after paste. The tuple schema still bounds every number and
     // the surface index still has to resolve, so reconstruction cannot escape
     // the encoded room.
+    const encodedX =
+      ((zone?.minX ?? piece!.minX) + (zone?.maxX ?? piece!.maxX)) / 2 + offsetX;
+    const encodedZ =
+      ((zone?.minZ ?? piece!.minZ) + (zone?.maxZ ?? piece!.maxZ)) / 2 + offsetZ;
     const placement = data[0] === 5
       ? {
           valid: true as const,
           canonicalPosition: [
-            ((zone?.minX ?? piece!.minX) + (zone?.maxX ?? piece!.maxX)) / 2 + offsetX,
-            zone?.groundY ?? piece!.groundY,
-            ((zone?.minZ ?? piece!.minZ) + (zone?.maxZ ?? piece!.maxZ)) / 2 + offsetZ,
+            encodedX,
+            zone?.groundY ?? surfaceSupportYAt(
+              piece!,
+              encodedX,
+              encodedZ,
+              TRAP_CATALOG[type].placementRadius * 0.5,
+            ),
+            encodedZ,
           ] as const,
           rotationY: quarterTurns * Math.PI / 2,
         }

@@ -1,6 +1,7 @@
 import { EXIT_POSITION, GRID_SIZE, PLAYER, PLAYER_SPAWN } from "./constants";
 import { LEVEL_PIECES, ZONE_MAP, zoneCenter } from "./level-definition";
 import { TRAP_CATALOG } from "./trap-catalog";
+import * as THREE from "three";
 import type { BuiltTrack } from "./track";
 import type { LevelPiece } from "./level-definition";
 import type { PlacementZone, TrapInstance, TrapPlacementInput, PlacementValidation, TrapType } from "./types";
@@ -56,29 +57,94 @@ export interface PlacementSurface {
   minZ: number;
   maxZ: number;
   groundY: number;
+  /** The actual transformed top plane for a tilted/rotated level piece. */
+  plane?: {
+    point: readonly [number, number, number];
+    normal: readonly [number, number, number];
+  };
+  /** Exact top-face transform used by the placement overlay. */
+  topFace?: {
+    center: readonly [number, number, number];
+    size: readonly [number, number];
+    rotation: readonly [number, number, number];
+  };
 }
 
 const surfaceOfZone = (zone: PlacementZone): PlacementSurface => ({
   id: zone.id, minX: zone.minX, maxX: zone.maxX, minZ: zone.minZ, maxZ: zone.maxZ, groundY: zone.groundY,
 });
 
+/** The transformed top face of a platform, including ramps and builder tilts. */
+const surfaceOfPiece = (piece: LevelPiece): PlacementSurface => {
+  const rotation = new THREE.Euler(
+    piece.rotationX ?? 0,
+    piece.rotationY ?? 0,
+    piece.rotationZ ?? 0,
+    "XYZ",
+  );
+  const quaternion = new THREE.Quaternion().setFromEuler(rotation);
+  const center = new THREE.Vector3(...piece.center);
+  const topCenter = new THREE.Vector3(0, piece.size[1] / 2, 0)
+    .applyQuaternion(quaternion)
+    .add(center);
+  const normal = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion).normalize();
+  const corners: THREE.Vector3[] = [];
+  for (const x of [-piece.size[0] / 2, piece.size[0] / 2])
+    for (const z of [-piece.size[2] / 2, piece.size[2] / 2])
+      corners.push(
+        new THREE.Vector3(x, piece.size[1] / 2, z)
+          .applyQuaternion(quaternion)
+          .add(center),
+      );
+  return {
+    id: piece.id,
+    minX: Math.min(...corners.map((corner) => corner.x)),
+    maxX: Math.max(...corners.map((corner) => corner.x)),
+    minZ: Math.min(...corners.map((corner) => corner.z)),
+    maxZ: Math.max(...corners.map((corner) => corner.z)),
+    groundY: topCenter.y,
+    plane: {
+      point: topCenter.toArray() as [number, number, number],
+      normal: normal.toArray() as [number, number, number],
+    },
+    topFace: {
+      center: topCenter.toArray() as [number, number, number],
+      size: [piece.size[0], piece.size[2]],
+      rotation: [rotation.x, rotation.y, rotation.z],
+    },
+  };
+};
+
+/** Height of the actual top plane under a world point. */
+export function surfaceGroundYAt(
+  surface: PlacementSurface,
+  worldX: number,
+  worldZ: number,
+): number {
+  if (!surface.plane) return surface.groundY;
+  const [px, py, pz] = surface.plane.point;
+  const [nx, ny, nz] = surface.plane.normal;
+  if (Math.abs(ny) < 1e-4) return surface.groundY;
+  return py - (nx * (worldX - px) + nz * (worldZ - pz)) / ny;
+}
+
 /**
- * The top face of a platform.
- *
- * `rotationX` is ignored here. The only tilted piece in the game is the ramp at
- * -0.1 rad over 3.6u of depth, so treating its top as flat misplaces a trap by
- * at most 0.18u vertically - under the 0.25u placement grid, and the trap is
- * dropped onto the deck rather than suspended, so it reads as seated either way.
- * A steeper piece would need the real plane.
+ * Keep an upright trap's whole circular base above a slope. The centre follows
+ * the real plane and the extra rise lets the uphill edge touch instead of
+ * burying half the prop inside the ramp.
  */
-const surfaceOfPiece = (piece: LevelPiece): PlacementSurface => ({
-  id: piece.id,
-  minX: piece.center[0] - piece.size[0] / 2,
-  maxX: piece.center[0] + piece.size[0] / 2,
-  minZ: piece.center[2] - piece.size[2] / 2,
-  maxZ: piece.center[2] + piece.size[2] / 2,
-  groundY: piece.center[1] + piece.size[1] / 2,
-});
+export function surfaceSupportYAt(
+  surface: PlacementSurface,
+  worldX: number,
+  worldZ: number,
+  baseClearance = 0,
+): number {
+  const centerY = surfaceGroundYAt(surface, worldX, worldZ);
+  if (!surface.plane || baseClearance <= 0) return centerY;
+  const [nx, ny, nz] = surface.plane.normal;
+  if (Math.abs(ny) < 1e-4) return centerY;
+  return centerY + Math.max(0, baseClearance) * Math.hypot(nx / ny, nz / ny);
+}
 
 function surfacesOf(track?: BuiltTrack): readonly PlacementSurface[] {
   const pieces = track ? track.pieces : LEVEL_PIECES;
@@ -105,10 +171,15 @@ export function placementSurfaces(track?: BuiltTrack): readonly PlacementSurface
 /** The surface under a world point, preferring the highest when they overlap. */
 export function surfaceAt(worldX: number, worldZ: number, track?: BuiltTrack): PlacementSurface | null {
   let best: PlacementSurface | null = null;
+  let bestY = Number.NEGATIVE_INFINITY;
   for (const surface of surfacesOf(track)) {
     if (worldX < surface.minX || worldX > surface.maxX) continue;
     if (worldZ < surface.minZ || worldZ > surface.maxZ) continue;
-    if (!best || surface.groundY > best.groundY) best = surface;
+    const y = surfaceGroundYAt(surface, worldX, worldZ);
+    if (!best || y > bestY) {
+      best = surface;
+      bestY = y;
+    }
   }
   return best;
 }
@@ -135,7 +206,11 @@ export function nearestSurface(worldX: number, worldZ: number, track?: BuiltTrac
     const z = Math.min(surface.maxZ, Math.max(surface.minZ, worldZ));
     const distance = Math.hypot(worldX - x, worldZ - z);
     // Ties go to the higher deck, matching surfaceAt where they overlap.
-    if (distance < bestDistance || (distance === bestDistance && best && surface.groundY > best.groundY)) {
+    if (
+      distance < bestDistance ||
+      (distance === bestDistance && best &&
+        surfaceGroundYAt(surface, x, z) > surfaceGroundYAt(best, x, z))
+    ) {
       bestDistance = distance;
       best = surface;
     }
@@ -204,7 +279,15 @@ export function validatePlacement(input: TrapPlacementInput, existing: readonly 
     const room=Math.max(x-surface.minX,surface.maxX-x)-radius;
     if(room<DODGE_MARGIN) return {valid:false,reason:"unsafe_sweep",message:"Not enough room to dodge this here."};
   }
-  return {valid:true,canonicalPosition:[x,surface.groundY,z],rotationY:input.rotationQuarterTurns*Math.PI/2};
+  return {
+    valid: true,
+    canonicalPosition: [
+      x,
+      surfaceSupportYAt(surface, x, z, edgeClearance),
+      z,
+    ],
+    rotationY: input.rotationQuarterTurns * Math.PI / 2,
+  };
 }
 
 /**

@@ -3,6 +3,7 @@ import { generateRandomRoom, runtimeMap } from "@/components/game/RoomBuilder";
 import { encodeChallengeLink } from "@/lib/game/challenge-link";
 import {
   MAP_SESSION_MAX_BYTES,
+  MAP_SESSION_POLL_MS,
   MAP_SESSION_PROTOCOL,
   MAP_SESSION_STATE_KEY,
   connectMapSession,
@@ -34,16 +35,20 @@ function installSdk(initialState: Record<string, unknown> = {}) {
   };
   const sent: unknown[] = [];
   const stateWrites: Array<[string, unknown]> = [];
+  const sharedState = { ...initialState };
   const net = {
     join: vi.fn(async () => ({
       self: { id: "self", playerId: "player", displayName: "Me", avatarUrl: null },
       players: [],
-      state: initialState,
+      state: { ...sharedState },
     })),
     leave: vi.fn(),
     send: vi.fn((value: unknown) => sent.push(value)),
-    setState: vi.fn((key: string, value: unknown) => stateWrites.push([key, value])),
-    getState: vi.fn(),
+    setState: vi.fn((key: string, value: unknown) => {
+      sharedState[key] = value;
+      stateWrites.push([key, value]);
+    }),
+    getState: vi.fn((key?: string) => key ? sharedState[key] : { ...sharedState }),
     players: vi.fn(() => []),
     self: vi.fn(() => ({ id: "self", playerId: "player", displayName: "Me", avatarUrl: null })),
     on: vi.fn((event: keyof typeof handlers, handler: never) => handlers[event].push(handler)),
@@ -65,7 +70,7 @@ function installSdk(initialState: Record<string, unknown> = {}) {
     net,
   };
   Object.defineProperty(globalThis, "window", { value: { Portals: sdk }, configurable: true });
-  return { handlers, net, sent, stateWrites };
+  return { handlers, net, sent, stateWrites, sharedState };
 }
 
 afterEach(() => {
@@ -142,6 +147,7 @@ describe("Portals same-session map protocol", () => {
       kind: "miw-map-response",
       versionId: lateMap.versionId,
     });
+    if (result.status === "ok") result.connection.close();
   });
 
   it("requests and accepts the latest map without relying on a playerjoin event", async () => {
@@ -160,6 +166,27 @@ describe("Portals same-session map protocol", () => {
 
     expect(received).toHaveBeenCalledOnce();
     expect(received.mock.calls[0]?.[0].challenge.slug).toBe(lateMap.versionId);
+    if (result.status === "ok") result.connection.close();
+  });
+
+  it("recovers a missed live state event from the documented state mirror", async () => {
+    vi.useFakeTimers();
+    try {
+      const host = installSdk();
+      const received = vi.fn();
+      const result = await connectMapSession(received);
+      expect(result.status).toBe("ok");
+
+      const missedMap = announcement(25);
+      host.sharedState[MAP_SESSION_STATE_KEY] = missedMap;
+      await vi.advanceTimersByTimeAsync(MAP_SESSION_POLL_MS);
+
+      expect(received).toHaveBeenCalledOnce();
+      expect(received.mock.calls[0]?.[0].challenge.slug).toBe(missedMap.versionId);
+      if (result.status === "ok") result.connection.close();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("ignores corrupted announcements without poisoning the session", async () => {
@@ -170,5 +197,6 @@ describe("Portals same-session map protocol", () => {
     host.handlers.message[0]?.({ ...announcement(30), code: "damaged" }, "peer");
     await Promise.resolve();
     expect(received).not.toHaveBeenCalled();
+    if (result.status === "ok") result.connection.close();
   });
 });

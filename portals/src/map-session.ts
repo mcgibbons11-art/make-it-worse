@@ -10,6 +10,7 @@ import type { BuiltTrack } from "@/lib/game/track";
 export const MAP_SESSION_PROTOCOL = 1;
 export const MAP_SESSION_STATE_KEY = "miw:latest-map";
 export const MAP_SESSION_MAX_BYTES = 8 * 1024;
+export const MAP_SESSION_POLL_MS = 1_500;
 
 export interface MapAnnouncement {
   kind: "miw-map-announcement" | "miw-map-response";
@@ -194,6 +195,18 @@ export async function connectMapSession(
     net.on("state", stateHandler);
     net.on("playerjoin", playerJoinHandler);
     accept(joined.state[MAP_SESSION_STATE_KEY]);
+    // The processed host has occasionally retained a confirmed setState write
+    // for later joiners without delivering its live `state` event to a player
+    // that joined after the original publisher. getState is the documented
+    // mirror for that shared data, so sample the single bounded key as a lost-
+    // event safety net. `seen` makes every unchanged sample a no-op.
+    const statePoll = globalThis.setInterval(() => {
+      try {
+        accept(net.getState(MAP_SESSION_STATE_KEY));
+      } catch {
+        // A disconnected host may throw until Portals reports status/rejoin.
+      }
+    }, MAP_SESSION_POLL_MS);
     // A fast iframe reload can replace one Portals connection with another
     // without the surviving peer receiving a distinct `playerjoin` event.
     // Ask the room directly after our handlers are live. Any peer that has a
@@ -230,6 +243,7 @@ export async function connectMapSession(
         if (parseMapSessionMessage(request)) net.send(request);
       },
       close() {
+        globalThis.clearInterval(statePoll);
         net.off("message", messageHandler);
         net.off("state", stateHandler);
         net.off("playerjoin", playerJoinHandler);

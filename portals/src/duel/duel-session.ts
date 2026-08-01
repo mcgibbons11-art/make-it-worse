@@ -65,6 +65,29 @@ function reason(error: unknown): string {
     : "Portals multiplayer did not respond.";
 }
 
+const JOIN_TIMEOUT_MS = 12_000;
+
+/**
+ * The SDK carries one connection, and a join issued while a previous session
+ * is still tearing down has been observed to neither resolve nor reject. A
+ * hang here used to strand the UI on "Connecting…" forever; a visible error
+ * with a retry beats silence.
+ */
+function joinWithTimeout(
+  portalsNet: PortalsNet,
+  options?: { channel?: string },
+): Promise<Awaited<ReturnType<PortalsNet["join"]>>> {
+  return Promise.race([
+    portalsNet.join(options),
+    new Promise<never>((_, rejectRace) => {
+      globalThis.setTimeout(
+        () => rejectRace(new Error("Portals did not answer the join request. Try again.")),
+        JOIN_TIMEOUT_MS,
+      );
+    }),
+  ]);
+}
+
 function net(): { sdk: NonNullable<typeof window.Portals>; net: PortalsNet } | null {
   const sdk = typeof window === "undefined" ? undefined : window.Portals;
   return sdk?.net ? { sdk, net: sdk.net } : null;
@@ -105,7 +128,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
   if (!host) return { status: "unavailable" };
   try {
     await host.sdk.ready();
-    const joined = await host.net.join();
+    const joined = await joinWithTimeout(host.net);
     const selfConnId = joined.self.id;
     const posts = new Map<string, LobbyPost>();
     let heartbeat: ReturnType<typeof globalThis.setInterval> | null = null;
@@ -264,7 +287,7 @@ export async function connectDuelChannel(
   if (!host) return { status: "unavailable" };
   try {
     await host.sdk.ready();
-    const joined = await host.net.join({ channel: duelChannel(code) });
+    const joined = await joinWithTimeout(host.net, { channel: duelChannel(code) });
     const selfConnId = joined.self.id;
     let latest: DuelMatch | null = null;
 

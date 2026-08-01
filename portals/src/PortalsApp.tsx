@@ -346,6 +346,18 @@ export function PortalsApp() {
     confirmLabel: string;
     act(): void;
   } | null>(null);
+  const mapSessionReady = useRef<Promise<MapSessionResult> | null>(null);
+  // The SDK carries exactly one net connection. Before the duel joins its
+  // session it must WAIT for the map relay to fully leave - handing this off
+  // through effect timing was the original bug: the duel's join raced the
+  // relay's still-attached session and died without resolving or rejecting.
+  const releaseNetForDuel = useCallback(async () => {
+    const pending = mapSessionReady.current;
+    mapSessionReady.current = null;
+    if (!pending) return;
+    const result = await pending.catch(() => null);
+    if (result?.status === "ok") await result.connection.close();
+  }, []);
   // The 1v1 duel brain. It owns the Portals.net matchmaking and match record;
   // this component stays the owner of attempts, so the duel taps into the
   // existing start/complete/fail/publish lifecycle rather than duplicating it.
@@ -353,6 +365,7 @@ export function PortalsApp() {
     playerName: guest?.displayName ?? "Runner",
     avatar: settings.avatar ?? null,
     avatarSeed: guest?.avatarSeed ?? 1,
+    acquireNet: releaseNetForDuel,
   });
   const duelRef = useRef(duel);
   useEffect(() => {
@@ -363,7 +376,6 @@ export function PortalsApp() {
   const lastHazard = useRef<HazardContact | null>(null);
   const finishing = useRef(false);
   const starting = useRef(false);
-  const mapSessionReady = useRef<Promise<MapSessionResult> | null>(null);
   const progress = useRef(0);
   // fail() shows its panel on a delay so the death reads before the card lands.
   // Restarting out of the pause menu starts a new attempt inside that window,
@@ -542,8 +554,8 @@ export function PortalsApp() {
     mapSessionReady.current = connecting;
     void connecting.then((result) => {
       if (result.status !== "ok") return;
-      if (!active) result.connection.close();
-      else close = () => result.connection.close();
+      if (!active) void result.connection.close();
+      else close = () => void result.connection.close();
     });
     return () => {
       active = false;

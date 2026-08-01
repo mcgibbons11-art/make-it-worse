@@ -56,7 +56,13 @@ export interface MapSessionConnection {
     publishedAt?: string;
   }): "sent" | "too_large";
   request(versionId: string): void;
-  close(): void;
+  /**
+   * Resolves once the SDK has actually left the session. The duel flow joins
+   * a different session on the SAME single connection, so its caller must be
+   * able to await the leave rather than race it. Idempotent: a second close
+   * (the React effect cleanup and the duel hand-off can both fire) is a no-op.
+   */
+  close(): Promise<void>;
 }
 
 function byteLength(value: unknown): number {
@@ -144,6 +150,7 @@ export async function connectMapSession(
     const joined = await net.join();
     const seen = new Set<string>();
     let latest: MapAnnouncement | null = null;
+    let closing: Promise<void> | null = null;
 
     const accept = (value: unknown) => {
       const message = parseMapSessionMessage(value);
@@ -243,11 +250,13 @@ export async function connectMapSession(
         if (parseMapSessionMessage(request)) net.send(request);
       },
       close() {
+        if (closing) return closing;
         globalThis.clearInterval(statePoll);
         net.off("message", messageHandler);
         net.off("state", stateHandler);
         net.off("playerjoin", playerJoinHandler);
-        net.leave();
+        closing = Promise.resolve(net.leave()).catch(() => undefined);
+        return closing;
       },
     };
     return { status: "ok", connection };

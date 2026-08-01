@@ -165,8 +165,15 @@ export function useDuel(input: {
   playerName: string;
   avatar: AvatarConfig | null;
   avatarSeed: number;
+  /**
+   * Awaited before every net.join. The SDK holds ONE connection, and the map
+   * relay owns it between duels; joining while that session is still attached
+   * races the SDK and the join dies silently. The shell hands the connection
+   * over here, resolving only once the previous session has fully left.
+   */
+  acquireNet?: () => Promise<void>;
 }): DuelApi {
-  const { playerName, avatar, avatarSeed } = input;
+  const { playerName, avatar, avatarSeed, acquireNet } = input;
   const [stage, setStage] = useState<DuelStage>({ kind: "closed" });
   const [match, setMatch] = useState<DuelMatch | null>(null);
   const [posts, setPosts] = useState<DuelLobbyPostView[]>([]);
@@ -259,8 +266,9 @@ export function useDuel(input: {
    */
   const enterChannel = useCallback(
     async (code: string, role: "host" | "join") => {
-      await dropLobby();
       setStage({ kind: "connecting" });
+      await dropLobby();
+      await acquireNet?.().catch(() => undefined);
       const result = await connectDuelChannel(code, {
         onMatch: (record) => {
           matchRef.current = record;
@@ -379,7 +387,7 @@ export function useDuel(input: {
         setStage({ kind: "waiting", code });
       }
     },
-    [dropChannel, dropLobby, me, publish, pushChat, pushFeed, token],
+    [acquireNet, dropChannel, dropLobby, me, publish, pushChat, pushFeed, token],
   );
 
   // When the joiner's record arrives while we sit in "waiting", claim seat B.
@@ -493,6 +501,7 @@ export function useDuel(input: {
     enterLobby: () => {
       setStage({ kind: "joining" });
       void (async () => {
+        await acquireNet?.().catch(() => undefined);
         const result = await connectDuelLobby({
           onPosts: (list) => {
             const now = Date.now();

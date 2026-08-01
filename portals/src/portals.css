@@ -845,3 +845,159 @@ summary:focus-visible {
   font-size: 0.84rem;
   font-weight: 700;
 }
+
+/* --- 1v1 duels ------------------------------------------------------------
+   The matchmaking popup reuses the shell's panel/button/lede classes; these
+   are only the surfaces that have no equivalent: the always-on match strip,
+   the invite code, the lobby posts, the chat, and the spectate corner. */
+.duel-strip {
+  position: absolute;
+  z-index: 14;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.94);
+  font-weight: 850;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.duel-strip-warn {
+  color: #b3123c;
+}
+.duel-hearts {
+  letter-spacing: 0.08em;
+}
+.duel-invite-code {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-align: center;
+  margin: 8px 0;
+  user-select: all;
+}
+.duel-code-row,
+.duel-chat-row {
+  display: flex;
+  gap: 8px;
+}
+.duel-code-row input,
+.duel-chat-row input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  background: white;
+  padding: 8px 14px;
+  font-weight: 850;
+  color: var(--ink);
+}
+.duel-posts {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+.duel-post {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: white;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.duel-post.is-dim {
+  opacity: 0.55;
+}
+.duel-post span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.duel-claim-card {
+  display: grid;
+  gap: 8px;
+  border: 2px dashed var(--ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 10px 0;
+}
+.duel-feed {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+.duel-feed p {
+  margin: 0;
+}
+.duel-chat {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.duel-chat-log {
+  display: grid;
+  gap: 2px;
+  max-height: 108px;
+  overflow-y: auto;
+  font-size: 0.82rem;
+}
+.duel-chat-log p {
+  margin: 0;
+}
+.duel-chat-log .is-you strong {
+  color: var(--muted);
+}
+.duel-reactions {
+  display: flex;
+  gap: 6px;
+}
+.duel-reactions button {
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  background: white;
+  padding: 4px 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.duel-spectate {
+  position: absolute;
+  z-index: 14;
+  right: 18px;
+  bottom: 18px;
+  width: min(340px, calc(100vw - 36px));
+  padding: 14px 16px !important;
+}
+.duel-spectate-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 4px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 650px) {
+  .duel-strip {
+    top: 66px;
+    font-size: 0.72rem;
+    gap: 8px;
+  }
+  .duel-spectate {
+    right: 10px;
+    bottom: 150px;
+  }
+}

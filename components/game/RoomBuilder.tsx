@@ -221,7 +221,7 @@ function orientedPlatformSpec(item: RoomItem): PlatformSpec | null {
   };
 }
 
-function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
+export function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[] {
   const items = source.filter((item, index) =>
     !isRequiredEndpoint(item.asset) || source.findIndex((candidate) => candidate.asset === item.asset) === index,
   ).map((item) => ({ ...item }));

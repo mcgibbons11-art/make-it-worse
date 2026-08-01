@@ -24,6 +24,7 @@ export type ShellView =
   | "controls"
   | "trending"
   | "map-code"
+  | "duel"
   | "confirm";
 
 /**

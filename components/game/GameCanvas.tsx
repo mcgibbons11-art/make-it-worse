@@ -16,6 +16,7 @@ import { ACESFilmicToneMapping } from "three";
 import { TONE_EXPOSURE } from "./render/tone";
 import type { TrapMechanicEvent } from "./TrapRenderer";
 import type { BuiltTrack } from "@/lib/game/track";
+import type { LiveGhostFeed } from "./LiveGhostRunner";
 interface Props {
   challenge: ChallengeDTO;
   phase: GamePhase;
@@ -37,6 +38,8 @@ interface Props {
   onAssetsReady(): void;
   /** Direct authored geometry used by the custom-map Test mode. */
   trackOverride?: BuiltTrack;
+  /** A duel opponent streamed live over Portals.net, rendered as a ghost. */
+  liveGhost?: LiveGhostFeed | null;
 }
 export default function GameCanvas(props: Props) {
   return (

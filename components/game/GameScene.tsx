@@ -32,6 +32,7 @@ import { PlayerController } from "./PlayerController";
 import { CameraRig } from "./CameraRig";
 import { TrapRenderer, type TrapMechanicEvent } from "./TrapRenderer";
 import { GhostRunner } from "./GhostRunner";
+import { LiveGhostRunner, type LiveGhostFeed } from "./LiveGhostRunner";
 import { PlacementZones } from "./placement/PlacementZones";
 import { TrapPreview } from "./placement/TrapPreview";
 import { EffectsLayer, type EffectsHandle } from "./effects/EffectsLayer";
@@ -55,6 +56,7 @@ interface Props {
   onSelectZone(zoneId: string): void;
   onMovePlacement(zoneId: string, worldX: number, worldZ: number): void;
   trackOverride?: BuiltTrack;
+  liveGhost?: LiveGhostFeed | null;
 }
 
 export function GameScene({
@@ -76,6 +78,7 @@ export function GameScene({
   onSelectZone,
   onMovePlacement,
   trackOverride,
+  liveGhost,
 }: Props) {
   const internalPlayer = useRef<RapierRigidBody>(null);
   const player = qaPlayerRef ?? internalPlayer;
@@ -194,6 +197,11 @@ export function GameScene({
       <Lighting />
       <LevelGeometry pieces={track.pieces} />
       <ExitDoor showLabel={phase === "playing"} position={track.exit} />
+      {/* Outside the attemptSerial branch: a duel spectator has never started
+          an attempt here (attemptSerial 0, so no CameraRig either), which is
+          exactly what lets this component own the camera while it follows the
+          opponent's streamed run. */}
+      {liveGhost && <LiveGhostRunner {...liveGhost} />}
       {challenge.traps.map((trap) => (
           <TrapRenderer
             key={`${attemptSerial}-${trap.id}`}

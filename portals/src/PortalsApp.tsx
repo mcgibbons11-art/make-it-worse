@@ -86,6 +86,8 @@ import {
   connectMapSession,
   type MapSessionResult,
 } from "./map-session";
+import { useDuel } from "./duel/useDuel";
+import { DuelHud, DuelMatchmakingPanel } from "./duel/DuelPanels";
 import {
   encodePublishedMapCode,
   forgetPublishedMap,
@@ -344,6 +346,19 @@ export function PortalsApp() {
     confirmLabel: string;
     act(): void;
   } | null>(null);
+  // The 1v1 duel brain. It owns the Portals.net matchmaking and match record;
+  // this component stays the owner of attempts, so the duel taps into the
+  // existing start/complete/fail/publish lifecycle rather than duplicating it.
+  const duel = useDuel({
+    playerName: guest?.displayName ?? "Runner",
+    avatar: settings.avatar ?? null,
+    avatarSeed: guest?.avatarSeed ?? 1,
+  });
+  const duelRef = useRef(duel);
+  useEffect(() => {
+    duelRef.current = duel;
+  });
+  const duelActive = duel.stage.kind === "match";
   const samples = useRef<DecodedGhostSample[]>([]);
   const lastHazard = useRef<HazardContact | null>(null);
   const finishing = useRef(false);
@@ -498,7 +513,11 @@ export function PortalsApp() {
     // silently joining before player one publishes, and it matches the real
     // lifecycle: someone who opens the game later becomes a genuine late
     // joiner and receives the room's shared map snapshot/handshake then.
-    if (showStartSplash) {
+    // The SDK carries one net connection at a time, and an open duel surface
+    // owns it: the lobby lives in the same default session the map relay
+    // uses, and a match lives in its own channel. The relay reconnects here
+    // as soon as the duel releases the connection.
+    if (showStartSplash || duel.netActive) {
       mapSessionReady.current = null;
       return;
     }
@@ -531,7 +550,7 @@ export function PortalsApp() {
       mapSessionReady.current = null;
       close();
     };
-  }, [repository, showStartSplash]);
+  }, [duel.netActive, repository, showStartSplash]);
   const loadBoard = useCallback(async (roomSlug: string) => {
     setBoardLoading(true);
     setBoard(await fetchClearTimes(roomSlug));
@@ -784,6 +803,85 @@ export function PortalsApp() {
     setEditorOpen(false);
     setRandomRoomSeed(null);
   }, [repository]);
+  // --- Duel orchestration ---------------------------------------------------
+  // Entering a match takes the screen: whatever solo run existed is dropped in
+  // one assignment and the matchmaking popup closes.
+  const prevDuelStage = useRef(duel.stage.kind);
+  useEffect(() => {
+    const previous = prevDuelStage.current;
+    prevDuelStage.current = duel.stage.kind;
+    if (duel.stage.kind === "match" && previous !== "match") {
+      applyRun(EMPTY_RUN);
+      setRuntimeTrack(null);
+      setViews([]);
+    }
+  }, [applyRun, duel.stage.kind]);
+  // Each shared course version mounts once, for the runner's handoff panel
+  // and the spectator's canvas alike. Firing on my own hand-off is the
+  // intended reset: publishing a worsened course is what moves me to the
+  // spectator seat.
+  const duelCourseVersion = duelActive ? duel.course?.version ?? null : null;
+  useEffect(() => {
+    if (!duelCourseVersion) return;
+    const course = duelRef.current.course;
+    if (!course) return;
+    let cancelled = false;
+    void (async () => {
+      const stored = await (
+        repository.importChallenge?.(course.challenge, course.track ?? undefined) ??
+        course.challenge
+      );
+      if (cancelled) return;
+      setChallenge(stored);
+      setRuntimeTrack(course.track);
+      setActivePublishedVersionId(null);
+      setAttemptSerial(0);
+      setOffered(null);
+      setResult(null);
+      setPlacement(null);
+      setNotice("");
+      setPhase("ready");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [duelCourseVersion, repository]);
+  // A duel surface abandoned mid-matchmaking (Escape past the popup) would
+  // hold the net connection with nothing on screen; drop it instead.
+  useEffect(() => {
+    const preMatch =
+      duel.stage.kind === "joining" ||
+      duel.stage.kind === "lobby" ||
+      duel.stage.kind === "connecting" ||
+      duel.stage.kind === "waiting";
+    if (preMatch && view !== "duel") duelRef.current.close();
+  }, [duel.stage.kind, view]);
+  const startingDuelTurn = useRef(false);
+  const startDuelTurn = useCallback(async () => {
+    const course = duelRef.current.course;
+    if (!course || startingDuelTurn.current) return;
+    startingDuelTurn.current = true;
+    try {
+      const track =
+        course.track ?? buildTrack(course.challenge.track ?? CLASSIC_TRACK);
+      await prepareCleanRun({ challenge: course.challenge, track });
+      duelRef.current.noteRunStarted();
+    } finally {
+      startingDuelTurn.current = false;
+    }
+  }, [prepareCleanRun]);
+  const resetToDuelSpectate = useCallback(() => {
+    setAttemptSerial(0);
+    setOffered(null);
+    setResult(null);
+    setPlacement(null);
+    setPhase("ready");
+  }, []);
+  const leaveDuel = useCallback(() => {
+    duelRef.current.close();
+    applyRun(EMPTY_RUN);
+    setRuntimeTrack(null);
+  }, [applyRun]);
   const complete = useCallback(async () => {
     if (finishing.current || !attemptId || !challenge) return;
     finishing.current = true;
@@ -816,6 +914,8 @@ export function PortalsApp() {
     setElapsed(duration);
     setOffered(finished.offeredTraps);
     setPhase("finished");
+    // No-op outside a duel turn: the note methods check the match record.
+    duelRef.current.noteRunCleared();
     recordCoachingRunEnd({ outcome: "completed", progress: 1, cause: null });
     recordProgressRun({
       challengeSlug: challenge.slug,
@@ -904,6 +1004,8 @@ export function PortalsApp() {
         ghostTrace: null,
         idempotencyKey: crypto.randomUUID(),
       });
+      // In a duel this burns a heart; the third burn hands the round over.
+      duelRef.current.noteRunFailed();
       failTimer.current = window.setTimeout(() => setPhase("failed"), 450);
     },
     [attemptId, challenge, recordProgressRun, repository, startedAt],
@@ -964,7 +1066,15 @@ export function PortalsApp() {
         idempotencyKey: crypto.randomUUID(),
       });
       setResult(published);
-      setPhase("sharing");
+      if (duelRef.current.myTurn) {
+        // In a duel the worsened course IS the hand-off: it goes straight to
+        // the opponent as their next run, and this player moves to the
+        // spectator seat rather than the share screen.
+        duelRef.current.noteWorsened(published.challenge, runtimeTrack);
+        resetToDuelSpectate();
+      } else {
+        setPhase("sharing");
+      }
       recordCoachingTrapPlaced(placement.type);
       recordProgressTrap(placement.type);
       AudioManager.publish();
@@ -1118,6 +1228,40 @@ export function PortalsApp() {
   // is the only difference between the title screen and the in-run menu: the
   // same body renders in both, so neither can drift from the other.
   const status = challenge ? runStatus(phase) : null;
+  const concedeDuel = () => {
+    setPending({
+      title: "Concede the match?",
+      body: "Your opponent takes the win and the duel ends.",
+      confirmLabel: "Concede the match",
+      act: () => {
+        duelRef.current.concedeMatch();
+        applyRun(EMPTY_RUN);
+        setRuntimeTrack(null);
+      },
+    });
+    openView("confirm");
+  };
+  // Rendered in both the title-screen and in-run branches: a match can be
+  // live before its first course has mounted a challenge. Hidden while any
+  // shell dialog is up so only one focus trap is ever armed.
+  const duelHud =
+    duelActive && view === null ? (
+      <DuelHud
+        duel={duel}
+        phase={phase}
+        onStartRun={() => void startDuelTurn()}
+        onRetry={() => {
+          void start().then(() => duelRef.current.noteRunStarted());
+        }}
+        onMakeWorse={() => setPhase("choosing_trap")}
+        onHandOverUnchanged={() => {
+          if (challenge) duelRef.current.noteWorsened(challenge, runtimeTrack);
+          resetToDuelSpectate();
+        }}
+        onConcede={concedeDuel}
+        onLeave={leaveDuel}
+      />
+    ) : null;
   const menuBody = (
     <>
       <h1 className="portals-title" id="portals-menu-title">
@@ -1151,6 +1295,24 @@ export function PortalsApp() {
           }
         >
           ▶️ Play a clean level
+        </button>
+        <button
+          className="button danger"
+          onClick={() =>
+            guard(
+              () => {
+                duel.open();
+                openView("duel");
+              },
+              {
+                title: "Leave this run?",
+                body: "Starting a duel replaces the run you are on. This run does not come back.",
+                confirmLabel: "Open 1v1 duels",
+              },
+            )
+          }
+        >
+          ⚔️ 1v1 duel
         </button>
         <button
           className="button secondary"
@@ -1316,6 +1478,17 @@ export function PortalsApp() {
           />
         </Overlay>
       )}
+      {view === "duel" && (
+        <Overlay labelledBy="portals-duel-title" panelClassName="portals-duel">
+          <DuelMatchmakingPanel
+            duel={duel}
+            onBack={() => {
+              duel.close();
+              closeView();
+            }}
+          />
+        </Overlay>
+      )}
       {view === "confirm" && pending && (
         <Overlay
           labelledBy="portals-confirm-title"
@@ -1457,6 +1630,7 @@ export function PortalsApp() {
     return (
       <main className="portals-home">
         <section className="panel portals-card">{menuBody}</section>
+        {duelHud}
         {shellDialogs}
       </main>
     );
@@ -1486,8 +1660,23 @@ export function PortalsApp() {
           startedAt={startedAt}
           placement={placement}
           ghostEnabled={settings.ghostEnabled}
+          liveGhost={
+            duelActive && !duel.myTurn
+              ? {
+                  sampleRef: duel.spectateSampleRef,
+                  avatarSeed: challenge.createdByAvatarSeed,
+                  avatar: duel.opponentAvatar,
+                  name: duel.opponentName,
+                  // Only while nothing local is happening: once this player
+                  // is placing a trap or back in a run, CameraRig owns the
+                  // camera again.
+                  followCamera: phase === "ready",
+                }
+              : null
+          }
           recordSample={(sample) => {
             if (samples.current.length < 900) samples.current.push(sample);
+            duelRef.current.noteRunSample(sample);
           }}
           onProgress={(value) => {
             progress.current = value;
@@ -1620,7 +1809,7 @@ export function PortalsApp() {
         </header>
       )}
       {runPanel === "playing" && <MobileControls />}
-      {runPanel === "failed" && (
+      {runPanel === "failed" && !duelActive && (
         <Overlay
           className="failure-backdrop"
           panelClassName="portals-failure"
@@ -1647,7 +1836,7 @@ export function PortalsApp() {
           </div>
         </Overlay>
       )}
-      {runPanel === "finished" && (
+      {runPanel === "finished" && !duelActive && (
         <Overlay
           labelledBy="portals-finished-title"
           decoration={
@@ -1822,7 +2011,7 @@ export function PortalsApp() {
           </button>
         </aside>
       )}
-      {runPanel === "sharing" && result && (
+      {runPanel === "sharing" && result && !duelActive && (
         <Overlay
           labelledBy="portals-sharing-title"
           decoration={
@@ -1877,6 +2066,7 @@ export function PortalsApp() {
           </p>
         </Overlay>
       )}
+      {duelHud}
       {view === "menu" && (
         <Overlay labelledBy="portals-menu-title" panelClassName="portals-menu">
           {menuBody}

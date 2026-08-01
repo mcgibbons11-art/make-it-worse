@@ -2,7 +2,7 @@
 // Reference manifest: assets/reference/headwear-upgrades/headwear-upgrade-spec.json
 import * as THREE from "three";
 
-export type HeadwearUpgradeId = "helmet" | "crown" | "cowboy" | "beret" | "grin" | "beard" | "mask" | "goggles" | "aviator" | "visorband";
+export type HeadwearUpgradeId = "helmet" | "crown" | "cowboy" | "beret" | "earmuffs" | "grin" | "beard" | "mask" | "goggles" | "aviator" | "visorband";
 type Tint = "main" | "trim" | "ink" | "cream" | "steel" | "metal" | "glow" | "glass";
 
 const placeholder = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
@@ -123,32 +123,316 @@ function curledOvalBrim() {
 function torus(radius: number, tube: number, arc = Math.PI * 2) {
   return new THREE.TorusGeometry(radius, tube, 7, Math.max(12, Math.round(arc * 7)), arc);
 }
+function smoothstep(edge0: number, edge1: number, value: number) {
+  const t = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+// The runner's skull in the head socket's own frame, read off the rig rather
+// than assumed: the Head mesh measures +-0.325 in x and y and +-0.310 in z
+// about the socket, so it is a sphere with a shallow front-to-back squash.
+const SKULL = { rx: 0.325, ry: 0.325, rz: 0.31 };
+
+/**
+ * A point on the skull pushed out along its own radii by `grow`.
+ *
+ * `u` is the azimuth from +Z towards +X and `v` the elevation, so y = ry sin(v).
+ * Face-worn hair authored in (u, v) follows the jaw at a constant offset; the
+ * flat constant-z plate it replaces stood 0.15u proud of the chin.
+ */
+function facePoint(u: number, v: number, grow: number): [number, number, number] {
+  const flat = Math.cos(v);
+  return [
+    (SKULL.rx + grow) * flat * Math.sin(u),
+    (SKULL.ry + grow) * Math.sin(v),
+    (SKULL.rz + grow) * flat * Math.cos(u),
+  ];
+}
+
+/**
+ * A closed slab of hair lying on the skull between two elevation boundaries.
+ *
+ * The outer skin stands `swell(u, s)` above the surface and the inner skin sits
+ * `bury` below it, with a rim joining them the whole way round, so the piece is
+ * a solid with thickness rather than a shell with a visible back face.
+ */
+function facePanel(
+  uMax: number,
+  top: (u: number) => number,
+  bottom: (u: number) => number,
+  swell: (u: number, s: number) => number,
+  bury = 0.006,
+  uSteps = 30,
+  vSteps = 14,
+) {
+  const rows = vSteps + 1;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (const skin of [0, 1]) {
+    for (let i = 0; i <= uSteps; i += 1) {
+      const u = -uMax + (2 * uMax * i) / uSteps;
+      const from = top(u);
+      const to = bottom(u);
+      for (let j = 0; j < rows; j += 1) {
+        const s = j / vSteps;
+        const point = facePoint(u, from + (to - from) * s, skin === 0 ? swell(u, s) : -bury);
+        positions.push(point[0], point[1], point[2]);
+      }
+    }
+  }
+  const inner = (uSteps + 1) * rows;
+  // i runs +x and j runs downward, so (a, d, b) and (a, c, d) wind outward.
+  const quad = (a: number, b: number, c: number, d: number) => {
+    indices.push(a, d, b, a, c, d);
+  };
+  for (let i = 0; i < uSteps; i += 1) {
+    for (let j = 0; j < vSteps; j += 1) {
+      const at = i * rows + j;
+      const next = (i + 1) * rows + j;
+      quad(at, next, at + 1, next + 1);
+      quad(inner + next, inner + at, inner + next + 1, inner + at + 1);
+    }
+  }
+  for (let i = 0; i < uSteps; i += 1) {
+    const at = i * rows;
+    const next = (i + 1) * rows;
+    quad(inner + at, inner + next, at, next);
+    quad(next + vSteps, inner + next + vSteps, at + vSteps, inner + at + vSteps);
+  }
+  for (let j = 0; j < vSteps; j += 1) {
+    quad(inner + j, j, inner + j + 1, j + 1);
+    const last = uSteps * rows + j;
+    quad(last, inner + last, last + 1, inner + last + 1);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// The helmet crown ellipsoid in the head socket's frame, and the half-angle of
+// the face opening measured about +Z. Every helmet part is placed against these.
+const HELMET_SHELL = { rx: 0.386, ry: 0.37, rz: 0.342, y: 0.075, z: 0.004 };
+const HELMET_FACE = 0.78;
+
+/**
+ * The lower shell, which is a different ellipsoid from the crown on purpose.
+ *
+ * The crown is sized around the visor and its centre sits 0.075u high, so it
+ * stops enclosing the skull below the eye line: at y -0.19 the back of the head
+ * measures 1.07 of the crown's radius, i.e. 0.02u outside it. These radii are
+ * chosen to pass through the crown's own bottom rim (at y -0.050 the crown's
+ * section is x 0.3632, z 0.3218, and this ellipsoid's equator is exactly that),
+ * so the two meet with no step, and to clear the skull by 10 to 25 per cent of
+ * radius all the way down to the jaw.
+ */
+const HELMET_SKIRT = { rx: 0.3632, ry: 0.33, rz: 0.3218, y: -0.05, z: 0.004 };
+
+/**
+ * The surface the visor is built on, which envelopes both shells.
+ *
+ * The visor cannot ride either shell: the crown is the fatter of the two above
+ * y -0.05 and the skirt below it, so a visor on one sinks inside the other where
+ * they cross. On the front centre line this surface clears the crown by 0.008 at
+ * y 0.05 and the skirt by 0.029 at y -0.156, and it stays outside the cheek pads
+ * as well - the pad's widest corner measures 0.89 of this ellipsoid's radius.
+ *
+ * Built as sphere patches rather than as a bowed extrusion. `curved` moves
+ * vertices, and an ExtrudeGeometry's face is triangulated across the whole width
+ * of a bar, so a deep bow sags along every chord: measured at a 0.132 crown, the
+ * middle of the frame fell 0.067 behind the shell it was meant to sit in front
+ * of. A patch of the surface itself cannot do that.
+ */
+const HELMET_VISOR = { rx: 0.395, ry: 0.4, rz: 0.355, y: -0.02, z: 0.004 };
+
+type HelmetShell = { rx: number; ry: number; rz: number; y: number; z: number };
+
+/** A piece of a shell surface. THREE puts phi = PI/2 at +Z, so the face opening spans PI/2 +- HELMET_FACE. */
+function helmetPatch(shell: HelmetShell, fromPhi: number, spanPhi: number, fromTheta: number, spanTheta: number, grow: number) {
+  const geometry = new THREE.SphereGeometry(1, 30, 12, fromPhi, spanPhi, fromTheta, spanTheta);
+  geometry.scale(shell.rx + grow, shell.ry + grow, shell.rz + grow);
+  return geometry;
+}
+
+/**
+ * A patch of a shell whose lower edge rises as it travels round the head.
+ *
+ * A SphereGeometry segment's bottom edge is a level ring, which forces the nape
+ * to choose between covering the back of the skull and clearing the shoulder
+ * caps: the depth that covers the centre of the nape puts the same edge out at
+ * the sides, where the caps are. This builds the same surface with a bottom edge
+ * that is a function of azimuth, so the back can hang low while the sides pull
+ * up. Winding follows SphereGeometry's own order so it faces the same way as the
+ * patches it continues.
+ */
+function taperedPatch(
+  shell: HelmetShell,
+  fromPhi: number,
+  spanPhi: number,
+  fromTheta: number,
+  toTheta: (across: number) => number,
+  steps = 30,
+  rows = 6,
+) {
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const across = i / steps;
+    const phi = fromPhi + spanPhi * across;
+    const bottom = toTheta(across * 2 - 1);
+    for (let j = 0; j <= rows; j += 1) {
+      const theta = fromTheta + (bottom - fromTheta) * (j / rows);
+      positions.push(
+        -shell.rx * Math.cos(phi) * Math.sin(theta),
+        shell.ry * Math.cos(theta),
+        shell.rz * Math.sin(phi) * Math.sin(theta),
+      );
+    }
+  }
+  for (let i = 0; i < steps; i += 1) {
+    for (let j = 0; j < rows; j += 1) {
+      const a = (i + 1) * (rows + 1) + j;
+      const b = i * (rows + 1) + j;
+      const c = i * (rows + 1) + j + 1;
+      const d = (i + 1) * (rows + 1) + j + 1;
+      indices.push(a, b, d, b, c, d);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** The height of the shell above (x, z), pushed out by `lift`. */
+function helmetTop(x: number, z: number, lift: number) {
+  const fx = x / HELMET_SHELL.rx;
+  const fz = (z - HELMET_SHELL.z) / HELMET_SHELL.rz;
+  return HELMET_SHELL.y + (HELMET_SHELL.ry + lift) * Math.sqrt(Math.max(0, 1 - fx * fx - fz * fz));
+}
 
 function helmet(root: THREE.Group) {
-  // The cap, visor frame, cheek rails and chin guard overlap into one continuous
-  // motorcycle shell. The glass sits inside the frame rather than acting as an
-  // opaque plate pasted over the face.
-  const shellGeometry = new THREE.SphereGeometry(1, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.61);
-  shellGeometry.scale(0.386, 0.37, 0.342);
-  const shell = mesh(shellGeometry, "main", "helmet-shell", [0, 0.075, 0.004]);
-  const visorOuter = [[-0.305, 0.095], [-0.255, 0.13], [0.255, 0.13], [0.305, 0.095], [0.268, -0.095], [0.205, -0.125], [-0.205, -0.125], [-0.268, -0.095]] as const;
-  const visorInner = [[-0.27, 0.075], [-0.23, 0.098], [0.23, 0.098], [0.27, 0.075], [0.235, -0.065], [0.185, -0.09], [-0.185, -0.09], [-0.235, -0.065]] as const;
-  const visor = mesh(curvedShape(visorInner, 0.008, 0.035), "glass", "helmet-glass", [0, -0.035, 0.313]);
-  const visorFrame = mesh(frameShape(visorOuter, visorInner, 0.014, 0.035), "trim", "helmet-flush-visor-frame", [0, -0.035, 0.308]);
+  // The cap, side skirt, cheek pads, visor frame and chin guard overlap into one
+  // continuous motorcycle shell. Everything bolted onto the helmet is placed on
+  // the shell ellipsoid itself, which is what the old crown stripe was not: its
+  // rear point sat at y 0.42 against a surface at 0.372 and read as a grey
+  // sliver floating off the back of the head.
+  const seat: [number, number, number] = [0, HELMET_SHELL.y, HELMET_SHELL.z];
+  const skirtSeat: [number, number, number] = [0, HELMET_SKIRT.y, HELMET_SKIRT.z];
+  const rear = Math.PI * 1.5;
+  // The crown closes over the top only as far as y 0.045, then continues as a
+  // band that leaves the face opening. It used to be a full revolve down to
+  // y -0.050, which put opaque shell at z 0.345 across the whole brow while the
+  // visor frame reached only 0.340: the top of the visor was drawn behind the
+  // shell. cos(theta) = (0.045 - 0.075) / 0.37 puts that cut at theta 0.526 PI.
+  const cap = mesh(helmetPatch(HELMET_SHELL, 0, Math.PI * 2, 0, Math.PI * 0.526, 0), "main", "helmet-shell", seat);
+  const crownBand = mesh(
+    helmetPatch(HELMET_SHELL, Math.PI / 2 + HELMET_FACE, Math.PI * 2 - HELMET_FACE * 2, Math.PI * 0.515, Math.PI * 0.095, 0),
+    "main",
+    "helmet-crown-band",
+    seat,
+  );
+  // The shell used to stop at y -0.050, so in profile it was a black skullcap
+  // over a bare jaw. The skirt carries it from there down to the jaw everywhere
+  // except across the face opening.
+  //
+  // Its lower edge is tapered rather than level, and that is the whole point of
+  // the piece. `across` runs -1 to 1 from one edge of the face opening round to
+  // the other, so 0 is straight back and the ears fall at 0.665. A level rim at
+  // the depth the back wants, y -0.2805, passes 0.0726 from the shoulder cap at
+  // (0.168, 1.14, 0) at rest, and the head's own twist closes that to 0.0020 -
+  // it passed the suite, but by a fiftieth of what every other head garment
+  // clears by, so any later change would have broken it. The rim now holds
+  // -0.2805 at the back and at the edges of the face opening, and lifts to -0.225
+  // only around the ears at 0.665, which is where the caps are. That is still
+  // 0.083 below the bottom of the ear at -0.142.
+  //
+  // The lift is a bump on the ear rather than a step, because a step lifted the
+  // rim at the front edges too, where z 0.167 already carries the rim clear of
+  // the cap and the only effect was to open the jaw. Measured over the twist,
+  // the bump's half width trades the two against each other: 0.34 gives 0.0355
+  // of cap clearance, 0.42 gives 0.0451, 0.50 gives 0.0518 but costs rear
+  // coverage. 0.42 is the chosen point.
+  const skirt = mesh(
+    taperedPatch(
+      HELMET_SKIRT,
+      Math.PI / 2 + HELMET_FACE,
+      Math.PI * 2 - HELMET_FACE * 2,
+      Math.PI * 0.49,
+      (across) => Math.PI * (0.745 - 0.067 * (1 - smoothstep(0, 0.42, Math.abs(Math.abs(across) - 0.665)))),
+    ),
+    "main",
+    "helmet-side-skirt",
+    skirtSeat,
+  );
+  // Closing the sides to the jaw still left the skull bare from the skirt's rim
+  // down to its underside at -0.325 - the nape. This panel hangs below the
+  // skirt's rear on the same ellipsoid, so it continues that surface rather than
+  // sitting on it, and it closes to nothing at its own edges: a lens, not a
+  // bracket. That is what keeps it out of the shoulders. Its depth is spent
+  // straight back, where it reaches y -0.292 - the height at which the skull's
+  // rear passes inside the neck, a 0.28-wide column against a back of the head
+  // measuring z -0.142 there, so below it the body hides the skull anyway.
+  const napeTop = Math.PI * 0.675;
+  const nape = mesh(
+    taperedPatch(
+      HELMET_SKIRT,
+      rear - 1.2,
+      2.4,
+      napeTop,
+      (across) => napeTop + (Math.PI * 0.7618 - napeTop) * (1 - smoothstep(0.35, 1, Math.abs(across))),
+    ),
+    "main",
+    "helmet-nape",
+    skirtSeat,
+  );
+  // The glass fills the opening and tucks behind the frame; heights come from
+  // y = -0.02 + 0.4 cos(theta) on the visor surface, so its top at y 0.052 laps
+  // behind the crown's rim at 0.045 and its bottom at -0.156 laps behind the
+  // chin guard's top at -0.158.
+  const visorSeat: [number, number, number] = [0, HELMET_VISOR.y, HELMET_VISOR.z];
+  const visor = mesh(
+    helmetPatch(HELMET_VISOR, Math.PI / 2 - 0.79, 1.58, Math.PI * 0.4423, Math.PI * 0.1681, 0),
+    "glass",
+    "helmet-glass",
+    visorSeat,
+  );
+  // Four bars around the opening, 0.008 proud of the glass, each covering one of
+  // its seams against the shell.
+  const visorBars: THREE.Object3D[] = [
+    mesh(helmetPatch(HELMET_VISOR, Math.PI / 2 - 0.83, 1.66, Math.PI * 0.431, Math.PI * 0.0267, 0.008), "trim", "helmet-visor-frame-top", visorSeat),
+    mesh(helmetPatch(HELMET_VISOR, Math.PI / 2 - 0.83, 1.66, Math.PI * 0.5989, Math.PI * 0.0194, 0.008), "trim", "helmet-visor-frame-base", visorSeat),
+  ];
+  for (const side of [-1, 1] as const) {
+    const from = side > 0 ? Math.PI / 2 + 0.75 : Math.PI / 2 - 0.85;
+    visorBars.push(
+      mesh(helmetPatch(HELMET_VISOR, from, 0.1, Math.PI * 0.431, Math.PI * 0.1873, 0.008), "trim", `helmet-visor-frame-${side}`, visorSeat),
+    );
+  }
+  // Cheek pads on the shell's own surface, straddling the edge of the face
+  // opening. The flat extruded outline they replace stood up to 0.065u outside
+  // the shell and read from the side as a grey box parked beside the cheek.
   const cheek = (side: -1 | 1) => {
-    const points = side < 0
-      ? [[-0.305, 0.02], [-0.235, 0.005], [-0.205, -0.17], [-0.105, -0.235], [-0.245, -0.24], [-0.325, -0.12]] as const
-      : [[0.305, 0.02], [0.235, 0.005], [0.205, -0.17], [0.105, -0.235], [0.245, -0.24], [0.325, -0.12]] as const;
-    const guard = mesh(curvedShape(points, 0.043, 0.013), "main", `helmet-cheek-${side}`, [0, -0.01, 0.26]);
-    guard.rotation.y = side * 0.08;
-    return guard;
+    const from = side > 0 ? Math.PI / 2 + HELMET_FACE - 0.32 : Math.PI - (Math.PI / 2 + HELMET_FACE + 0.44);
+    return mesh(
+      helmetPatch(HELMET_SKIRT, from, 0.76, Math.PI * 0.51, Math.PI * 0.174, 0.008),
+      "main",
+      `helmet-cheek-${side}`,
+      skirtSeat,
+    );
   };
   const chinOuter = [[-0.245, 0.015], [0.245, 0.015], [0.22, -0.13], [0.145, -0.18], [-0.145, -0.18], [-0.22, -0.13]] as const;
   const chinVent = [[-0.115, -0.02], [0.115, -0.02], [0.095, -0.105], [-0.095, -0.105]] as const;
-  const chin = mesh(frameShape(chinOuter, chinVent, 0.044, 0.022), "main", "helmet-chin-guard", [0, -0.205, 0.282]);
+  // Lifted from -0.205 to -0.178 so its top edge meets the visor frame's lower
+  // bar at y -0.165. At -0.205 a 0.02u strip of bare face showed between them.
+  const chin = mesh(frameShape(chinOuter, chinVent, 0.044, 0.022), "main", "helmet-chin-guard", [0, -0.178, 0.282]);
   const lowerRim = mesh(line([[-0.205, -0.35, 0.288], [0, -0.38, 0.299], [0.205, -0.35, 0.288]], 0.015), "ink", "helmet-lower-rim");
   for (const x of [-0.075, -0.025, 0.025, 0.075]) {
-    const bar = mesh(box(0.016, 0.075, 0.018, 0.005), "ink", `helmet-vent-bar-${x}`, [x, -0.272, 0.325]);
+    // Raised to sit inside the chin guard's vent opening (y -0.198 to -0.283)
+    // instead of hanging below it, which left the top of the vent see-through.
+    const bar = mesh(box(0.016, 0.075, 0.018, 0.005), "ink", `helmet-vent-bar-${x}`, [x, -0.2405, 0.325]);
     bar.rotation.z = x * 0.6;
     add(root, bar);
   }
@@ -158,8 +442,33 @@ function helmet(root: THREE.Group) {
     const hinge = mesh(ball(0.018, 0.03, 0.021, 16, 10), "steel", `helmet-flush-hinge-${side}`, [side * 0.326, -0.025, 0.158]);
     add(root, hinge);
   }
-  const crownStripe = mesh(line([[0, 0.42, -0.20], [0, 0.405, 0.02], [0, 0.31, 0.29]], 0.021), "trim", "helmet-crown-stripe");
-  add(root, shell, visor, visorFrame, cheek(-1), cheek(1), chin, lowerRim, crownStripe);
+  // Three shallow intake slots recessed 0.004u into the crown, each laid along
+  // the surface by the ellipsoid's own gradient there.
+  for (const [index, [x, z]] of ([[0, 0.215], [-0.135, 0.085], [0.135, 0.085]] as const).entries()) {
+    const y = helmetTop(x, z, -0.004);
+    const vent = mesh(box(0.062, 0.014, 0.05, 0.005), "ink", `helmet-crown-vent-${index}`, [x, y, z]);
+    const up = (y - HELMET_SHELL.y) / HELMET_SHELL.ry ** 2;
+    vent.rotation.x = Math.atan2((z - HELMET_SHELL.z) / HELMET_SHELL.rz ** 2, up);
+    vent.rotation.z = -Math.atan2(x / HELMET_SHELL.rx ** 2, up);
+    add(root, vent);
+  }
+  // A spoiler ridge on the lower rear, placed by walking the polar angle round
+  // the shell rather than by picking a z and hoping.
+  const spoilerTheta = Math.PI * 0.55;
+  const spoiler = mesh(ball(0.115, 0.088, 0.042, 20, 12), "trim", "helmet-rear-spoiler", [
+    0,
+    HELMET_SHELL.y + HELMET_SHELL.ry * Math.cos(spoilerTheta),
+    HELMET_SHELL.z - HELMET_SHELL.rz * Math.sin(spoilerTheta),
+  ]);
+  const crownStripe = mesh(
+    line(
+      [-0.27, -0.14, 0, 0.14, 0.27].map((z) => [0, helmetTop(0, z, 0.004), z] as [number, number, number]),
+      0.018,
+    ),
+    "trim",
+    "helmet-crown-stripe",
+  );
+  add(root, cap, crownBand, skirt, nape, visor, ...visorBars, cheek(-1), cheek(1), chin, lowerRim, spoiler, crownStripe);
 }
 
 function crown(root: THREE.Group) {
@@ -209,32 +518,122 @@ function cowboy(root: THREE.Group) {
   // The brim is a closed oval annulus with raised side curls, not a single
   // left-to-right tube. Its inner edge stays seated under the crown.
   const brim = mesh(curledOvalBrim(), "main", "cowboy-complete-brim", [0, 0.03, -0.015]);
-  const crown = mesh(new THREE.CylinderGeometry(0.235, 0.275, 0.23, 28), "main", "cowboy-crown", [0, 0.275, -0.025]);
-  crown.scale.z = 0.86;
+  // The crown was 0.275 wide with a 0.86 z squash, which puts its wall at z 0.236
+  // against a skull that measures 0.270 at the same height: the forehead and the
+  // back of the head came through the crown between y 0.16 and y 0.23, which is
+  // the clipping the player reported. 0.305 with a 0.955 squash clears the skull
+  // by 0.022 in x and 0.009 in z, and the extra 0.025u of height puts the
+  // interior above the skull's own crest at y 0.325 with room for hair.
+  const crown = mesh(new THREE.CylinderGeometry(0.255, 0.305, 0.255, 28), "main", "cowboy-crown", [0, 0.2875, -0.012]);
+  crown.scale.z = 0.955;
   // Two raised lobes and a recessed centre establish the pinched western crown
-  // without painting a contrast-coloured box down its face.
-  const crownLeft = mesh(ball(0.142, 0.052, 0.195), "main", "cowboy-crown-lobe-left", [-0.088, 0.392, -0.035]);
-  const crownRight = mesh(ball(0.142, 0.052, 0.195), "main", "cowboy-crown-lobe-right", [0.088, 0.392, -0.035]);
-  const crease = mesh(line([[0, 0.408, -0.178], [0, 0.386, -0.025], [0, 0.406, 0.132]], 0.011), "trim", "cowboy-top-crease");
-  const band = mesh(torus(0.266, 0.019), "trim", "cowboy-band", [0, 0.173, -0.02]);
+  // without painting a contrast-coloured box down its face. Their undersides sit
+  // at y 0.363, clear of the skull crest at 0.325 and of the hair cap at 0.338.
+  const crownLeft = mesh(ball(0.148, 0.055, 0.2), "main", "cowboy-crown-lobe-left", [-0.09, 0.418, -0.022]);
+  const crownRight = mesh(ball(0.148, 0.055, 0.2), "main", "cowboy-crown-lobe-right", [0.09, 0.418, -0.022]);
+  const crease = mesh(line([[0, 0.434, -0.177], [0, 0.412, -0.012], [0, 0.432, 0.148]], 0.011), "trim", "cowboy-top-crease");
+  const band = mesh(torus(0.307, 0.02), "trim", "cowboy-band", [0, 0.176, -0.012]);
   band.rotation.x = Math.PI / 2;
-  band.scale.y = 0.86;
-  const buckle = mesh(box(0.07, 0.052, 0.018, 0.012), "steel", "cowboy-buckle", [0, 0.175, 0.223]);
+  band.scale.y = 0.955;
+  // On the band's front face, which the squash puts at z -0.012 + (0.307 + 0.02)
+  // * 0.955 = 0.300.
+  const buckle = mesh(box(0.07, 0.052, 0.018, 0.012), "steel", "cowboy-buckle", [0, 0.178, 0.296]);
   add(root, brim, crown, crownLeft, crownRight, crease, band, buckle);
 }
 
+/** Where a point of the beret's crown ends up once the cloth slumps to one side. */
+function beretSlump(x: number, y: number): [number, number] {
+  const side = Math.min(1, Math.max(-1, -x / BERET_CROWN.rx));
+  const sag = Math.max(0, side) ** 1.7;
+  const lift = Math.max(0, -side) ** 1.7;
+  return [x - 0.036 * sag, y - 0.062 * sag + 0.026 * lift];
+}
+function slumped(geometry: THREE.BufferGeometry) {
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+  for (let index = 0; index < position.count; index += 1) {
+    const [x, y] = beretSlump(position.getX(index), position.getY(index));
+    position.setXY(index, x, y);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+const BERET_CROWN = { rx: 0.352, ry: 0.128, rz: 0.33, y: 0.268, z: -0.02 };
+
 function beret(root: THREE.Group) {
-  // One offset ellipsoid forms a soft, asymmetric dome. The narrow band is
-  // buried into its lower edge so the profile no longer reads as stacked discs.
-  const cap = mesh(ball(0.355, 0.122, 0.315, 32, 18), "main", "beret-soft-dome", [-0.052, 0.278, -0.035]);
-  cap.rotation.z = 0.12;
-  cap.rotation.x = -0.035;
-  const headband = mesh(torus(0.292, 0.014), "trim", "beret-headband", [0, 0.194, -0.015]);
-  headband.rotation.x = Math.PI / 2;
-  headband.scale.y = 0.93;
-  const stalk = mesh(new THREE.CylinderGeometry(0.01, 0.016, 0.052, 10), "trim", "beret-stalk", [0.045, 0.412, -0.05]);
-  stalk.rotation.z = -0.35;
-  add(root, cap, headband, stalk);
+  // A real sweatband with height, a rolled lip at the seam, and a crown that
+  // sags towards the left ear with its far edge lifted. The item it replaces was
+  // a symmetric squashed ellipsoid over a 0.014u wire ring, which reads as a
+  // plate resting on the head rather than as cloth.
+  //
+  // The band clears the skull by 0.012u: at its lower edge, y 0.148, the skull
+  // measures x 0.290 and z 0.277, and 0.302 with a 0.96 z squash gives 0.302 by
+  // 0.290. The 0.93 squash it replaces pinched inside that.
+  const band = mesh(new THREE.CylinderGeometry(0.302, 0.302, 0.064, 30, 1, true), "trim", "beret-sweatband", [0, 0.18, -0.012]);
+  band.scale.z = 0.96;
+  const lip = mesh(torus(0.308, 0.017), "trim", "beret-rolled-lip", [0, 0.212, -0.012]);
+  lip.rotation.x = Math.PI / 2;
+  // Scale composes before rotation, so the world-z squash of a flat-lying torus
+  // has to go through LOCAL y.
+  lip.scale.y = 0.96;
+  const crown = mesh(
+    slumped(ball(BERET_CROWN.rx, BERET_CROWN.ry, BERET_CROWN.rz, 34, 20)),
+    "main",
+    "beret-slumped-crown",
+    [0, BERET_CROWN.y, BERET_CROWN.z],
+  );
+  add(root, band, lip, crown);
+  // Gather folds running from the band up to the stalk, laid on the crown's own
+  // surface and passed through the same slump so they travel with the cloth.
+  for (const [index, angle] of [0.5, 1.9, 3.4, 4.9].entries()) {
+    const path = [1.25, 0.45, -0.42].map((tilt) => {
+      const flat = Math.cos(tilt);
+      const [x, y] = beretSlump(BERET_CROWN.rx * flat * Math.sin(angle), BERET_CROWN.ry * Math.sin(tilt));
+      return [x, BERET_CROWN.y + y, BERET_CROWN.z + BERET_CROWN.rz * flat * Math.cos(angle)] as [number, number, number];
+    });
+    add(root, mesh(line(path, 0.008, 16), "trim", `beret-gather-${index}`));
+  }
+  const [stalkX, stalkY] = beretSlump(0.03, BERET_CROWN.ry * 0.996);
+  const stalk = mesh(new THREE.CylinderGeometry(0.011, 0.017, 0.05, 10), "trim", "beret-stalk", [
+    stalkX,
+    BERET_CROWN.y + stalkY + 0.02,
+    BERET_CROWN.z,
+  ]);
+  add(root, stalk);
+}
+
+function earmuffs(root: THREE.Group) {
+  // A padded band over the crown, a U-yoke per side, and cups built as a shell
+  // with a separate cushion pressed against the head. Ear centres are read off
+  // the rig rather than assumed: the Ear meshes box x 0.291 to 0.369 and y -0.142
+  // to -0.022, so an ear sits at (+-0.330, -0.082, -0.010).
+  //
+  // The arc radius is 0.385 and the tube 0.026, so the band's inner face rides
+  // 0.034 above the skull crest at 0.325 and 0.021 above the hair cap at 0.338.
+  // It has to clear the hair as well as the skull: earmuffs are one of the items
+  // that leave a chosen hairstyle visible.
+  const bandRadius = 0.385;
+  const arc = [-1.3, -0.975, -0.65, -0.325, 0, 0.325, 0.65, 0.975, 1.3].map(
+    (angle) => [bandRadius * Math.sin(angle), bandRadius * Math.cos(angle), -0.03] as [number, number, number],
+  );
+  add(root, mesh(line(arc, 0.026, 30), "main", "earmuff-padded-band"));
+  for (const side of [-1, 1] as const) {
+    // Two arms straddling the cup, bridging the band's end at y 0.103 down to
+    // the cup's crown at y 0.028, with a pivot pin across them.
+    for (const [index, z] of [-0.072, 0.012].entries()) {
+      add(root, mesh(box(0.02, 0.11, 0.018, 0.006), "steel", `earmuff-yoke-arm-${side}-${index}`, [side * 0.372, 0.062, z]));
+    }
+    const pivot = mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.1, 12), "steel", `earmuff-yoke-pivot-${side}`, [side * 0.372, 0.028, -0.03]);
+    pivot.rotation.x = Math.PI / 2;
+    const shell = mesh(ball(0.062, 0.112, 0.095, 22, 14), "trim", `earmuff-cup-shell-${side}`, [side * 0.383, -0.082, -0.012]);
+    // The cushion is its own ring seated on the head, not a face of the shell:
+    // its hole is 0.088 across against an ear 0.078 by 0.120, so it closes round
+    // the ear instead of hovering beside it.
+    const cushion = mesh(torus(0.074, 0.03), "cream", `earmuff-cushion-${side}`, [side * 0.334, -0.082, -0.012]);
+    cushion.rotation.y = Math.PI / 2;
+    add(root, pivot, shell, cushion);
+  }
 }
 
 function grin(root: THREE.Group) {
@@ -254,27 +653,56 @@ function grin(root: THREE.Group) {
 }
 
 function beard(root: THREE.Group) {
-  // One shallow concave U joins the cheek and jaw silhouette while remaining
-  // open above the chin. Buried rounded volumes soften the surface without
-  // separating into the pointed petal/mandible ring seen in the runtime sheet.
-  const outline = [
-    [-0.235, -0.082], [-0.215, -0.16], [-0.19, -0.245], [-0.145, -0.315],
-    [-0.075, -0.355], [0, -0.37], [0.075, -0.355], [0.145, -0.315],
-    [0.19, -0.245], [0.215, -0.16], [0.235, -0.082],
-    [0.175, -0.105], [0.142, -0.205], [0.09, -0.25], [0.04, -0.27],
-    [0, -0.274], [-0.04, -0.27], [-0.09, -0.25], [-0.142, -0.205], [-0.175, -0.105],
-  ] as const;
-  const base = mesh(curvedShape(outline, 0.014, 0.03), "main", "beard-connected-jaw", [0, 0, 0.267]);
-  add(root, base);
-  for (const side of [-1, 1] as const) {
-    const sideburn = mesh(ball(0.045, 0.095, 0.022, 20, 14), "main", `beard-sideburn-${side}`, [side * 0.225, -0.145, 0.245]);
-    sideburn.rotation.z = side * 0.1;
-    const cheek = mesh(ball(0.074, 0.09, 0.018, 22, 14), "main", `beard-buried-cheek-${side}`, [side * 0.155, -0.235, 0.283]);
-    cheek.rotation.z = side * 0.18;
-    add(root, sideburn, cheek);
-  }
-  const chin = mesh(ball(0.105, 0.052, 0.018, 24, 14), "main", "beard-rounded-chin", [0, -0.334, 0.287]);
+  // Lofted off the skull rather than stood in front of it. Elevations are the
+  // rig's own landmarks turned into angles by v = asin(y / 0.325):
+  //   eye        y -0.076 -> -0.235      mouth top    y -0.144 -> -0.455
+  //   cheek line y -0.110 -> -0.345      mouth bottom y -0.174 -> -0.556
+  //   jaw hinge  y -0.198 -> -0.660      chin under   y -0.318 -> -1.360
+  // The jaw panel's top edge sits under the mouth at the front and climbs to the
+  // cheek line at the sides; the moustache panel bridges above the mouth and
+  // droops at its ends into that climb, so the two together enclose the mouth in
+  // one loop instead of leaving it floating in an open U.
+  const uMax = 1.22;
+  const jawTop = (u: number) => -0.615 + 0.27 * smoothstep(0.24, 0.44, Math.abs(u));
+  // -1.02 rather than the -1.36 that would carry the loft round to the throat.
+  // A panel lofted onto the skull travels through the collar volume on its way
+  // under the chin, and wardrobe.test.ts fails any head garment inside the shirt
+  // once the head twists: at -1.36 the underside reached y -0.363, which lands
+  // at world 1.226 against a 1.23 ceiling. -1.02 ends the loft on the underside
+  // of the chin at y -0.317, world 1.243.
+  const jawBottom = (u: number) => -1.02 + 0.36 * smoothstep(0, uMax, Math.abs(u));
+  const jawSwell = (u: number, s: number) =>
+    0.006 + 0.04 * smoothstep(0, 0.32, s) * (0.62 + 0.38 * smoothstep(0, 0.26, 1 - Math.abs(u) / uMax));
+  const jaw = mesh(facePanel(uMax, jawTop, jawBottom, jawSwell), "main", "beard-jaw-loft");
+  // The rig gives a moustache no clear room: the nose ends at y -0.1455 and the
+  // mouth starts at -0.1436. The bridge therefore tucks its thin top edge under
+  // the nose and stops at y -0.153, which leaves the lower two thirds of the
+  // mouth open. Its ends droop past the jaw panel's top edge so the two pieces
+  // overlap at the corner of the mouth rather than meeting on a hairline.
+  const lipMax = 0.3;
+  const lipTop = () => -0.395;
+  const lipBottom = (u: number) => -0.44 - 0.16 * (Math.abs(u) / lipMax) ** 2;
+  const lipSwell = (u: number, s: number) =>
+    0.008 + 0.026 * smoothstep(0, 0.35, s) * (0.6 + 0.4 * smoothstep(0, 0.3, 1 - Math.abs(u) / lipMax));
+  const moustache = mesh(
+    facePanel(lipMax, lipTop, lipBottom, lipSwell, 0.004, 20, 10),
+    "main",
+    "beard-moustache-bridge",
+  );
+  add(root, jaw, moustache);
+  // Rounded volumes seated on the same surface, so they soften the silhouette
+  // from inside the loft instead of separating from it.
+  const chin = mesh(ball(0.088, 0.048, 0.04, 22, 14), "main", "beard-chin-mass", facePoint(0, -0.95, 0.004));
   add(root, chin);
+  for (const side of [-1, 1] as const) {
+    const jowl = mesh(ball(0.062, 0.05, 0.036, 20, 12), "main", `beard-jowl-${side}`, facePoint(side * 0.6, -0.86, 0.004));
+    // At v -0.44 this ball topped out at y -0.081, level with the eye at -0.076
+    // and the exact "climbs to eye level" note on the old beard. Dropped to
+    // v -0.50 and shortened, it now tops out at -0.107, under the panel's own
+    // cheek edge.
+    const sideburn = mesh(ball(0.032, 0.05, 0.026, 18, 12), "main", `beard-sideburn-${side}`, facePoint(side * 1.04, -0.5, 0.002));
+    add(root, jowl, sideburn);
+  }
 }
 
 function mask(root: THREE.Group) {
@@ -361,6 +789,7 @@ export function createHeadwearUpgradeModel(id: HeadwearUpgradeId): THREE.Group {
     case "crown": crown(root); break;
     case "cowboy": cowboy(root); break;
     case "beret": beret(root); break;
+    case "earmuffs": earmuffs(root); break;
     case "grin": grin(root); break;
     case "beard": beard(root); break;
     case "mask": mask(root); break;

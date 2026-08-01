@@ -207,7 +207,10 @@ const DEFAULT_GARMENT_COLORS: AvatarGarmentColors = {
   legwear: "charcoal",
   footwear: "ink",
   backpack: "rust",
-  held: "bronze",
+  // Ocean, not bronze: with bronze the default flag, torch collar, balloon
+  // and trophy landed in the same orange-brown band as the rust backpack,
+  // and adjacent picker slots read as one substance.
+  held: "ocean",
 };
 
 export const DEFAULT_AVATAR: AvatarConfig = {

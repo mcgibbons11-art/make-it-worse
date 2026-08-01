@@ -68,6 +68,18 @@
       "pass": "final runtime evidence closure",
       "status": "pass",
       "note": "Filled the edge-on mohawk and fauxhawk profiles into solid crests, sealed the swept-undercut root while retaining a short shaded side, and moved both ponytail ties and tails onto the rear-centre plane."
+    },
+    {
+      "date": "2026-08-01",
+      "pass": "systemic hairline rebuild",
+      "status": "skipped",
+      "note": "Superseded in part by the 2026-08-01 render review below. Geometry-only pass, no render performed: the agent that authored it could not open a browser, so nothing here is visually confirmed. Every cap gained a hairline-bounded shell that carries the mass down the temples, notches over the ear tops at y -0.022 and tapers to the nape; bolted-on quiff, pompadour, side-part and undercut masses were reseated inside their caps with bridge lobes; slickback and pompadour took the wardrobe palette's plastic and leather roles for shine; the sphere-chain ponytails, braids and locs became tapered swept tubes with ties; and the clumped styles were rescattered from a deterministic index hash. Verified by tsc, the wardrobe suite, the character silhouette suite and a bounding-box probe only. A multi-angle on-runner render review is still outstanding."
+    },
+    {
+      "date": "2026-08-01",
+      "pass": "on-runner render review of the hairline rebuild",
+      "status": "pass with corrections",
+      "note": "Front and side renders of all twenty styles on the dressed runner (artifacts/avatar-aaa-wave4b). The hairline system reads: buzz and crew side coverage, the bob curtain, the tapered ponytails and the afro spread all hold up on the body. Three defects were found and corrected. The mohawk had regained a full head of hair, because the shared shell undid the earlier rebuild that removed its cap; it is now the one style with no shell at all. The slickback's plastic palette role rendered gray-white, so slick hair moved to the leather role, which keeps the chosen hue, and the pompadour dropped back to matte entirely. The pompadour also stacked: its cap dome ended at y 0.31 while the roll carried to 0.475, and the fold ridge's end caps stood proud of the roll at 1.076 of its radius and rendered as beaks. The cap is 0.02 taller and both fold ridges are now sampled on the mass they cross. The corrected geometry has NOT been re-rendered by the agent that authored it."
     }
   ]
 }

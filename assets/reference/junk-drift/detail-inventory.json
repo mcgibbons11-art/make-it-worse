@@ -1,0 +1,71 @@
+{
+  "sourceImage": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\junk-drift\\junk-drift-concept-sheet.png",
+  "zonesDir": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\junk-drift\\evidence",
+  "detailInventory": {
+    "scanMethod": "component-zones",
+    "targetMinDetails": 14,
+    "details": [
+      {
+        "id": "front",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.0,
+          "y": 0.0,
+          "width": 0.34,
+          "height": 1.0,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\junk-drift\\evidence\\front.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "side",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.33,
+          "y": 0.0,
+          "width": 0.34,
+          "height": 1.0,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\junk-drift\\evidence\\side.png",
+        "confidence": 0.0
+      },
+      {
+        "id": "rear",
+        "kind": "",
+        "description": "",
+        "region": {
+          "x": 0.66,
+          "y": 0.0,
+          "width": 0.34,
+          "height": 1.0,
+          "units": "normalized"
+        },
+        "scale": "",
+        "affects": "",
+        "mapsTo": {
+          "type": "",
+          "ref": ""
+        },
+        "evidenceRef": "C:\\Users\\Mcgib\\Partners HealthCare Dropbox\\Jason Gibbons\\Portals make it worse\\assets\\reference\\junk-drift\\evidence\\rear.png",
+        "confidence": 0.0
+      }
+    ]
+  },
+  "authoringInstruction": "Open each zone crop under zonesDir and replace every detail stub's kind, description, scale, affects, mapsTo, and confidence with what is actually observed. Add more detail entries per zone if a single zone contains multiple distinct marks; do not leave stubs unfilled or unlinked (mapsTo must reference a real component.localFeatures or material.localOverrides entry)."
+}

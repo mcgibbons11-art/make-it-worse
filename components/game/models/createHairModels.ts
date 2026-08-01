@@ -4,10 +4,49 @@ import * as THREE from "three";
 
 type HairMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 
-function surface(color: string, shade = 1): THREE.MeshStandardMaterial {
-  const value = new THREE.Color(color).multiplyScalar(shade);
-  const material = new THREE.MeshStandardMaterial({ color: value, roughness: 0.82, metalness: 0 });
-  material.name = shade < 1 ? "hair-shadow" : "hair-main";
+/**
+ * The scalp every style is cut against, in the head socket's own frame.
+ *
+ * Head__pivot scales a 0.5 sphere by (0.65, 0.65, 0.62) about that origin, so
+ * the skull is an ellipsoid of radii (0.325, 0.325, 0.31). The ears sit at
+ * x +-0.33, y -0.082 with a 0.06 vertical half extent, which puts their tops at
+ * y -0.022 and their azimuth span at 86.6 to 93.4 degrees off straight ahead.
+ * Both numbers are what the hairline below is measured against.
+ */
+const SKULL = { x: 0.325, y: 0.325, z: 0.31 } as const;
+
+/**
+ * The four ways hair is drawn, and the wardrobe palette role each asks for.
+ *
+ * createWardrobeModels swaps every tinted mesh's material for the palette entry
+ * of its role, so what is authored here only lives as far as the socket and has
+ * to mirror the role it names. Slick hair asks for `leather`, the chosen colour
+ * at 0.76 and roughness 0.48: a sheen that keeps the hue. It asked for
+ * `plastic` first - lerped 8 per cent toward white at roughness 0.25 - and that
+ * rendered as a gray-white wig under the preview light, so only the slickback
+ * is slick now and it takes the quieter role. The matte shade keeps the 0.72 it
+ * has always been authored at; the palette darkens it to 0.62 in play.
+ */
+const FINISHES = {
+  "hair-main": { tint: "main", shade: 1, roughness: 0.82 },
+  "hair-shadow": { tint: "hairShadow", shade: 0.72, roughness: 0.82 },
+  "hair-sleek": { tint: "leather", shade: 0.76, roughness: 0.48 },
+  "hair-sleek-shadow": { tint: "hairShadow", shade: 0.62, roughness: 0.78 },
+} as const;
+
+type HairFinish = keyof typeof FINISHES;
+
+function surface(color: string, finish: HairFinish): THREE.MeshStandardMaterial {
+  const { shade, roughness } = FINISHES[finish];
+  const material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color).multiplyScalar(shade),
+    roughness,
+    metalness: 0,
+    // Curtains, hairline rims and swept tubes are single-walled, so both faces
+    // have to draw or the inside of a bob reads as a hole in the head.
+    side: THREE.DoubleSide,
+  });
+  material.name = finish;
   return material;
 }
 
@@ -15,7 +54,7 @@ function add(
   root: THREE.Group,
   geometry: THREE.BufferGeometry,
   material: THREE.MeshStandardMaterial,
-  position: [number, number, number],
+  position: [number, number, number] = [0, 0, 0],
   rotation: [number, number, number] = [0, 0, 0],
   scale: [number, number, number] = [1, 1, 1],
   name = "hair-piece",
@@ -28,14 +67,208 @@ function add(
   part.castShadow = true;
   part.receiveShadow = false;
   part.raycast = () => undefined;
-  part.userData["wardrobeTint"] = material.name === "hair-shadow" ? "hairShadow" : "main";
+  part.userData["wardrobeTint"] = FINISHES[material.name as HairFinish]?.tint ?? "main";
   root.add(part);
   return part;
 }
 
 const sphere = () => new THREE.SphereGeometry(1, 14, 9);
+/** Cheap enough to close a lock's ends with wherever one is needed. */
+const pebble = () => new THREE.SphereGeometry(1, 8, 6);
 
-function cap(root: THREE.Group, main: THREE.MeshStandardMaterial, scale: [number, number, number] = [0.35, 0.24, 0.35], y = 0.12) {
+const UP = new THREE.Vector3(0, 1, 0);
+const FORWARD = new THREE.Vector3(0, 0, 1);
+
+const at = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+
+/**
+ * A deterministic hash in 0..1.
+ *
+ * The clumped styles want scatter, and the catalog has to build identically on
+ * every machine and in every test run, so the scatter is index arithmetic
+ * rather than Math.random.
+ */
+function wobble(index: number, salt: number): number {
+  const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+// --- The hairline -----------------------------------------------------------
+
+type HairlineKey = readonly [azimuth: number, y: number];
+
+/**
+ * Where the hair stops, as height against azimuth measured from straight ahead.
+ *
+ * A shell that ends on a horizontal plane reads as a swim cap from every angle
+ * except dead front, which is what every style in this catalog used to do. This
+ * curve carries the shell down instead: high at the brow, dipping through the
+ * temples, rising into a notch that clears the ear, then falling away to the
+ * nape. Smoothstep between keys, mirrored left to right.
+ *
+ * The notch was checked against the ear rather than eyeballed. Between the
+ * 1.36 and 1.5708 keys, smoothstep puts the hairline at -0.011 at the ear's
+ * leading azimuth (86.6 degrees) and at -0.004 at its trailing one (93.4), both
+ * above the ear top at -0.022.
+ */
+const HAIRLINE: readonly HairlineKey[] = [
+  [0, 0.042],          // brow: 0.118 of forehead above the eyes at y -0.076
+  [0.55, 0.03],
+  [0.95, -0.03],       // temple dip
+  [1.36, -0.075],      // sideburn, in front of the ear
+  [Math.PI / 2, 0.005], // notch over the ear
+  [1.83, -0.06],       // behind the ear
+  [2.3, -0.09],
+  [Math.PI, -0.105],   // nape
+];
+
+/**
+ * A blunt level hem that closes round the back, for the bob.
+ *
+ * The hem is at -0.28 rather than -0.30 because the head counter-rotates by
+ * 0.22 about z in the run cycle, which swings the curtain's corner down and in
+ * toward the shoulder cap. At -0.30 the closest approach measured 0.011u; this
+ * puts it back near the 0.03 the shipped catalog's longest style held.
+ */
+const BOB_HEM: readonly HairlineKey[] = [
+  [0, 0.05],
+  [0.62, 0.03],
+  [0.95, -0.28],
+  [Math.PI, -0.28],
+];
+
+/** A layered mid-length base the shag's flicks break the edge of. */
+const SHAG_EDGE: readonly HairlineKey[] = [
+  [0, 0.055],
+  [0.5, 0.03],
+  [0.95, -0.06],
+  [1.36, -0.1],
+  [Math.PI / 2, 0],
+  [1.83, -0.12],
+  [2.3, -0.16],
+  [Math.PI, -0.175],
+];
+
+function hairlineAt(table: readonly HairlineKey[], azimuth: number): number {
+  const turn = ((azimuth % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const phi = turn > Math.PI ? Math.PI * 2 - turn : turn;
+  let index = 1;
+  while (index < table.length - 1 && phi > table[index]![0]) index += 1;
+  const [start, startY] = table[index - 1]!;
+  const [end, endY] = table[index]!;
+  const t = Math.min(1, Math.max(0, (phi - start) / (end - start)));
+  return startY + (endY - startY) * t * t * (3 - 2 * t);
+}
+
+/**
+ * A point `out` beyond the scalp, at a height and a bearing.
+ *
+ * `hang` decides what happens below the equator: 0 follows the skull in, 1
+ * keeps the width it had at y = 0 and drops straight, which is what a curtain
+ * of hair does once it leaves the head. `out` may be negative, which seats a
+ * clump inside the shell instead of gluing it to the outside.
+ */
+function shellPoint(y: number, azimuth: number, out: number, hang = 0): THREE.Vector3 {
+  const k = Math.sqrt(Math.max(0, 1 - (y / (SKULL.y + out)) ** 2));
+  const spread = y < 0 ? k + (1 - k) * hang : k;
+  return at(
+    (SKULL.x + out) * spread * Math.sin(azimuth),
+    y,
+    (SKULL.z + out) * spread * Math.cos(azimuth),
+  );
+}
+
+/** The same, for a style's own cap ellipsoid rather than for the scalp. */
+function onEllipsoid(
+  radii: readonly [number, number, number],
+  centre: readonly [number, number, number],
+  y: number,
+  azimuth: number,
+  out = 0,
+): THREE.Vector3 {
+  const k = Math.sqrt(Math.max(0, 1 - ((y - centre[1]) / radii[1]) ** 2));
+  return at(
+    centre[0] + (radii[0] + out) * k * Math.sin(azimuth),
+    y,
+    centre[2] + (radii[2] + out) * k * Math.cos(azimuth),
+  );
+}
+
+const SHELL_RADIAL = 28;
+const SHELL_RINGS = 6;
+
+type ShellOptions = {
+  /** The hair's own thickness over the scalp. */
+  shell: number;
+  /**
+   * Where the shell starts. Leave it out to close the shell over the crown;
+   * otherwise the top ring sits at this height, inside the cap that covers it.
+   * Every style passes its cap centre plus 0.02, which is far enough above the
+   * cap's own equator that the ring is inside it by 0.02 or better.
+   */
+  top?: number;
+  /** Raises the whole hairline: a short back and sides tapers higher. */
+  lift?: number;
+  /** A hemline of the style's own, for cuts that do not end on the skull. */
+  edge?: readonly HairlineKey[];
+  hang?: number;
+  name?: string;
+};
+
+/**
+ * The shell that carries a style's mass from the crown down to its hairline.
+ *
+ * Rings are spaced by polar angle rather than by height so they stay evenly
+ * apart over the curve, and the bottom ring is closed against a second ring
+ * seated 0.003 off the scalp - so the hairline has a visible edge thickness
+ * instead of the paper edge an open shell would show.
+ */
+function hairShell(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  options: ShellOptions,
+): HairMesh {
+  const { shell, lift = 0, hang = 0, name = "hair-shell" } = options;
+  const table = options.edge ?? HAIRLINE;
+  const ry = SKULL.y + shell;
+  const angleAt = (y: number) => Math.acos(Math.min(1, Math.max(-1, y / ry)));
+  const topAngle = options.top === undefined ? 0 : angleAt(options.top);
+  const stride = SHELL_RINGS + 2;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let column = 0; column < SHELL_RADIAL; column += 1) {
+    const azimuth = (column / SHELL_RADIAL) * Math.PI * 2;
+    const bottom = hairlineAt(table, azimuth) + lift;
+    const bottomAngle = angleAt(bottom);
+    for (let ring = 0; ring <= SHELL_RINGS; ring += 1) {
+      const angle = topAngle + (bottomAngle - topAngle) * (ring / SHELL_RINGS);
+      positions.push(...shellPoint(ry * Math.cos(angle), azimuth, shell, hang).toArray());
+    }
+    positions.push(...shellPoint(bottom, azimuth, 0.003, hang).toArray());
+  }
+  for (let column = 0; column < SHELL_RADIAL; column += 1) {
+    const here = column * stride;
+    const next = ((column + 1) % SHELL_RADIAL) * stride;
+    for (let ring = 0; ring < SHELL_RINGS + 1; ring += 1) {
+      indices.push(here + ring, here + ring + 1, next + ring);
+      indices.push(next + ring, here + ring + 1, next + ring + 1);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return add(root, geometry, material, [0, 0, 0], [0, 0, 0], [1, 1, 1], name);
+}
+
+// --- Masses -----------------------------------------------------------------
+
+function cap(
+  root: THREE.Group,
+  main: THREE.MeshStandardMaterial,
+  scale: [number, number, number] = [0.35, 0.24, 0.35],
+  y = 0.12,
+) {
   add(root, sphere(), main, [0, y, -0.015], [0, 0, 0], scale, "hair-cap");
 }
 
@@ -48,6 +281,17 @@ function lobe(
   name = "hair-lobe",
 ) {
   return add(root, sphere(), material, position, rotation, scale, name);
+}
+
+function curl(root: THREE.Group, material: THREE.MeshStandardMaterial, seat: THREE.Vector3, size: number) {
+  return lobe(
+    root,
+    material,
+    seat.toArray() as [number, number, number],
+    [size, size * 0.94, size],
+    [0, 0, 0],
+    "hair-curl",
+  );
 }
 
 function capsuleBetween(
@@ -71,7 +315,7 @@ function capsuleBetween(
     [1, 1, 1],
     name,
   );
-  part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  part.quaternion.setFromUnitVectors(UP, direction.normalize());
   return part;
 }
 
@@ -95,7 +339,120 @@ function taperedLock(
     [1, 1, 1],
     name,
   );
-  part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  part.quaternion.setFromUnitVectors(UP, direction.normalize());
+  return part;
+}
+
+/**
+ * A lock swept along a curve, thinning toward its tip.
+ *
+ * TubeGeometry carries one radius the whole way, and a mesh scale cannot taper
+ * something that bends, so the taper is applied to the built vertices: the
+ * geometry lays out (segments + 1) rings of (radial + 1) vertices with ring i
+ * sampled at getPointAt(i / segments), so scaling each ring about its own curve
+ * point narrows the tube without moving its spine.
+ */
+function sweptLock(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  points: readonly THREE.Vector3[],
+  radius: number,
+  tip = 0.35,
+  name = "hair-lock",
+  segments = 16,
+  /** Off for a ridge whose two ends are already buried in a mass. */
+  capEnds = true,
+): HairMesh {
+  const radial = 8;
+  const curve = new THREE.CatmullRomCurve3(points.map((point) => point.clone()));
+  const geometry = new THREE.TubeGeometry(curve, segments, radius, radial, false);
+  const position = geometry.getAttribute("position");
+  const centre = new THREE.Vector3();
+  const vertex = new THREE.Vector3();
+  for (let ring = 0; ring <= segments; ring += 1) {
+    const t = ring / segments;
+    curve.getPointAt(t, centre);
+    const scale = 1 + (tip - 1) * t;
+    for (let side = 0; side <= radial; side += 1) {
+      const index = ring * (radial + 1) + side;
+      vertex.fromBufferAttribute(position, index).sub(centre).multiplyScalar(scale).add(centre);
+      position.setXYZ(index, vertex.x, vertex.y, vertex.z);
+    }
+  }
+  geometry.computeVertexNormals();
+  const part = add(root, geometry, material, [0, 0, 0], [0, 0, 0], [1, 1, 1], name);
+  // A tube is open at both ends, and the materials draw both faces, so an
+  // uncapped end reads as a dark notch rather than as nothing at all - unless
+  // the end is inside another mass, where a cap becomes a bead hanging off it.
+  if (capEnds) for (const [end, size] of [[points[0]!, radius], [points[points.length - 1]!, radius * tip]] as const)
+    add(root, pebble(), material, end.toArray() as [number, number, number],
+      [0, 0, 0], [size, size, size], `${name}-end`);
+  return part;
+}
+
+/**
+ * Point a part's local +Y along `along`, with its local +Z along `flat`.
+ *
+ * setFromUnitVectors alone leaves the roll free, which is fine for a round lock
+ * and useless for a flat one: a slab has to know which way its face points.
+ */
+function orient(part: THREE.Object3D, along: THREE.Vector3, flat: THREE.Vector3) {
+  const y = along.clone().normalize();
+  const z = flat.clone().sub(y.clone().multiplyScalar(flat.dot(y)));
+  if (z.lengthSq() < 1e-8) z.copy(FORWARD).sub(y.clone().multiplyScalar(y.z));
+  z.normalize();
+  const x = new THREE.Vector3().crossVectors(y, z);
+  part.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+
+/** A flat tapered slab of hair: a four-sided prism squashed across its face. */
+function flatLock(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  halfWidth: number,
+  thickness: number,
+  flat: THREE.Vector3,
+  tip = 0.3,
+  name = "hair-slab",
+) {
+  const direction = end.clone().sub(start);
+  const part = add(
+    root,
+    new THREE.CylinderGeometry(halfWidth * tip, halfWidth, direction.length(), 4, 1),
+    material,
+    start.clone().add(end).multiplyScalar(0.5).toArray() as [number, number, number],
+    [0, 0, 0],
+    // Scale composes before rotation, so squashing local Z is what flattens the
+    // slab across the face `orient` is about to aim.
+    [1, 1, thickness / halfWidth],
+    name,
+  );
+  orient(part, direction, flat);
+  return part;
+}
+
+/** A tie round a tail: a torus whose axis follows the hair through it. */
+function tie(
+  root: THREE.Group,
+  material: THREE.MeshStandardMaterial,
+  centre: THREE.Vector3,
+  along: THREE.Vector3,
+  radius: number,
+  thickness: number,
+  name = "hair-tie",
+) {
+  const part = add(
+    root,
+    new THREE.TorusGeometry(radius, thickness, 8, 16),
+    material,
+    centre.toArray() as [number, number, number],
+    [0, 0, 0],
+    [1, 1, 1],
+    name,
+  );
+  part.quaternion.setFromUnitVectors(FORWARD, along.clone().normalize());
   return part;
 }
 
@@ -140,48 +497,87 @@ function mohawkFin(
   add(root, geometry, material, [0, 0, -0.015], [0, Math.PI / 2, 0], [1, 1, 1], tall ? "mohawk-fin" : "fauxhawk-fin");
 }
 
-function curl(root: THREE.Group, material: THREE.MeshStandardMaterial, x: number, y: number, z: number, size = 0.085) {
-  lobe(root, material, [x, y, z], [size, size * 0.94, size], [0, 0, 0], "hair-curl");
-}
-
-function braid(root: THREE.Group, main: THREE.MeshStandardMaterial, shadow: THREE.MeshStandardMaterial, x: number) {
-  const points: [number, number, number][] = [
-    [x, 0.055, 0.105],
-    [x * 1.035, -0.035, 0.12],
-    [x * 0.98, -0.125, 0.115],
-    [x * 1.04, -0.215, 0.105],
-    [x, -0.295, 0.095],
-  ];
-  for (let index = 0; index < points.length - 1; index += 1) {
-    capsuleBetween(root, index % 2 ? shadow : main, points[index]!, points[index + 1]!, 0.052, "hair-braid-segment");
+/**
+ * One plait: three strands wound about a falling spine.
+ *
+ * The spine is sampled first and the strands are offset from those samples, so
+ * the helix is even along the curve rather than only at the points it was
+ * written at. The offset is taken in the horizontal plane, which is within a
+ * few degrees of perpendicular to a spine this close to vertical.
+ */
+function braid(
+  root: THREE.Group,
+  main: THREE.MeshStandardMaterial,
+  shadow: THREE.MeshStandardMaterial,
+  side: -1 | 1,
+) {
+  // The spine hangs wide and forward on purpose. Drawn in to x 0.238 and back
+  // to z 0.075 it swung onto the shoulder cap at the far end of the head's own
+  // twist, which the catalog measures at 0.023 INSIDE the cap; out here it
+  // clears, and the plait still ends inside the authoring width.
+  const spine = new THREE.CatmullRomCurve3([
+    at(side * 0.248, 0.075, 0.09),
+    at(side * 0.278, -0.04, 0.105),
+    at(side * 0.29, -0.15, 0.11),
+    at(side * 0.29, -0.25, 0.112),
+    at(side * 0.283, -0.325, 0.112),
+  ]);
+  const samples = 9;
+  const helix = 0.024;
+  for (let strand = 0; strand < 3; strand += 1) {
+    const points: THREE.Vector3[] = [];
+    for (let index = 0; index < samples; index += 1) {
+      const t = index / (samples - 1);
+      const angle = (strand / 3) * Math.PI * 2 + t * 4.4 * side;
+      const point = spine.getPointAt(t);
+      points.push(at(
+        point.x + Math.cos(angle) * helix,
+        point.y,
+        point.z + Math.sin(angle) * helix,
+      ));
+    }
+    sweptLock(root, strand === 1 ? shadow : main, points, 0.03, 0.62, "hair-braid-strand");
   }
-  taperedLock(root, main, points.at(-1)!, [x, -0.37, 0.09], 0.05, "hair-braid-tip");
+  const root0 = spine.getPointAt(0.06);
+  const root1 = spine.getPointAt(0.14);
+  tie(root, shadow, root0, root1.clone().sub(root0), 0.058, 0.018, "hair-braid-tie");
+  const tail0 = spine.getPointAt(0.92);
+  tie(root, shadow, spine.getPointAt(0.97), spine.getPointAt(1).sub(tail0), 0.042, 0.015, "hair-braid-tie");
 }
 
 export function createHairStyleModel(id: string, color: string): THREE.Group {
   const root = new THREE.Group();
   root.name = `hair:${id}`;
-  const main = surface(color);
-  const shadow = surface(color, 0.72);
+  const main = surface(color, "hair-main");
+  const shadow = surface(color, "hair-shadow");
+  const sleek = surface(color, "hair-sleek");
+  const sleekShade = surface(color, "hair-sleek-shadow");
 
   switch (id) {
     case "classic":
       cap(root, main, [0.345, 0.235, 0.345], 0.115);
+      hairShell(root, main, { shell: 0.02, top: 0.135 });
       lobe(root, main, [0, 0.075, 0.267], [0.305, 0.09, 0.092], [0.08, 0, 0], "classic-fringe-band");
       lobe(root, main, [-0.18, 0.045, 0.294], [0.115, 0.055, 0.065], [0, 0, -0.22], "classic-fringe-left");
       lobe(root, main, [0, 0.035, 0.302], [0.13, 0.06, 0.065], [0, 0, 0.05], "classic-fringe-centre");
       lobe(root, main, [0.18, 0.048, 0.294], [0.115, 0.055, 0.065], [0, 0, 0.22], "classic-fringe-right");
       break;
     case "buzz":
+      // A buzz is short, not partial: the identity is that it covers the whole
+      // scalp at almost no thickness, so the shell is 0.012 and reaches the
+      // same hairline every other style does.
       cap(root, main, [0.326, 0.19, 0.326], 0.135);
+      hairShell(root, main, { shell: 0.012, top: 0.155, lift: 0.012 });
       break;
     case "crew":
       cap(root, main, [0.33, 0.195, 0.33], 0.125);
+      hairShell(root, main, { shell: 0.016, top: 0.145, lift: 0.008 });
       add(root, new THREE.CylinderGeometry(0.215, 0.295, 0.165, 16), main, [0, 0.245, -0.02], [0, 0, 0], [1, 1, 0.94], "crew-tapered-top");
       lobe(root, shadow, [0, 0.327, -0.02], [0.205, 0.012, 0.19], [0, 0, 0], "crew-top-plane");
       break;
     case "spikes":
       cap(root, shadow, [0.34, 0.215, 0.34], 0.105);
+      hairShell(root, shadow, { shell: 0.018, top: 0.125 });
       // A ring of six leaning outward plus three tall ones along the midline,
       // so the crown reads spiked from EVERY bearing. The first cut placed
       // seven spikes by hand and left the front face flat, which photographed
@@ -201,10 +597,10 @@ export function createHairStyleModel(id: string, color: string): THREE.Group {
       taperedLock(root, main, [0, 0.28, -0.2], [0, 0.47, -0.29], 0.09, "chunky-spike-rear");
       break;
     case "mohawk":
-      // No cap: a mohawk IS the shaved sides. The full hair cap this wore
-      // before turned it into "haircut with a lump", because the fin's lower
-      // half vanished inside the cap and only a crumple showed. The fin now
-      // rises off the bare scalp from a narrow seated ridge.
+      // The one style with no shell. Shaved sides ARE the mohawk, and the
+      // hairline shell every other style gained put a full head of hair back
+      // under the crest - which is the read this style was rebuilt to get rid
+      // of. Bare scalp, a narrow seated ridge, then the fin.
       lobe(root, shadow, [0, 0.24, -0.015], [0.082, 0.13, 0.33], [0, 0, 0], "mohawk-base-ridge");
       mohawkFin(root, main, true);
       break;
@@ -213,134 +609,306 @@ export function createHairStyleModel(id: string, color: string): THREE.Group {
       // hair styled upward, not a separate object. The extruded fin this
       // reused from the mohawk read as a dark blade glued to a beret.
       cap(root, main, [0.33, 0.198, 0.33], 0.125);
+      hairShell(root, main, { shell: 0.016, top: 0.145, lift: 0.006 });
       lobe(root, main, [0, 0.275, 0.135], [0.095, 0.1, 0.17], [-0.3, 0, 0], "fauxhawk-ridge-front");
       lobe(root, main, [0, 0.3, -0.01], [0.09, 0.115, 0.21], [0, 0, 0], "fauxhawk-ridge-crown");
       lobe(root, main, [0, 0.275, -0.16], [0.085, 0.09, 0.17], [0.25, 0, 0], "fauxhawk-ridge-rear");
       lobe(root, shadow, [0, 0.3, 0.075], [0.05, 0.075, 0.1], [-0.2, 0, 0], "fauxhawk-ridge-shade");
       break;
     case "quiff":
+      // Every mass here is seated inside the 0.34 x 0.205 cap rather than
+      // balanced on it. The wave used to start at y 0.3 and reach x -0.29,
+      // where the cap is only 0.105 wide, so a wedge of violet showed under it
+      // in profile; the two fill lobes bridge that span from inside the cap.
       cap(root, main, [0.34, 0.205, 0.34], 0.105);
-      lobe(root, main, [0, 0.265, 0.135], [0.3, 0.105, 0.19], [-0.12, 0, 0.06], "quiff-root");
-      lobe(root, main, [-0.1, 0.3, 0.18], [0.19, 0.105, 0.17], [-0.18, 0.08, 0.18], "quiff-sweep-left");
-      lobe(root, main, [0.08, 0.32, 0.16], [0.22, 0.11, 0.17], [-0.22, -0.06, -0.12], "quiff-sweep-right");
-      capsuleBetween(root, shadow, [-0.16, 0.285, 0.27], [0.16, 0.31, 0.255], 0.018, "quiff-fold");
+      hairShell(root, main, { shell: 0.02, top: 0.125 });
+      lobe(root, main, [0, 0.245, 0.145], [0.3, 0.115, 0.185], [-0.12, 0, 0.04], "quiff-root");
+      lobe(root, main, [-0.17, 0.245, 0.1], [0.135, 0.105, 0.15], [0, 0, 0.14], "quiff-fill-left");
+      lobe(root, main, [0.17, 0.245, 0.1], [0.135, 0.105, 0.15], [0, 0, -0.14], "quiff-fill-right");
+      lobe(root, main, [0, 0.335, 0.115], [0.255, 0.115, 0.155], [-0.22, 0, 0], "quiff-wave");
+      // Sampled on the wave the way the pompadour's fold is, and for the same
+      // reason: the first cut ended at x +-0.16, which is 1.126 of the tilted
+      // lobe's radius, so both ends stood off it. Five points, at 0.86 of the
+      // radius at the ends and 1.01 to 1.02 across the middle, so the ridge
+      // rides proud where it is seen and dives in before it can end in a bead.
+      sweptLock(root, shadow, [
+        at(-0.136, 0.385, 0.203), at(-0.093, 0.401, 0.241), at(0, 0.406, 0.252),
+        at(0.093, 0.401, 0.241), at(0.136, 0.385, 0.203),
+      ], 0.016, 1, "quiff-fold", 10, false);
       break;
     case "pompadour":
-      cap(root, shadow, [0.34, 0.205, 0.34], 0.105);
-      lobe(root, main, [0, 0.27, 0.11], [0.3, 0.105, 0.2], [-0.08, 0, 0], "pompadour-root");
-      lobe(root, main, [0, 0.325, 0.17], [0.315, 0.13, 0.18], [-0.1, 0, 0], "pompadour-roll");
-      lobe(root, main, [-0.2, 0.295, 0.12], [0.135, 0.105, 0.15], [0, 0.08, 0.18], "pompadour-left");
-      lobe(root, main, [0.2, 0.295, 0.12], [0.135, 0.105, 0.15], [0, -0.08, -0.18], "pompadour-right");
-      capsuleBetween(root, shadow, [-0.2, 0.292, 0.265], [0.2, 0.305, 0.255], 0.017, "pompadour-fold");
+      // Matte, like everything but the slickback. Rendered slick, the roll took
+      // the bright role and the cap the dark one, and a mass that changes
+      // material halfway up a head reads as a separate ball resting on a bowl.
+      // The cap is also 0.02 taller than the rest of the family: at 0.205 its
+      // dome ran out at y 0.31 while the roll carried on to 0.475, so the rear
+      // profile stepped in by 0.09 over 0.015 of height and stacked.
+      cap(root, shadow, [0.34, 0.225, 0.34], 0.105);
+      hairShell(root, shadow, { shell: 0.02, top: 0.125 });
+      lobe(root, main, [0, 0.25, 0.125], [0.3, 0.12, 0.19], [-0.08, 0, 0], "pompadour-root");
+      lobe(root, main, [-0.19, 0.26, 0.075], [0.135, 0.11, 0.16], [0, 0.08, 0.18], "pompadour-fill-left");
+      lobe(root, main, [0.19, 0.26, 0.075], [0.135, 0.11, 0.16], [0, -0.08, -0.18], "pompadour-fill-right");
+      lobe(root, main, [0, 0.34, 0.14], [0.3, 0.135, 0.175], [-0.1, 0, 0], "pompadour-roll");
+      // Sampled on the roll itself, at 1.02 of its radius across the crest and
+      // 0.86 at the ends, so the ridge dies inside the mass. The first cut ran
+      // it to x +-0.2, which is 1.076 of the roll's radius, and the cap on that
+      // open end rendered as a dark beak hanging off the crest.
+      sweptLock(root, shadow, [
+        at(-0.161, 0.386, 0.245), at(-0.11, 0.399, 0.29), at(0, 0.402, 0.303),
+        at(0.11, 0.399, 0.29), at(0.161, 0.386, 0.245),
+      ], 0.016, 1, "pompadour-fold", 10, false);
       break;
     case "sidepart":
       cap(root, main, [0.345, 0.23, 0.345], 0.115);
-      lobe(root, main, [-0.085, 0.265, 0.08], [0.295, 0.115, 0.255], [-0.08, 0.08, 0.22], "side-sweep");
-      capsuleBetween(root, shadow, [0.105, 0.13, 0.287], [0.155, 0.29, 0.065], 0.014, "side-part-groove");
+      hairShell(root, main, { shell: 0.02, top: 0.135 });
+      lobe(root, main, [-0.06, 0.255, 0.075], [0.26, 0.115, 0.235], [-0.08, 0.08, 0.2], "side-sweep");
+      // The sweep's far edge lands at x -0.32 where the cap has drawn in to
+      // 0.274, so this lobe carries the mass back down to it.
+      lobe(root, main, [-0.235, 0.175, 0.055], [0.115, 0.115, 0.16], [0, 0, 0.25], "side-sweep-bridge");
+      // The part rides the line where the sweep's surface crosses the cap's,
+      // which is at x 0.145: at that x the sweep tops out at 0.323 and the cap
+      // at 0.327. The old groove ran through y 0.13 to 0.29, a tenth of a unit
+      // under a cap surface that is at 0.31 to 0.35 there, so it never showed.
+      sweptLock(root, shadow, [
+        at(0.145, 0.225, 0.26), at(0.145, 0.303, 0.14),
+        at(0.145, 0.33, 0), at(0.145, 0.313, -0.14),
+      ], 0.013, 1, "side-part-groove", 10);
       break;
-    case "slickback":
-      cap(root, main, [0.34, 0.215, 0.355], 0.12);
+    case "slickback": {
+      // Combed back and shining, and no longer the buzz's twin: seven grooves
+      // ride the cap front to back and a gather collects at the nape.
+      const slickRadii = [0.34, 0.215, 0.355] as const;
+      const slickAt = [0, 0.12, -0.015] as const;
+      cap(root, sleek, [...slickRadii], slickAt[1]);
+      hairShell(root, sleek, { shell: 0.02, top: 0.14 });
+      for (let index = 0; index < 7; index += 1) {
+        const x = -0.24 + index * 0.08;
+        // Sampled on the cap inflated by 0.006, so each groove sits proud of
+        // the surface it combs rather than sunk invisibly inside it.
+        const points = [0.25, 0.12, -0.02, -0.16, -0.29].map((z) => {
+          const drop = (x / (slickRadii[0] + 0.006)) ** 2 + (z / (slickRadii[2] + 0.006)) ** 2;
+          return at(x, slickAt[1] + (slickRadii[1] + 0.006) * Math.sqrt(Math.max(0, 1 - drop)), z + slickAt[2]);
+        });
+        sweptLock(root, sleekShade, points, 0.011, 1, "slickback-comb-groove", 12);
+      }
+      lobe(root, sleek, [0, 0.02, -0.3], [0.15, 0.14, 0.1], [0.12, 0, 0], "slickback-gather");
       break;
+    }
     case "bob":
-      cap(root, main, [0.35, 0.275, 0.35], 0.095);
-      capsuleBetween(root, main, [-0.285, 0.11, 0.02], [-0.275, -0.22, 0.065], 0.105, "bob-left");
-      capsuleBetween(root, main, [0.285, 0.11, 0.02], [0.275, -0.22, 0.065], 0.105, "bob-right");
-      lobe(root, main, [-0.15, 0.065, 0.276], [0.15, 0.07, 0.075], [0, 0, -0.12], "bob-fringe-left");
-      lobe(root, main, [0.08, 0.055, 0.285], [0.17, 0.072, 0.075], [0, 0, 0.12], "bob-fringe-right");
+      // One curtain, closed round the back and cut level at y -0.3. The old
+      // pair of side capsules left the nape bare between them and reached
+      // 0.39 from the centre line; this hangs at 0.349.
+      cap(root, main, [0.35, 0.26, 0.35], 0.095);
+      hairShell(root, main, { shell: 0.024, top: 0.115, hang: 1, edge: BOB_HEM, name: "bob-curtain" });
+      lobe(root, main, [0, 0.055, 0.275], [0.28, 0.085, 0.085], [0.06, 0, 0], "bob-fringe");
+      lobe(root, main, [-0.17, 0.045, 0.262], [0.13, 0.07, 0.08], [0, 0, -0.14], "bob-fringe-left");
+      lobe(root, main, [0.17, 0.045, 0.262], [0.13, 0.07, 0.08], [0, 0, 0.14], "bob-fringe-right");
       break;
     case "curlybob":
       cap(root, main, [0.345, 0.235, 0.345], 0.105);
-      for (const side of [-1, 1] as const) {
-        for (let index = 0; index < 5; index += 1) {
-          const y = 0.15 - index * 0.078;
-          const x = side * (0.27 + (index % 2) * 0.018);
-          curl(root, index % 2 ? shadow : main, x, y, 0.08 - (index % 2) * 0.035, 0.083);
-        }
+      hairShell(root, main, { shell: 0.022, top: 0.125, lift: -0.02 });
+      // Eighteen clumps down the sides and round the back, each seated so its
+      // centre is 0.55 of its own size inside the shell: they read as one
+      // broken mass, and the outer reach stays at shell + 0.45 * size.
+      for (let index = 0; index < 18; index += 1) {
+        const side = index % 2 ? 1 : -1;
+        const row = Math.floor(index / 2);
+        const azimuth = side * (0.75 + row * 0.24 + wobble(index, 3) * 0.14);
+        const y = 0.05 - row * 0.022 - wobble(index, 7) * 0.12;
+        const size = 0.058 + wobble(index, 11) * 0.03;
+        curl(root, index % 3 ? main : shadow, shellPoint(y, azimuth, 0.022 - size * 0.55, 1), size);
       }
-      for (const x of [-0.18, -0.06, 0.06, 0.18] as const) curl(root, main, x, 0.075, 0.278, 0.074);
-      break;
-    case "afro":
-      cap(root, main, [0.375, 0.335, 0.375], 0.185);
-      for (let ring = 0; ring < 2; ring += 1) for (let index = 0; index < 12; index += 1) {
-        const angle = (index / 12) * Math.PI * 2 + ring * 0.14;
-        const radius = ring === 0 ? 0.295 : 0.225;
-        const y = ring === 0 ? 0.19 : 0.385;
-        curl(root, (index + ring) % 4 === 0 ? shadow : main, Math.sin(angle) * radius, y + Math.cos(angle) * 0.055, Math.cos(angle) * radius - 0.025, ring === 0 ? 0.11 : 0.102);
+      for (let index = 0; index < 5; index += 1) {
+        const azimuth = (index - 2) * 0.3;
+        const size = 0.06 + wobble(index, 23) * 0.022;
+        curl(root, index % 2 ? main : shadow, shellPoint(0.055, azimuth, 0.03 - size * 0.5), size);
       }
-      curl(root, main, 0, 0.525, -0.025, 0.14);
       break;
+    case "afro": {
+      const afroRadii = [0.375, 0.335, 0.375] as const;
+      const afroAt = [0, 0.185, -0.015] as const;
+      cap(root, main, [...afroRadii], afroAt[1]);
+      hairShell(root, main, { shell: 0.024, top: 0.205, lift: -0.02 });
+      // Twenty-two clumps on a golden-angle spiral over the cap, sizes hashed
+      // rather than uniform. Seated at -0.55 of their size they reach
+      // 0.375 + 0.45 * 0.114 = 0.426 from the centre line: past the 0.325
+      // skull, which is what makes the shape an afro and not a helmet, and
+      // inside the 0.47 the wardrobe allows a single garment.
+      for (let index = 0; index < 22; index += 1) {
+        const azimuth = index * 2.39996;
+        const y = 0.06 + ((index * 7) % 22) / 22 * 0.42;
+        const size = 0.086 + wobble(index, 3) * 0.028;
+        curl(root, index % 4 === 0 ? shadow : main, onEllipsoid(afroRadii, afroAt, y, azimuth, -size * 0.55), size);
+      }
+      // A darker layer set 0.045 deeper fills the gaps the outer ring leaves,
+      // so the breaks between clumps read as depth rather than as holes.
+      for (let index = 0; index < 16; index += 1) {
+        const azimuth = index * 2.39996 + 1.2;
+        const y = 0.09 + ((index * 5) % 16) / 16 * 0.36;
+        const size = 0.06 + wobble(index, 13) * 0.02;
+        curl(root, index % 3 ? shadow : main, onEllipsoid(afroRadii, afroAt, y, azimuth, -size * 0.55 - 0.045), size);
+      }
+      curl(root, main, at(0, 0.505, -0.02), 0.115);
+      curl(root, shadow, at(-0.1, 0.475, -0.055), 0.085);
+      curl(root, main, at(0.105, 0.48, 0.02), 0.088);
+      break;
+    }
     case "puffs":
       cap(root, main, [0.34, 0.215, 0.34], 0.105);
+      hairShell(root, main, { shell: 0.02, top: 0.125 });
       for (const side of [-1, 1] as const) {
-        capsuleBetween(root, shadow, [side * 0.235, 0.27, -0.02], [side * 0.295, 0.335, -0.025], 0.07, "puff-root");
-        curl(root, shadow, side * 0.315, 0.37, -0.025, 0.135);
-        for (let index = 0; index < 7; index += 1) {
-          const angle = (index / 7) * Math.PI * 2;
-          curl(root, main, side * 0.315 + Math.sin(angle) * 0.07, 0.37 + Math.cos(angle) * 0.064, -0.025, 0.065);
+        const centre = at(side * 0.29, 0.355, -0.022);
+        const gathered = at(side * 0.215, 0.245, -0.02);
+        capsuleBetween(root, shadow, gathered.toArray() as [number, number, number],
+          [side * 0.275, 0.325, -0.022], 0.062, "puff-root");
+        tie(root, shadow, at(side * 0.253, 0.293, -0.021),
+          centre.clone().sub(gathered), 0.076, 0.021, "puff-wrap");
+        lobe(root, shadow, centre.toArray() as [number, number, number],
+          [0.1, 0.1, 0.1], [0, 0, 0], "puff-core");
+        // Eleven clumps on a golden-angle sphere about the bun, so the puff
+        // reads as gathered hair rather than as a ball. The furthest point is
+        // 0.29 + 0.078 + 0.072 = 0.44 from the centre line.
+        for (let index = 0; index < 11; index += 1) {
+          const u = (index + 0.5) / 11;
+          const polar = Math.acos(1 - 2 * u);
+          const around = index * 2.39996;
+          const size = 0.05 + wobble(index, side + 3) * 0.022;
+          curl(root, index % 4 === 0 ? shadow : main, at(
+            centre.x + Math.sin(polar) * Math.cos(around) * 0.078,
+            centre.y + Math.cos(polar) * 0.078,
+            centre.z + Math.sin(polar) * Math.sin(around) * 0.078,
+          ), size);
         }
       }
       break;
-    case "ponytail":
+    case "ponytail": {
       cap(root, main, [0.345, 0.235, 0.345], 0.115);
-      add(root, new THREE.TorusGeometry(0.06, 0.021, 7, 14), shadow, [0, 0.075, -0.35], [Math.PI / 2, 0, 0], [1, 1, 1], "pony-tie");
-      capsuleBetween(root, main, [0, 0.08, -0.345], [0, -0.18, -0.43], 0.075, "low-pony-upper");
-      capsuleBetween(root, main, [0, -0.18, -0.43], [0, -0.39, -0.39], 0.062, "low-pony-lower");
-      lobe(root, main, [0, -0.405, -0.375], [0.062, 0.085, 0.06], [0, 0, 0], "low-pony-rounded-tip");
+      hairShell(root, main, { shell: 0.02, top: 0.135 });
+      // The tail starts at z -0.265, inside the shell's own -0.329 at that
+      // height, so it grows out of the hair instead of beginning beside it.
+      const tail = [
+        at(0, 0.06, -0.265),
+        at(0, 0.03, -0.345),
+        at(0, -0.1, -0.415),
+        at(0, -0.26, -0.425),
+        at(0, -0.4, -0.385),
+      ];
+      tie(root, shadow, at(0, 0.025, -0.355), at(0, -0.13, -0.07), 0.072, 0.02, "pony-tie");
+      sweptLock(root, main, tail, 0.078, 0.3, "low-pony-tail");
       break;
-    case "highpony":
+    }
+    case "highpony": {
       cap(root, main, [0.345, 0.235, 0.345], 0.115);
-      capsuleBetween(root, main, [0, 0.25, -0.23], [0, 0.39, -0.34], 0.085, "high-pony-root");
-      add(root, new THREE.TorusGeometry(0.064, 0.022, 7, 14), shadow, [0, 0.39, -0.35], [Math.PI / 2, 0, 0], [1, 1, 1], "high-pony-tie");
-      capsuleBetween(root, main, [0, 0.39, -0.355], [0, 0.17, -0.45], 0.08, "high-pony-upper");
-      capsuleBetween(root, main, [0, 0.17, -0.45], [0, -0.1, -0.4], 0.066, "high-pony-lower");
-      lobe(root, main, [0, -0.125, -0.385], [0.066, 0.09, 0.062], [0, 0, 0], "high-pony-rounded-tip");
+      hairShell(root, main, { shell: 0.02, top: 0.135 });
+      // Gathered high at the back of the crown, kicked up to y 0.375 before it
+      // falls: without the rise a high ponytail is only a low one moved up.
+      const tail = [
+        at(0, 0.215, -0.175),
+        at(0, 0.3, -0.275),
+        at(0, 0.355, -0.345),
+        at(0, 0.375, -0.425),
+        at(0, 0.27, -0.475),
+        at(0, 0.1, -0.465),
+        at(0, -0.05, -0.415),
+      ];
+      tie(root, shadow, at(0, 0.352, -0.343), at(0, 0.075, -0.15), 0.075, 0.021, "high-pony-tie");
+      sweptLock(root, main, tail, 0.082, 0.32, "high-pony-tail", 20);
       break;
+    }
     case "braids":
       cap(root, main, [0.345, 0.22, 0.345], 0.105);
-      braid(root, main, shadow, -0.265);
-      braid(root, main, shadow, 0.265);
+      hairShell(root, main, { shell: 0.02, top: 0.125 });
+      braid(root, main, shadow, -1);
+      braid(root, main, shadow, 1);
       break;
-    case "locs":
-      cap(root, main, [0.35, 0.225, 0.35], 0.105);
-      for (const [start, end, material] of [
-        [[-0.285, 0.13, 0.055], [-0.32, -0.2, 0.04], main],
-        [[0.285, 0.13, 0.055], [0.32, -0.2, 0.04], shadow],
-        [[-0.335, 0.17, -0.055], [-0.35, -0.19, -0.075], shadow],
-        [[0.335, 0.17, -0.055], [0.35, -0.19, -0.075], main],
-        [[-0.275, 0.2, -0.2], [-0.295, -0.17, -0.245], main],
-        [[0.275, 0.2, -0.2], [0.295, -0.17, -0.245], shadow],
-        [[-0.13, 0.225, -0.31], [-0.145, -0.15, -0.365], shadow],
-        [[0.13, 0.225, -0.31], [0.145, -0.15, -0.365], main],
-        [[-0.02, 0.235, -0.335], [-0.035, -0.12, -0.39], main],
-      ] as const) capsuleBetween(root, material, start, end, 0.043, "rounded-loc");
+    case "locs": {
+      const locRadii = [0.35, 0.225, 0.35] as const;
+      const locAt = [0, 0.105, -0.015] as const;
+      cap(root, main, [...locRadii], locAt[1]);
+      hairShell(root, main, { shell: 0.018, top: 0.125, lift: -0.01 });
+      // Roots first. Without them the locs hang off a smooth dome and read as
+      // beads on a helmet, so twelve nubs seated 0.55 deep cover the crown.
+      for (let index = 0; index < 12; index += 1) {
+        const azimuth = index * 2.39996;
+        const y = 0.2 + wobble(index, 5) * 0.09;
+        const size = 0.055 + wobble(index, 9) * 0.02;
+        curl(root, index % 3 === 0 ? shadow : main, onEllipsoid(locRadii, locAt, y, azimuth, -size * 0.55), size);
+      }
+      // Fourteen locs round everything but the face, each with its own length,
+      // thickness and sideways drift, so no two read as the same part. Length
+      // is bounded by the shoulder rather than by taste: locs hang all the way
+      // round, so unlike the braids they pass over the cap on both the twist's
+      // extremes, and at a 0.35 drop the nearest measured 0.022u off it.
+      for (let index = 0; index < 14; index += 1) {
+        const azimuth = 0.62 + (index / 13) * (Math.PI * 2 - 1.24);
+        const drop = 0.22 + wobble(index, 13) * 0.09;
+        const radius = 0.038 + wobble(index, 17) * 0.012;
+        const lean = (wobble(index, 19) - 0.5) * 0.16;
+        sweptLock(root, index % 3 === 1 ? shadow : main, [
+          shellPoint(0.13, azimuth, -0.01),
+          shellPoint(-0.02, azimuth + lean * 0.4, 0.012, 1),
+          shellPoint(-drop, azimuth + lean, 0.02, 1),
+        ], radius, 0.78, "rounded-loc", 10);
+      }
       break;
-    case "shag":
-      cap(root, main, [0.36, 0.245, 0.36], 0.095);
-      for (const [start, end, material] of [
-        [[-0.22, 0.12, 0.27], [-0.255, 0.04, 0.292], main],
-        [[-0.07, 0.12, 0.3], [-0.09, 0.035, 0.312], shadow],
-        [[0.08, 0.12, 0.3], [0.09, 0.04, 0.312], main],
-        [[0.22, 0.12, 0.27], [0.255, 0.045, 0.292], shadow],
-      ] as const) capsuleBetween(root, material, start, end, 0.06, "rounded-shag-fringe");
-      for (const [start, end, material] of [
-        [[-0.31, 0.12, 0.08], [-0.34, -0.14, 0.07], main],
-        [[0.31, 0.12, 0.08], [0.34, -0.14, 0.07], main],
-        [[-0.27, 0.13, -0.18], [-0.3, -0.17, -0.22], shadow],
-        [[0.27, 0.13, -0.18], [0.3, -0.17, -0.22], shadow],
-        [[-0.1, 0.15, -0.31], [-0.12, -0.19, -0.36], main],
-        [[0.1, 0.15, -0.31], [0.12, -0.2, -0.36], main],
-      ] as const) taperedLock(root, material, start, end, 0.075, "shag-layer");
+    }
+    case "shag": {
+      cap(root, main, [0.355, 0.245, 0.355], 0.095);
+      hairShell(root, main, { shell: 0.022, top: 0.115, hang: 0.5, edge: SHAG_EDGE });
+      // Three layers of flat slabs, each seated far enough out to start inside
+      // the layer above it: 0.004 is just under the shell, 0.02 is level with
+      // it, and 0.038 lands inside the second layer's slabs where they pass
+      // y -0.09 at radius 0.369.
+      const layers = [
+        [0.135, 0.45, 0.004, 0.155, 0.03, 0.058],
+        [0.02, 0.6, 0.02, 0.175, 0.038, 0.062],
+        [-0.09, 0.95, 0.038, 0.165, 0.042, 0.056],
+      ] as const;
+      for (const [level, from, seat, drop, flick, width] of layers) {
+        for (let index = 0; index < 12; index += 1) {
+          const azimuth = from + (index / 11) * (Math.PI * 2 - from * 2);
+          const start = shellPoint(level, azimuth, seat, 0.5);
+          const radial = at(Math.sin(azimuth), 0, Math.cos(azimuth));
+          const jitter = wobble(index, level * 100 + 1);
+          const end = start.clone().add(at(
+            radial.x * flick,
+            -drop * (0.82 + jitter * 0.36),
+            radial.z * flick,
+          ));
+          flatLock(root, index % 3 === 1 ? shadow : main, start, end,
+            width * (0.85 + jitter * 0.3), 0.011, radial, 0.28, "shag-layer");
+        }
+      }
+      // The fringe, cut level with the brow rather than into the eyes at
+      // y -0.076: the lowest tip here is 0.005.
+      for (let index = 0; index < 5; index += 1) {
+        const azimuth = (index - 2) * 0.26;
+        const start = shellPoint(0.14, azimuth, 0.004);
+        const end = shellPoint(0.005, azimuth * 1.15, 0.05);
+        flatLock(root, index % 2 ? shadow : main, start, end, 0.06, 0.012,
+          at(Math.sin(azimuth), 0, Math.cos(azimuth)), 0.35, "shag-fringe");
+      }
       break;
+    }
     case "undercut":
-      cap(root, shadow, [0.326, 0.2, 0.326], 0.13);
-      lobe(root, shadow, [-0.075, 0.165, 0.265], [0.255, 0.07, 0.075], [0.02, 0, 0.08], "undercut-sealed-root");
+      // The disconnect is the style: a 0.01 shaved shell in the shadow tone
+      // runs down to the hairline, and the long top overhangs it on a hard
+      // horizontal underside rather than fading into it.
+      cap(root, main, [0.352, 0.205, 0.352], 0.13);
+      hairShell(root, shadow, { shell: 0.01, top: 0.15, name: "undercut-shaved-side" });
+      // Inner radius 0.30, not 0.32: the ring is a circle and the shaved shell
+      // is an ellipse 0.309 deep at this height, so 0.32 would have left the
+      // underside floating clear of the nape by 0.023.
+      add(root, new THREE.RingGeometry(0.3, 0.348, 24), shadow, [0, 0.088, -0.012],
+        [Math.PI / 2, 0, 0], [1, 1, 1], "undercut-disconnect");
       lobe(root, main, [-0.135, 0.255, 0.075], [0.225, 0.095, 0.22], [-0.1, 0.06, 0.3], "undercut-sweep-base");
-      lobe(root, main, [-0.215, 0.305, 0.13], [0.155, 0.085, 0.15], [-0.16, 0.12, 0.34], "undercut-sweep-crown");
-      capsuleBetween(root, main, [-0.27, 0.285, 0.18], [0.055, 0.32, 0.15], 0.055, "undercut-swept-lock");
-      capsuleBetween(root, main, [-0.29, 0.235, 0.22], [-0.02, 0.27, 0.235], 0.048, "undercut-front-lock");
+      lobe(root, main, [-0.215, 0.285, 0.115], [0.155, 0.095, 0.155], [-0.16, 0.12, 0.34], "undercut-sweep-crown");
+      capsuleBetween(root, main, [-0.25, 0.29, 0.17], [0.055, 0.32, 0.15], 0.055, "undercut-swept-lock");
+      capsuleBetween(root, main, [-0.265, 0.245, 0.21], [-0.02, 0.27, 0.235], 0.048, "undercut-front-lock");
       break;
     default:
       cap(root, main);
+      hairShell(root, main, { shell: 0.02, top: 0.14 });
       break;
   }
   return root;

@@ -1,6 +1,6 @@
 {
   "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
-  "revision": "aaa-wave-1-tank-unburied",
+  "revision": "aaa-wave-4-footwear-back-held",
   "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
   "sourceReferences": [
     "assets/reference/wear-tank.png",
@@ -9,6 +9,13 @@
     "assets/reference/wear-sandal.png",
     "assets/reference/wear-cape.png",
     "assets/reference/wear-wings.png",
+    "assets/reference/wear-boots.png",
+    "assets/reference/wear-hightop.png",
+    "assets/reference/wear-trainers.png",
+    "assets/reference/wear-skates.png",
+    "assets/reference/wear-backpack.png",
+    "assets/reference/wear-jetpack.png",
+    "assets/reference/wear-trophy.png",
     "assets/reference/wearable-upgrades/missing-wearables-reference.png"
   ],
   "items": [
@@ -22,9 +29,32 @@
     "cape",
     "wings",
     "flag",
-    "balloon"
+    "balloon",
+    "boot",
+    "hightop",
+    "cleat",
+    "skate",
+    "daypack",
+    "jetpack",
+    "trophy"
   ],
-  "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts",
+  "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts, plus the deck plane measured off PlayerVisual.measureRunnerLimbs",
+  "measuredFrames": {
+    "shoeSocket": {
+      "deckY": -0.1875,
+      "deckEvidence": "measureRunnerLimbs reports ankleToSole 0.1875 on the undressed sculpt and the gait places the ankle exactly that far above the deck, so the socket's own y = -0.1875 is the ground",
+      "calfRimY": 0.0945,
+      "calfRimX": [
+        -0.0398,
+        0.0938
+      ],
+      "calfLeanBy022": [
+        -0.0358,
+        0.1085
+      ],
+      "note": "the socket sits 0.027u outboard of the calf axis and one template serves both feet, so nothing built here can lean inboard"
+    }
+  },
   "features": {
     "tank": [
       "torso profile",
@@ -43,11 +73,13 @@
     ],
     "barefoot": [
       "single continuous asymmetric foot volume",
-      "tapered ankle and instep bridge",
-      "heel-to-toe silhouette rather than an oval capsule"
+      "sole planted on the measured deck plane rather than floating above it",
+      "malleolus ankle mass wide enough to swallow the calf on the inner side",
+      "slim hidden shin column that carries the join through the ankle sweep"
     ],
     "sandal": [
-      "fitted shaped bed",
+      "shared bare-foot last",
+      "bed on the deck",
       "cross straps",
       "heel sling"
     ],
@@ -67,10 +99,10 @@
       "neck yoke and clasps"
     ],
     "wings": [
-      "thick membranes",
-      "perimeter frame",
-      "veins",
-      "back mounting plate"
+      "membranes bowed back and outward rather than parallel plates",
+      "tapered swept leading edge",
+      "trailing edge left unframed",
+      "veins and back mounting plate"
     ],
     "flag": [
       "waved thick cloth",
@@ -80,7 +112,48 @@
     "balloon": [
       "compact rotation-safe reach",
       "knot, tether and wrist retention loop"
+    ],
+    "boot": [
+      "lofted last with toe taper and heel counter",
+      "lugged outsole on the deck, welt band, raised heel block",
+      "fold-over cuff, rear pull tab, toe rand",
+      "four eyelets a side with swept lace crossings"
+    ],
+    "hightop": [
+      "collar lofted into the upper as one shell",
+      "tongue, eyelets and swept laces",
+      "toe rand wrapping the front of the midsole",
+      "cream midsole over a dark outsole"
+    ],
+    "cleat": [
+      "lofted upper with toe taper and heel counter",
+      "side stripe swept along the upper's own surface",
+      "ten studs on a sole plate, including under the ball"
+    ],
+    "skate": [
+      "boot shell with a padded lathe cuff",
+      "lace panel and instep cam buckle",
+      "I-beam chassis with axle bosses",
+      "four wheels on visible trucks, toe stop at the chassis front"
+    ],
+    "daypack": [
+      "extruded rounded body with a lid flap",
+      "contrasting base panel and side bottle pocket",
+      "swept zip line with a pull tab",
+      "compression strap pair"
+    ],
+    "jetpack": [
+      "twin lathe tanks with domed caps and filler valves",
+      "accent bands and a spine plate onto a back plate",
+      "swept-back extruded fins",
+      "short emissive thruster cones"
+    ],
+    "trophy": [
+      "cup lathed with wall thickness so the mouth is open",
+      "rolled rim in the same profile",
+      "ring handles terminating in lugs",
+      "knop stem over a two-tier plinth with a nameplate"
     ]
   },
-  "reviewStatus": "aaa wave 1: fast-mode eyeball review, front and side per item against the 4173 preview; wardrobe suite green; no formal ledger review"
+  "reviewStatus": "aaa wave 4: fast-mode eyeball review of every new and rebuilt item in an offline three.js render harness (swiftshader, orthographic front/side/inner/under views of the dressed runner); geometry winding audited outward against each shell's own centroid; wardrobe and silhouette suites green; no formal ledger review"
 }

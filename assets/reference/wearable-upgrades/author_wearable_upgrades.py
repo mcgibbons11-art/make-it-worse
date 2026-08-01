@@ -1,4 +1,4 @@
-"""Author the first reference-led wearable rebuild wave.
+"""Author the reference-led wearable rebuild waves.
 
 This is the deterministic author source.  The generated TypeScript is runtime
 output and must not be edited by hand.  New forms are based on the source images
@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 
 SPEC = {
     "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
-    "revision": "aaa-wave-1-tank-unburied",
+    "revision": "aaa-wave-4-footwear-back-held",
     "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
     "sourceReferences": [
         "assets/reference/wear-tank.png",
@@ -22,36 +22,115 @@ SPEC = {
         "assets/reference/wear-sandal.png",
         "assets/reference/wear-cape.png",
         "assets/reference/wear-wings.png",
+        "assets/reference/wear-boots.png",
+        "assets/reference/wear-hightop.png",
+        "assets/reference/wear-trainers.png",
+        "assets/reference/wear-skates.png",
+        "assets/reference/wear-backpack.png",
+        "assets/reference/wear-jetpack.png",
+        "assets/reference/wear-trophy.png",
         "assets/reference/wearable-upgrades/missing-wearables-reference.png",
     ],
-    "items": ["tank", "puffer", "vest", "barefoot", "sandal", "kilt", "bedroll", "cape", "wings", "flag", "balloon"],
-    "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts",
+    "items": [
+        "tank", "puffer", "vest", "barefoot", "sandal", "kilt", "bedroll", "cape",
+        "wings", "flag", "balloon", "boot", "hightop", "cleat", "skate",
+        "daypack", "jetpack", "trophy",
+    ],
+    "fitBasis": "runner sockets and clearance constants in createWardrobeModels.ts, plus the deck plane measured off PlayerVisual.measureRunnerLimbs",
+    "measuredFrames": {
+        "shoeSocket": {
+            "deckY": -0.1875,
+            "deckEvidence": "measureRunnerLimbs reports ankleToSole 0.1875 on the undressed sculpt and the gait places the ankle exactly that far above the deck, so the socket's own y = -0.1875 is the ground",
+            "calfRimY": 0.0945,
+            "calfRimX": [-0.0398, 0.0938],
+            "calfLeanBy022": [-0.0358, 0.1085],
+            "note": "the socket sits 0.027u outboard of the calf axis and one template serves both feet, so nothing built here can lean inboard",
+        },
+    },
     "features": {
         "tank": ["torso profile", "open armholes", "neck and arm binding"],
         "puffer": ["split padded panels", "zip track, teeth and pull", "sleeve-safe armholes"],
         "vest": ["split padded panels", "deep shaped armholes", "zip track, teeth and pull"],
         "barefoot": [
             "single continuous asymmetric foot volume",
-            "tapered ankle and instep bridge",
-            "heel-to-toe silhouette rather than an oval capsule",
+            "sole planted on the measured deck plane rather than floating above it",
+            "malleolus ankle mass wide enough to swallow the calf on the inner side",
+            "slim hidden shin column that carries the join through the ankle sweep",
         ],
-        "sandal": ["fitted shaped bed", "cross straps", "heel sling"],
+        "sandal": ["shared bare-foot last", "bed on the deck", "cross straps", "heel sling"],
         "kilt": ["front, side and rear pleat rhythm", "flared hem"],
         "bedroll": ["carrier frame", "compression straps", "buckles and tie bridge"],
         "cape": ["thick curved panels", "folds", "scalloped hem", "neck yoke and clasps"],
-        "wings": ["thick membranes", "perimeter frame", "veins", "back mounting plate"],
+        "wings": [
+            "membranes bowed back and outward rather than parallel plates",
+            "tapered swept leading edge",
+            "trailing edge left unframed",
+            "veins and back mounting plate",
+        ],
         "flag": ["waved thick cloth", "asymmetric swallow tail", "separate pole, seam and finial"],
         "balloon": ["compact rotation-safe reach", "knot, tether and wrist retention loop"],
+        "boot": [
+            "lofted last with toe taper and heel counter",
+            "lugged outsole on the deck, welt band, raised heel block",
+            "fold-over cuff, rear pull tab, toe rand",
+            "four eyelets a side with swept lace crossings",
+        ],
+        "hightop": [
+            "collar lofted into the upper as one shell",
+            "tongue, eyelets and swept laces",
+            "toe rand wrapping the front of the midsole",
+            "cream midsole over a dark outsole",
+        ],
+        "cleat": [
+            "lofted upper with toe taper and heel counter",
+            "side stripe swept along the upper's own surface",
+            "ten studs on a sole plate, including under the ball",
+        ],
+        "skate": [
+            "boot shell with a padded lathe cuff",
+            "lace panel and instep cam buckle",
+            "I-beam chassis with axle bosses",
+            "four wheels on visible trucks, toe stop at the chassis front",
+        ],
+        "daypack": [
+            "extruded rounded body with a lid flap",
+            "contrasting base panel and side bottle pocket",
+            "swept zip line with a pull tab",
+            "compression strap pair",
+        ],
+        "jetpack": [
+            "twin lathe tanks with domed caps and filler valves",
+            "accent bands and a spine plate onto a back plate",
+            "swept-back extruded fins",
+            "short emissive thruster cones",
+        ],
+        "trophy": [
+            "cup lathed with wall thickness so the mouth is open",
+            "rolled rim in the same profile",
+            "ring handles terminating in lugs",
+            "knop stem over a two-tier plinth with a nameplate",
+        ],
     },
-    "reviewStatus": "aaa wave 1: fast-mode eyeball review, front and side per item against the 4173 preview; wardrobe suite green; no formal ledger review",
+    "reviewStatus": (
+        "aaa wave 4: fast-mode eyeball review of every new and rebuilt item in an offline "
+        "three.js render harness (swiftshader, orthographic front/side/inner/under views of the "
+        "dressed runner); geometry winding audited outward against each shell's own centroid; "
+        "wardrobe and silhouette suites green; no formal ledger review"
+    ),
 }
 
 SOURCE = r'''// GENERATED by assets/reference/wearable-upgrades/author_wearable_upgrades.py
 // Reference manifest: assets/reference/wearable-upgrades/wearable-upgrade-spec.json
 import * as THREE from "three";
 
-export type WearableUpgradeId = "tank" | "puffer" | "vest" | "barefoot" | "sandal" | "kilt" | "bedroll" | "cape" | "wings" | "flag" | "balloon";
-type Tint = "main" | "trim" | "cream" | "skin" | "knit" | "rubber" | "plastic" | "metal" | "glass";
+export type WearableUpgradeId =
+  | "tank" | "puffer" | "vest" | "barefoot" | "sandal" | "kilt" | "bedroll"
+  | "cape" | "wings" | "flag" | "balloon"
+  | "boot" | "hightop" | "cleat" | "skate"
+  | "daypack" | "jetpack" | "trophy";
+type Tint =
+  | "main" | "trim" | "cream" | "skin" | "knit" | "rubber" | "plastic" | "metal"
+  | "glass" | "steel" | "ink" | "glow" | "leather";
 
 const placeholder = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 function mesh(geometry: THREE.BufferGeometry, tint: Tint, name: string, position: [number, number, number] = [0, 0, 0]) {
@@ -79,11 +158,77 @@ function box(x: number, y: number, z: number, bevel = 0.012) {
   geometry.translate(0, 0, -z / 2);
   return geometry;
 }
+function cylinder(radius: number, height: number, segments = 12) {
+  return new THREE.CylinderGeometry(radius, radius, height, segments);
+}
 function add(root: THREE.Group, ...parts: THREE.Object3D[]) { root.add(...parts); }
 function pathTube(points: readonly [number, number, number][], radius: number, tint: Tint, name: string, closed = false) {
   const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), closed, "centripetal");
   return mesh(new THREE.TubeGeometry(curve, Math.max(10, points.length * 5), radius, 7, closed), tint, name);
 }
+
+/**
+ * A swept tube whose radius runs from one end to the other.
+ *
+ * TubeGeometry cannot taper, and a taper is the whole difference between a
+ * wing spar and a length of pipe. The frames come from the curve rather than
+ * from a fixed up-vector so the ring never collapses on a bend, and the ring
+ * winding matches loftShell's, which is audited outward.
+ */
+function taperedTube(
+  points: readonly [number, number, number][],
+  startRadius: number,
+  endRadius: number,
+  tint: Tint,
+  name: string,
+  steps = 26,
+  radialSegments = 8,
+) {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)), false, "centripetal");
+  const frames = curve.computeFrenetFrames(steps, false);
+  const positions: number[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const along = step / steps;
+    const centre = curve.getPointAt(along);
+    const radius = startRadius + (endRadius - startRadius) * along;
+    const normal = frames.normals[step]!;
+    const binormal = frames.binormals[step]!;
+    for (let index = 0; index < radialSegments; index += 1) {
+      const angle = (index / radialSegments) * Math.PI * 2;
+      const cos = Math.cos(angle) * radius, sin = Math.sin(angle) * radius;
+      positions.push(
+        centre.x + normal.x * cos + binormal.x * sin,
+        centre.y + normal.y * cos + binormal.y * sin,
+        centre.z + normal.z * cos + binormal.z * sin,
+      );
+    }
+  }
+  const indices: number[] = [];
+  for (let step = 0; step < steps; step += 1) {
+    const here = step * radialSegments, next = (step + 1) * radialSegments;
+    for (let index = 0; index < radialSegments; index += 1) {
+      const after = (index + 1) % radialSegments;
+      indices.push(here + index, next + after, next + index);
+      indices.push(here + index, here + after, next + after);
+    }
+  }
+  const capStart = positions.length / 3;
+  positions.push(curve.getPointAt(0).x, curve.getPointAt(0).y, curve.getPointAt(0).z);
+  const capEnd = positions.length / 3;
+  positions.push(curve.getPointAt(1).x, curve.getPointAt(1).y, curve.getPointAt(1).z);
+  const lastRing = steps * radialSegments;
+  for (let index = 0; index < radialSegments; index += 1) {
+    const after = (index + 1) % radialSegments;
+    indices.push(capStart, after, index);
+    indices.push(capEnd, lastRing + index, lastRing + after);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return mesh(geometry, tint, name);
+}
+
 function thickShape(points: readonly [number, number][], depth = 0.018) {
   const shape = new THREE.Shape();
   shape.moveTo(points[0]![0], points[0]![1]);
@@ -100,31 +245,74 @@ function thickShape(points: readonly [number, number][], depth = 0.018) {
   geometry.translate(0, 0, -depth / 2);
   return geometry;
 }
-function footLast() {
-  // A small anatomical last lofted from heel to toe. Each station has its own
-  // width and vertical profile, which gives the bare foot a raised instep,
-  // planted sole, broad forefoot and tapered toe instead of a flat extruded
-  // puck. The back stations sink into the ankle bridge below.
-  const stations = [
-    { z: -0.145, width: 0.064, bottom: -0.052, top: 0.06 },
-    { z: -0.085, width: 0.078, bottom: -0.058, top: 0.122 },
-    { z: 0.0, width: 0.09, bottom: -0.06, top: 0.158 },
-    { z: 0.105, width: 0.108, bottom: -0.055, top: 0.112 },
-    { z: 0.185, width: 0.094, bottom: -0.047, top: 0.078 },
-    { z: 0.225, width: 0.052, bottom: -0.032, top: 0.045 },
-  ] as const;
-  const radialSegments = 12;
+
+/**
+ * A flat plate cut from a footprint drawn in (x, forward).
+ *
+ * rotation.x = PI/2 sends the extrusion's depth into world Y and the outline's
+ * own second axis into world Z, so the drawing reads as a plan view and the
+ * thickness reads as the height of the slab.
+ */
+function plate(
+  outline: readonly [number, number][],
+  thickness: number,
+  tint: Tint,
+  name: string,
+  y: number,
+  z = 0,
+) {
+  const value = mesh(thickShape(outline, thickness), tint, name, [0, y, z]);
+  value.rotation.x = Math.PI / 2;
+  return value;
+}
+
+/**
+ * A body of revolution from a (radius, height) profile.
+ *
+ * A lathe carries its own rotation of none, so unlike a flat-laid torus its
+ * oval squash genuinely belongs on scale.z.
+ */
+function lathed(
+  profile: readonly [number, number][],
+  tint: Tint,
+  name: string,
+  position: [number, number, number] = [0, 0, 0],
+  zScale = 1,
+  segments = 22,
+) {
+  const geometry = new THREE.LatheGeometry(
+    profile.map(([radius, y]) => new THREE.Vector2(Math.max(radius, 0.0008), y)),
+    segments,
+  );
+  const value = mesh(geometry, tint, name, position);
+  if (zScale !== 1) value.scale.z = zScale;
+  return value;
+}
+
+interface Station {
+  readonly z: number;
+  readonly width: number;
+  readonly bottom: number;
+  readonly top: number;
+}
+
+/**
+ * A closed shell lofted heel-to-toe through elliptical stations.
+ *
+ * Each station carries its own width and its own top and bottom, so a last can
+ * have a raised instep, a planted sole, a broad forefoot and a tapered toe
+ * without being a scaled capsule. Every side quad and both end caps wind
+ * outward, which an audit of the built geometry against its own centroid
+ * confirms rather than assumes.
+ */
+function loftShell(stations: readonly Station[], radialSegments = 14): THREE.BufferGeometry {
   const positions: number[] = [];
   for (const station of stations) {
     const cy = (station.top + station.bottom) / 2;
     const ry = (station.top - station.bottom) / 2;
     for (let index = 0; index < radialSegments; index += 1) {
       const angle = (index / radialSegments) * Math.PI * 2;
-      positions.push(
-        Math.cos(angle) * station.width,
-        cy + Math.sin(angle) * ry,
-        station.z,
-      );
+      positions.push(Math.cos(angle) * station.width, cy + Math.sin(angle) * ry, station.z);
     }
   }
   const indices: number[] = [];
@@ -137,15 +325,17 @@ function footLast() {
       indices.push(here + index, here + after, next + after);
     }
   }
-  const heelCenter = positions.length / 3;
-  positions.push(0, 0.004, stations[0]!.z);
-  const toeCenter = positions.length / 3;
-  positions.push(0, 0.006, stations[stations.length - 1]!.z);
+  const first = stations[0]!;
+  const last = stations[stations.length - 1]!;
+  const heelCentre = positions.length / 3;
+  positions.push(0, (first.top + first.bottom) / 2, first.z);
+  const toeCentre = positions.length / 3;
+  positions.push(0, (last.top + last.bottom) / 2, last.z);
+  const toeRing = (stations.length - 1) * radialSegments;
   for (let index = 0; index < radialSegments; index += 1) {
     const after = (index + 1) % radialSegments;
-    indices.push(heelCenter, after, index);
-    const toeStart = (stations.length - 1) * radialSegments;
-    indices.push(toeCenter, toeStart + index, toeStart + after);
+    indices.push(heelCentre, after, index);
+    indices.push(toeCentre, toeRing + index, toeRing + after);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
@@ -153,6 +343,50 @@ function footLast() {
   geometry.computeVertexNormals();
   return geometry;
 }
+
+/** The station a loft has at an arbitrary z, so trim can follow its surface. */
+function stationAt(stations: readonly Station[], z: number): Station {
+  const first = stations[0]!;
+  if (z <= first.z) return first;
+  for (let index = 1; index < stations.length; index += 1) {
+    const high = stations[index]!;
+    if (z > high.z) continue;
+    const low = stations[index - 1]!;
+    const along = (z - low.z) / (high.z - low.z);
+    return {
+      z,
+      width: low.width + (high.width - low.width) * along,
+      bottom: low.bottom + (high.bottom - low.bottom) * along,
+      top: low.top + (high.top - low.top) * along,
+    };
+  }
+  return stations[stations.length - 1]!;
+}
+
+/**
+ * A point on a loft's flank, `push` proud of it.
+ *
+ * A stripe placed at a fixed radius crosses the surface it is meant to follow
+ * the moment the last tapers, which is what makes a side flash read as a board
+ * bolted to a shoe.
+ */
+function flankPoint(
+  stations: readonly Station[],
+  side: -1 | 1,
+  z: number,
+  angle: number,
+  push = 0,
+): [number, number, number] {
+  const station = stationAt(stations, z);
+  const cy = (station.top + station.bottom) / 2;
+  const ry = (station.top - station.bottom) / 2;
+  return [
+    side * (station.width + push) * Math.cos(angle),
+    cy + (ry + push) * Math.sin(angle),
+    z,
+  ];
+}
+
 function wavedShape(points: readonly [number, number][], depth = 0.018, amplitude = 0.02) {
   const contour = points.map(([x, y]) => new THREE.Vector2(x, y));
   const triangles = THREE.ShapeUtils.triangulateShape(contour, []);
@@ -180,6 +414,61 @@ function wavedShape(points: readonly [number, number][], depth = 0.018, amplitud
   geometry.computeVertexNormals();
   return geometry;
 }
+
+/**
+ * A thick panel bowed away from its root.
+ *
+ * The sweep grows with distance from x = 0, so a pair of these reads as two
+ * curved sails rather than as two parallel plates seen edge-on.
+ *
+ * The contour is normalised counter-clockwise first. Mirroring a wing's outline
+ * for the other side reverses its winding, and the triangulator returns
+ * counter-clockwise triangles whatever it is handed, so without the
+ * normalisation the rim of one membrane faces inward. That is not a cosmetic
+ * detail here: the runner's ink outline is a scaled BackSide shell of this same
+ * geometry, and an inverted panel draws its outline over itself as a solid ink
+ * slab. An audit of the built geometry against its own centroid is what catches
+ * it, not the index order read on the page.
+ */
+function bowedPanel(points: readonly [number, number][], depth: number, bow: number) {
+  let twiceArea = 0;
+  for (let index = 0; index < points.length; index += 1) {
+    const [x0, y0] = points[index]!;
+    const [x1, y1] = points[(index + 1) % points.length]!;
+    twiceArea += x0 * y1 - x1 * y0;
+  }
+  const contour = twiceArea < 0 ? [...points].reverse() : [...points];
+  const triangles = THREE.ShapeUtils.triangulateShape(
+    contour.map(([x, y]) => new THREE.Vector2(x, y)),
+    [],
+  );
+  const reach = Math.max(0.001, Math.max(...contour.map(([x]) => Math.abs(x))));
+  const positions: number[] = [];
+  for (const side of [-1, 1] as const)
+    for (const [x, y] of contour) {
+      const outward = Math.abs(x) / reach;
+      positions.push(x, y, -bow * outward ** 1.7 + (side * depth) / 2);
+    }
+  const count = contour.length;
+  const indices: number[] = [];
+  for (const triangle of triangles) {
+    const a = triangle[0]!, b = triangle[1]!, c = triangle[2]!;
+    // The front sheet keeps the triangulator's own counter-clockwise order, so
+    // its normal points along +z away from the solid; the back sheet reverses.
+    indices.push(count + a, count + b, count + c);
+    indices.push(c, b, a);
+  }
+  for (let index = 0; index < count; index += 1) {
+    const next = (index + 1) % count;
+    indices.push(index, next, count + next, index, count + next, count + index);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function ring(radius: number, tube: number, tint: Tint, name: string, y: number, zScale = 0.8) {
   const value = mesh(new THREE.TorusGeometry(radius, tube, 7, 24), tint, name, [0, y, 0]);
   value.rotation.x = Math.PI / 2;
@@ -191,6 +480,35 @@ function ring(radius: number, tube: number, tint: Tint, name: string, y: number,
   value.scale.y = zScale;
   return value;
 }
+
+// --- The shoe socket's own frame --------------------------------------------
+
+/**
+ * The deck, in the shoe socket's units.
+ *
+ * PlayerVisual.measureRunnerLimbs reads ankleToSole off the undressed sculpt at
+ * 0.1875 and the gait puts the ankle exactly that far above the ground, so
+ * y = -0.1875 here IS the deck and a sole belongs on it. Everything this
+ * catalogue put in the shoe socket floated above it: the bare foot's sole sat
+ * at -0.052, which is a thirteenth of the runner's height clear of the ground.
+ * The value is a hair inside the plane so a sole never z-fights the deck.
+ */
+const DECK = -0.185;
+
+/**
+ * Where the calf arrives, measured on the built runner.
+ *
+ * The socket sits 0.027u OUTBOARD of the calf's own axis and one template is
+ * cloned to both feet, so nothing authored here can lean inboard. In this frame
+ * the calf's bottom rim runs from x -0.040 on the outer side to +0.094 on the
+ * inner, and its outer face leans a further 0.004 in by the time it reaches
+ * y 0.22. So an ankle that hides the calf on the inner side has to be symmetric
+ * and reach CALF_REACH either way, and anything above the rim that is wider
+ * than CALF_HIDDEN comes back out through the shin as a cuff.
+ */
+const CALF_RIM_Y = 0.0945;
+const CALF_REACH = 0.094;
+const CALF_HIDDEN = 0.036;
 
 function tank(root: THREE.Group) {
   // A continuous knit shell follows the runner from waist to neck. The previous
@@ -242,7 +560,10 @@ function quilted(root: THREE.Group, vest: boolean) {
   // authored at fixed radii while the shell tapers: baffle ribs needling out
   // past the silhouette, and the whole zip assembly hanging 0.05u off the
   // chest in side view.
-  const shellRadius = (y: number) => 0.272 - ((y + 0.175) / 0.44) * 0.026;
+  // Wide enough that an inner shirt (torso 0.262 plus band 0.019 = 0.281 at
+  // the chest) stays INSIDE after the 1.035 outer attach scale: the 0.272 it
+  // shipped with let the turtleneck poke through in patches.
+  const shellRadius = (y: number) => 0.288 - ((y + 0.175) / 0.44) * 0.028;
   if (vest) {
     // A vest tapers into the shoulders the way the tank does, so the shell
     // stops inboard of the resting arms instead of passing through them -
@@ -251,31 +572,38 @@ function quilted(root: THREE.Group, vest: boolean) {
     // space; the floating "binding" arcs that used to hover near the
     // shoulders are gone with the surface they had nothing to bind.
     const profile = [
-      new THREE.Vector2(0.272, -0.175),
-      new THREE.Vector2(0.266, -0.06),
-      new THREE.Vector2(0.254, 0.06),
-      new THREE.Vector2(0.236, 0.16),
-      new THREE.Vector2(0.212, 0.24),
-      new THREE.Vector2(0.202, 0.265),
+      new THREE.Vector2(0.288, -0.175),
+      new THREE.Vector2(0.282, -0.06),
+      new THREE.Vector2(0.27, 0.06),
+      new THREE.Vector2(0.252, 0.16),
+      // The widening pass raised the body of this lathe but left its last two
+      // stations short. Measured on the built runner, the turtleneck reaches
+      // 0.2281 at y 0.265 while a 0.218 rim lands at 0.2256 after the 1.035
+      // outer attach scale, so the collar came back out through the vest's own
+      // neck rim - the one place the pass did not reach. These two clear the
+      // widest inner top there by 0.012 without touching the widest point of
+      // the garment, which is still the hem.
+      new THREE.Vector2(0.240, 0.24),
+      new THREE.Vector2(0.232, 0.265),
     ];
     const shell = mesh(new THREE.LatheGeometry(profile, 28), "main", "vest-under-shell");
     shell.scale.z = zScale;
     add(root, shell);
   } else {
-    const shell = mesh(new THREE.CylinderGeometry(0.246, 0.272, 0.44, 28, 4, true), "main", `${prefix}-under-shell`, [0, 0.045, 0]);
+    const shell = mesh(new THREE.CylinderGeometry(0.26, 0.288, 0.44, 28, 4, true), "main", `${prefix}-under-shell`, [0, 0.045, 0]);
     shell.scale.z = zScale;
     add(root, shell);
   }
   const vestRadius = (y: number): number => {
     const stations: readonly [number, number][] = [
-      [-0.175, 0.272], [-0.06, 0.266], [0.06, 0.254], [0.16, 0.236], [0.24, 0.212], [0.265, 0.202],
+      [-0.175, 0.288], [-0.06, 0.282], [0.06, 0.27], [0.16, 0.252], [0.24, 0.240], [0.265, 0.232],
     ];
     for (let index = 1; index < stations.length; index += 1) {
       const [y0, r0] = stations[index - 1]!;
       const [y1, r1] = stations[index]!;
       if (y <= y1) return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
     }
-    return 0.202;
+    return 0.232;
   };
   const surface = (y: number) => (vest ? vestRadius(y) : shellRadius(y));
   const baffleYs = [-0.125, -0.045, 0.035, 0.115, 0.195];
@@ -308,46 +636,396 @@ function quilted(root: THREE.Group, vest: boolean) {
   add(root, zip);
 }
 
-function barefoot(root: THREE.Group) {
-  const foot = mesh(footLast(), "skin", "bare-foot", [0, 0.008, 0.02]);
+// --- Bare foot ---------------------------------------------------------------
 
-  // The shoe socket is the ankle. A tapered bridge rises through the bottom
-  // of the calf and sinks into the heel/instep below, so there is no daylight
-  // between leg and foot during heel strike, toe-off or the victory pose.
-  const ankle = mesh(
-    new THREE.CylinderGeometry(0.076, 0.09, 0.23, 18, 3),
-    "skin",
-    "bare-foot-ankle-bridge",
-    [0, 0.11, -0.06],
+/**
+ * The bare last, planted on the deck.
+ *
+ * Bottoms sit within a thousandth of DECK across the middle three stations, so
+ * the foot stands on the ground the gait solver measured rather than hovering
+ * over it, and the heel and toe lift off it the way a foot's do.
+ */
+const BARE_FOOT: readonly Station[] = [
+  { z: -0.124, width: 0.072, bottom: -0.176, top: 0.024 },
+  { z: -0.062, width: 0.090, bottom: -0.184, top: 0.080 },
+  { z: 0.006, width: 0.094, bottom: -0.185, top: 0.058 },
+  { z: 0.088, width: 0.098, bottom: -0.183, top: 0.016 },
+  { z: 0.150, width: 0.088, bottom: -0.177, top: -0.020 },
+  { z: 0.186, width: 0.056, bottom: -0.170, top: -0.052 },
+  { z: 0.202, width: 0.020, bottom: -0.160, top: -0.070 },
+];
+
+/**
+ * The ankle, which is where the bare foot was going wrong.
+ *
+ * The shape it replaces was a plain cylinder of radius 0.076-0.090 centred on
+ * the socket. Because the socket is 0.027u outboard of the calf, that cylinder
+ * stood up to 0.049 proud of the shin on the OUTER side - a hard-rimmed cuff
+ * climbing 0.13u up the leg - while falling 0.005 short of the calf on the
+ * INNER side, where the shin's own wall and the underside of its bottom cap
+ * were left hanging over the foot's inner flank with nothing under them. That
+ * is the "no foot on the inside" the review reported, and it is a placement
+ * fault rather than a winding one: an audit of the loft's 144 triangles
+ * against its own centroid finds every one of them facing outward.
+ *
+ * This profile answers both halves. It reaches CALF_REACH at the calf's rim so
+ * the shin is covered on the inner side, then collapses to CALF_HIDDEN within
+ * 0.03u of height so nothing re-emerges on the outer side, and carries on up
+ * as a slim column that keeps foot and calf joined right through the ankle's
+ * sweep. Below the rim the flare is a malleolus, which is what an ankle looks
+ * like anyway.
+ */
+const BARE_ANKLE: readonly [number, number][] = [
+  [0.000, -0.086],
+  [0.046, -0.078],
+  [0.070, -0.040],
+  [0.084, 0.004],
+  [0.090, 0.044],
+  [0.094, 0.076],
+  [CALF_REACH + 0.001, CALF_RIM_Y + 0.002],
+  [0.066, 0.114],
+  [CALF_HIDDEN + 0.002, 0.130],
+  [CALF_HIDDEN - 0.002, 0.162],
+  [CALF_HIDDEN - 0.004, 0.210],
+  [CALF_HIDDEN - 0.006, 0.246],
+  [0.000, 0.250],
+];
+
+/** Foot and ankle, with the last lifted when something is under it. */
+function bareFootParts(lift: number, tint: Tint, prefix: string): THREE.Object3D[] {
+  const last = mesh(
+    loftShell(BARE_FOOT.map((station) => ({
+      ...station,
+      bottom: station.bottom + lift,
+      top: station.top + lift,
+    }))),
+    tint,
+    prefix,
+    [0, 0, 0.02],
   );
-  ankle.scale.z = 0.82;
+  // The ankle is squashed fore-and-aft to 0.80, which still leaves it 0.075
+  // deep against the calf's own 0.067, and centred at z -0.046 so it covers the
+  // shin's footprint of -0.127 to 0.007 without hanging off the back of the heel.
+  const ankle = lathed(BARE_ANKLE, tint, `${prefix}-ankle-bridge`, [0, lift, -0.046], 0.80);
   ankle.userData["wardrobeNoOutline"] = true;
-  add(root, foot, ankle);
+  return [last, ankle];
+}
+
+function barefoot(root: THREE.Group) {
+  add(root, ...bareFootParts(0, "skin", "bare-foot"));
 }
 
 function sandal(root: THREE.Group) {
-  const footOutline: readonly [number, number][] = [
-    [-0.062, -0.12], [0.062, -0.12], [0.084, -0.055], [0.094, 0.055],
-    [0.086, 0.145], [0.058, 0.185], [-0.058, 0.185], [-0.086, 0.145],
-    [-0.094, 0.055], [-0.084, -0.055],
+  // The sandal shares the bare last rather than carrying a second outline of
+  // its own, so the ankle fix and the deck plane reach it too. The bed is what
+  // stands on the ground, and the foot rides on top of the bed.
+  const bedThickness = 0.030;
+  const bed: readonly [number, number][] = [
+    [-0.062, -0.126], [0.062, -0.126], [0.088, -0.062], [0.100, 0.020],
+    [0.104, 0.090], [0.092, 0.160], [0.056, 0.208], [-0.056, 0.208],
+    [-0.092, 0.160], [-0.104, 0.090], [-0.100, 0.020], [-0.088, -0.062],
   ];
-  const bedOutline: readonly [number, number][] = footOutline.map(([x, z]) => [x * 1.08, z + (z > 0.14 ? 0.012 : -0.004)] as [number, number]);
-  const bed = mesh(thickShape(bedOutline, 0.034), "rubber", "sandal-fitted-bed", [0, -0.052, 0.018]);
-  bed.rotation.x = Math.PI / 2;
-  const foot = mesh(thickShape(footOutline, 0.09), "skin", "sandal-shaped-foot", [0, 0.006, 0.02]);
-  foot.rotation.x = Math.PI / 2;
-  add(root, bed, foot);
+  add(root,
+    plate(bed, bedThickness, "rubber", "sandal-fitted-bed", DECK + bedThickness / 2, 0.02),
+    ...bareFootParts(bedThickness, "skin", "sandal-foot"),
+  );
 
   // Curved tubes hug the instep instead of hovering as flat diagonal planks.
   for (const side of [-1, 1] as const)
     add(root, pathTube([
-      [side * 0.082, 0.035, -0.002], [side * 0.052, 0.072, 0.045],
-      [0, 0.085, 0.085], [-side * 0.052, 0.072, 0.125],
+      [side * 0.086, -0.086, 0.000], [side * 0.056, -0.026, 0.046],
+      [0, -0.004, 0.086], [-side * 0.056, -0.026, 0.126],
     ], 0.018, "main", `sandal-cross-strap-${side}`));
   add(root, pathTube([
-    [-0.073, 0.026, -0.072], [-0.085, 0.07, -0.105], [0, 0.092, -0.13],
-    [0.085, 0.07, -0.105], [0.073, 0.026, -0.072],
+    [-0.076, -0.094, -0.070], [-0.088, -0.040, -0.104], [0, -0.012, -0.128],
+    [0.088, -0.040, -0.104], [0.076, -0.094, -0.070],
   ], 0.014, "main", "sandal-heel-sling"));
+}
+
+// --- Shoes -------------------------------------------------------------------
+
+/** The footprint every shoe's sole stack is cut from. */
+const SHOE_SOLE: readonly [number, number][] = [
+  [-0.058, -0.116], [0.058, -0.116], [0.088, -0.058], [0.101, 0.022],
+  [0.104, 0.092], [0.092, 0.164], [0.056, 0.210], [-0.056, 0.210],
+  [-0.092, 0.164], [-0.104, 0.092], [-0.101, 0.022], [-0.088, -0.058],
+];
+
+/** A footprint scaled about its own centre line, for stacking a sole. */
+function soleAt(scale: number): [number, number][] {
+  return SHOE_SOLE.map(([x, z]) => [x * scale, z * scale]);
+}
+
+/**
+ * Lace hardware seated on a shoe's own throat.
+ *
+ * Both the eyelets and the crossings are placed from the last's surface rather
+ * than from a fixed column and height. Authored at fixed numbers they sat
+ * INSIDE the shell - the upper is 0.10 wide at the ball of the foot, so a
+ * column at 0.070 is buried - and the crossings ran through the instep, which
+ * left three white stubs poking out of a closed shoe. The eyelets lie on their
+ * sides, the only orientation that shows a hole rather than a dot, and the
+ * laces arch over the crest between one row and the next.
+ */
+function lacing(
+  prefix: string,
+  stations: readonly Station[],
+  rows: readonly number[],
+  eyeletTint: Tint,
+  laceTint: Tint,
+): THREE.Object3D[] {
+  const seat = (side: -1 | 1, z: number) => flankPoint(stations, side, z, 1.02, 0.005);
+  const parts: THREE.Object3D[] = [];
+  for (const [index, z] of rows.entries())
+    for (const side of [-1, 1] as const) {
+      const eyelet = mesh(cylinder(0.0085, 0.015, 10), eyeletTint, `${prefix}-eyelet-${index}-${side}`, seat(side, z));
+      eyelet.rotation.z = Math.PI / 2;
+      parts.push(eyelet);
+    }
+  for (let index = 0; index < rows.length - 1; index += 1) {
+    const z0 = rows[index]!;
+    const z1 = rows[index + 1]!;
+    const crest = stationAt(stations, (z0 + z1) / 2);
+    for (const side of [-1, 1] as const)
+      parts.push(pathTube([
+        seat(side, z0),
+        [0, crest.top + 0.006, (z0 + z1) / 2],
+        seat(-side as -1 | 1, z1),
+      ], 0.006, laceTint, `${prefix}-lace-${index}-${side}`));
+  }
+  return parts;
+}
+
+/**
+ * A rand wrapped round the front of a last in one piece.
+ *
+ * Two tubes run in from either side and stopped at the centre line put their
+ * end caps in the same place, and the pair photographed as a ball stuck on the
+ * toe. One path through the toe leaves a continuous strip, and the seat is
+ * dropped below the flank so the strip meets the sole instead of floating over
+ * it.
+ */
+function toeRand(
+  stations: readonly Station[],
+  radius: number,
+  tint: Tint,
+  name: string,
+  drop = 0.005,
+): THREE.Object3D {
+  const seat = (side: -1 | 1, z: number): [number, number, number] => {
+    const point = flankPoint(stations, side, z, -0.62, 0.004);
+    return [point[0], point[1] - drop, point[2]];
+  };
+  const nose = stationAt(stations, 0.170);
+  const noseY = (nose.top + nose.bottom) / 2 - (nose.top - nose.bottom) * 0.28 - drop;
+  return pathTube([
+    seat(-1, 0.024), seat(-1, 0.108),
+    [-0.038, noseY, 0.172], [0.038, noseY, 0.172],
+    seat(1, 0.108), seat(1, 0.024),
+  ], radius, tint, name);
+}
+
+// Each last closes on a small final station rather than on its widest one: the
+// loft caps a station with a fan from its centre, so ending on a broad ellipse
+// leaves the toe cut off flat.
+const BOOT_UPPER: readonly Station[] = [
+  { z: -0.108, width: 0.062, bottom: -0.100, top: 0.070 },
+  { z: -0.052, width: 0.084, bottom: -0.112, top: 0.094 },
+  { z: 0.016, width: 0.097, bottom: -0.142, top: 0.062 },
+  { z: 0.092, width: 0.101, bottom: -0.144, top: 0.014 },
+  { z: 0.156, width: 0.087, bottom: -0.140, top: -0.030 },
+  { z: 0.172, width: 0.056, bottom: -0.134, top: -0.058 },
+  { z: 0.188, width: 0.020, bottom: -0.124, top: -0.076 },
+];
+
+function boot(root: THREE.Group) {
+  // wear-boots.png: a coloured upper over a light lugged sole with a raised
+  // heel. The sole is the light piece in the reference, so the value break
+  // that separates boot from leg lives on the ground rather than on the shaft.
+  const lugTop = DECK + 0.016;
+  for (const [index, z] of [-0.086, -0.030, 0.026, 0.082, 0.134, 0.176].entries())
+    add(root, mesh(
+      box(0.176 - Math.abs(z - 0.04) * 0.32, 0.020, 0.030, 0.006),
+      "cream",
+      `boot-lug-${index}`,
+      [0, DECK + 0.010, z],
+    ));
+  add(root,
+    plate(SHOE_SOLE, 0.028, "cream", "boot-outsole", lugTop + 0.014),
+    plate(soleAt(1.02), 0.016, "trim", "boot-welt", lugTop + 0.036),
+    // The heel block fills between the welt and the last's raised rear, which
+    // is what makes this a boot rather than a plimsoll with a thick sole.
+    plate([
+      [-0.050, -0.110], [0.050, -0.110], [0.072, -0.070], [0.078, -0.014],
+      [0.058, 0.016], [-0.058, 0.016], [-0.078, -0.014], [-0.072, -0.070],
+    ], 0.054, "cream", "boot-heel-block", lugTop + 0.071),
+    mesh(loftShell(BOOT_UPPER), "leather", "boot-upper", [0, 0, 0]),
+  );
+  add(root, toeRand(BOOT_UPPER, 0.013, "trim", "boot-toe-rand"));
+  // The fold-over cuff flares upward and outward, so it reads as turned-down
+  // leather instead of a band clamped round the ankle.
+  add(root, lathed([
+    [0.080, 0.052], [0.086, 0.070], [0.095, 0.090], [0.100, 0.102],
+    [0.093, 0.110], [0.083, 0.100], [0.078, 0.078], [0.076, 0.054],
+  ], "trim", "boot-cuff", [0, 0, -0.044], 0.86));
+  add(root,
+    mesh(box(0.032, 0.052, 0.014, 0.006), "trim", "boot-pull-tab", [0, 0.100, -0.112]),
+    ...lacing("boot", BOOT_UPPER, [0.020, 0.052, 0.082, 0.110], "metal", "cream"),
+  );
+}
+
+const HIGHTOP_UPPER: readonly Station[] = [
+  // The collar IS the last's rear stations carried upward, so there is one
+  // shell here and no torus hovering round the ankle.
+  { z: -0.106, width: 0.066, bottom: -0.088, top: 0.106 },
+  { z: -0.050, width: 0.086, bottom: -0.104, top: 0.118 },
+  { z: 0.018, width: 0.098, bottom: -0.126, top: 0.058 },
+  { z: 0.092, width: 0.102, bottom: -0.128, top: 0.012 },
+  { z: 0.154, width: 0.089, bottom: -0.124, top: -0.034 },
+  { z: 0.170, width: 0.058, bottom: -0.120, top: -0.060 },
+  { z: 0.186, width: 0.021, bottom: -0.112, top: -0.078 },
+];
+
+function hightop(root: THREE.Group) {
+  // wear-hightop.png: a deep cream midsole standing proud of the upper, a dark
+  // outsole under it, a wrapping toe cap and a laced throat under a padded
+  // collar. The midsole's underside is the deck, so a high-top stands the
+  // runner no further off the ground than a boot does.
+  add(root,
+    plate(SHOE_SOLE, 0.024, "rubber", "hightop-outsole", DECK + 0.012),
+    plate(soleAt(0.99), 0.040, "cream", "hightop-midsole", DECK + 0.044),
+    mesh(loftShell(HIGHTOP_UPPER), "main", "hightop-upper", [0, 0, 0]),
+  );
+  // The padded collar lip sits ON the shell's rim: its inner wall is inside the
+  // upper, so it reads as a rolled edge rather than a ring left floating above
+  // the opening.
+  add(root, lathed([
+    [0.070, 0.086], [0.084, 0.100], [0.090, 0.116], [0.084, 0.128],
+    [0.070, 0.124], [0.064, 0.108], [0.064, 0.088],
+  ], "trim", "hightop-collar-pad", [0, 0, -0.048], 0.84));
+  const tongue = mesh(box(0.086, 0.020, 0.140, 0.008), "trim", "hightop-tongue", [0, 0.040, 0.036]);
+  // Laid along the instep's own slope, so it beds into the throat instead of
+  // hovering over it as a loose slab.
+  tongue.rotation.x = -0.42;
+  add(root, tongue);
+  // A rand, not a pebble: it wraps the front of the last in one piece and meets
+  // the midsole instead of intersecting the upper's face.
+  add(root, toeRand(HIGHTOP_UPPER, 0.015, "cream", "hightop-toe-rand"));
+  add(root, ...lacing("hightop", HIGHTOP_UPPER, [0.028, 0.060, 0.090, 0.118], "metal", "cream"));
+}
+
+const CLEAT_UPPER: readonly Station[] = [
+  { z: -0.108, width: 0.062, bottom: -0.104, top: 0.048 },
+  { z: -0.052, width: 0.084, bottom: -0.116, top: 0.066 },
+  { z: 0.018, width: 0.097, bottom: -0.128, top: 0.046 },
+  { z: 0.094, width: 0.101, bottom: -0.128, top: 0.002 },
+  { z: 0.156, width: 0.087, bottom: -0.124, top: -0.042 },
+  { z: 0.172, width: 0.056, bottom: -0.120, top: -0.066 },
+  { z: 0.188, width: 0.020, bottom: -0.112, top: -0.082 },
+];
+
+function cleat(root: THREE.Group) {
+  // wear-trainers.png is a low running shoe with a chunky pale midsole and one
+  // swept flash along each side. The studs under it are the only invented part;
+  // they are what makes this a cleat rather than the trainer in the reference.
+  const studTop = DECK + 0.030;
+  add(root,
+    plate(soleAt(0.985), 0.030, "cream", "cleat-sole-plate", studTop + 0.015),
+    mesh(loftShell(CLEAT_UPPER), "main", "cleat-upper", [0, 0, 0]),
+  );
+  // Ten studs: a forefoot rank under the ball, a mid pair, and a heel pair.
+  // Each is a short cone standing on the deck, so the plate above it is what
+  // the runner's weight reads as sitting on.
+  const studs: readonly [number, number][] = [
+    [-0.070, 0.150], [0.070, 0.150],
+    [-0.084, 0.090], [0.084, 0.090], [0.000, 0.116],
+    [-0.080, 0.026], [0.080, 0.026],
+    [-0.058, -0.062], [0.058, -0.062], [0.000, -0.096],
+  ];
+  for (const [index, [x, z]] of studs.entries()) {
+    const stud = mesh(new THREE.ConeGeometry(0.019, 0.036, 10), "rubber", `cleat-stud-${index}`, [x, DECK + 0.020, z]);
+    // ConeGeometry puts its apex at +Y, so an unturned cone is a stud standing
+    // on its point with its broad end on the ground.
+    stud.rotation.x = Math.PI;
+    add(root, stud);
+  }
+  // The flash is swept along the upper's own surface, dropping from the heel
+  // counter to the ball of the foot, and stands 0.004 proud of it. It stops
+  // short of the heel's own end so it cannot spike out past the counter.
+  for (const side of [-1, 1] as const)
+    add(root, taperedTube([
+      flankPoint(CLEAT_UPPER, side, -0.070, 0.52, 0.004),
+      flankPoint(CLEAT_UPPER, side, -0.006, 0.16, 0.004),
+      flankPoint(CLEAT_UPPER, side, 0.070, -0.18, 0.004),
+      flankPoint(CLEAT_UPPER, side, 0.140, -0.44, 0.004),
+    ], 0.015, 0.007, "trim", `cleat-flash-${side}`));
+  add(root, ...lacing("cleat", CLEAT_UPPER, [0.024, 0.056, 0.086, 0.114], "cream", "cream"));
+}
+
+const SKATE_UPPER: readonly Station[] = [
+  { z: -0.104, width: 0.066, bottom: -0.058, top: 0.096 },
+  { z: -0.048, width: 0.086, bottom: -0.072, top: 0.112 },
+  { z: 0.020, width: 0.096, bottom: -0.094, top: 0.062 },
+  { z: 0.094, width: 0.098, bottom: -0.096, top: 0.014 },
+  { z: 0.148, width: 0.085, bottom: -0.092, top: -0.036 },
+  { z: 0.174, width: 0.054, bottom: -0.088, top: -0.058 },
+  { z: 0.188, width: 0.019, bottom: -0.082, top: -0.070 },
+];
+
+function skate(root: THREE.Group) {
+  // wear-skates.png is a ROLLER skate: a boot on a plate with four wheels, not
+  // an ice skate. The wheels reach the deck and the chassis rides above them,
+  // so the runner still stands where the gait solver put them.
+  const wheelRadius = 0.040;
+  const wheelY = DECK + wheelRadius;
+  const chassisY = wheelY + 0.030;
+  add(root,
+    mesh(loftShell(SKATE_UPPER), "leather", "skate-boot", [0, 0, 0]),
+    // The chassis reaches z 0.174 so the boot's toe sits ON the plate rather
+    // than hanging off the front of it.
+    mesh(box(0.130, 0.022, 0.250, 0.008), "steel", "skate-chassis-web", [0, chassisY, 0.044]),
+    mesh(box(0.164, 0.016, 0.258, 0.008), "steel", "skate-chassis-deck", [0, chassisY + 0.019, 0.044]),
+  );
+  // The padded cuff is a lathe on the boot's own rim, which is what keeps the
+  // ankle looking supported rather than sawn off.
+  add(root, lathed([
+    [0.070, 0.078], [0.086, 0.094], [0.092, 0.112], [0.084, 0.124],
+    [0.068, 0.118], [0.062, 0.100], [0.062, 0.080],
+  ], "trim", "skate-cuff", [0, 0, -0.046], 0.84));
+  add(root,
+    mesh(box(0.084, 0.018, 0.124, 0.008), "trim", "skate-lace-panel", [0, 0.044, 0.036]),
+    ...lacing("skate", SKATE_UPPER, [-0.006, 0.024, 0.054], "steel", "cream"),
+  );
+  // Instep cam buckle: a strap across the throat, a ladder on top of it and the
+  // cam lever standing off the outer side.
+  add(root,
+    mesh(box(0.180, 0.016, 0.044, 0.006), "trim", "skate-instep-strap", [0, 0.030, 0.086]),
+    mesh(box(0.052, 0.020, 0.030, 0.006), "steel", "skate-cam-body", [0.052, 0.048, 0.086]),
+    mesh(box(0.038, 0.010, 0.022, 0.004), "steel", "skate-cam-lever", [0.070, 0.062, 0.086]),
+  );
+  for (const z of [-0.056, 0.116]) {
+    // Trucks: a hanger dropping out of the chassis onto a visible axle, with a
+    // boss at each end so the wheels are mounted on something.
+    add(root,
+      mesh(box(0.070, 0.034, 0.048, 0.008), "steel", `skate-truck-${z}`, [0, chassisY - 0.026, z]),
+    );
+    const axle = mesh(cylinder(0.009, 0.176, 10), "steel", `skate-axle-${z}`, [0, wheelY, z]);
+    axle.rotation.z = Math.PI / 2;
+    add(root, axle);
+    for (const side of [-1, 1] as const) {
+      const wheel = mesh(cylinder(wheelRadius, 0.030, 16), "rubber", `skate-wheel-${z}-${side}`, [side * 0.070, wheelY, z]);
+      wheel.rotation.z = Math.PI / 2;
+      const boss = mesh(cylinder(0.016, 0.036, 10), "cream", `skate-boss-${z}-${side}`, [side * 0.070, wheelY, z]);
+      boss.rotation.z = Math.PI / 2;
+      add(root, wheel, boss);
+    }
+  }
+  add(root, mesh(
+    new THREE.ConeGeometry(0.030, 0.052, 12),
+    "rubber",
+    "skate-toe-stop",
+    [0, DECK + 0.026, 0.164],
+  ));
 }
 
 function kilt(root: THREE.Group) {
@@ -432,6 +1110,121 @@ function bedroll(root: THREE.Group) {
   );
 }
 
+// --- Back items --------------------------------------------------------------
+
+function daypack(root: THREE.Group) {
+  // wear-backpack.png: a coloured body with a lid flap over it, a dark base,
+  // a zip up the back and a bottle pocket on one side. The sculpt carries the
+  // shoulder straps in its own material, so none are rebuilt here.
+  //
+  // A thigh swinging to the victory pose cuts anything below -0.178 in this
+  // frame, which is TORSO_HEM_Y read from the torso pivot. box() grows its
+  // outline by its own bevel size rather than insetting it, so the panel that
+  // decides this clears the line by 0.012 measured on the built geometry, not
+  // by its nominal half-height.
+  add(root,
+    mesh(box(0.330, 0.356, 0.190, 0.048), "main", "daypack-body", [0, 0.048, -0.318]),
+    mesh(box(0.322, 0.100, 0.184, 0.030), "trim", "daypack-base-panel", [0, -0.100, -0.318]),
+  );
+  const lid = mesh(box(0.342, 0.132, 0.200, 0.044), "trim", "daypack-lid-flap", [0, 0.204, -0.322]);
+  // The flap tips back over the top rather than sitting square, which is what
+  // separates a lid from a stripe painted across the top of a box.
+  lid.rotation.x = -0.18;
+  add(root, lid);
+  add(root,
+    // Under the flap's lower edge rather than behind it: at 0.146 the whole zip
+    // was inside the lid and nothing of it reached a camera.
+    pathTube([
+      [-0.132, 0.086, -0.412], [0, 0.100, -0.420], [0.132, 0.086, -0.412],
+    ], 0.008, "metal", "daypack-zip-line"),
+    mesh(box(0.020, 0.048, 0.012, 0.005), "metal", "daypack-zip-pull", [0.132, 0.056, -0.410]),
+    mesh(box(0.078, 0.166, 0.130, 0.030), "trim", "daypack-bottle-pocket", [0.190, -0.022, -0.312]),
+  );
+  for (const [index, y] of [0.070, -0.028].entries())
+    add(root, pathTube([
+      [-0.176, y, -0.268], [-0.180, y, -0.360], [-0.108, y - 0.006, -0.420],
+      [0.108, y - 0.006, -0.420], [0.180, y, -0.360], [0.176, y, -0.268],
+    ], 0.011, "cream", `daypack-compression-strap-${index}`));
+}
+
+function jetpack(root: THREE.Group) {
+  // A pack rather than two bare barrels: the tanks are lathed with domed caps,
+  // banded, filled through real valves and joined to a back plate by a spine,
+  // so it reads as one assembly strapped to the runner.
+  const tankProfile: readonly [number, number][] = [
+    [0.000, -0.128], [0.030, -0.134], [0.052, -0.124], [0.066, -0.100],
+    [0.072, -0.060], [0.072, 0.140], [0.068, 0.180], [0.054, 0.212],
+    [0.032, 0.230], [0.000, 0.234],
+  ];
+  add(root,
+    mesh(box(0.300, 0.330, 0.055, 0.030), "trim", "jetpack-back-plate", [0, 0.040, -0.250]),
+    mesh(box(0.330, 0.090, 0.070, 0.024), "trim", "jetpack-spine-plate", [0, 0.108, -0.288]),
+  );
+  for (const side of [-1, 1] as const) {
+    const x = side * 0.158;
+    add(root,
+      lathed(tankProfile, "steel", `jetpack-tank-${side}`, [x, 0.030, -0.312]),
+      // Two accent bands, both on the tank's own 0.072 radius so neither one
+      // needles out of the barrel the way a fixed-radius ring would.
+      lathed([[0.074, -0.016], [0.078, -0.004], [0.078, 0.020], [0.074, 0.032]], "trim", `jetpack-band-lower-${side}`, [x, 0.030, -0.312]),
+      lathed([[0.074, 0.096], [0.078, 0.108], [0.078, 0.132], [0.074, 0.144]], "trim", `jetpack-band-upper-${side}`, [x, 0.030, -0.312]),
+      mesh(cylinder(0.017, 0.036, 10), "steel", `jetpack-valve-${side}`, [x, 0.276, -0.312]),
+      mesh(cylinder(0.026, 0.012, 10), "trim", `jetpack-valve-wheel-${side}`, [x, 0.296, -0.312]),
+      // The cone hangs to -0.166, which keeps the whole pack above the -0.17
+      // a swinging thigh reaches.
+      mesh(new THREE.ConeGeometry(0.032, 0.058, 12), "glow", `jetpack-thruster-${side}`, [x, -0.137, -0.312]),
+    );
+    // Fins lie in the x-y plane, which is the one a chase camera sees, and start
+    // at the tank's own 0.072 surface so they grow out of it. Turned edge-on and
+    // set at the tank's own x they were swallowed whole by the barrel. The
+    // outline is mirrored in its data rather than by a negative scale: a mirror
+    // scale flips the winding, and the ink outline is a BackSide shell.
+    add(root, mesh(thickShape(([
+      [0.060, 0.146], [0.116, 0.070], [0.134, -0.020], [0.104, -0.084],
+      [0.058, -0.050],
+    ] as const).map(([fx, fy]) => [side * fx, fy] as [number, number]), 0.022),
+      "trim", `jetpack-fin-${side}`, [x, 0.030, -0.318]));
+  }
+}
+
+// --- Held items --------------------------------------------------------------
+
+function trophy(root: THREE.Group) {
+  // wear-trophy.png: a cup with a rolled rim and two ring handles on a dark
+  // two-tier base. Built around x 0.058 because that is where HELD_GRIPS puts
+  // the palm, and kept narrow in x because the hand swings past the skull.
+  const x = 0.058;
+  // The profile climbs the outside, rolls over the rim and comes back down the
+  // inside, so the cup has a wall and an open mouth that shadows. A single
+  // outward profile gives a solid plug with a painted-on lip.
+  add(root, lathed([
+    [0.014, 0.082], [0.038, 0.094], [0.050, 0.120], [0.056, 0.152],
+    [0.058, 0.172], [0.062, 0.182], [0.058, 0.190], [0.051, 0.182],
+    [0.048, 0.156], [0.042, 0.122], [0.026, 0.098], [0.010, 0.090],
+  ], "metal", "trophy-cup", [x, 0, 0], 1, 20));
+  add(root,
+    mesh(cylinder(0.014, 0.044, 10), "metal", "trophy-stem", [x, 0.055, 0]),
+    mesh(ball(0.026, 0.013, 0.026), "metal", "trophy-knop", [x, 0.072, 0]),
+    mesh(box(0.100, 0.020, 0.100, 0.008), "ink", "trophy-plinth-lower", [x, 0.008, 0]),
+    mesh(box(0.078, 0.018, 0.078, 0.007), "ink", "trophy-plinth-upper", [x, 0.026, 0]),
+    mesh(box(0.052, 0.014, 0.008, 0.003), "cream", "trophy-nameplate", [x, 0.008, 0.052]),
+  );
+  for (const side of [-1, 1] as const) {
+    // Each handle leaves the cup wall, loops out and returns to it, and the lug
+    // is where it lands - so the two never pass through the bowl.
+    add(root,
+      pathTube([
+        [x + side * 0.052, 0.166, 0],
+        [x + side * 0.086, 0.150, 0],
+        [x + side * 0.090, 0.124, 0],
+        [x + side * 0.056, 0.112, 0],
+      ], 0.008, "metal", `trophy-handle-${side}`),
+      mesh(ball(0.011, 0.009, 0.011), "metal", `trophy-handle-lug-top-${side}`, [x + side * 0.052, 0.166, 0]),
+      mesh(ball(0.011, 0.009, 0.011), "metal", `trophy-handle-lug-base-${side}`, [x + side * 0.054, 0.112, 0]),
+    );
+  }
+}
+
 function cape(root: THREE.Group) {
   root.position.y = 0.02;
   root.scale.set(1.08, 1.04, 1);
@@ -474,19 +1267,42 @@ function cape(root: THREE.Group) {
 function wings(root: THREE.Group) {
   root.scale.set(1.08, 1.1, 1);
   const outline: readonly [number, number][] = [[0.035, 0.09], [0.14, 0.32], [0.29, 0.40], [0.39, 0.30], [0.32, 0.15], [0.40, 0.09], [0.32, 0.01], [0.28, -0.11], [0.17, -0.07], [0.07, -0.02]];
+  // How far the tip trails the root. Two flat parallel plates read as cardboard
+  // from the side however good their outline is; a membrane that leaves the
+  // mount flat and sweeps 0.09u back by the tip catches light across its span
+  // and gives the pair a plan-view curve.
+  const bow = 0.09;
+  const reach = Math.max(...outline.map(([x]) => x));
+  const sweep = (x: number) => -bow * (Math.abs(x) / reach) ** 1.7;
   for (const side of [-1, 1] as const) {
     const points = outline.map(([x, y]) => [x * side, y] as [number, number]);
-    const panel = mesh(thickShape(points, 0.024), "main", `wing-thick-membrane-${side}`, [0, 0, -0.255]);
-    add(root, panel);
-    add(root, pathTube(points.map(([x, y]) => [x, y, -0.238] as [number, number, number]), 0.012, "cream", `wing-perimeter-frame-${side}`, true));
-    const rootPoint: [number, number, number] = [side * 0.055, 0.075, -0.232];
+    add(root, mesh(bowedPanel(points, 0.024, bow), "main", `wing-thick-membrane-${side}`, [0, 0, -0.245]));
+    // The leading edge alone is framed, and the spar tapers from root to tip.
+    // A rim carried all the way round the trailing edge is what gave the old
+    // pair their cut-from-card outline.
+    add(root, taperedTube(
+      outline.slice(0, 4).map(([x, y]) => [x * side, y, -0.245 + sweep(x) - 0.016] as [number, number, number]),
+      0.017,
+      0.007,
+      "cream",
+      `wing-leading-spar-${side}`,
+    ));
+    // The veins ride the membrane's REAR face, which is the one a chase camera
+    // sees: the panel's own surface there is -0.245 + sweep - 0.012, so a vein
+    // authored in front of that is a vein inside the wing.
+    const veinZ = (x: number) => -0.245 + sweep(x) - 0.017;
+    const rootPoint: [number, number, number] = [side * 0.055, 0.075, veinZ(0.055)];
     for (const [index, target] of ([
-      [side * 0.29, 0.37, -0.232],
-      [side * 0.34, 0.17, -0.232],
-      [side * 0.31, 0.015, -0.232],
-      [side * 0.25, -0.08, -0.232],
+      [0.29, 0.37],
+      [0.34, 0.17],
+      [0.31, 0.015],
+      [0.25, -0.08],
     ] as const).entries())
-      add(root, pathTube([rootPoint, [side * 0.16, (rootPoint[1] + target[1]) * 0.55, -0.225], [target[0], target[1], target[2]]], 0.009, "cream", `wing-vein-${side}-${index}`));
+      add(root, pathTube([
+        rootPoint,
+        [side * 0.16, (rootPoint[1] + target[1]) * 0.55, veinZ(0.16)],
+        [side * target[0], target[1], veinZ(target[0])],
+      ], 0.009, "cream", `wing-vein-${side}-${index}`));
   }
   add(root,
     mesh(box(0.15, 0.20, 0.042, 0.025), "plastic", "wing-back-mount", [0, 0.08, -0.205]),
@@ -561,6 +1377,13 @@ export function createWearableUpgradeModel(id: WearableUpgradeId): THREE.Group {
     case "wings": wings(root); break;
     case "flag": flag(root); break;
     case "balloon": balloon(root); break;
+    case "boot": boot(root); break;
+    case "hightop": hightop(root); break;
+    case "cleat": cleat(root); break;
+    case "skate": skate(root); break;
+    case "daypack": daypack(root); break;
+    case "jetpack": jetpack(root); break;
+    case "trophy": trophy(root); break;
   }
   return root;
 }

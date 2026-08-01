@@ -38,20 +38,23 @@ const DUEL_TOKEN_STORAGE_KEY = "miw:duel-token";
 /**
  * The stable identity a duel seat is keyed by. Portals connection ids change
  * on every join, and playerId is null when signed out, so the token is minted
- * once per browser and persisted.
+ * once and persisted. sessionStorage, not localStorage, on purpose: it
+ * survives the reload-and-rejoin case (same tab) while keeping two tabs of
+ * the same browser distinct players - which is also what lets the Portals
+ * editor's side-by-side 2p preview seat both panes.
  */
 export function duelToken(): string {
   try {
-    const existing = globalThis.localStorage?.getItem(DUEL_TOKEN_STORAGE_KEY);
+    const existing = globalThis.sessionStorage?.getItem(DUEL_TOKEN_STORAGE_KEY);
     if (existing && existing.length >= 8 && existing.length <= 80) return existing;
     const minted =
       globalThis.crypto?.randomUUID?.() ??
       `tok-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
-    globalThis.localStorage?.setItem(DUEL_TOKEN_STORAGE_KEY, minted);
+    globalThis.sessionStorage?.setItem(DUEL_TOKEN_STORAGE_KEY, minted);
     return minted;
   } catch {
-    // Storage denied (private mode): a per-tab token still works, it just
-    // cannot survive a full reload.
+    // Storage denied (private mode): a per-instance token still works, it
+    // just cannot survive a full reload.
     return `tok-${Math.random().toString(36).slice(2)}`;
   }
 }

@@ -105,7 +105,7 @@ afterEach(() => {
 describe("duel identity", () => {
   it("mints a token without storage and keeps it stable when storage exists", () => {
     const store = new Map<string, string>();
-    Object.defineProperty(globalThis, "localStorage", {
+    Object.defineProperty(globalThis, "sessionStorage", {
       value: {
         getItem: (key: string) => store.get(key) ?? null,
         setItem: (key: string, value: string) => void store.set(key, value),
@@ -117,7 +117,7 @@ describe("duel identity", () => {
       expect(first.length).toBeGreaterThanOrEqual(8);
       expect(duelToken()).toBe(first);
     } finally {
-      Reflect.deleteProperty(globalThis, "localStorage");
+      Reflect.deleteProperty(globalThis, "sessionStorage");
     }
   });
 });

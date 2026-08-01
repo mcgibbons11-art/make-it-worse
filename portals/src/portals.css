@@ -888,6 +888,15 @@ summary:focus-visible {
   display: flex;
   gap: 8px;
 }
+/* .portals-actions stretches every .button to 100%, which inside this flex
+   row squashed the invite-code input to a sliver. The button sizes to its
+   label here; the input takes the rest. */
+.portals-actions .duel-code-row .button,
+.duel-code-row .button,
+.duel-chat-row .button {
+  width: auto;
+  flex: 0 0 auto;
+}
 .duel-code-row input,
 .duel-chat-row input {
   flex: 1;

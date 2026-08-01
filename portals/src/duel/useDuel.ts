@@ -141,9 +141,11 @@ export interface DuelApi {
   noteWorsened(challenge: ChallengeDTO, track: BuiltTrack | null): void;
 }
 
+// sessionStorage to match the token's tab-scoped identity: a rejoin offer is
+// only honest in the tab whose token still holds the seat.
 function activeCodeRead(): string | null {
   try {
-    const raw = globalThis.localStorage?.getItem(ACTIVE_DUEL_STORAGE_KEY);
+    const raw = globalThis.sessionStorage?.getItem(ACTIVE_DUEL_STORAGE_KEY);
     return raw ? normalizeDuelCode(raw) : null;
   } catch {
     return null;
@@ -152,8 +154,8 @@ function activeCodeRead(): string | null {
 
 function activeCodeWrite(code: string | null) {
   try {
-    if (code === null) globalThis.localStorage?.removeItem(ACTIVE_DUEL_STORAGE_KEY);
-    else globalThis.localStorage?.setItem(ACTIVE_DUEL_STORAGE_KEY, code);
+    if (code === null) globalThis.sessionStorage?.removeItem(ACTIVE_DUEL_STORAGE_KEY);
+    else globalThis.sessionStorage?.setItem(ACTIVE_DUEL_STORAGE_KEY, code);
   } catch {
     // Private mode: rejoin-after-reload is simply not offered.
   }

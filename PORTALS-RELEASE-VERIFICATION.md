@@ -26,6 +26,21 @@ Portals synced GitHub commit `736b440` from `portals/dist` as a static bundle an
 - The same-session protocol now combines bounded announcement/request/response messages, late-join shared state, a `playerjoin` recovery signal, an explicit latest-map request, and a 1.5-second deduplicated read of the documented state mirror so a missed host event cannot strand an active player on an older version.
 - The original featured thumbnail was restored after the sync settings pass.
 
+## 1v1 duel verification — 2026-08-01
+
+Release snapshots: `4f344bb` (duel mode) and `5c1f920` (tab-scoped identity fix), both synced to the Portals editor with the last-commit hash confirmed on the settings card.
+
+Verified:
+
+- TypeScript, ESLint, and Vitest passed (73 files, 840 passed, 1 skipped), including 25 new duel protocol/transport tests covering the best-of-3 walk, hearts, forfeit gates, rematch seat swap, invite codes, wire validation, seq ordering, and the lobby/channel adapters against a mocked SDK.
+- A 10-check Playwright smoke pass against the built static preview: menu entry, popup, host/join/lobby paths, bad-code rejection, and graceful no-SDK failures.
+- In the processed editor 2p preview (real Portals.net): the duel popup renders, hosting connects to a live channel and mints an invite code, and after a preview reload the same pane reclaimed its seat through the tab-scoped duel token ("Rejoin MIW-XXXX" -> waiting on the same channel), which is the reload-recovery path working end to end.
+- The invite-input layout fix (`5c1f920`) confirmed rendering correctly in the processed build.
+
+Not verified live, honestly: the full two-seat handshake, live spectating, and the turn loop were not driven to completion in the 2p preview. Editor iframe clicks became unreliable mid-session (window resizes changed the capture scale and stalled iframe hit-testing), and one stray click left player 2 in a solo run. The protocol behind those flows is unit-tested, but the live two-player pass remains open.
+
+The public `/g/make-it-worse` page still serves the pre-duel published build: GitHub sync updates the editor and its previews, and only the user-owned Publish action updates the public page.
+
 ## Deliberately not performed
 
 - The final Portals **Publish Game** action was not pressed.

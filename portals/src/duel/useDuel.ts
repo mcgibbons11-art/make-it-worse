@@ -575,7 +575,12 @@ export function useDuel(input: {
       sendWire({ k: "chat", v: DUEL_PROTOCOL, text: trimmed });
       pushChat("you", trimmed);
     },
-    sendReaction: (emoji) => sendWire({ k: "react", v: DUEL_PROTOCOL, emoji }),
+    sendReaction: (emoji) => {
+      sendWire({ k: "react", v: DUEL_PROTOCOL, emoji });
+      // Echoed locally too: without this the sender saw nothing happen and
+      // the buttons read as dead, while the opponent received them fine.
+      pushFeed(emoji);
+    },
     claimTimeout: () => {
       const current = matchRef.current;
       if (!current || !mySeat) return;

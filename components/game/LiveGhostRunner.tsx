@@ -1,12 +1,18 @@
 "use client";
 
 import { Html } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 import { Vector3, type Group } from "three";
+import { getCameraYaw, setCameraYaw } from "@/lib/game/input";
 import type { AvatarConfig } from "@/lib/game/avatar";
 import type { DecodedGhostSample } from "@/lib/game/types";
 import { PlayerVisual, type PlayerMotionState } from "./PlayerVisual";
+
+/** Same feel as CameraRig's look drag; the two must not drift apart. */
+const LOOK_SENSITIVITY = 0.006;
+const SPECTATE_DISTANCE = 5.2;
+const SPECTATE_HEIGHT = 3.1;
 
 export interface LiveGhostFeed {
   /** Latest network sample; the transport overwrites it, this component reads it. */
@@ -28,6 +34,42 @@ export interface LiveGhostFeed {
 export function LiveGhostRunner({ sampleRef, avatarSeed, avatar, name, followCamera }: LiveGhostFeed) {
   const group = useRef<Group>(null);
   const label = useRef<HTMLSpanElement>(null);
+  const gl = useThree((state) => state.gl);
+  // The same hold-and-drag look CameraRig gives the runner, writing into the
+  // same shared yaw. A spectator has no CameraRig (attemptSerial is 0), so
+  // without this the view was welded behind the opponent with no way to look
+  // around the course they are about to inherit.
+  useEffect(() => {
+    if (!followCamera) return;
+    const element = gl.domElement;
+    let dragging = false;
+    let lastX = 0;
+    const down = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      dragging = true;
+      lastX = event.clientX;
+    };
+    const move = (event: PointerEvent) => {
+      if (!dragging) return;
+      const dx = event.clientX - lastX;
+      lastX = event.clientX;
+      const next = getCameraYaw() - dx * LOOK_SENSITIVITY;
+      setCameraYaw(Math.atan2(Math.sin(next), Math.cos(next)));
+    };
+    const up = () => {
+      dragging = false;
+    };
+    // Down on the canvas only, so the duel HUD keeps its clicks; move and up
+    // on the window, so a drag that leaves the canvas neither sticks nor snaps.
+    element.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => {
+      element.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+  }, [followCamera, gl]);
   const motion = useRef<PlayerMotionState>({
     speed: 0,
     verticalVelocity: 0,
@@ -70,10 +112,15 @@ export function LiveGhostRunner({ sampleRef, avatarSeed, avatar, name, followCam
       stunned: false,
     };
     if (followCamera) {
-      // The chase framing CameraRig would give the runner, without the rig:
-      // spectators have no pointer-look, so the camera simply trails behind
-      // the course direction (+Z runs away from the spawn) and watches.
-      cameraGoal.current.set(target.position.x * 0.6, target.position.y + 3.1, target.position.z - 5.2);
+      // The chase framing CameraRig would give the runner, orbited by the
+      // shared look yaw so a held left-drag swings the view a full 360
+      // around the opponent - the same gesture the runner has.
+      const yaw = getCameraYaw();
+      cameraGoal.current.set(
+        target.position.x - Math.sin(yaw) * SPECTATE_DISTANCE,
+        target.position.y + SPECTATE_HEIGHT,
+        target.position.z - Math.cos(yaw) * SPECTATE_DISTANCE,
+      );
       camera.position.lerp(cameraGoal.current, 1 - Math.exp(-dt * 4));
       lookGoal.current.lerp(
         new Vector3(target.position.x, target.position.y + 0.9, target.position.z),

@@ -2628,7 +2628,12 @@ function specsFor(look: ResolvedAvatar): Spec[] {
     // outer shirt beneath themselves.
     if (["jacket", "puffer", "vest", "poncho", "hoodie"].includes(look.outerwear))
       add(SOCKETS.pelvis, `outerWaist:${look.outerwear}`, () =>
-        garmentWaistBridge(outerTint, 0.025),
+        // 0.008, down from 0.025: the outer bridge never receives the 1.035
+        // attach scale the outer SHELLS do, so at 0.025 its rim (0.307)
+        // crossed the widened vest and puffer hems (0.298) and rasterized as
+        // a sawtooth band above the hem. 0.008 keeps it outside the shirt
+        // bridge (0.282) and inside every outer hem shell.
+        garmentWaistBridge(outerTint, 0.008),
       );
   }
 

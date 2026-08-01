@@ -23,8 +23,16 @@ function Hearts({ count, max }: { count: number; max: number }) {
   );
 }
 
+// Plain buttons and an Enter handler instead of <form> submission on purpose:
+// the processed Portals preview runs the game in a sandboxed iframe where
+// form submission is blocked outright, so a submit-based control reads as
+// simply dead. onClick and onKeyDown are unaffected.
 function DuelChat({ duel }: { duel: DuelApi }) {
   const [draft, setDraft] = useState("");
+  const send = () => {
+    duel.sendChat(draft);
+    setDraft("");
+  };
   return (
     <div className="duel-chat">
       <div className="duel-chat-log" role="log" aria-label="Duel chat">
@@ -34,23 +42,19 @@ function DuelChat({ duel }: { duel: DuelApi }) {
           </p>
         ))}
       </div>
-      <form
-        className="duel-chat-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          duel.sendChat(draft);
-          setDraft("");
-        }}
-      >
+      <div className="duel-chat-row">
         <input
           value={draft}
           maxLength={300}
           placeholder="Talk trash…"
           aria-label="Chat message"
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") send();
+          }}
         />
-        <button className="button secondary" type="submit">Send</button>
-      </form>
+        <button className="button secondary" type="button" onClick={send}>Send</button>
+      </div>
       <div className="duel-reactions">
         {REACTION_EMOJI.map((emoji) => (
           <button
@@ -109,22 +113,25 @@ export function DuelMatchmakingPanel({
             <button className="button danger" onClick={duel.hostPrivate}>
               🔒 Host a private duel
             </button>
-            <form
-              className="duel-code-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                duel.joinWithCode(codeDraft);
-              }}
-            >
+            <div className="duel-code-row">
               <input
                 value={codeDraft}
                 placeholder="MIW-XXXX"
                 aria-label="Invite code"
                 maxLength={12}
                 onChange={(event) => setCodeDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") duel.joinWithCode(codeDraft);
+                }}
               />
-              <button className="button secondary" type="submit">Join</button>
-            </form>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={() => duel.joinWithCode(codeDraft)}
+              >
+                Join
+              </button>
+            </div>
             <button className="button secondary" onClick={duel.enterLobby}>
               📣 Open lobby
             </button>
@@ -180,22 +187,25 @@ export function DuelMatchmakingPanel({
               </button>
             </div>
           ) : (
-            <form
-              className="duel-code-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                duel.postToLobby(noteDraft);
-              }}
-            >
+            <div className="duel-code-row">
               <input
                 value={noteDraft}
                 placeholder="Anyone want to lose? (optional note)"
                 aria-label="Lobby post note"
                 maxLength={120}
                 onChange={(event) => setNoteDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") duel.postToLobby(noteDraft);
+                }}
               />
-              <button className="button danger" type="submit">Post it</button>
-            </form>
+              <button
+                className="button danger"
+                type="button"
+                onClick={() => duel.postToLobby(noteDraft)}
+              >
+                Post it
+              </button>
+            </div>
           )}
           <div className="duel-posts">
             {duel.posts.length === 0 && (

@@ -16,6 +16,7 @@ import {
   connectDuelChannel,
   connectDuelLobby,
   duelToken,
+  resetDuelTokenForTests,
 } from "@/portals/src/duel/duel-session";
 
 function installSdk(initialState: Record<string, unknown> = {}) {
@@ -103,21 +104,43 @@ afterEach(() => {
 });
 
 describe("duel identity", () => {
-  it("mints a token without storage and keeps it stable when storage exists", () => {
-    const store = new Map<string, string>();
-    Object.defineProperty(globalThis, "sessionStorage", {
-      value: {
-        getItem: (key: string) => store.get(key) ?? null,
-        setItem: (key: string, value: string) => void store.set(key, value),
-      },
+  it("persists the token in window.name and recovers it after a reload", () => {
+    // window.name is per-frame and reload-surviving, which is what keeps the
+    // editor's same-origin 2p preview panes DISTINCT players: shared web
+    // storage had made both panes seat A.
+    resetDuelTokenForTests();
+    Object.defineProperty(globalThis, "window", {
+      value: { name: "" },
       configurable: true,
     });
     try {
       const first = duelToken();
       expect(first.length).toBeGreaterThanOrEqual(8);
+      expect((globalThis.window as { name: string }).name).toContain(first);
+      expect(duelToken()).toBe(first);
+      // A reload drops the module cache but keeps window.name.
+      resetDuelTokenForTests();
       expect(duelToken()).toBe(first);
     } finally {
-      Reflect.deleteProperty(globalThis, "sessionStorage");
+      Reflect.deleteProperty(globalThis, "window");
+      resetDuelTokenForTests();
+    }
+  });
+
+  it("leaves a platform-owned window.name alone and still mints a token", () => {
+    resetDuelTokenForTests();
+    Object.defineProperty(globalThis, "window", {
+      value: { name: "platform-routing-data" },
+      configurable: true,
+    });
+    try {
+      const token = duelToken();
+      expect(token.length).toBeGreaterThanOrEqual(8);
+      expect((globalThis.window as { name: string }).name).toBe("platform-routing-data");
+      expect(duelToken()).toBe(token);
+    } finally {
+      Reflect.deleteProperty(globalThis, "window");
+      resetDuelTokenForTests();
     }
   });
 });

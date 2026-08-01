@@ -33,30 +33,49 @@ import {
 } from "./duel-protocol";
 import type { PortalsNet, PortalsNetPlayer } from "../leaderboard";
 
-const DUEL_TOKEN_STORAGE_KEY = "miw:duel-token";
+const TOKEN_NAME_PATTERN = /miwtok:([A-Za-z0-9-]{8,72})/;
+let mintedToken: string | null = null;
 
 /**
  * The stable identity a duel seat is keyed by. Portals connection ids change
- * on every join, and playerId is null when signed out, so the token is minted
- * once and persisted. sessionStorage, not localStorage, on purpose: it
- * survives the reload-and-rejoin case (same tab) while keeping two tabs of
- * the same browser distinct players - which is also what lets the Portals
- * editor's side-by-side 2p preview seat both panes.
+ * on every join, and playerId is null when signed out, so the game mints its
+ * own. Web storage is the wrong home for it: the editor's side-by-side 2p
+ * preview runs both players as same-origin iframes in one tab, and they
+ * SHARE sessionStorage and localStorage - a stored token made both panes the
+ * same player, so the joiner could never take seat B. window.name is the one
+ * slot that is per-frame AND survives a reload of that frame, which is
+ * exactly the reload-and-rejoin case. When the host platform already uses
+ * window.name the token stays in memory and rejoin simply needs the frame to
+ * not reload - still correct, just less convenient.
  */
 export function duelToken(): string {
+  if (mintedToken) return mintedToken;
   try {
-    const existing = globalThis.sessionStorage?.getItem(DUEL_TOKEN_STORAGE_KEY);
-    if (existing && existing.length >= 8 && existing.length <= 80) return existing;
-    const minted =
-      globalThis.crypto?.randomUUID?.() ??
-      `tok-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
-    globalThis.sessionStorage?.setItem(DUEL_TOKEN_STORAGE_KEY, minted);
-    return minted;
+    const existing = TOKEN_NAME_PATTERN.exec(globalThis.window?.name ?? "");
+    if (existing?.[1]) {
+      mintedToken = existing[1];
+      return mintedToken;
+    }
   } catch {
-    // Storage denied (private mode): a per-instance token still works, it
-    // just cannot survive a full reload.
-    return `tok-${Math.random().toString(36).slice(2)}`;
+    // Cross-origin or sandbox restrictions: fall through to a fresh mint.
   }
+  mintedToken =
+    globalThis.crypto?.randomUUID?.() ??
+    `tok-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  try {
+    const frame = globalThis.window;
+    if (frame && (frame.name === "" || TOKEN_NAME_PATTERN.test(frame.name))) {
+      frame.name = `miwtok:${mintedToken}`;
+    }
+  } catch {
+    // Persistence refused: the in-memory token still identifies this player.
+  }
+  return mintedToken;
+}
+
+/** Test hook: clears the module cache so mint/persist paths can be exercised. */
+export function resetDuelTokenForTests(): void {
+  mintedToken = null;
 }
 
 function reason(error: unknown): string {

@@ -234,17 +234,28 @@ export function GameScene({
             // along -Z makes every trap cost time, which is what makes a
             // placement worth choosing. Capped so a hit is a setback rather
             // than a run ender, and only while actually playing.
-            const body = player.current;
-            if (body && phase === "playing") {
+            if (phase === "playing") {
               const push = Math.min(
                 6,
                 (2.1 + hazard.impulseMagnitude * 0.25) * disruption,
               );
-              try {
-                body.applyImpulse({ x: 0, y: 1.45, z: -push }, true);
-              } catch {
-                // The body can be remounting between attempts.
-              }
+              // Deferred one microtask, NOT applied inline: collision-driven
+              // hazards arrive from inside @react-three/rapier's event drain,
+              // which invokes onCollisionEnter within world.contactPair - the
+              // world is borrowed for that whole call. applyImpulse there
+              // re-enters wasm and panics ("recursive use of an object"), and
+              // the old try/catch swallowed the panic while leaving the world
+              // permanently borrow-poisoned, so every later physics call died.
+              // A microtask runs after the drain unwinds, in the same tick.
+              queueMicrotask(() => {
+                const body = player.current;
+                if (!body) return;
+                try {
+                  body.applyImpulse({ x: 0, y: 1.45, z: -push }, true);
+                } catch {
+                  // The body can be remounting between attempts.
+                }
+              });
             }
             onHazard(hazard);
             }}

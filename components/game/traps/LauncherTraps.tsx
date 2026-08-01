@@ -855,17 +855,24 @@ export function RobotMopTrap({
           lastBump.current = now;
           contact(trap, onHazard, MOP_IMPULSE);
           mechanic(trap, onMechanic, "mop_bump", MOP_IMPULSE);
-          const target = player.current;
-          if (!isLive(target)) return;
-          // Shoved the way the mop is travelling, once per contact.
-          target.applyImpulse(
-            {
-              x: forward.x * travelSign.current * MOP_BUMP_IMPULSE,
-              y: 1.2,
-              z: forward.z * travelSign.current * MOP_BUMP_IMPULSE,
-            },
-            true,
-          );
+          // Shoved the way the mop is travelling, once per contact. Deferred a
+          // microtask because onCollisionEnter runs inside world.contactPair
+          // with the world borrowed - an inline applyImpulse re-enters wasm
+          // and borrow-poisons the whole physics world (see GameScene's
+          // hazard knockback for the full story).
+          const sign = travelSign.current;
+          queueMicrotask(() => {
+            const target = player.current;
+            if (!isLive(target)) return;
+            target.applyImpulse(
+              {
+                x: forward.x * sign * MOP_BUMP_IMPULSE,
+                y: 1.2,
+                z: forward.z * sign * MOP_BUMP_IMPULSE,
+              },
+              true,
+            );
+          });
         }}
       >
         <CylinderCollider args={[MOP_HALF_HEIGHT, MOP_RADIUS]} />

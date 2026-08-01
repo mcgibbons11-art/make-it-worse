@@ -1419,8 +1419,14 @@ function collarParts(id: AvatarTopId): THREE.Object3D[] {
           return roll;
         })(),
       ];
-    case "hoodie":
-      return [part(tube(0.185, 0.2, 0.075, 18, true), "trim", { x: 0, y: 0.015, z: 0 })];
+    case "hoodie": {
+      // A soft torus roll, not a stand funnel: a hoodie's neckband is a
+      // folded rib that hugs the collarbone, and the open tube this replaces
+      // read as a parka collar standing proud of the body.
+      const band = part(ring(0.19, 0.026), "trim", { x: 0, y: 0.02, z: 0 });
+      band.rotation.x = Math.PI / 2;
+      return [band];
+    }
     case "jersey":
       // wear-jersey.png: a cream polo collar that lies flat and spreads as it
       // rises, open at the front where the placket is. Cut on the same partial
@@ -1696,11 +1702,14 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
         // Cloth and fringes live in one group whose origin is the top of the
         // tail, so the outward lean carries the fringes with it for free.
         const hang = new THREE.Group();
-        hang.position.set(side * 0.06, 0.155, 0.235);
+        hang.position.set(side * 0.06, 0.19, 0.225);
         hang.rotation.z = side * 0.09;
         hang.rotation.x = -0.06;
         hang.add(
-          part(roundedSlab(0.082, 0.035, 0.04), "knit", { x: 0, y: -0.018, z: 0.001 }),
+          // The fold reaches up past the loop's bottom edge (world 1.155), so
+          // the tails visibly continue OUT of the loop instead of starting
+          // below it.
+          part(roundedSlab(0.082, 0.06, 0.04), "knit", { x: 0, y: 0.012, z: 0.001 }),
           part(roundedSlab(0.075, length, 0.034), "knit", {
             x: 0, y: -length / 2, z: 0,
           }),
@@ -1781,21 +1790,46 @@ function outerCollarParts(id: AvatarOuterwearId): THREE.Object3D[] {
     case "hoodie":
       return collarParts("hoodie");
     case "puffer":
-      return [part(tube(0.195, 0.205, 0.095, 18, true), "trim", { x: 0, y: 0.05, z: 0 })];
-    case "scarf":
-      return [part(tube(0.207, 0.207, 0.13, 18, true), "main", { x: 0, y: 0.03, z: 0 })];
+      // Lower and closer than it first shipped: at 0.095u tall on y 0.05 the
+      // funnel hovered with open air between its underside and the jacket's
+      // shoulders.
+      return [part(tube(0.188, 0.198, 0.08, 18, true), "trim", { x: 0, y: 0.025, z: 0 })];
+    case "scarf": {
+      // The loop reaches DOWN to hand the tails off: its old bottom stopped
+      // 0.08u above where the tails began and the garment photographed as two
+      // pieces with bare chest between them. A torus roll caps the top so the
+      // cut edge of the tube no longer presses a hard line under the jaw.
+      const wrap = part(tube(0.207, 0.207, 0.15, 18, true), "main", { x: 0, y: -0.005, z: 0 });
+      const roll = part(ring(0.2, 0.022), "main", { x: 0, y: 0.065, z: 0 });
+      roll.rotation.x = Math.PI / 2;
+      return [wrap, roll];
+    }
     case "vest":
-      // wear-vest.png: a tall stand collar in the vest's own colour.
-      return [part(tube(0.19, 0.2, 0.105, 18, true), "main", { x: 0, y: 0.06, z: 0 })];
+      // wear-vest.png: a stand collar in the vest's own colour, seated on the
+      // shoulders rather than ringing the neck in mid-air.
+      return [part(tube(0.183, 0.193, 0.08, 18, true), "main", { x: 0, y: 0.025, z: 0 })];
     case "jacket":
       // wear-jacket.png: a wide flat collar in a contrast colour, open at the
-      // front where the jacket is.
+      // front where the jacket is. The arc runs wider than it first shipped
+      // (2.9rad against 2.6) because with the runner's resting torso twist a
+      // 2.6 arc showed on one shoulder only, and a rolled top edge keeps the
+      // cut rim from reading as a blade in profile.
       return [
         part(
-          new THREE.CylinderGeometry(0.245, 0.19, 0.07, 18, 1, true, Math.PI - 1.3, 2.6),
+          new THREE.CylinderGeometry(0.24, 0.19, 0.065, 20, 1, true, Math.PI - 1.45, 2.9),
           "trim",
-          { x: 0, y: 0.035, z: 0 },
+          { x: 0, y: 0.032, z: 0 },
         ),
+        (() => {
+          const wrap = new THREE.Group();
+          const roll = part(ring(0.235, 0.014, Math.PI * 2 - 1.3), "trim", {
+            x: 0, y: 0.062, z: 0,
+          });
+          roll.rotation.x = Math.PI / 2;
+          wrap.add(roll);
+          wrap.rotation.y = -(Math.PI / 2 + 0.65);
+          return wrap;
+        })(),
       ];
     default:
       return [];
@@ -1848,7 +1882,14 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       const seam = part(slab(0.008, 0.5, 0.026), "trim");
       seam.position.copy(limbPoint(LEG, side, 0.45));
       seam.position.x += side * (legRadius(0.45) + 0.016);
-      return [leg, seam];
+      // A turned-up hem cuff: with the fly and back yoke on the pelvis, this
+      // is the one denim cue that can safely ride the leg, because a sleeve
+      // around the limb axis never changes its own x extent in the swing.
+      const cuff = limbSleeve(
+        LEG, side, 0.94, 1.04, legRadius(0.95) + 0.027, legRadius(1) + 0.027,
+      );
+      cuff.userData["wardrobeTint"] = "trim";
+      return [leg, seam, cuff];
     }
     case "cargo": {
       // wear-cargo.png: the trouser, its waistband, its thigh pockets and its
@@ -1863,16 +1904,25 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       // it would come out either doubled or riding up with the stride.
       const leg = trouser(1.03, legRadius(0.9) + 0.02);
       const cuff = limbSleeve(LEG, side, 0.92, 1.04, legRadius(0.95) + 0.027, legRadius(1) + 0.027);
-      const pocket = part(roundedSlab(0.026, 0.115, 0.085), "main");
+      // The bellows pocket is the whole identity of a cargo trouser and the
+      // 0.026-thin card that stood here did not read as one. The pouch is now
+      // a real box standing off the thigh, the flap overhangs it with a
+      // visible shadow gap, and a smaller calf pocket makes the side view
+      // differ from the front. All of it grows in x only as far as 0.114 off
+      // the axis - under the 0.125 sweep cap the suite enforces.
+      const pocket = part(roundedSlab(0.044, 0.115, 0.085), "main");
       pocket.position.copy(limbPoint(LEG, side, 0.52));
       pocket.position.x += side * (legRadius(0.52) + 0.017);
-      const flap = part(roundedSlab(0.028, 0.032, 0.089), "main");
+      const flap = part(roundedSlab(0.044, 0.034, 0.08), "main");
       flap.position.copy(limbPoint(LEG, side, 0.42));
       flap.position.x += side * (legRadius(0.42) + 0.019);
       const button = part(ball(0.01, 0.013, 0.013), "cream");
       button.position.copy(limbPoint(LEG, side, 0.44));
-      button.position.x += side * (legRadius(0.44) + 0.032);
-      return [leg, cuff, pocket, flap, button];
+      button.position.x += side * (legRadius(0.44) + 0.036);
+      const calfPocket = part(roundedSlab(0.036, 0.07, 0.06), "main");
+      calfPocket.position.copy(limbPoint(LEG, side, 0.74));
+      calfPocket.position.x += side * (legRadius(0.74) + 0.015);
+      return [leg, cuff, pocket, flap, button, calfPocket];
     }
     case "kneepads": {
       // A plastic shell over a proud cushion ring, not a lump of dark rubber:
@@ -1910,6 +1960,11 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       // are what make it read as worn; the leg itself is left as close to the
       // body as it was.
       const leg = trouser(1.05, legRadius(1.0) + 0.008);
+      // Sheen is what separates a technical legging from the three matte
+      // charcoal trousers beside it in the picker: the plastic role keeps the
+      // chosen hue but answers light the way stretch knit does, where main's
+      // 0.78 roughness made tights, jeans and joggers one material.
+      leg.userData["wardrobeTint"] = "plastic";
       const seam = part(slab(0.009, 0.31, 0.02), "trim");
       seam.position.copy(limbPoint(LEG, side, 0.46));
       seam.position.x += side * (legRadius(0.46) + 0.01);
@@ -1936,35 +1991,72 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
  */
 function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
   if (id === "kneepads" || id === "none") return [];
-  const baseTint: WardrobeTint = id === "jeans" ? "denim" : "main";
+  // Tights take the same sheen as their legs or the waist reads as a
+  // different garment.
+  const baseTint: WardrobeTint =
+    id === "jeans" ? "denim" : id === "tights" ? "plastic" : "main";
   // The old top radius was only 0.176u: narrower than the runner's bare torso
   // at the same height. The pants technically overlapped the shirt in Y, but
   // sat behind the body in X/Z, leaving a visible body-coloured band. This
   // high-rise yoke meets the actual torso silhouette and overlaps the selected
   // garment bridge above from every viewing angle.
-  const yoke = part(new THREE.CylinderGeometry(0.265, 0.21, 0.21, 24, 3), baseTint, {
-    x: 0,
-    y: 0.105,
-    z: 0,
-  });
-  yoke.scale.z = 0.8;
+  // A lathe rather than a capped cylinder. The cylinder's flat top rim plus
+  // the waistband torus stood wider than the torso and photographed, in the
+  // side view of every trouser, as a thin dark plate projecting into the air
+  // past the body - a table edge through the hips. The profile still reaches
+  // 0.266 (the waist-coverage tests need the pants wider than the shirt gap)
+  // but it reaches it MID-YOKE, where it reads as hip flare, and then curls
+  // back INWARD so the top edge tucks toward the body instead of ending in a
+  // proud rim. The bottom extends to -0.04 to close the bare-hip band that
+  // showed between the old yoke and the leg tubes.
+  const yoke = part(
+    new THREE.LatheGeometry(
+      [
+        new THREE.Vector2(0.205, -0.04),
+        new THREE.Vector2(0.212, 0),
+        new THREE.Vector2(0.238, 0.05),
+        new THREE.Vector2(0.256, 0.1),
+        new THREE.Vector2(0.263, 0.14),
+        new THREE.Vector2(0.262, 0.175),
+        new THREE.Vector2(0.252, 0.2),
+        new THREE.Vector2(0.234, 0.215),
+        new THREE.Vector2(0.205, 0.224),
+        new THREE.Vector2(0.155, 0.228),
+      ],
+      24,
+    ),
+    baseTint,
+    { x: 0, y: 0, z: 0 },
+  );
+  // 0.77 rather than the torso's own 0.8: the coverage tests bound x and z
+  // separately, and the sliver the yoke must keep in x (to stay wider than
+  // the shirt gap) does not have to be spent in z, which is the axis the
+  // side view actually photographs.
+  yoke.scale.z = 0.77;
   yoke.userData["wardrobeNoOutline"] = true;
-  const waistband = part(new THREE.TorusGeometry(0.257, 0.014, 6, 24), "trim", {
+  const waistband = part(new THREE.TorusGeometry(0.25, 0.011, 6, 24), "trim", {
     x: 0,
-    y: 0.205,
+    y: 0.19,
     z: 0,
   });
   waistband.userData["wardrobeTint"] = baseTint;
   waistband.userData["wardrobeNoOutline"] = true;
+  // Mesh scale composes BEFORE rotation, so squashing the ring's world-z
+  // means scaling its LOCAL Y once it lies flat. The scale.z it shipped with
+  // squashed only the tube's thickness and left the ring a perfect circle
+  // around an oval body: 0.26 in a direction where the torso is 0.21, which
+  // was the dark ledge photographed at the waist of every trouser.
   waistband.rotation.x = Math.PI / 2;
-  waistband.scale.z = 0.8;
+  waistband.scale.y = 0.77;
   if (id === "kilt") return [yoke, waistband, createWearableUpgradeModel("kilt")];
   // The leg sleeves must stay separate so they can run, but trousers are not
   // two disconnected tubes. This pelvis-mounted gusset overlaps the yoke and
   // both upper thighs, closing the bright vertical slit that used to show
   // through every pair of pants. It ends high enough that the legs still swing
   // freely beneath it.
-  const crotch = part(roundedSlab(0.13, 0.15, 0.19), baseTint, {
+  // An ellipsoid saddle rather than a slab: the slab's square corners were
+  // the hard step at the crotch that read as a diaper from the side.
+  const crotch = part(ball(0.1, 0.09, 0.105), baseTint, {
     x: 0,
     y: -0.045,
     z: 0,
@@ -1977,6 +2069,29 @@ function pelvisLegwearParts(id: AvatarLegwearId): THREE.Object3D[] {
     });
     frontSeam.userData["wardrobeNoOutline"] = true;
     return [yoke, waistband, crotch, frontSeam];
+  }
+  if (id === "jeans") {
+    // The denim details live HERE and not on the legs on purpose: the pelvis
+    // does not swing, so small proud features are safe where the same detail
+    // on a leg tube would lift into the shirt hem at full stride. Fly stitch,
+    // waist button and back yoke are the minimum set that says "jeans"
+    // rather than "trousers".
+    const fly = part(slab(0.009, 0.115, 0.01), "cream", { x: 0.02, y: 0.1, z: 0.212 });
+    fly.userData["wardrobeNoOutline"] = true;
+    const flyCurve = part(slab(0.009, 0.045, 0.01), "cream", { x: 0.008, y: 0.048, z: 0.208 });
+    flyCurve.rotation.z = 0.6;
+    flyCurve.userData["wardrobeNoOutline"] = true;
+    const button = part(ball(0.014, 0.014, 0.01), "cream", { x: 0, y: 0.175, z: 0.203 });
+    button.userData["wardrobeNoOutline"] = true;
+    const backYoke = ([-1, 1] as const).map((side) => {
+      const line = part(slab(0.1, 0.008, 0.01), "cream", {
+        x: side * 0.06, y: 0.115, z: -0.204,
+      });
+      line.rotation.z = -side * 0.28;
+      line.userData["wardrobeNoOutline"] = true;
+      return line;
+    });
+    return [yoke, waistband, crotch, fly, flyCurve, button, ...backYoke];
   }
   if (id !== "joggers") return [yoke, waistband, crotch];
   const drawstring = (side: -1 | 1) =>

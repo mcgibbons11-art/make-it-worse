@@ -183,7 +183,12 @@ function wavedShape(points: readonly [number, number][], depth = 0.018, amplitud
 function ring(radius: number, tube: number, tint: Tint, name: string, y: number, zScale = 0.8) {
   const value = mesh(new THREE.TorusGeometry(radius, tube, 7, 24), tint, name, [0, y, 0]);
   value.rotation.x = Math.PI / 2;
-  value.scale.z = zScale;
+  // Scale composes before rotation: once the ring lies flat its LOCAL Y is
+  // the world-z direction, so the oval squash must go there. The scale.z
+  // this helper shipped with squashed only the tube thickness and left every
+  // caller's ring circular around an oval shell - which is what made the
+  // baffle ribs needle out of the puffer's front and back.
+  value.scale.y = zScale;
   return value;
 }
 
@@ -231,41 +236,76 @@ function tank(root: THREE.Group) {
 
 function quilted(root: THREE.Group, vest: boolean) {
   const prefix = vest ? "vest" : "puffer";
-  // One softly inflated shell carries shallow horizontal quilt ribs. The old
-  // split front/back/side pad for every row gave every baffle its own ink
-  // outline, turning the garment into a stack of black tires at picker scale.
-  const shell = mesh(new THREE.CylinderGeometry(0.246, 0.272, 0.44, 28, 4, true), "main", `${prefix}-under-shell`, [0, 0.045, 0]);
-  shell.scale.z = vest ? 0.79 : 0.84;
-  add(root, shell);
+  const zScale = vest ? 0.79 : 0.84;
+  // The shell's own radius at a height, shared by everything that has to sit
+  // on it. The review pass caught two classes of float that came from parts
+  // authored at fixed radii while the shell tapers: baffle ribs needling out
+  // past the silhouette, and the whole zip assembly hanging 0.05u off the
+  // chest in side view.
+  const shellRadius = (y: number) => 0.272 - ((y + 0.175) / 0.44) * 0.026;
+  if (vest) {
+    // A vest tapers into the shoulders the way the tank does, so the shell
+    // stops inboard of the resting arms instead of passing through them -
+    // the cylinder it used before ran straight up at chest radius and the
+    // arms entered its face. The armholes are the taper's own negative
+    // space; the floating "binding" arcs that used to hover near the
+    // shoulders are gone with the surface they had nothing to bind.
+    const profile = [
+      new THREE.Vector2(0.272, -0.175),
+      new THREE.Vector2(0.266, -0.06),
+      new THREE.Vector2(0.254, 0.06),
+      new THREE.Vector2(0.236, 0.16),
+      new THREE.Vector2(0.212, 0.24),
+      new THREE.Vector2(0.202, 0.265),
+    ];
+    const shell = mesh(new THREE.LatheGeometry(profile, 28), "main", "vest-under-shell");
+    shell.scale.z = zScale;
+    add(root, shell);
+  } else {
+    const shell = mesh(new THREE.CylinderGeometry(0.246, 0.272, 0.44, 28, 4, true), "main", `${prefix}-under-shell`, [0, 0.045, 0]);
+    shell.scale.z = zScale;
+    add(root, shell);
+  }
+  const vestRadius = (y: number): number => {
+    const stations: readonly [number, number][] = [
+      [-0.175, 0.272], [-0.06, 0.266], [0.06, 0.254], [0.16, 0.236], [0.24, 0.212], [0.265, 0.202],
+    ];
+    for (let index = 1; index < stations.length; index += 1) {
+      const [y0, r0] = stations[index - 1]!;
+      const [y1, r1] = stations[index]!;
+      if (y <= y1) return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
+    }
+    return 0.202;
+  };
+  const surface = (y: number) => (vest ? vestRadius(y) : shellRadius(y));
   const baffleYs = [-0.125, -0.045, 0.035, 0.115, 0.195];
   for (const [index, y] of baffleYs.entries()) {
-    const radius = 0.268 - index * 0.003;
-    const rib = ring(radius, 0.006, "main", `${prefix}-baffle-rib-${index}`, y, vest ? 0.79 : 0.84);
+    const rib = ring(surface(y) + 0.003, 0.006, "main", `${prefix}-baffle-rib-${index}`, y, zScale);
     rib.userData["wardrobeNoOutline"] = true;
     add(root, rib);
   }
 
-  // Raised zipper tape, individual teeth, stop boxes and a readable pull.
-  const zipZ = 0.274;
-  add(root, mesh(box(0.052, 0.432, 0.018, 0.008), "trim", `${prefix}-zip-tape`, [0, 0.045, zipZ]));
+  // The zip rides IN a group tilted to the shell's own front slope, with the
+  // tape half-buried in the surface: only the teeth, slider and pull stand
+  // proud, the way a set-in zip actually reads.
+  const zip = new THREE.Group();
+  zip.name = `${prefix}-zip-assembly`;
+  const frontAt = (y: number) => surface(y) * zScale;
+  zip.position.set(0, 0.045, frontAt(0.045) + 0.004);
+  // Negative: rotating about +x moves a point below the pivot BACKWARD, and
+  // the shell's bottom is the wide end, so the tape's bottom must lean OUT.
+  zip.rotation.x = -Math.atan2(frontAt(-0.175) - frontAt(0.265), 0.44);
+  zip.add(mesh(box(0.052, 0.432, 0.018, 0.008), "trim", `${prefix}-zip-tape`, [0, 0, 0]));
   for (let index = 0; index < 11; index += 1) {
-    const y = -0.145 + index * 0.038;
+    const y = -0.19 + index * 0.038;
     for (const side of [-1, 1] as const)
-      add(root, mesh(box(0.012, 0.019, 0.026, 0.004), "metal", `${prefix}-zip-tooth-${index}-${side}`, [side * 0.009, y, zipZ + 0.013]));
+      zip.add(mesh(box(0.012, 0.019, 0.026, 0.004), "metal", `${prefix}-zip-tooth-${index}-${side}`, [side * 0.009, y, 0.012]));
   }
-  const slider = mesh(box(0.046, 0.055, 0.032, 0.01), "metal", `${prefix}-zip-slider`, [0, 0.19, zipZ + 0.025]);
-  const pull = mesh(new THREE.TorusGeometry(0.022, 0.006, 6, 14), "metal", `${prefix}-zip-pull`, [0, 0.225, zipZ + 0.03]);
-  add(root, slider, pull);
-
-  if (vest) {
-    // Proud piping traces the open side of each armhole. There is no torso pad
-    // behind these curves, so the negative space is real from front and side.
-    for (const side of [-1, 1] as const)
-      add(root, pathTube([
-        [side * 0.23, 0.08, 0.17], [side * 0.255, 0.14, 0.105],
-        [side * 0.255, 0.225, 0], [side * 0.225, 0.285, -0.11],
-      ], 0.011, "knit", `vest-armhole-binding-${side}`));
-  }
+  zip.add(
+    mesh(box(0.046, 0.055, 0.032, 0.01), "metal", `${prefix}-zip-slider`, [0, 0.145, 0.02]),
+    mesh(new THREE.TorusGeometry(0.022, 0.006, 6, 14), "metal", `${prefix}-zip-pull`, [0, 0.18, 0.025]),
+  );
+  add(root, zip);
 }
 
 function barefoot(root: THREE.Group) {
@@ -316,22 +356,51 @@ function kilt(root: THREE.Group) {
   const skirt = mesh(new THREE.CylinderGeometry(0.205, 0.245, 0.29, 24, 3, true), "main", "kilt-skirt", [0, -0.02, 0]);
   skirt.scale.z = 0.78;
   add(root, skirt, ring(0.205, 0.018, "knit", "kilt-waist", 0.125, 0.78));
-  // Pleats wrap through both profiles and the rear, so turning the runner no
-  // longer turns a detailed front into a smooth lampshade.
-  const pleatCount = 12;
+  // The pleats are GEOMETRY now: chunky wedges standing proud of the skirt
+  // wall around the rear two thirds, leaning with the flare, their bottoms
+  // dropping past the skirt hem so the lower edge reads as a pleat scallop
+  // instead of a smooth ellipse. The 0.008-wide streaks they replace were
+  // buried flush in the wall and photographed as paint.
+  const pleatCount = 13;
   for (let index = 0; index < pleatCount; index += 1) {
-    const angle = (index / pleatCount) * Math.PI * 2;
-    const radius = 0.222;
+    const angle = 0.66 + (index / (pleatCount - 1)) * (Math.PI * 2 - 1.32);
+    const seat = new THREE.Group();
+    seat.rotation.y = angle;
     const pleat = mesh(
-      box(0.008, 0.225, 0.012, 0.003),
+      box(0.06, 0.275, 0.026, 0.008),
       index % 3 === 0 ? "trim" : "main",
       `kilt-pleat-${index}`,
-      [Math.sin(angle) * radius, -0.01, Math.cos(angle) * radius * 0.78],
+      [0, -0.03, 0.2245 * 0.78],
     );
-    pleat.rotation.y = angle;
-    pleat.rotation.z = Math.sin(angle) * 0.035;
+    pleat.rotation.x = -0.135;
     pleat.userData["wardrobeNoOutline"] = true;
-    add(root, pleat);
+    seat.add(pleat);
+    add(root, seat);
+  }
+  // A flat apron closes the front the way a kilt actually fastens, overlapping
+  // the pleated section, with its own hem lip and two strap buckles at the
+  // wearer's right hip.
+  const apron = mesh(
+    new THREE.CylinderGeometry(0.243, 0.262, 0.285, 14, 1, true, -0.62, 1.24),
+    "main", "kilt-apron", [0, -0.022, 0],
+  );
+  apron.scale.z = 0.78;
+  // Torus arc laid flat, then the wrapper's y-rotation centres its 1.18rad
+  // span on the front - shifting plan angle after an x-flip needs a parent
+  // rotation, not a z euler on the same mesh.
+  const apronHemSeat = new THREE.Group();
+  const apronHem = mesh(
+    new THREE.TorusGeometry(0.258, 0.011, 6, 12, 1.18), "knit", "kilt-apron-hem", [0, -0.158, 0],
+  );
+  apronHem.rotation.x = Math.PI / 2;
+  apronHem.scale.set(1, 0.78, 1);
+  apronHemSeat.add(apronHem);
+  apronHemSeat.rotation.y = 0.59 - Math.PI / 2;
+  add(root, apron, apronHemSeat);
+  for (const [index, y] of [0.085, 0.01].entries()) {
+    const buckle = mesh(box(0.04, 0.026, 0.016, 0.006), "metal", `kilt-buckle-${index}`, [0.185, y, 0.145]);
+    buckle.rotation.y = 0.9;
+    add(root, buckle);
   }
   add(root, ring(0.238, 0.009, "knit", "kilt-rolled-hem", -0.165, 0.78));
 }

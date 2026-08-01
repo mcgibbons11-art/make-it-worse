@@ -159,6 +159,15 @@ export function DuelMatchmakingPanel({
           <p className="portals-notice" role="status">
             Waiting for an opponent to join…
           </p>
+          {/* Live session facts, so a stuck hand-off is diagnosable at a
+              glance instead of reading as a dead screen. */}
+          <p className="duel-session-status" role="status">
+            {duel.peerConnected ? "another connection is here" : "nobody else here yet"}
+            {" · "}
+            {duel.match
+              ? `record #${duel.match.seq} · you: ${duel.mySeat ? `seat ${duel.mySeat.toUpperCase()}` : "no seat"} · opponent: ${duel.match.players.b ? "seated" : "open"}`
+              : "no match record yet"}
+          </p>
         </>
       )}
       {stage.kind === "lobby" && (

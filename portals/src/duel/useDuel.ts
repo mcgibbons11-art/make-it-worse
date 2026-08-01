@@ -186,6 +186,7 @@ export function useDuel(input: {
   const lobby = useRef<DuelLobbyConnection | null>(null);
   const channel = useRef<DuelChannelConnection | null>(null);
   const matchRef = useRef<DuelMatch | null>(null);
+  const activeCodeRef = useRef<string | null>(null);
   const spectateSampleRef = useRef<DecodedGhostSample | null>(null);
   const sampleCounter = useRef(0);
   const serial = useRef(0);
@@ -229,11 +230,21 @@ export function useDuel(input: {
     setChat((entries) => [...entries.slice(-(CHAT_LIMIT - 1)), { id: (serial.current += 1), from, text }]);
   }, []);
 
-  /** Publish a new record and adopt it locally in the same breath. */
+  /**
+   * Publish a new record and adopt it locally in the same breath. Writing a
+   * record that seats both players IS entering the match - the joiner's own
+   * write never comes back through onMatch (seq guards drop echoes), so the
+   * stage flip has to happen here, not only on arriving records.
+   */
   const publish = useCallback((next: DuelMatch) => {
     matchRef.current = next;
     setMatch(next);
     channel.current?.publishMatch(next);
+    if (next.players.b && !next.result && activeCodeRef.current) {
+      setStage((current) =>
+        current.kind === "match" ? current : { kind: "match", code: activeCodeRef.current! },
+      );
+    }
   }, []);
 
   const dropLobby = useCallback(async () => {
@@ -267,6 +278,7 @@ export function useDuel(input: {
   const enterChannel = useCallback(
     async (code: string, role: "host" | "join") => {
       setStage({ kind: "connecting" });
+      activeCodeRef.current = code;
       await dropLobby();
       await acquireNet?.().catch(() => undefined);
       const result = await connectDuelChannel(code, {
@@ -308,24 +320,11 @@ export function useDuel(input: {
               break;
           }
         },
-        onPeerJoin: (player) => {
-          setPeerConnected(true);
-          const current = matchRef.current;
-          if (!current) return;
-          // The host seats a fresh arrival; a known token is a rejoin.
-          if (seatOf(current, token) !== "a") return;
-          if (current.players.b === null) {
-            const seated = joinMatch(current, {
-              token: `pending:${player.id}`,
-              connId: player.id,
-              name: player.displayName?.trim().slice(0, 40) || "Challenger",
-              avatarCode: null,
-            });
-            // The joiner introduces itself through its own refresh below, so
-            // seat B starts as the connection and adopts the token after.
-            if (seated) publish(seated);
-          }
-        },
+        // Seat claiming is the JOINER's job alone: a host-side provisional
+        // seat raced the joiner's own claim (both bumped the same seq with
+        // different players.b) and last-write-wins could leave the joiner
+        // seatless in its own match.
+        onPeerJoin: () => setPeerConnected(true),
         onPeerLeave: () => {
           setPeerConnected(false);
           spectateSampleRef.current = null;
@@ -359,22 +358,24 @@ export function useDuel(input: {
           else setStage({ kind: "waiting", code });
           return;
         }
-        // The host provisionally seated this connection before the token was
-        // known; adopt seat B properly. Otherwise take the empty seat.
-        if (existing.players.b?.token === `pending:${player.connId}` || existing.players.b === null) {
-          const seated =
-            existing.players.b === null
-              ? joinMatch(existing, player)
-              : { ...existing, seq: existing.seq + 1, players: { ...existing.players, b: player } };
+        if (existing.players.b === null && !existing.result) {
+          const seated = joinMatch(existing, player);
           if (seated) {
             publish(seated);
-            setStage({ kind: "match", code });
             return;
           }
         }
-        setStage({ kind: "error", message: "That duel already has two players." });
-        await dropChannel();
-        activeCodeWrite(null);
+        if (role !== "host") {
+          setStage({ kind: "error", message: "That duel already has two players." });
+          await dropChannel();
+          activeCodeWrite(null);
+          return;
+        }
+        // A finished or foreign record squatting in the channel: the HOST
+        // resets it. seq continues past the stale record - a fresh seq 1
+        // would lose every supersedes() comparison and be invisible.
+        publish({ ...createMatch(player, Date.now()), seq: existing.seq + 1 });
+        setStage({ kind: "waiting", code });
         return;
       }
       if (role === "host") {
@@ -382,28 +383,32 @@ export function useDuel(input: {
         setStage({ kind: "waiting", code });
       } else {
         // Joining an empty channel: the host's record may still be in flight.
-        // Wait on it; onMatch flips the stage when it lands, and the poll
-        // covers a lost event. A truly dead code stays here until Back.
+        // Wait on it; the claim effect below seats us when it lands, and the
+        // poll covers a lost event. A truly dead code stays here until Back.
         setStage({ kind: "waiting", code });
       }
     },
     [acquireNet, dropChannel, dropLobby, me, publish, pushChat, pushFeed, token],
   );
 
-  // When the joiner's record arrives while we sit in "waiting", claim seat B.
+  // When the host's record arrives while we sit in "waiting", claim seat B.
+  // Deferred one tick so the claim reacts to the settled record rather than
+  // cascading inside the render that delivered it.
   useEffect(() => {
     if (stage.kind !== "waiting" || !match || !channel.current) return;
     if (seatOf(match, token)) return;
-    if (match.players.b !== null && match.players.b.token !== `pending:${channel.current.selfConnId}`) {
-      setStage({ kind: "error", message: "That duel already has two players." });
-      return;
-    }
-    const player = me(channel.current.selfConnId);
-    const seated =
-      match.players.b === null
-        ? joinMatch(match, player)
-        : { ...match, seq: match.seq + 1, players: { ...match.players, b: player } };
-    if (seated) publish(seated);
+    const timer = globalThis.setTimeout(() => {
+      const connection = channel.current;
+      if (!connection) return;
+      if (match.players.b !== null) {
+        if (!match.result) setStage({ kind: "error", message: "That duel already has two players." });
+        return;
+      }
+      if (match.result) return;
+      const seated = joinMatch(match, me(connection.selfConnId));
+      if (seated) publish(seated);
+    }, 0);
+    return () => globalThis.clearTimeout(timer);
   }, [match, me, publish, stage, token]);
 
   // The runner mints the round's fresh course when none exists yet: round 1
@@ -453,6 +458,7 @@ export function useDuel(input: {
     await dropChannel();
     await dropLobby();
     matchRef.current = null;
+    activeCodeRef.current = null;
     spectateSampleRef.current = null;
     setMatch(null);
     setChat([]);

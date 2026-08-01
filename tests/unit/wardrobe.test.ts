@@ -302,7 +302,10 @@ describe("dressing a runner", () => {
     expect(model.getObjectByName("Wardrobe legwearPelvis:none")).toBeFalsy();
     expect(model.getObjectByName("Wardrobe legwear:none:-1")).toBeFalsy();
     expect(model.getObjectByName("Wardrobe legwear:none:1")).toBeFalsy();
-    expect(model.getObjectByName("Wardrobe bareFoot:none")).toBeTruthy();
+    // Per-side since the inboard seat: one shared clone could not lean toward
+    // the body on both feet at once.
+    expect(model.getObjectByName("Wardrobe bareFoot:none:-1")).toBeTruthy();
+    expect(model.getObjectByName("Wardrobe bareFoot:none:1")).toBeTruthy();
   });
 
   it("joins each shaped bare foot to its calf instead of floating as a circle", () => {
@@ -1029,8 +1032,12 @@ describe("garments through the run cycle", () => {
     // The head counter-rotates about Y and Z, so a beard or a wide brim travels
     // sideways as well as down. What it must not reach is the shoulder caps or
     // anything worn on the torso.
+    // Hair is in the loop too: it rides the same head socket and a long
+    // style swings exactly the way a wide brim does. Its absence here was
+    // found by an agent whose braids passed the whole suite while sitting
+    // 0.023 INSIDE a shoulder cap at full twist.
     for (const { slot, item } of NON_EMPTY) {
-      if (!["headwear", "face", "eyewear"].includes(slot)) continue;
+      if (!["headwear", "hair", "face", "eyewear"].includes(slot)) continue;
       const { model } = dressedRaw(only(slot, item));
       const occupied = torsoGarmentVolume(model);
       for (const fraction of poses()) {
@@ -1054,7 +1061,7 @@ describe("garments through the run cycle", () => {
         ).toBeUndefined();
       }
     }
-  }, 20_000);
+  }, 40_000);
 });
 
 describe("colour rules", () => {

@@ -1231,7 +1231,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
     case "tee": {
       // wear-tee.png: one broad cream band across the chest, not a stripe at
       // the hem. It is the whole of the shirt's second colour.
-      shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.014), "main"));
       shell.add(part(torsoShell(0.03, 0.115, 0.019), "cream"));
       // A rolled hem, so the shirt ENDS somewhere visible instead of fading
       // into the body: without an edge the tee photographed as paint.
@@ -1251,7 +1251,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // the body rather than as stripes, and what they read as MOST was the
       // jersey with its collar taken off. Cream at the jersey's own pitch
       // halved is a stripe you can see and cannot mistake for a hoop.
-      shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.014), "main"));
       // 0.0165 against the shell's 0.014: enough to win the depth test,
       // small enough that the silhouette's edge stays smooth. At 0.019 each
       // band stood 0.005 proud and the profile edge read as corrugated.
@@ -1264,7 +1264,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // pocket and two cream drawstrings. The pocket is the reference's light
       // piece rather than its dark one, which is why it is cream where the hem
       // rib is trim.
-      shell.add(part(torsoShell(HEM, 0.27, 0.016), "knit"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.016), "knit"));
       shell.add(part(torsoShell(HEM, HEM + 0.04, 0.023), "trim"));
       // wear-hoodie.png's pocket is a SOLID contrast trapezoid standing proud
       // of the body, not an outline: the thin half-torus that used to draw the
@@ -1319,7 +1319,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // the reference's do rather than at heights picked one at a time. The
       // top band is left in the main colour, which is what puts a solid
       // shoulder under the collar.
-      shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.014), "main"));
       for (const [bottom, top] of JERSEY_HOOPS)
         shell.add(part(torsoShell(bottom, top, 0.0165), "cream"));
       // The placket hugs the shell the way the hoops do. It used to be a
@@ -1370,7 +1370,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // hem. The rib is the body's own colour because the reference's is - the
       // whole of that sweater's second colour is at the cuffs - so it is given
       // its edge by standing proud rather than by contrast.
-      shell.add(part(torsoShell(HEM, 0.28, 0.022), "knit"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.022), "knit"));
       shell.add(part(torsoShell(HEM, HEM + 0.06, 0.032), "knit"));
       return [shell];
     case "racer": {
@@ -1379,7 +1379,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // chest at one radius: they stood off the body where it narrowed, they
       // stopped at the front, and at a glance they read as two dashes stuck on
       // a plain shirt rather than as any garment at all.
-      shell.add(part(torsoShell(HEM, 0.26, 0.0165), "main"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.0165), "main"));
       // Wider than the first cut: at 0.3rad the pair read as two chalk lines.
       // 0.42rad each with the same gap between them is the proportion racing
       // stripes actually carry, and a thin trim edge either side of the pair
@@ -1549,7 +1549,7 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       // wear-jacket.png: a denim jacket with a mint collar (on the neck socket
       // below), two flap chest pockets, a hem band and a row of light buttons
       // down the placket.
-      shell.add(part(torsoShell(HEM, 0.27, 0.032, 0.5), "denim"));
+      shell.add(part(torsoShell(HEM, 0.315, 0.032, 0.5), "denim"));
       shell.add(part(torsoShell(HEM, HEM + 0.05, 0.038, 0.5), "trim"));
       // A fine cream line above the hem band: the reference's contrast
       // topstitching, at the one scale a single line of it still reads. Cut
@@ -2289,7 +2289,14 @@ function footwearFootParts(id: AvatarFootwearId): THREE.Object3D[] {
       return [createWearableUpgradeModel("sandal")];
     }
     case "cleats": {
-      return [createWearableUpgradeModel("cleat")];
+      // A low-cut shoe with no shin sleeve left open daylight between the
+      // calf's bottom (y 0.0945 in this frame) and the cleat's collar, so the
+      // shoe photographed as detached from the body entirely. The liner is
+      // the sock that closes that gap, in the shoe's own colour.
+      const liner = part(tube(0.07, 0.082, 0.22, 14), "main", {
+        x: 0, y: 0.03, z: -0.05,
+      });
+      return [createWearableUpgradeModel("cleat"), liner];
     }
     case "skates": {
       return [createWearableUpgradeModel("skate")];
@@ -2385,23 +2392,43 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
       return [createWearableUpgradeModel("flag")];
     }
     case "torch": {
-      // wear-torch.png: a pale bowl on a pale handle with a banded collar under
-      // it, and two flames - an outer one and a brighter inner one. The outer
-      // flame takes the carried colour, which is the only part of a torch a
-      // player can own. Both are given their size in z, not in x.
-      const handle = part(tube(0.018, 0.014, 0.16, 10), "leather", { x: 0.055, y: 0.02, z: 0 });
+      // wear-torch.png: a pale bowl on a pale handle with a banded collar
+      // under it. The flame is a stack of three lobes twisted off each
+      // other's axis with a bright core rising through them - the single
+      // cone-through-a-ball it replaces read as a soft-serve swirl with a
+      // spike. The bowl carries a rim band and three rivets, and the handle
+      // tapers into a grip wrap and pommel.
+      const handle = part(tube(0.019, 0.013, 0.16, 10), "leather", { x: 0.055, y: 0.02, z: 0 });
+      const wrap = part(tube(0.022, 0.022, 0.05, 10), "trim", { x: 0.055, y: -0.01, z: 0 });
+      const pommel = part(ball(0.022, 0.016, 0.022), "metal", { x: 0.055, y: -0.062, z: 0 });
       const collar = part(tube(0.03, 0.024, 0.045, 12), "main", { x: 0.055, y: 0.115, z: 0 });
       const bowl = part(tube(0.05, 0.026, 0.05, 14), "metal", { x: 0.055, y: 0.16, z: 0 });
       bowl.scale.z = 1.4;
-      const flameBase = part(ball(0.044, 0.055, 0.06), "flame", { x: 0.055, y: 0.215, z: 0 });
-      const flameTip = part(new THREE.ConeGeometry(0.04, 0.13, 14), "flame", {
-        x: 0.05, y: 0.285, z: 0.005,
+      const rim = part(ring(0.05, 0.007), "trim", { x: 0.055, y: 0.183, z: 0 });
+      rim.rotation.x = Math.PI / 2;
+      rim.scale.y = 1.4;
+      const rivets = [0.4, Math.PI, Math.PI * 1.6].map((angle) =>
+        part(ball(0.006, 0.006, 0.006), "steel", {
+          x: 0.055 + Math.sin(angle) * 0.048,
+          y: 0.168,
+          z: Math.cos(angle) * 0.067,
+        }),
+      );
+      const lobes = [
+        [0.052, 0.21, 0.006, 0.042, 0.05, 0.058, 0.14],
+        [0.058, 0.252, -0.008, 0.034, 0.046, 0.048, -0.2],
+        [0.053, 0.295, 0.01, 0.024, 0.05, 0.034, 0.1],
+      ].map(([x, y, z, rx, ry, rz, tilt]) => {
+        const lobe = part(ball(rx!, ry!, rz!), "flame", { x: x!, y: y!, z: z! });
+        lobe.rotation.z = tilt!;
+        return lobe;
       });
-      flameTip.rotation.z = -0.12;
-      const core = part(new THREE.ConeGeometry(0.021, 0.083, 12), "glow", {
-        x: 0.058, y: 0.242, z: 0.018,
+      const tip = part(new THREE.ConeGeometry(0.02, 0.075, 10), "flame", {
+        x: 0.054, y: 0.35, z: 0.006,
       });
-      return [handle, collar, bowl, flameBase, flameTip, core];
+      tip.rotation.z = -0.1;
+      const core = part(ball(0.018, 0.062, 0.02), "glow", { x: 0.056, y: 0.246, z: 0.012 });
+      return [handle, wrap, pommel, collar, bowl, rim, ...rivets, ...lobes, tip, core];
     }
     case "umbrella": {
       // wear-umbrella.png is FURLED, not open: a tapered spindle of gores under
@@ -2447,16 +2474,35 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
     }
     case "plunger": {
       // wear-plunger.png: a pale straight handle into a collar, over a domed
-      // cup with a rolled rim. The cup stays squashed in x whatever the
-      // reference's is, because the hand it is in swings past the skull.
-      const handle = part(tube(0.014, 0.014, 0.24, 8), "cream", { x: 0.058, y: 0.07, z: 0 });
-      const collar = part(tube(0.03, 0.03, 0.045, 12), "rubber", { x: 0.058, y: -0.032, z: 0 });
-      collar.scale.x = 0.6;
-      const cup = part(tube(0.038, 0.075, 0.085, 14), "rubber", { x: 0.058, y: -0.082, z: 0 });
-      cup.scale.x = 0.6;
-      const rim = part(tube(0.082, 0.082, 0.022, 14), "rubber", { x: 0.058, y: -0.122, z: 0 });
-      rim.scale.x = 0.6;
-      return [handle, collar, cup, rim];
+      // cup. The cup is now a LATHE with a concave bell flare ending in a
+      // rolled lip torus - the straight cone it replaces read as a lampshade
+      // on a dowel - and a ferrule socket joins wood to rubber. Still
+      // squashed in x, because the hand it is in swings past the skull.
+      const handle = part(tube(0.014, 0.014, 0.235, 8), "cream", { x: 0.058, y: 0.075, z: 0 });
+      const socket = part(tube(0.024, 0.03, 0.035, 12), "rubber", { x: 0.058, y: -0.028, z: 0 });
+      socket.scale.x = 0.6;
+      const bell = part(
+        new THREE.LatheGeometry(
+          [
+            new THREE.Vector2(0.02, 0),
+            new THREE.Vector2(0.032, -0.022),
+            new THREE.Vector2(0.048, -0.045),
+            new THREE.Vector2(0.066, -0.062),
+            new THREE.Vector2(0.08, -0.072),
+          ],
+          16,
+        ),
+        "rubber",
+        { x: 0.058, y: -0.045, z: 0 },
+      );
+      bell.scale.x = 0.6;
+      // Rotation about x leaves world x as local x, so the clearance squash
+      // stays on scale.x here (unlike a world-Z squash, which moves to local
+      // y - the trap this file has now hit four times).
+      const lip = part(ring(0.079, 0.011), "rubber", { x: 0.058, y: -0.119, z: 0 });
+      lip.rotation.x = Math.PI / 2;
+      lip.scale.x = 0.6;
+      return [handle, socket, bell, lip];
     }
     case "balloon": {
       return [createWearableUpgradeModel("balloon")];
@@ -2595,16 +2641,31 @@ function specsFor(look: ResolvedAvatar): Spec[] {
         add(socket, `legwear:${look.legwear}:${side}`, () => legwearParts(look.legwear, side));
   }
 
+  // The sneaker socket sits 0.027u OUTBOARD of the calf's own axis - measured
+  // on the built rig - so a foot centred on its socket rides visibly outside
+  // the leg it belongs to. Every foot's contents therefore shift that far
+  // back INBOARD, which needs a per-side template: one shared clone cannot
+  // lean toward the body on both feet at once.
+  const FOOT_INBOARD = 0.027;
+  const seatFoot = (side: -1 | 1, parts: THREE.Object3D[]): THREE.Object3D[] => {
+    const seated = group(...parts);
+    seated.position.x = -side * FOOT_INBOARD;
+    return [seated];
+  };
   if (look.footwear !== "none") {
     for (const [socket, side] of LEG_SOCKETS)
       add(socket, `shoeShin:${look.footwear}:${side}`, () =>
         footwearShinParts(look.footwear, side),
       );
-    for (const [socket] of SHOE_SOCKETS)
-      add(socket, `shoeFoot:${look.footwear}`, () => footwearFootParts(look.footwear));
+    for (const [socket, side] of SHOE_SOCKETS)
+      add(socket, `shoeFoot:${look.footwear}:${side}`, () =>
+        seatFoot(side, footwearFootParts(look.footwear)),
+      );
   } else {
-    for (const [socket] of SHOE_SOCKETS)
-      add(socket, "bareFoot:none", () => [createWearableUpgradeModel("barefoot")]);
+    for (const [socket, side] of SHOE_SOCKETS)
+      add(socket, `bareFoot:none:${side}`, () =>
+        seatFoot(side, [createWearableUpgradeModel("barefoot")]),
+      );
   }
 
   if (look.backpack !== "none")

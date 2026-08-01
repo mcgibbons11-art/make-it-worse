@@ -554,7 +554,11 @@ function tank(root: THREE.Group) {
 
 function quilted(root: THREE.Group, vest: boolean) {
   const prefix = vest ? "vest" : "puffer";
-  const zScale = vest ? 0.79 : 0.84;
+  // Vest depth 0.815 against the torso's own 0.8: the x margins the widening
+  // pass verified collapse in Z when the shell is squashed deeper than the
+  // body - at 0.79 the front cleared an inner turtleneck by 0.003 and the
+  // chest mottled with z-fighting.
+  const zScale = vest ? 0.815 : 0.84;
   // The shell's own radius at a height, shared by everything that has to sit
   // on it. The review pass caught two classes of float that came from parts
   // authored at fixed radii while the shell tapers: baffle ribs needling out

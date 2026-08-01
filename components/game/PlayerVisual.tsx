@@ -121,11 +121,19 @@ export function dressRunner(
   // The sculpt's shoulder caps are the sleeves of its baked-in purple shirt,
   // not anatomy. Real tops author their own sleeves; leaving these underneath
   // made Top: None look like a shirt and made sleeveless tops grow T-shirt
-  // cuffs. The torso, arms and legs now share the chosen body colour, so None
-  // is genuinely the unclothed character instead of a permanent shirt/pants
-  // outfit hiding below every wardrobe option.
-  clone.getObjectByName("Shoulder cap left__pivot")?.removeFromParent();
-  clone.getObjectByName("Shoulder cap right__pivot")?.removeFromParent();
+  // cuffs. The BAKED MESHES are hidden rather than the pivots removed: the
+  // wardrobe hangs its own shoulder pads from these very sockets, and
+  // removing the nodes silently discarded every topShoulder/outerShoulder
+  // attachment - the suite kept asserting them against a raw rig while the
+  // dressed runner ran armhole-bare, which is the "body bleeding through the
+  // shirt" players saw at the armpit.
+  for (const side of ["left", "right"] as const) {
+    const capPivot = clone.getObjectByName(`Shoulder cap ${side}__pivot`);
+    capPivot?.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.isMesh) mesh.visible = false;
+    });
+  }
   // The baked shoulder straps belong to the daypack, not to every object that
   // happens to occupy the Back slot. They looked like unrelated base gear over
   // capes, wings, bedrolls, and jetpacks.

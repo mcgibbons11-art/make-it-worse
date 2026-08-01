@@ -515,12 +515,21 @@ function braid(
   // to z 0.075 it swung onto the shoulder cap at the far end of the head's own
   // twist, which the catalog measures at 0.023 INSIDE the cap; out here it
   // clears, and the plait still ends inside the authoring width.
+  // Wider and further BACK than the cap-clearance reroute left it: the newly
+  // hair-aware shoulder test caught the old z 0.11 spine 0.986 of the way
+  // into the shirt's padded ellipse at full twist. At z 0.07 the same point
+  // measures 0.81.
   const spine = new THREE.CatmullRomCurve3([
-    at(side * 0.248, 0.075, 0.09),
-    at(side * 0.278, -0.04, 0.105),
-    at(side * 0.29, -0.15, 0.11),
-    at(side * 0.29, -0.25, 0.112),
-    at(side * 0.283, -0.325, 0.112),
+    at(side * 0.255, 0.075, 0.055),
+    at(side * 0.29, -0.04, 0.065),
+    // Jaw length, and that is a constraint rather than a haircut opinion:
+    // the head's own twist swings a braid tip up to 0.10 below its rest
+    // height and inboard toward the shirt's padded ellipse, and every longer
+    // spine put SOME sample inside it or the shoulder cap. Ending at -0.24
+    // keeps the whole plait above the shirt line at both twist extremes.
+    at(side * 0.304, -0.13, 0.07),
+    at(side * 0.304, -0.19, 0.07),
+    at(side * 0.298, -0.24, 0.068),
   ]);
   const samples = 9;
   const helix = 0.024;

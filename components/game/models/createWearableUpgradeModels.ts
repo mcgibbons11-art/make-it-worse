@@ -475,7 +475,13 @@ function balloon(root: THREE.Group) {
   // The string starts in the palm and bows outward before reaching the
   // balloon. Keeping the balloon above the hand but outside the head's
   // silhouette makes it visibly held without covering the runner's face.
-  const balloon = mesh(ball(0.075, 0.105, 0.085), "main", "balloon-body", [0.20, 0.39, -0.06]);
+  // Plastic, not cloth: a matte balloon reads as a potato in the held slot's
+  // default bronze. The plastic role keeps the chosen colour and answers
+  // light with the latex sheen the painted-on highlight was faking. The body
+  // is a teardrop - widest above the equator, pinched toward the knot.
+  const balloon = mesh(ball(0.078, 0.108, 0.088), "plastic", "balloon-body", [0.20, 0.395, -0.06]);
+  balloon.geometry.translate(0, 0.01, 0);
+  balloon.scale.y = 1.04;
   const knot = mesh(new THREE.ConeGeometry(0.022, 0.038, 8), "main", "balloon-knot", [0.20, 0.267, -0.06]);
   knot.rotation.z = Math.PI;
   const curve = new THREE.CatmullRomCurve3([
@@ -487,9 +493,9 @@ function balloon(root: THREE.Group) {
   const string = mesh(new THREE.TubeGeometry(curve, 20, 0.005, 6, false), "trim", "balloon-string");
   const retention = mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 18), "rubber", "balloon-retention-loop", [0.045, -0.005, 0]);
   retention.rotation.x = Math.PI / 2;
-  const highlight = mesh(ball(0.018, 0.034, 0.009), "glass", "balloon-highlight", [0.175, 0.425, 0.017]);
-  highlight.rotation.z = -0.35;
-  add(root, balloon, knot, string, retention, highlight);
+  // No painted-on highlight: it sat where the light was not, actively
+  // contradicting the scene. The plastic body's own specular does the job.
+  add(root, balloon, knot, string, retention);
 }
 
 export function createWearableUpgradeModel(id: WearableUpgradeId): THREE.Group {

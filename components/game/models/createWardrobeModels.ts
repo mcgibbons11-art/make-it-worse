@@ -800,7 +800,10 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       return [crown, cuff];
     }
     case "visor": {
-      const band = part(ring(0.332, 0.032), "trim", { x: 0, y: 0.07, z: -0.01 });
+      // 0.353, not 0.332: the skull's own section at this height is 0.342
+      // across, so the old band ran INSIDE the head and the visor read as a
+      // floating brim with no band holding it on.
+      const band = part(ring(0.353, 0.03), "trim", { x: 0, y: 0.07, z: -0.01 });
       band.rotation.x = Math.PI / 2;
       const brim = part(roundedSlab(0.41, 0.024, 0.34), "main", {
         x: 0, y: 0.042, z: 0.34,
@@ -891,9 +894,13 @@ function browBar(side: -1 | 1, lift: number, tilt: number): THREE.Mesh {
   const bar = part(slab(0.105, 0.026, 0.022), "main", {
     x: side * 0.11,
     y: HEAD.eye.y + lift,
-    z: 0.283,
+    z: 0.281,
   });
   bar.rotation.z = -side * tilt;
+  // Yawed so the outer end follows the skull instead of lifting off it: a
+  // straight slab tangent to a sphere floats at the temple and vanishes in
+  // profile.
+  bar.rotation.y = side * 0.24;
   return bar;
 }
 
@@ -919,72 +926,88 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [lens(-1), lens(1), bridge, left, right];
     }
     case "brows":
+      // Thinner in depth and seated closer: at rz 0.027 on z 0.295 the brow
+      // mass jutted past the head in profile and read as a beak.
       return ([-1, 1] as const).map((side) => {
-        const brow = part(ball(0.115, 0.035, 0.027), "main", {
-          x: side * 0.115,
+        const brow = part(ball(0.108, 0.035, 0.019), "main", {
+          x: side * 0.112,
           y: HEAD.eye.y + 0.105,
-          z: 0.295,
+          z: 0.287,
         });
         brow.rotation.z = side * 0.12;
+        brow.rotation.y = side * 0.2;
         return brow;
       });
     case "moustache": {
+      // Dropped and widened at the middle so the nose sphere no longer
+      // punches through the moustache's centre seam.
       const make = (side: -1 | 1) => {
         const hair = part(ball(0.062, 0.024, 0.022), "main", {
-          x: side * 0.056,
-          y: -0.132,
-          z: 0.276,
+          x: side * 0.058,
+          y: -0.142,
+          z: 0.278,
         });
         hair.rotation.z = -side * 0.28;
+        hair.rotation.y = side * 0.18;
         return hair;
       };
       return [
         make(-1),
         make(1),
-        part(ball(0.025, 0.019, 0.02), "main", { x: 0, y: -0.132, z: 0.282 }),
+        part(ball(0.024, 0.017, 0.02), "main", { x: 0, y: -0.148, z: 0.283 }),
       ];
     }
     case "beard": {
       return [createHeadwearUpgradeModel("beard")];
     }
     case "goatee": {
-      const chin = part(ball(0.07, 0.055, 0.026), "main", {
-        x: 0, y: -0.22, z: 0.294,
+      // One material and one mass. The three-cone version tinted its outer
+      // tufts "trim", which rendered lighter and read as tusks, and its tips
+      // hung to -0.34 against a chin at -0.22 - into the neck. The tuft now
+      // tapers to a tip that stays inside the jaw's forward extent.
+      const chin = part(ball(0.068, 0.055, 0.026), "main", {
+        x: 0, y: -0.218, z: 0.292,
       });
-      const tufts = ([-0.036, 0, 0.036] as const).map((x, index) => {
-        const tuft = part(
-          new THREE.ConeGeometry(index === 1 ? 0.032 : 0.026, index === 1 ? 0.105 : 0.085, 12),
-          index === 1 ? "main" : "trim",
-          { x, y: index === 1 ? -0.29 : -0.278, z: 0.282 },
-        );
-        tuft.rotation.z = Math.PI;
-        return tuft;
+      const tuft = part(new THREE.ConeGeometry(0.034, 0.075, 12), "main", {
+        x: 0, y: -0.268, z: 0.284,
       });
-      return [chin, ...tufts];
+      tuft.rotation.z = Math.PI;
+      tuft.rotation.x = 0.15;
+      return [chin, tuft];
     }
     case "freckles": {
-      const dot = (x: number, y: number) =>
-        part(ball(0.013, 0.011, 0.004), "main", { x, y, z: 0.267 });
+      // Larger, deeper, and deliberately unmirrored: at 0.004 depth only two
+      // of six dots survived catalog scale, and the perfect left-right mirror
+      // read as machined. One dot crosses the nose bridge.
+      const dot = (x: number, y: number, r = 0.016) =>
+        part(ball(r, r * 0.82, 0.008), "main", { x, y, z: 0.268 });
       return [
-        dot(-0.095, -0.095),
-        dot(-0.068, -0.12),
-        dot(-0.118, -0.125),
-        dot(0.095, -0.095),
-        dot(0.068, -0.12),
-        dot(0.118, -0.125),
+        dot(-0.098, -0.092),
+        dot(-0.064, -0.122, 0.013),
+        dot(-0.122, -0.128, 0.014),
+        dot(0.09, -0.1),
+        dot(0.072, -0.126, 0.014),
+        dot(0.124, -0.118, 0.013),
+        dot(0.01, -0.108, 0.012),
       ];
     }
     case "warpaint": {
+      // Each mark yaws to follow the cheek's curvature. At a constant z the
+      // slab's inner end sat 0.024 UNDER the face while its outer end poked
+      // 0.0065 past the silhouette - one mark simultaneously buried and
+      // protruding. The yaw swings the outer end back onto the skull and the
+      // inner end out of it.
       const stripe = (side: -1 | 1, yOffset: number) =>
         part(roundedSlab(0.122, 0.022, 0.008), "main", {
           x: side * 0.105,
           y: -0.118 + yOffset,
-          z: 0.269,
+          z: 0.272,
         });
       const marks = ([-1, 1] as const).flatMap((side) =>
         [-0.025, 0.02].map((offset) => {
           const mark = stripe(side, offset);
           mark.rotation.z = -side * 0.16;
+          mark.rotation.y = side * 0.26;
           return mark;
         }),
       );
@@ -1000,8 +1023,22 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
 
 function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
   if (id === "none") return [];
-  const temple = (side: -1 | 1) =>
-    part(slab(0.018, 0.02, 0.17), "main", { x: side * 0.152, y: HEAD.eye.y, z: 0.205 });
+  // The temple runs ALONG the skull's side, not through it. At x 0.152 the
+  // head's own surface is at z 0.274, so 91 percent of the old arm was inside
+  // the skull and the glasses had no arms in profile - measured, not eyeballed.
+  const temple = (side: -1 | 1) => {
+    const arm = part(slab(0.016, 0.02, 0.16), "main", {
+      x: side * 0.295, y: HEAD.eye.y, z: 0.16,
+    });
+    arm.rotation.y = -side * 0.28;
+    // The end piece carries the frame's outer corner back to the arm, the
+    // joint a hinge would occupy on real glasses.
+    const endPiece = part(slab(0.1, 0.018, 0.016), "main", {
+      x: side * 0.225, y: HEAD.eye.y, z: 0.265,
+    });
+    endPiece.rotation.y = -side * 0.5;
+    return group(arm, endPiece);
+  };
   const bridge = (width: number, y: number) =>
     part(slab(width, 0.016, 0.016), "main", { x: 0, y, z: 0.288 });
   switch (id) {
@@ -1202,8 +1239,11 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // jersey with its collar taken off. Cream at the jersey's own pitch
       // halved is a stripe you can see and cannot mistake for a hoop.
       shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
+      // 0.0165 against the shell's 0.014: enough to win the depth test,
+      // small enough that the silhouette's edge stays smooth. At 0.019 each
+      // band stood 0.005 proud and the profile edge read as corrugated.
       for (const [bottom, top] of BRETON_BANDS)
-        shell.add(part(torsoShell(bottom, top, 0.019), "cream"));
+        shell.add(part(torsoShell(bottom, top, 0.0165), "cream"));
       return [shell];
     }
     case "hoodie": {
@@ -1264,7 +1304,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // shoulder under the collar.
       shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
       for (const [bottom, top] of JERSEY_HOOPS)
-        shell.add(part(torsoShell(bottom, top, 0.019), "cream"));
+        shell.add(part(torsoShell(bottom, top, 0.0165), "cream"));
       // The placket hugs the shell the way the hoops do. It used to be a
       // plate() at one fixed radius, which stood 0.033u off the chest where
       // the torso has already narrowed: photographed, it read as a cream
@@ -1322,7 +1362,7 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // chest at one radius: they stood off the body where it narrowed, they
       // stopped at the front, and at a glance they read as two dashes stuck on
       // a plain shirt rather than as any garment at all.
-      shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
+      shell.add(part(torsoShell(HEM, 0.26, 0.0165), "main"));
       // Wider than the first cut: at 0.3rad the pair read as two chalk lines.
       // 0.42rad each with the same gap between them is the proportion racing
       // stripes actually carry, and a thin trim edge either side of the pair
@@ -1402,8 +1442,10 @@ const SHOULDER_BANDS: Partial<
 function collarParts(id: AvatarTopId): THREE.Object3D[] {
   switch (id) {
     case "tee":
-      // wear-tee.png: a ribbed crew neck in the shirt's own colour.
-      return [part(tube(0.168, 0.172, 0.05, 18, true), "main", { x: 0, y: 0.005, z: 0 })];
+      // wear-tee.png: a ribbed crew neck in the shirt's own colour. Reaches
+      // lower than it first did - a bare ring of body showed between the
+      // shell's top edge and the collar's bottom.
+      return [part(tube(0.168, 0.174, 0.065, 18, true), "main", { x: 0, y: -0.005, z: 0 })];
     case "turtleneck":
       // wear-turtleneck.png: the collar is the garment - a tall stand that
       // widens as it rises and rolls over on itself at the top, wide enough to
@@ -1411,10 +1453,16 @@ function collarParts(id: AvatarTopId): THREE.Object3D[] {
       // 1.235u to 1.390u and is 0.14u through, so the roll's top edge is set
       // just under the jaw: a collar the head meets when it tilts is what a
       // roll-neck is, and a collar past 1.39u would be one inside the chin.
+      // Raised a hair from the first cut: a violet gap showed between the
+      // roll and the jaw, and a turtleneck the head visibly clears is a crew
+      // neck with ambitions.
       return [
-        part(tube(0.186, 0.168, 0.145, 18, true), "main", { x: 0, y: 0.06, z: 0 }),
+        part(tube(0.186, 0.168, 0.148, 18, true), "main", { x: 0, y: 0.062, z: 0 }),
         (() => {
-          const roll = part(ring(0.182, 0.027), "main", { x: 0, y: 0.122, z: 0 });
+          // Top of the roll lands at 1.389u world - the suite caps collars at
+          // the 1.39u jaw line, and this sits as close under it as the cap
+          // allows.
+          const roll = part(ring(0.182, 0.027), "main", { x: 0, y: 0.127, z: 0 });
           roll.rotation.x = Math.PI / 2;
           return roll;
         })(),
@@ -2181,7 +2229,11 @@ function footwearShinParts(id: AvatarFootwearId, side: -1 | 1): THREE.Object3D[]
       const sock = limbSleeve(LEG, side, 0.56, 1.06, legRadius(0.56) + 0.016, legRadius(1) + 0.012);
       const band = limbSleeve(LEG, side, 0.58, 0.66, legRadius(0.58) + 0.021, legRadius(0.66) + 0.021);
       band.userData["wardrobeTint"] = "trim";
-      return [sock, band];
+      // A second ring in cream under the cuff: the classic athletic stripe
+      // pair, and the one detail that says "long sock" from across a course.
+      const stripe = limbSleeve(LEG, side, 0.69, 0.74, legRadius(0.69) + 0.019, legRadius(0.74) + 0.019);
+      stripe.userData["wardrobeTint"] = "cream";
+      return [sock, band, stripe];
     }
     case "skates": {
       const shaft = limbSleeve(LEG, side, 0.72, 1.06, legRadius(0.8) + 0.026, legRadius(1) + 0.02);
@@ -2313,16 +2365,21 @@ function footwearFootParts(id: AvatarFootwearId): THREE.Object3D[] {
       });
       return [upper, tongue, sole, ...trucks, toeStop, ...wheels];
     }
-    case "socks":
+    case "socks": {
       // Socks replace the shoe. Repaint the rounded bare-foot geometry into the
       // selected sock color so this is a covered foot, not a sole-less stock
-      // sneaker left under a calf sleeve.
+      // sneaker left under a calf sleeve. Heel and toe panels in cream give
+      // the knit its classic two-tone read: without them the foot was a
+      // featureless dark blob under the calf.
       const sockFoot = createWearableUpgradeModel("barefoot");
       sockFoot.traverse((node) => {
         if (node.userData["wardrobeTint"] === "skin")
           node.userData["wardrobeTint"] = "main";
       });
-      return [sockFoot];
+      const heel = part(ball(0.07, 0.055, 0.055), "cream", { x: 0, y: 0.005, z: -0.115 });
+      const toe = part(ball(0.078, 0.05, 0.055), "cream", { x: 0, y: -0.005, z: 0.185 });
+      return [sockFoot, heel, toe];
+    }
   }
 }
 

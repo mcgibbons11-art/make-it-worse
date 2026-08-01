@@ -140,30 +140,41 @@ function ring(radius: number, tube: number, tint: Tint, name: string, y: number,
 }
 
 function tank(root: THREE.Group) {
-  // A continuous knit shell follows the runner from waist to neck. The earlier
-  // flat front/back yokes photographed as two detached boards in side view;
-  // tapering the whole shell into a narrow neck keeps the sleeveless silhouette
-  // while every surface remains seated on the torso.
+  // A continuous knit shell follows the runner from waist to neck. The previous
+  // profile was authored against the tank's own silhouette rather than the
+  // torso lathe underneath it, and between the chest and the neck it dipped
+  // UNDER the body surface (0.254 at a height where the torso itself reaches
+  // 0.262), so the runner swallowed the garment and only the two bindings
+  // survived on camera. Every station below is the measured torso radius at
+  // that height plus a constant 0.016 stand-off, which is how the tee's
+  // torsoShell(0.014) stays visible, plus a little for the knit's weight.
   const profile = [
-    new THREE.Vector2(0.263, -0.175),
-    new THREE.Vector2(0.268, -0.12),
-    new THREE.Vector2(0.254, -0.015),
-    new THREE.Vector2(0.235, 0.105),
-    new THREE.Vector2(0.208, 0.205),
-    new THREE.Vector2(0.178, 0.292),
+    new THREE.Vector2(0.242, -0.175),
+    new THREE.Vector2(0.257, -0.12),
+    new THREE.Vector2(0.275, -0.06),
+    new THREE.Vector2(0.278, -0.023),
+    new THREE.Vector2(0.275, 0.03),
+    new THREE.Vector2(0.265, 0.084),
+    new THREE.Vector2(0.255, 0.138),
+    new THREE.Vector2(0.244, 0.191),
+    new THREE.Vector2(0.228, 0.245),
+    new THREE.Vector2(0.206, 0.285),
+    new THREE.Vector2(0.199, 0.292),
   ];
   const lower = mesh(new THREE.LatheGeometry(profile, 28), "main", "tank-profile-shell");
   lower.scale.z = 0.8;
-  add(root, lower, ring(0.254, 0.013, "knit", "tank-hem-binding", -0.164, 0.8));
-  const neck = ring(0.178, 0.014, "knit", "tank-neck-binding", 0.292, 0.8);
+  add(root, lower, ring(0.246, 0.013, "knit", "tank-hem-binding", -0.164, 0.8));
+  const neck = ring(0.199, 0.014, "knit", "tank-neck-binding", 0.292, 0.8);
   neck.userData["wardrobeNoOutline"] = true;
   add(root, neck);
   // Short shoulder seams make the tank construction legible without fake
-  // panels floating beyond the runner's front and back planes.
+  // panels floating beyond the runner's front and back planes. They sit on the
+  // rebuilt shell's own surface: radius 0.2075 at their height, 45 degrees
+  // round, with the z leg scaled by the shell's own 0.8.
   for (const side of [-1, 1] as const) {
     const seam = pathTube([
-      [side * 0.105, 0.286, 0.145], [side * 0.145, 0.294, 0],
-      [side * 0.105, 0.286, -0.145],
+      [side * 0.145, 0.282, 0.118], [side * 0.202, 0.29, 0],
+      [side * 0.145, 0.282, -0.118],
     ], 0.012, "knit", `tank-shoulder-seam-${side}`);
     seam.userData["wardrobeNoOutline"] = true;
     add(root, seam);
@@ -378,6 +389,11 @@ function flag(root: THREE.Group) {
     [0.172, -0.005], [0.235, -0.105], [0.15, -0.07], [0.065, -0.09], [0, -0.075],
   ];
   const cloth = mesh(wavedShape(clothPoints, 0.022, 0.026), "main", "flag-waved-swallowtail", [0.052, 0.22, 0.012]);
+  // The invariant ink outline is a back-face shell of the same geometry, and
+  // for a waved 0.022u sheet the enlarged shell's far side shows IN FRONT of
+  // the cloth wherever the wave bends away - photographed, the whole flag
+  // read as ink. The seam and piping give the cloth its edges instead.
+  cloth.userData["wardrobeNoOutline"] = true;
   const seam = mesh(box(0.021, 0.225, 0.022, 0.007), "knit", "flag-reinforced-seam", [0.064, 0.245, 0.01]);
   const finial = mesh(ball(0.018, 0.018, 0.018), "plastic", "flag-finial", [0.068, 0.365, 0]);
   const grip = mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.105, 10), "rubber", "flag-grip", [0.068, -0.055, 0]);

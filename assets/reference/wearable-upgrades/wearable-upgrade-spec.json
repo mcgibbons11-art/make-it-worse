@@ -1,6 +1,6 @@
 {
   "pipeline": "img2threejs reference -> measured socket blockout -> generated runtime factory",
-  "revision": "retained-audit-factory-pass-5-anatomical-feet",
+  "revision": "aaa-wave-1-tank-unburied",
   "referenceSheet": "assets/reference/wearable-upgrades/missing-wearables-reference.png",
   "sourceReferences": [
     "assets/reference/wear-tank.png",
@@ -82,5 +82,5 @@
       "knot, tether and wrist retention loop"
     ]
   },
-  "reviewStatus": "generated retained-audit pass; targeted runtime tests required"
+  "reviewStatus": "aaa wave 1: fast-mode eyeball review, front and side per item against the 4173 preview; wardrobe suite green; no formal ledger review"
 }

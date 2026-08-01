@@ -106,14 +106,18 @@ function mohawkFin(
 ) {
   const outline = new THREE.Shape();
   if (tall) {
-    outline.moveTo(-0.275, 0.18);
-    outline.lineTo(-0.225, 0.37);
-    outline.lineTo(-0.13, 0.48);
-    outline.lineTo(-0.035, 0.43);
-    outline.lineTo(0.075, 0.51);
-    outline.lineTo(0.17, 0.42);
-    outline.lineTo(0.275, 0.31);
-    outline.lineTo(0.275, 0.18);
+    // Tall enough to be the haircut: the crest carries 0.3u above the skull
+    // top at 0.33, with saw-tooth peaks. The first outline stopped at 0.51
+    // and photographed as a wedge cap rather than a mohawk.
+    outline.moveTo(-0.28, 0.16);
+    outline.lineTo(-0.245, 0.42);
+    outline.lineTo(-0.135, 0.56);
+    outline.lineTo(-0.06, 0.47);
+    outline.lineTo(0.015, 0.64);
+    outline.lineTo(0.1, 0.5);
+    outline.lineTo(0.185, 0.58);
+    outline.lineTo(0.27, 0.34);
+    outline.lineTo(0.28, 0.16);
   } else {
     outline.moveTo(-0.22, 0.255);
     outline.lineTo(-0.14, 0.35);
@@ -178,25 +182,41 @@ export function createHairStyleModel(id: string, color: string): THREE.Group {
       break;
     case "spikes":
       cap(root, shadow, [0.34, 0.215, 0.34], 0.105);
-      for (const [base, tip, radius] of [
-        [[-0.2, 0.23, 0.15], [-0.29, 0.39, 0.2], 0.085],
-        [[0, 0.29, 0.17], [0, 0.5, 0.22], 0.105],
-        [[0.2, 0.23, 0.15], [0.29, 0.41, 0.19], 0.085],
-        [[-0.17, 0.31, -0.06], [-0.23, 0.49, -0.08], 0.09],
-        [[0.15, 0.31, -0.06], [0.2, 0.48, -0.1], 0.09],
-        [[-0.12, 0.22, -0.23], [-0.16, 0.39, -0.3], 0.075],
-        [[0.13, 0.22, -0.23], [0.18, 0.4, -0.3], 0.075],
-      ] as const) taperedLock(root, main, base, tip, radius, "chunky-spike");
+      // A ring of six leaning outward plus three tall ones along the midline,
+      // so the crown reads spiked from EVERY bearing. The first cut placed
+      // seven spikes by hand and left the front face flat, which photographed
+      // as paper triangles glued to a bowl.
+      for (let index = 0; index < 6; index += 1) {
+        const angle = Math.PI / 6 + (index / 6) * Math.PI * 2;
+        const sin = Math.sin(angle), cos = Math.cos(angle);
+        taperedLock(
+          root, index % 2 ? shadow : main,
+          [sin * 0.2, 0.245, cos * 0.2 - 0.02],
+          [sin * 0.31, 0.42, cos * 0.31 - 0.03],
+          0.085, "chunky-spike",
+        );
+      }
+      taperedLock(root, main, [0, 0.29, 0.11], [0, 0.5, 0.16], 0.1, "chunky-spike-front");
+      taperedLock(root, main, [0, 0.3, -0.05], [0, 0.53, -0.07], 0.105, "chunky-spike-crown");
+      taperedLock(root, main, [0, 0.28, -0.2], [0, 0.47, -0.29], 0.09, "chunky-spike-rear");
       break;
     case "mohawk":
-      cap(root, shadow, [0.332, 0.22, 0.332], 0.12);
-      lobe(root, main, [0, 0.3, -0.015], [0.115, 0.15, 0.3], [0, 0, 0], "mohawk-solid-core");
+      // No cap: a mohawk IS the shaved sides. The full hair cap this wore
+      // before turned it into "haircut with a lump", because the fin's lower
+      // half vanished inside the cap and only a crumple showed. The fin now
+      // rises off the bare scalp from a narrow seated ridge.
+      lobe(root, shadow, [0, 0.24, -0.015], [0.082, 0.13, 0.33], [0, 0, 0], "mohawk-base-ridge");
       mohawkFin(root, main, true);
       break;
     case "fauxhawk":
-      cap(root, main, [0.34, 0.22, 0.34], 0.13);
-      lobe(root, main, [0, 0.275, -0.015], [0.09, 0.1, 0.28], [0, 0, 0], "fauxhawk-solid-ridge");
-      mohawkFin(root, shadow, false);
+      // Short crop with a raised centre ridge built from overlapping lobes -
+      // hair styled upward, not a separate object. The extruded fin this
+      // reused from the mohawk read as a dark blade glued to a beret.
+      cap(root, main, [0.33, 0.198, 0.33], 0.125);
+      lobe(root, main, [0, 0.275, 0.135], [0.095, 0.1, 0.17], [-0.3, 0, 0], "fauxhawk-ridge-front");
+      lobe(root, main, [0, 0.3, -0.01], [0.09, 0.115, 0.21], [0, 0, 0], "fauxhawk-ridge-crown");
+      lobe(root, main, [0, 0.275, -0.16], [0.085, 0.09, 0.17], [0.25, 0, 0], "fauxhawk-ridge-rear");
+      lobe(root, shadow, [0, 0.3, 0.075], [0.05, 0.075, 0.1], [-0.2, 0, 0], "fauxhawk-ridge-shade");
       break;
     case "quiff":
       cap(root, main, [0.34, 0.205, 0.34], 0.105);

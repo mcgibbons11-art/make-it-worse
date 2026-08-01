@@ -680,15 +680,46 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
     case "hair":
       return [];
     case "cap": {
-      // wear-cap.png: a mint six-panel crown under a navy curved brim, with a
+      // wear-cap.png: a mint SIX-PANEL crown under a navy curved brim, with a
       // coral button at the apex. The brim is the reference's contrast piece,
-      // which is why it is trim rather than main.
+      // which is why it is trim rather than main. The crown used to be the
+      // bare ellipsoid every other hat starts from; the reference's panel
+      // seams and eyelets are what make it a ball cap rather than a dome, so
+      // three seam arcs now quarter the crown and an eyelet sits mid-panel.
+      const crown = hatCrown(0.005, 0.25);
+      const seams: THREE.Object3D[] = [];
+      for (let index = 0; index < 3; index += 1) {
+        const seam = part(ring(0.365, 0.0055, Math.PI), "trim", {
+          x: 0, y: 0.108, z: -0.012,
+        });
+        seam.scale.y = 0.69;
+        seam.rotation.y = (index * Math.PI) / 3;
+        seams.push(seam);
+      }
+      const eyelets: THREE.Object3D[] = [];
+      for (let index = 0; index < 6; index += 1) {
+        const angle = Math.PI / 6 + (index * Math.PI) / 3;
+        // On the ellipsoid's own surface at 0.68 of its height, where the
+        // horizontal section has radius rx*sqrt(1-0.68^2) = 0.263.
+        eyelets.push(
+          part(ball(0.013, 0.013, 0.013), "trim", {
+            x: Math.cos(angle) * 0.267,
+            y: 0.278,
+            z: -0.012 + Math.sin(angle) * 0.263,
+          }),
+        );
+      }
       const brim = part(roundedSlab(0.43, 0.026, 0.34), "trim", {
         x: 0, y: 0.018, z: 0.31,
       });
       brim.rotation.x = -0.09;
+      // One stitch row following the brim's curve, the navy piece's only
+      // interior detail in the reference.
+      const stitch = part(ring(0.155, 0.0045), "cream", { x: 0, y: 0.034, z: 0.318 });
+      stitch.rotation.x = Math.PI / 2 - 0.09;
+      stitch.scale.y = 0.8;
       const button = part(ball(0.032, 0.026, 0.032), "cream", { x: 0, y: 0.35, z: -0.012 });
-      return [hatCrown(0.005, 0.25), brim, button];
+      return [crown, ...seams, ...eyelets, brim, stitch, button];
     }
     case "band":
       return [
@@ -701,6 +732,20 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       ];
     case "bobble": {
       const cuff = part(tube(0.352, 0.352, 0.09, 22), "trim", { x: 0, y: 0.002, z: -0.012 });
+      // Rib ticks the whole way round the fold, so the knit read survives the
+      // turn instead of stopping at the front five slabs on the crown.
+      // Positions are in the cuff's own frame: it already carries the hat's
+      // -0.012 z offset, so the ribs only need their place on its wall.
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * Math.PI * 2;
+        const rib = part(slab(0.011, 0.08, 0.011), "main", {
+          x: Math.sin(angle) * 0.354,
+          y: 0,
+          z: Math.cos(angle) * 0.354,
+        });
+        rib.rotation.y = angle;
+        cuff.add(rib);
+      }
       const pom = part(ball(0.102, 0.102, 0.102), "trim", { x: 0, y: 0.43, z: -0.012 });
       const tie = part(tube(0.022, 0.028, 0.065, 10), "trim", { x: 0, y: 0.355, z: -0.012 });
       const crown = hatCrown(0.02, 0.3);
@@ -737,6 +782,19 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       // Rides on the forehead, not over the eyes: at the reference's depth a
       // cuff centred where this one was reached HEAD.eye.y and 0.05u below it.
       const cuff = part(tube(0.366, 0.366, 0.145, 22), "cream", { x: 0, y: 0.024, z: -0.012 });
+      // The folded brim is a third of the hat and it was a featureless band;
+      // rib ticks in the hat's own colour are what say knit at this scale.
+      // In the cuff's own frame, which already carries the hat's offsets.
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * Math.PI * 2;
+        const rib = part(slab(0.012, 0.132, 0.012), "main", {
+          x: Math.sin(angle) * 0.368,
+          y: 0,
+          z: Math.cos(angle) * 0.368,
+        });
+        rib.rotation.y = angle;
+        cuff.add(rib);
+      }
       const crown = hatCrown(0.015, 0.3);
       crown.userData["wardrobeTint"] = "knit";
       return [crown, cuff];
@@ -1120,12 +1178,21 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
   switch (id) {
     case "none":
       return [];
-    case "tee":
+    case "tee": {
       // wear-tee.png: one broad cream band across the chest, not a stripe at
       // the hem. It is the whole of the shirt's second colour.
       shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
       shell.add(part(torsoShell(0.03, 0.115, 0.019), "cream"));
+      // A rolled hem, so the shirt ENDS somewhere visible instead of fading
+      // into the body: without an edge the tee photographed as paint.
+      const hemRoll = part(ring(torsoRadius(HEM) + 0.018, 0.011), "main", {
+        x: 0, y: HEM + 0.013, z: 0,
+      });
+      hemRoll.rotation.x = Math.PI / 2;
+      hemRoll.userData["wardrobeNoOutline"] = true;
+      shell.add(hemRoll);
       return [shell];
+    }
     case "tank": {
       return [createWearableUpgradeModel("tank")];
     }
@@ -1146,26 +1213,44 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // rib is trim.
       shell.add(part(torsoShell(HEM, 0.27, 0.016), "knit"));
       shell.add(part(torsoShell(HEM, HEM + 0.04, 0.023), "trim"));
-      shell.add(part(plate(0.288, 0.115, 1.5), "knit", { x: 0, y: -0.088, z: 0 }));
-      const pocketOpening = part(ring(0.115, 0.011, Math.PI), "trim", {
-        x: 0, y: -0.055, z: 0.238,
+      // wear-hoodie.png's pocket is a SOLID contrast trapezoid standing proud
+      // of the body, not an outline: the thin half-torus that used to draw the
+      // opening photographed as a grey frown floating on a plain chest. The
+      // panel is cream because the pocket is the reference's light piece.
+      const pocket = part(roundedSlab(0.21, 0.115, 0.032), "cream", {
+        x: 0, y: -0.06, z: (torsoRadius(-0.06) + 0.024) * TORSO_DEPTH,
       });
+      pocket.rotation.x = -0.1;
       // A collapsed half-dome, not a second head-sized ball. It starts at the
       // shoulder line and folds upward behind the neck, with an open rim that
       // reads as fabric even in profile.
-      const hood = part(dome(0.205, 0.105, 0.115), "knit", {
-        x: 0, y: 0.255, z: -0.205,
+      const hood = part(dome(0.225, 0.115, 0.135), "knit", {
+        x: 0, y: 0.25, z: -0.21,
       });
-      const hoodRim = part(ring(0.145, 0.018, Math.PI), "trim", {
-        x: 0, y: 0.285, z: -0.115,
+      // A 2.4rad arc rather than a full half-circle: at PI the rim's ends
+      // reached past the neck's sides and photographed as grey fins on the
+      // shoulders whenever the torso twisted in the rest pose.
+      const hoodRim = part(ring(0.15, 0.02, 2.4), "trim", {
+        x: 0, y: 0.278, z: -0.105,
       });
+      hoodRim.rotation.z = Math.PI / 2 - 1.2;
+      // Chunky drawcords ending in aglets, the reference's most recognisable
+      // small detail. Fatter than the 0.011 threads that vanished at picker
+      // scale.
       const drawstring = (side: -1 | 1) =>
-        part(tube(0.011, 0.011, 0.13, 8), "cream", {
-          x: side * 0.052,
-          y: 0.155,
-          z: 0.196,
-        });
-      return [shell, pocketOpening, hood, hoodRim, drawstring(-1), drawstring(1)];
+        group(
+          part(tube(0.014, 0.014, 0.125, 8), "cream", {
+            x: side * 0.055,
+            y: 0.16,
+            z: 0.213,
+          }),
+          part(tube(0.018, 0.018, 0.034, 8), "cream", {
+            x: side * 0.055,
+            y: 0.085,
+            z: 0.213,
+          }),
+        );
+      return [shell, pocket, hood, hoodRim, drawstring(-1), drawstring(1)];
     }
     case "jersey": {
       // wear-jersey.png: a rugby shirt - cream hoops of the same depth as the
@@ -1180,9 +1265,21 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
       for (const [bottom, top] of JERSEY_HOOPS)
         shell.add(part(torsoShell(bottom, top, 0.019), "cream"));
-      shell.add(part(plate(0.262, 0.15, 0.42), "cream", { x: 0, y: 0.185, z: 0 }));
-      shell.add(part(ball(0.014, 0.014, 0.01), "trim", { x: 0, y: 0.205, z: 0.205 }));
-      shell.add(part(ball(0.014, 0.014, 0.01), "trim", { x: 0, y: 0.16, z: 0.215 }));
+      // The placket hugs the shell the way the hoops do. It used to be a
+      // plate() at one fixed radius, which stood 0.033u off the chest where
+      // the torso has already narrowed: photographed, it read as a cream
+      // rectangle floating at the collarbone, and it buried its own buttons.
+      shell.add(part(torsoStripe(0.09, 0.26, 0.024, 0.36, 0), "cream"));
+      shell.add(
+        part(ball(0.015, 0.015, 0.01), "trim", {
+          x: 0, y: 0.2, z: torsoRadius(0.2) + 0.035,
+        }),
+      );
+      shell.add(
+        part(ball(0.015, 0.015, 0.01), "trim", {
+          x: 0, y: 0.145, z: torsoRadius(0.145) + 0.035,
+        }),
+      );
       return [shell];
     }
     case "overalls": {
@@ -1191,6 +1288,21 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       shell.add(part(torsoShell(HEM, 0.08, 0.016), "denim"));
       shell.add(part(plate(0.28, 0.17, 1.2), "denim", { x: 0, y: 0.16, z: 0 }));
       shell.add(part(plate(0.292, 0.1, 0.72), "trim", { x: 0, y: 0.155, z: 0 }));
+      // The bib is the same denim as the body panel behind it, so its top
+      // edge carries a cream stitch line to separate the two, and a button
+      // fastens each hip the way real overalls close.
+      shell.add(part(plate(0.287, 0.012, 1.16), "cream", { x: 0, y: 0.238, z: 0 }));
+      for (const side of [-1, 1] as const) {
+        const angle = side * 1.05;
+        const radius = torsoRadius(0.045) + 0.024;
+        shell.add(
+          part(ball(0.017, 0.017, 0.012), "cream", {
+            x: Math.sin(angle) * radius,
+            y: 0.045,
+            z: Math.cos(angle) * radius,
+          }),
+        );
+      }
       const buckle = (side: -1 | 1) =>
         part(slab(0.036, 0.036, 0.022), "cream", { x: side * 0.1, y: 0.225, z: 0.185 });
       return [shell, buckle(-1), buckle(1), tankStrap(-1), tankStrap(1)];
@@ -1211,8 +1323,14 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
       // stopped at the front, and at a glance they read as two dashes stuck on
       // a plain shirt rather than as any garment at all.
       shell.add(part(torsoShell(HEM, 0.26, 0.014), "main"));
-      for (const at of [-0.27, 0.27])
-        shell.add(part(torsoStripe(HEM, 0.255, 0.021, 0.3, at), "cream"));
+      // Wider than the first cut: at 0.3rad the pair read as two chalk lines.
+      // 0.42rad each with the same gap between them is the proportion racing
+      // stripes actually carry, and a thin trim edge either side of the pair
+      // gives them the painted-on-panel read.
+      for (const at of [-0.29, 0.29])
+        shell.add(part(torsoStripe(HEM, 0.255, 0.022, 0.42, at), "cream"));
+      for (const at of [-0.62, 0.62])
+        shell.add(part(torsoStripe(HEM, 0.255, 0.02, 0.07, at), "trim"));
       return [shell];
     }
   }
@@ -1308,12 +1426,36 @@ function collarParts(id: AvatarTopId): THREE.Object3D[] {
       // rises, open at the front where the placket is. Cut on the same partial
       // arc the jacket collar uses, for the same reason: a closed ring here
       // would shut a throat the reference leaves open.
+      //
+      // The reference's collar is a rolled fold hugging the neck, open at a
+      // small front notch where two points turn down. Both flat-walled
+      // versions of this failed on camera: the original 2.4rad funnel hid
+      // behind the skull, and a wider funnel showed its own cut ends as grey
+      // fins over the shoulders. A torus arc has no cut face to catch the
+      // light - its ends are rounded - so the roll reads as cloth from every
+      // angle the picker offers.
       return [
-        part(
-          new THREE.CylinderGeometry(0.228, 0.176, 0.062, 18, 1, true, Math.PI - 1.2, 2.4),
-          "cream",
-          { x: 0, y: 0.031, z: 0 },
-        ),
+        (() => {
+          const wrap = new THREE.Group();
+          const roll = part(ring(0.19, 0.034, Math.PI * 2 - 1.0), "cream", {
+            x: 0, y: 0.055, z: 0,
+          });
+          roll.rotation.x = Math.PI / 2;
+          wrap.add(roll);
+          // Shift the arc's start so its 1.0rad gap faces the front notch.
+          wrap.rotation.y = -(Math.PI / 2 + 0.5);
+          return wrap;
+        })(),
+        ...([-1, 1] as const).map((side) => {
+          const point = part(
+            new THREE.ConeGeometry(0.034, 0.08, 3),
+            "cream",
+            { x: side * 0.082, y: 0.012, z: 0.162 },
+          );
+          point.rotation.x = Math.PI;
+          point.rotation.y = side * 0.45;
+          return point;
+        }),
       ];
     default:
       return [];
@@ -1338,20 +1480,53 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       // down the placket.
       shell.add(part(torsoShell(HEM, 0.27, 0.032, 0.5), "denim"));
       shell.add(part(torsoShell(HEM, HEM + 0.05, 0.038, 0.5), "trim"));
+      // A fine cream line above the hem band: the reference's contrast
+      // topstitching, at the one scale a single line of it still reads. Cut
+      // with the same front gap as the shell so it does not bar the placket.
+      shell.add(part(torsoShell(HEM + 0.052, HEM + 0.06, 0.04, 0.5), "cream"));
+      // wear-jacket.png's chest pockets are two DISTINCT flapped patches with
+      // a domed button each. The old pair of near-identical plates met in the
+      // middle and photographed as one grey bar across the chest, so the
+      // bodies stay denim, the flaps ride further out with a real gap between
+      // the two, and each flap carries its button.
       const pocket = (side: -1 | 1) => {
-        const body = part(plate(0.304, 0.13, 0.48), "denim", { x: 0, y: 0.045, z: 0 });
-        const flap = part(plate(0.309, 0.055, 0.52), "trim", { x: 0, y: 0.098, z: 0 });
-        body.rotation.y = side * 0.44;
-        flap.rotation.y = side * 0.44;
-        return group(body, flap);
+        const body = part(plate(torsoRadius(0.05) + 0.052, 0.1, 0.4), "denim", {
+          x: 0, y: 0.04, z: 0,
+        });
+        const flap = part(plate(torsoRadius(0.05) + 0.062, 0.048, 0.44), "trim", {
+          x: 0, y: 0.095, z: 0,
+        });
+        const angle = side * 0.46;
+        body.rotation.y = angle;
+        flap.rotation.y = angle;
+        const buttonRadius = torsoRadius(0.075) + 0.075;
+        const button = part(ball(0.016, 0.016, 0.011), "cream", {
+          x: Math.sin(angle) * buttonRadius,
+          y: 0.078,
+          z: Math.cos(angle) * buttonRadius,
+        });
+        button.rotation.y = angle;
+        return group(body, flap, button);
       };
       shell.add(pocket(-1));
       shell.add(pocket(1));
+      // Welt pockets low on the front quarters, the reference's small coral
+      // accents, drawn in trim so they survive every chosen colour.
+      for (const side of [-1, 1] as const) {
+        const welt = part(slab(0.02, 0.075, 0.016), "trim");
+        const angle = side * 0.62;
+        const radius = torsoRadius(-0.1) + 0.045;
+        welt.position.set(Math.sin(angle) * radius, -0.1, Math.cos(angle) * radius);
+        welt.rotation.y = angle;
+        welt.rotation.z = side * 0.18;
+        shell.add(welt);
+      }
+      // A raised placket strip carrying four domed buttons, in place of the
+      // thin thread-and-floating-pearls column: the buttons sit ON the strip
+      // the way the reference's brass domes sit on theirs.
+      shell.add(part(roundedSlab(0.052, 0.44, 0.026), "denim", { x: 0, y: 0.045, z: 0.262 }));
       for (const y of [0.2, 0.1, 0, -0.1])
-        shell.add(
-          part(ball(0.019, 0.019, 0.012), "cream", { x: 0, y, z: torsoRadius(y) + 0.045 }),
-        );
-      shell.add(part(slab(0.014, 0.42, 0.018), "cream", { x: 0, y: 0.045, z: 0.257 }));
+        shell.add(part(ball(0.019, 0.019, 0.013), "cream", { x: 0, y, z: 0.283 }));
       return [shell];
     }
     case "puffer": {
@@ -1395,25 +1570,51 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       const shoulder = 0.3;
       const neckRadius = 0.175;
       const hemRadius = 0.372;
-      const cloth = part(tube(neckRadius, hemRadius, shoulder - HEM, 22, true), "knit", {
-        x: 0,
-        y: (shoulder + HEM) / 2,
-        z: 0,
-      });
+      // A lathe with a concave flare rather than a straight cone: cloth
+      // hanging off shoulders accelerates outward as it falls, and the
+      // straight version photographed as a lampshade. One profile drives both
+      // the surface and the cord anchors below, so they cannot drift apart.
+      const PONCHO_PROFILE: readonly (readonly [number, number])[] = [
+        [shoulder, neckRadius],
+        [0.21, 0.198],
+        [0.1, 0.235],
+        [-0.02, 0.285],
+        [-0.11, 0.335],
+        [HEM, hemRadius],
+      ];
+      const cloth = part(
+        new THREE.LatheGeometry(
+          PONCHO_PROFILE.map(([y, radius]) => new THREE.Vector2(radius, y)),
+          24,
+        ),
+        "knit",
+        { x: 0, y: 0, z: 0 },
+      );
       // The hood rests behind the neck. A full head-sized ellipsoid here read
       // as a second black head in profile and swallowed the face from oblique
       // angles; this folded hood stays recognisable without competing with the
       // runner's actual head.
-      const hood = part(dome(0.22, 0.115, 0.13), "knit", {
-        x: 0, y: 0.265, z: -0.215,
+      const hood = part(dome(0.2, 0.105, 0.12), "knit", {
+        x: 0, y: 0.26, z: -0.205,
       });
-      const hoodRim = part(ring(0.155, 0.02, Math.PI), "trim", {
-        x: 0, y: 0.3, z: -0.11,
+      // Same arc trim as the hoodie's rim: at a full half-circle the ends
+      // reached past the neck and read as fins on the shoulders.
+      const hoodRim = part(ring(0.148, 0.02, 2.4), "trim", {
+        x: 0, y: 0.293, z: -0.105,
       });
-      // The cone's own front surface at each height, so the cord hangs off the
-      // cloth instead of floating in front of it or sinking behind it.
-      const frontAt = (y: number) =>
-        neckRadius + ((shoulder - y) / (shoulder - HEM)) * (hemRadius - neckRadius);
+      hoodRim.rotation.z = Math.PI / 2 - 1.2;
+      // The cloth's own front surface at each height, interpolated from the
+      // same profile the lathe is built from, so the cord hangs off the cloth
+      // instead of floating in front of it or sinking behind it.
+      const frontAt = (y: number): number => {
+        for (let index = 1; index < PONCHO_PROFILE.length; index += 1) {
+          const [y0, r0] = PONCHO_PROFILE[index - 1]!;
+          const [y1, r1] = PONCHO_PROFILE[index]!;
+          if (y <= y0 && y >= y1)
+            return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
+        }
+        return hemRadius;
+      };
       const tab = part(slab(0.05, 0.055, 0.022), "cream", {
         x: 0,
         y: 0.225,
@@ -1435,41 +1636,83 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       return [cloth, hood, hoodRim, tab, cord(-1), cord(1)];
     }
     case "harness": {
-      const belt = part(torsoShell(-0.11, -0.06, 0.03), "leather");
+      // No reference exists for this one. It is authored as the climbing rig
+      // its name promises: a strap over each shoulder, a true X crossing at
+      // the sternum under a metal chest ring, and a padded belt with a
+      // buckle. What was here before was two near-vertical slabs meeting at
+      // the collarbone, which photographed as a letter A drawn on the chest.
       const wrap = shellGroup();
-      wrap.add(belt);
-      const cross = (side: -1 | 1) => {
-        const strap = part(roundedSlab(0.05, 0.42, 0.024), "leather", {
-          x: side * 0.06,
-          y: 0.07,
-          z: 0.2,
+      wrap.add(part(torsoShell(-0.12, -0.05, 0.032), "leather"));
+      const shoulder = (side: -1 | 1) => {
+        const strap = part(ring(0.118, 0.028, Math.PI), "leather", {
+          x: side * 0.15,
+          y: 0.155,
+          z: 0,
         });
-        strap.rotation.z = side * 0.32;
+        strap.rotation.y = Math.PI / 2;
         return strap;
       };
-      const buckle = part(ring(0.042, 0.009), "metal", { x: 0, y: 0.06, z: 0.223 });
-      return [wrap, cross(-1), cross(1), buckle];
+      // Each diagonal runs shoulder to opposite hip. Rotated about z through
+      // the shared sternum point, the two make the X that says harness from
+      // the chase camera.
+      const cross = (side: -1 | 1) => {
+        const strap = part(roundedSlab(0.052, 0.36, 0.022), "leather", {
+          x: 0,
+          y: 0.045,
+          z: 0.208,
+        });
+        strap.rotation.z = side * 0.82;
+        return strap;
+      };
+      const chestRing = part(ring(0.046, 0.012), "metal", { x: 0, y: 0.045, z: 0.228 });
+      // The belt's own front face sits at 0.224 world, so hardware on it
+      // starts there and stands proud, not inside it.
+      const buckle = part(slab(0.06, 0.045, 0.02), "steel", { x: 0, y: -0.085, z: 0.236 });
+      const keeper = (side: -1 | 1) => {
+        const tab = part(slab(0.045, 0.03, 0.018), "trim", {
+          x: side * 0.14,
+          y: -0.075,
+          z: 0.206,
+        });
+        tab.rotation.y = side * 0.55;
+        return tab;
+      };
+      return [
+        wrap, shoulder(-1), shoulder(1), cross(-1), cross(1),
+        chestRing, buckle, keeper(-1), keeper(1),
+      ];
     }
     case "scarf": {
       // wear-scarf.png: a chunky knit looped once at the neck with two tails
       // hanging down the front, each ending in a cream fringe. The loop itself
       // rides the neck socket (scarfCollarParts); only the tails are here, and
       // they stop well above the hem so a thigh never reaches them.
+      // The two tails hang at different lengths and lean apart the way a
+      // once-looped scarf actually settles; equal parallel slabs read as a
+      // bib. Each tail tips slightly outward at the hem so it drapes off the
+      // chest instead of lying flat against it.
       const tail = (side: -1 | 1) => {
-        const cloth = part(roundedSlab(0.075, 0.235, 0.032), "knit", {
-          x: side * 0.062,
-          y: 0.055,
-          z: 0.238,
-        });
-        cloth.rotation.z = side * 0.055;
-        const fringes = [-0.026, -0.009, 0.009, 0.026].map((offset) =>
-          part(tube(0.006, 0.006, 0.045, 6), "cream", {
-            x: side * 0.062 + offset,
-            y: -0.086,
-            z: 0.238,
+        const length = side < 0 ? 0.235 : 0.185;
+        // Cloth and fringes live in one group whose origin is the top of the
+        // tail, so the outward lean carries the fringes with it for free.
+        const hang = new THREE.Group();
+        hang.position.set(side * 0.06, 0.155, 0.235);
+        hang.rotation.z = side * 0.09;
+        hang.rotation.x = -0.06;
+        hang.add(
+          part(roundedSlab(0.082, 0.035, 0.04), "knit", { x: 0, y: -0.018, z: 0.001 }),
+          part(roundedSlab(0.075, length, 0.034), "knit", {
+            x: 0, y: -length / 2, z: 0,
           }),
+          ...[-0.026, -0.009, 0.009, 0.026].map((offset) =>
+            part(tube(0.006, 0.006, 0.045, 6), "cream", {
+              x: offset,
+              y: -length - 0.016,
+              z: 0,
+            }),
+          ),
         );
-        return group(cloth, ...fringes);
+        return hang;
       };
       return [tail(-1), tail(1)];
     }
@@ -1632,9 +1875,18 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       return [leg, cuff, pocket, flap, button];
     }
     case "kneepads": {
-      const pad = part(ball(0.092, 0.085, 0.078), "rubber");
+      // A plastic shell over a proud cushion ring, not a lump of dark rubber:
+      // with the default charcoal legwear the rubber tint multiplied down to
+      // near-black and the pad vanished against the leg it was protecting.
+      const pad = part(ball(0.094, 0.086, 0.078), "plastic");
       pad.position.copy(limbPoint(LEG, side, 0.54));
-      pad.position.z += 0.036;
+      pad.position.z += 0.034;
+      const cushion = part(ring(0.05, 0.013), "trim");
+      cushion.position.copy(limbPoint(LEG, side, 0.54));
+      cushion.position.z += 0.09;
+      const cap = part(ball(0.04, 0.038, 0.018), "trim");
+      cap.position.copy(limbPoint(LEG, side, 0.54));
+      cap.position.z += 0.098;
       const upperStrap = limbSleeve(
         LEG, side, 0.43, 0.49, legRadius(0.43) + 0.014, legRadius(0.49) + 0.014,
       );
@@ -1643,7 +1895,7 @@ function legwearParts(id: AvatarLegwearId, side: -1 | 1): THREE.Object3D[] {
       );
       upperStrap.userData["wardrobeTint"] = "trim";
       lowerStrap.userData["wardrobeTint"] = "trim";
-      return [upperStrap, lowerStrap, pad];
+      return [upperStrap, lowerStrap, pad, cushion, cap];
     }
     case "kilt": {
       // The actual kilt is a single pelvis-mounted garment. Returning no
@@ -2121,23 +2373,35 @@ function heldParts(id: AvatarHeldId): THREE.Object3D[] {
       // a banded collar, with a crook handle above and a pale ferrule below.
       // The crook curves fore-and-aft because that is the free direction - one
       // curving sideways would swing through the skull.
-      const canopy = part(tube(0.052, 0.008, 0.26, 12), "main", { x: 0.055, y: 0.06, z: 0 });
-      canopy.scale.x = 0.55;
-      const band = part(tube(0.04, 0.04, 0.032, 12), "trim", { x: 0.055, y: 0.09, z: 0 });
-      band.scale.x = 0.6;
-      const shaft = part(tube(0.011, 0.011, 0.12, 8), "cream", { x: 0.055, y: 0.24, z: 0 });
-      const crook = part(ring(0.032, 0.011, Math.PI), "cream", { x: 0.055, y: 0.3, z: 0.032 });
+      const canopy = part(tube(0.062, 0.009, 0.27, 12), "main", { x: 0.055, y: 0.055, z: 0 });
+      canopy.scale.x = 0.7;
+      // A second, tilted band midway down the furl: with only the collar band
+      // the canopy read as a bare spindle, and a slight diagonal is what says
+      // "cloth wrapped and cinched" at this scale.
+      const midBand = part(tube(0.037, 0.037, 0.028, 12), "trim", { x: 0.055, y: -0.01, z: 0 });
+      midBand.scale.x = 0.72;
+      midBand.rotation.z = 0.12;
+      const band = part(tube(0.045, 0.045, 0.034, 12), "trim", { x: 0.055, y: 0.1, z: 0 });
+      band.scale.x = 0.72;
+      const shaft = part(tube(0.012, 0.012, 0.115, 8), "cream", { x: 0.055, y: 0.245, z: 0 });
+      const crook = part(ring(0.034, 0.012, Math.PI), "cream", { x: 0.055, y: 0.305, z: 0.034 });
       crook.rotation.y = Math.PI / 2;
-      const ferrule = part(ball(0.014, 0.028, 0.014), "cream", { x: 0.055, y: -0.078, z: 0 });
+      const ferrule = part(ball(0.015, 0.03, 0.015), "cream", { x: 0.055, y: -0.083, z: 0 });
       return [canopy, band, shaft, crook, ferrule];
     }
     case "baguette": {
       // wear-baguette.png: a golden crust with four pale diagonal slashes. The
       // slashes ride in the loaf's own group, so they keep their place on it
       // when it is tipped.
-      const loaf = group(part(ball(0.036, 0.036, 0.135), "main"));
-      for (const z of [-0.075, -0.025, 0.025, 0.075]) {
-        const slash = part(ball(0.01, 0.012, 0.026), "cream", { x: 0, y: 0.03, z });
+      // Longer and slightly fatter than the first cut, which photographed as
+      // a small brown blob at the hip: depth is the free direction for a held
+      // item, so the length is where the presence comes from. The heel ends
+      // taper the way a real loaf's do.
+      const loaf = group(part(ball(0.04, 0.04, 0.165), "main"));
+      for (const z of [-0.16, 0.16])
+        loaf.add(part(ball(0.02, 0.02, 0.03), "main", { x: 0, y: 0, z }));
+      for (const z of [-0.095, -0.032, 0.032, 0.095]) {
+        const slash = part(ball(0.012, 0.014, 0.03), "cream", { x: 0, y: 0.033, z });
         slash.rotation.y = 0.5;
         loaf.add(slash);
       }

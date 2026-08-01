@@ -238,14 +238,27 @@ export const PlayerController = forwardRef<
   useEffect(() => {
     const rigid = body.current;
     if (!rigid) return;
-    if (pose === "failure") {
-      rigid.setEnabledRotations(true, true, true, true);
-      rigid.applyTorqueImpulse({ x: 2.8, y: 1.2, z: -3.4 }, true);
+    try {
+      if (!rigid.isValid()) return;
+      if (pose === "failure") {
+        rigid.setEnabledRotations(true, true, true, true);
+        rigid.applyTorqueImpulse({ x: 2.8, y: 1.2, z: -3.4 }, true);
+      }
+    } catch {
+      // The body can be remounting between attempts.
     }
   }, [pose]);
   useFrame((_, frameDelta) => {
     const rigidBody = body.current;
     if (!rigidBody) return;
+    // A truthy ref is not a live body: during a course swap the body can be
+    // freed while the wrapper is still reachable for a frame, and any wasm
+    // call on it panics and borrow-poisons the whole physics world.
+    try {
+      if (!rigidBody.isValid()) return;
+    } catch {
+      return;
+    }
     // Pin the capsule upright, every frame, unconditionally.
     //
     // enabledRotations={[false,false,false]} on the RigidBody is supposed to

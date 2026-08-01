@@ -146,6 +146,10 @@ export function CameraRig({
     const body = player.current;
     if (!body) return;
     try {
+      // isValid first: translation() on a freed body panics inside wasm and
+      // leaks a borrow that poisons the world - the catch below cannot undo
+      // that, it only hides it.
+      if (!body.isValid()) return;
       const position = body.translation();
       const velocity = body.linvel();
       // The rig's frame, swung about the runner by the held-drag yaw. At yaw 0

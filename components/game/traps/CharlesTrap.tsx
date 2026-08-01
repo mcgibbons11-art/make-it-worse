@@ -11,6 +11,20 @@ import type { TrapProps } from "../TrapRenderer";
 const CHARLES_IMPULSE = 13;
 const CHARLES_GATE_MS = 1000;
 
+// Same guard every other trap file carries. A truthy ref is NOT a live body:
+// during a course swap a body can be freed while the wrapper is still
+// reachable for a frame, and translation() on a freed body panics inside
+// rapier's wasm ("unreachable"), leaking a borrow that poisons the whole
+// world - after which every step() fails until the page reloads.
+function isLive(body: RapierRigidBody | null | undefined): body is RapierRigidBody {
+  if (!body) return false;
+  try {
+    return body.isValid();
+  } catch {
+    return false;
+  }
+}
+
 export function CharlesModel() {
   const rig = useMemo(() => createCharlesModel(), []);
   return <primitive object={rig.root} rotation={[0, Math.PI, 0]} />;
@@ -38,7 +52,7 @@ export function CharlesTrap({ trap, player, trapBodies, onHazard, onMechanic }: 
   useFrame((state, delta) => {
     const rigid = body.current;
     const runner = player.current;
-    if (!rigid || !runner) return;
+    if (!isLive(rigid) || !isLive(runner)) return;
     const crawl = state.clock.elapsedTime * 9;
     const visual = rigRoot.current;
     if (visual) {

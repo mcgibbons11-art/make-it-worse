@@ -251,6 +251,9 @@ export function GameScene({
                 const body = player.current;
                 if (!body) return;
                 try {
+                  // isValid first: a wasm call on a freed body panics and
+                  // borrow-poisons the world; the catch cannot undo that.
+                  if (!body.isValid()) return;
                   body.applyImpulse({ x: 0, y: 1.45, z: -push }, true);
                 } catch {
                   // The body can be remounting between attempts.

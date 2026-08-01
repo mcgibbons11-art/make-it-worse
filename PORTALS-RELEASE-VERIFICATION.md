@@ -37,9 +37,13 @@ Verified:
 - In the processed editor 2p preview (real Portals.net): the duel popup renders, hosting connects to a live channel and mints an invite code, and after a preview reload the same pane reclaimed its seat through the tab-scoped duel token ("Rejoin MIW-XXXX" -> waiting on the same channel), which is the reload-recovery path working end to end.
 - The invite-input layout fix (`5c1f920`) confirmed rendering correctly in the processed build.
 
-Not verified live, honestly: the full two-seat handshake, live spectating, and the turn loop were not driven to completion in the 2p preview. Editor iframe clicks became unreliable mid-session (window resizes changed the capture scale and stalled iframe hit-testing), and one stray click left player 2 in a solo run. The protocol behind those flows is unit-tested, but the live two-player pass remains open.
-
 The public `/g/make-it-worse` page still serves the pre-duel published build: GitHub sync updates the editor and its previews, and only the user-owned Publish action updates the public page.
+
+### Completed two-player duel pass — 2026-08-01, snapshot `9e39cce`
+
+User testing surfaced that Join, lobby Post, and chat Send did nothing in the editor. Three defects were found and fixed: the duel's net.join raced the still-attached map-relay session (the hand-off is now serialized and awaited, with a 12s join timeout instead of a silent hang, `ead7006`); every duel input row used form submission, which the preview's sandboxed iframes block outright, so they are now plain-button click and Enter handlers (`87a0a02`); and the duel identity moved to a per-frame `window.name` token because the preview panes share web storage and a shared token made both panes seat A (`58bc31d`). Seat claiming was then made joiner-owned with stale-record recovery and a live status line on the waiting panel (`9e39cce`).
+
+With those fixes synced, a full best-of-3 match ran to completion in the processed editor 2p preview over real Portals.net: player 1 hosted `MIW-NRLH` (status line: record #1, seat A, opponent open), player 2 typed the code and joined, both panes flipped to Round 1 · Turn 1 with the host as runner and a freshly minted course. The spectator pane rendered the runner as a live streamed ghost with a floating name label and follow camera, with "started a run" and "went down" events arriving in its feed. Three burned hearts handed round 1 over, round 2 opened with the round loser running first on a fresh course and mirrored score strips (`YOU 0-1` vs `YOU 1-0`), and three more burns ended the match with mirrored result screens ("Bouncy Otter took the match. Final score 0-2" / "You took the match. Final score 2-0") and rematch offered. Not exercised live in this pass: the worsening hand-off (clear -> trap picker -> opponent runs the worsened course), the open lobby, forfeit claims, and rematch - their logic is unit-tested but has not been driven in the editor.
 
 ## Deliberately not performed
 

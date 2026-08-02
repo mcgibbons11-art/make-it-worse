@@ -2,6 +2,7 @@
 import {
   CapsuleCollider,
   RigidBody,
+  useRapier,
   type RapierRigidBody,
 } from "@react-three/rapier";
 import { useFrame } from "@react-three/fiber";
@@ -83,6 +84,23 @@ const LEDGE_RELEASE_SPEED = 1.2;
  */
 const STEP_LANDING_INSET = 0.12;
 const STEP_PROBE = PLAYER.capsuleRadius + STEP_LANDING_INSET;
+
+/**
+ * Grounded probe: the capsule's lower sphere, shrunk by the margin, swept this
+ * far straight down through the physics world.
+ *
+ * The shrink is what keeps a side graze from counting as footing - a wall the
+ * capsule is touching stays outside the probe, and a purely downward sweep
+ * never closes a horizontal gap. The reach covers the old landing window
+ * (sole up to 0.12 above the deck) plus the slant of a lip perch, where the
+ * contact sits off to the side of the sphere and the sweep meets it late.
+ * Both numbers derive from the capsule and the solver's contact slop, not
+ * from movement feel.
+ */
+const GROUND_PROBE_SHRINK = 0.03;
+const GROUND_PROBE_REACH = 0.16;
+const GROUND_PROBE_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
+const GROUND_PROBE_SWEEP = { x: 0, y: -1, z: 0 };
 
 /**
  * The top of the highest piece covering (`x`, `z`), or null out over the void.
@@ -169,6 +187,7 @@ export const PlayerController = forwardRef<
   },
   forwardedRef,
 ) {
+  const { world, rapier } = useRapier();
   const pieces = track?.pieces ?? LEVEL_PIECES;
   const spawn = track?.spawn ?? PLAYER_SPAWN;
   const exit = track?.exit ?? EXIT_POSITION;
@@ -328,34 +347,43 @@ export const PlayerController = forwardRef<
     const position = rigidBody.translation();
     const velocity = rigidBody.linvel();
     const soleDrop = PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius;
-    // A capsule perched on a deck lip rests its round bottom on the CORNER,
-    // so its centre sags below flat rest by up to the full radius - far past
-    // the 0.18 the window below tolerates. That marked a runner standing at
-    // any platform edge as airborne: air-control steering that read as
-    // uncontrollable sliding, and no jump, exactly where a player lines one
-    // up. The sag allowance is geometry, not tuning: the deepest sag a
-    // corner contact can produce, plus a whisker.
-    const perchSag = PLAYER.capsuleRadius + 0.04;
-    // The ceiling stops an overhead piece (a bridge, a stacked platform)
-    // from masking the real support underfoot; anything higher than the
-    // deepest acceptable perch could never be what the runner stands on.
+    // Grounded is answered by the physics world, not inferred from the piece
+    // list. The engine resolving the capsule against every collider is the
+    // one authority that cannot disagree with what the player sees underfoot;
+    // the geometric window it replaces was blind in turn to lip perches,
+    // overhead decks and standable props, and every miss dropped the runner
+    // into 0.35x air control on visibly solid ground - the reported "slide
+    // mode". Sensors and moving bodies still do not count as footing, exactly
+    // as before, and the runner's own capsule is excluded from the sweep.
+    const groundHit = world.castShape(
+      { x: position.x, y: position.y - PLAYER.capsuleHalfHeight, z: position.z },
+      GROUND_PROBE_ROTATION,
+      GROUND_PROBE_SWEEP,
+      new rapier.Ball(PLAYER.capsuleRadius - GROUND_PROBE_SHRINK),
+      0,
+      GROUND_PROBE_REACH,
+      true,
+      rapier.QueryFilterFlags.EXCLUDE_SENSORS |
+        rapier.QueryFilterFlags.EXCLUDE_DYNAMIC |
+        rapier.QueryFilterFlags.EXCLUDE_KINEMATIC,
+      undefined,
+      undefined,
+      rigidBody,
+    );
+    // Rising faster than a nudge is takeoff, not standing: without this gate
+    // the first airborne frames of a jump would still probe the deck below,
+    // read grounded, and disarm the variable-jump release.
+    const grounded = groundHit !== null && velocity.y <= 0.8;
+    // The step assist still measures its rise against the authored piece
+    // tops; the ceiling keeps an overhead deck from being mistaken for the
+    // one the runner stands on.
     const surface = surfaceUnder(
       pieces,
       position.x,
       position.z,
       GROUND_MARGIN,
-      position.y - soleDrop + perchSag,
+      position.y - soleDrop + PLAYER.capsuleRadius + 0.04,
     );
-    const grounded =
-      surface !== null &&
-      position.y <= surface + soleDrop + 0.12 &&
-      velocity.y <= 0.8 &&
-      // Flat rest keeps the original tight band. The perch branch accepts
-      // the deeper corner sag only while the capsule is actually RESTING:
-      // a genuine fall beside the deck blows through the 0.2 rest ceiling
-      // within a frame at this gravity, so it cannot fake groundedness.
-      (position.y >= surface + soleDrop - 0.18 ||
-        (Math.abs(velocity.y) <= 0.2 && position.y >= surface + soleDrop - perchSag));
     if (grounded) lastGrounded.current = now;
     const input = getInput();
     if (consumeJumpPress()) {

@@ -27,6 +27,13 @@ export const HEARTS_PER_TURN = 3;
 export const HANDOFF_DEADLINE_MS = 120_000;
 export const WORSEN_DEADLINE_MS = 90_000;
 export const FORFEIT_GRACE_MS = 10_000;
+/**
+ * How long a mid-match opponent may stay disconnected before the match ends
+ * in the remaining player's favour. Long enough for the supported
+ * reload-and-rejoin (an editor preview reload alone can take half of it),
+ * short enough that nobody plays on against an empty seat for long.
+ */
+export const ABANDON_TIMEOUT_MS = 60_000;
 
 /** Lobby posts older than this render dimmed; older than stale are ignored. */
 export const LOBBY_HEARTBEAT_MS = 20_000;

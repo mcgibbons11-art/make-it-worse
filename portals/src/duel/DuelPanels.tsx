@@ -386,7 +386,12 @@ export function DuelHud({
       <span className="duel-strip-course">{courseLabel(match.courseTitle)}</span>
       <Hearts count={turn.heartsLeft} max={match.rules.hearts} />
       {!duel.peerConnected && !match.result && (
-        <span className="duel-strip-warn">⚠ {duel.opponentName} disconnected</span>
+        <span className="duel-strip-warn">
+          ⚠ {duel.opponentName} disconnected
+          {duel.abandonSecondsLeft !== null
+            ? ` · match ends in ${duel.abandonSecondsLeft}s unless they rejoin`
+            : ""}
+        </span>
       )}
     </div>
   );

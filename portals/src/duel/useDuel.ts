@@ -22,6 +22,7 @@ import {
 import type { BuiltTrack } from "@/lib/game/track";
 import type { ChallengeDTO, DecodedGhostSample } from "@/lib/game/types";
 import {
+  ABANDON_TIMEOUT_MS,
   DUEL_PROTOCOL,
   FORFEIT_GRACE_MS,
   beginRun,
@@ -137,6 +138,8 @@ export interface DuelApi {
   forfeitClaimable: boolean;
   /** Whole seconds until the current turn's deadline, clamped at zero. */
   deadlineSeconds: number;
+  /** Seconds until a vanished opponent forfeits the match, or null. */
+  abandonSecondsLeft: number | null;
   rejoinableCode: string | null;
 
   open(): void;
@@ -211,6 +214,8 @@ export function useDuel(input: {
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
+  /** When the opponent's connection dropped, for the abandonment clock. */
+  const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [mapChoices, setMapChoices] = useState<PublishedMapRecord[]>([]);
   const [courseChoice, setCourseChoice] = useState<string | null>(null);
@@ -389,9 +394,13 @@ export function useDuel(input: {
         // seat raced the joiner's own claim (both bumped the same seq with
         // different players.b) and last-write-wins could leave the joiner
         // seatless in its own match.
-        onPeerJoin: () => setPeerConnected(true),
+        onPeerJoin: () => {
+          setPeerConnected(true);
+          setPeerLostAt(null);
+        },
         onPeerLeave: () => {
           setPeerConnected(false);
+          setPeerLostAt(Date.now());
           spectateSampleRef.current = null;
           pushFeed("Opponent disconnected. They can rejoin with the same code.");
         },
@@ -411,6 +420,10 @@ export function useDuel(input: {
       }
       channel.current = result.connection;
       setPeerConnected(result.peers.length > 0);
+      // Rejoining a match whose opponent is currently gone starts their
+      // abandonment clock from now; this side cannot know how long they have
+      // already been away.
+      setPeerLostAt(result.peers.length > 0 ? null : Date.now());
       activeCodeWrite(code);
       const player = me(result.connection.selfConnId);
       const existing = matchRef.current;
@@ -539,6 +552,26 @@ export function useDuel(input: {
     return () => globalThis.clearInterval(timer);
   }, [pendingClaim, stage.kind]);
 
+  // A vanished opponent forfeits the whole match once their clock runs out:
+  // a reload-and-rejoin reconnects well inside the window, and anything
+  // longer leaves the remaining player playing against an empty seat. The
+  // effect only schedules the timer; peerLostAt is set by the connection
+  // callbacks, so the window is anchored to the disconnect and does not
+  // slide on the survivor's own record writes. The record is re-read when
+  // the clock fires.
+  useEffect(() => {
+    if (peerLostAt === null || stage.kind !== "match") return;
+    const timer = globalThis.setTimeout(() => {
+      const record = matchRef.current;
+      const seat = record ? seatOf(record, token) : null;
+      if (!record || record.result || !record.players.b || !seat) return;
+      publish(concede(record, otherSeat(seat)));
+      pushFeed("Opponent never came back. Match over.");
+      activeCodeWrite(null);
+    }, Math.max(0, peerLostAt + ABANDON_TIMEOUT_MS - Date.now()));
+    return () => globalThis.clearTimeout(timer);
+  }, [peerLostAt, publish, pushFeed, stage.kind, token]);
+
   const forfeitClaimable =
     match !== null && mySeat !== null && mayClaimForfeit(match, mySeat, nowTick);
   const deadlineSeconds = match
@@ -547,6 +580,14 @@ export function useDuel(input: {
   const claimSecondsLeft = pendingClaim
     ? Math.max(0, Math.ceil((pendingClaim.expiresAt - nowTick) / 1000))
     : 0;
+  const abandonSecondsLeft =
+    peerLostAt !== null &&
+    stage.kind === "match" &&
+    match !== null &&
+    !match.result &&
+    match.players.b !== null
+      ? Math.max(0, Math.ceil((peerLostAt + ABANDON_TIMEOUT_MS - nowTick) / 1000))
+      : null;
 
   const sendWire = useCallback((message: DuelWireMessage) => {
     channel.current?.send(message);
@@ -564,6 +605,7 @@ export function useDuel(input: {
     setChat([]);
     setFeed([]);
     setPeerConnected(false);
+    setPeerLostAt(null);
   }, [dropChannel, dropLobby]);
 
   // Arm the chooser's selection right before a match record is created, and
@@ -605,6 +647,7 @@ export function useDuel(input: {
     chooseCourse: (versionId) => setCourseChoice(versionId),
     forfeitClaimable,
     deadlineSeconds,
+    abandonSecondsLeft,
     rejoinableCode,
 
     open: () => {
@@ -618,6 +661,13 @@ export function useDuel(input: {
       setStage((current) => (current.kind === "closed" ? { kind: "menu" } : current));
     },
     close: () => {
+      // Closing the popup mid-match IS leaving the match: concede before the
+      // connection drops so the opponent gets the result immediately instead
+      // of waiting out the abandonment clock.
+      const current = matchRef.current;
+      const seat = current ? seatOf(current, token) : null;
+      if (current && seat && current.players.b && !current.result)
+        publish(concede(current, seat));
       void teardown();
       activeCodeWrite(null);
       setStage({ kind: "closed" });

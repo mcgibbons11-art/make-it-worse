@@ -129,7 +129,12 @@ export interface DuelLobbyConnection {
   selfConnId: string;
   selfName: string | null;
   /** Advertise an open challenge; heartbeats renew it until unpost/close. */
-  post(input: { name: string; avatarCode: string | null; note: string }): void;
+  post(input: {
+    name: string;
+    avatarCode: string | null;
+    note: string;
+    courseTitle?: string | null;
+  }): void;
   unpost(): void;
   claim(toConnId: string): void;
   accept(toConnId: string, code: string): void;
@@ -218,7 +223,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
     const connection: DuelLobbyConnection = {
       selfConnId,
       selfName: joined.self.displayName,
-      post({ name, avatarCode, note }) {
+      post({ name, avatarCode, note, courseTitle }) {
         clearPost();
         const now = Date.now();
         myPost = {
@@ -227,6 +232,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
           name: name.trim().slice(0, 40) || "Runner",
           avatarCode,
           note: note.trim().slice(0, 120),
+          courseTitle: courseTitle?.slice(0, 80) ?? null,
           createdAt: now,
           heartbeatAt: now,
         };

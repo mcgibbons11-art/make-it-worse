@@ -13,6 +13,60 @@ function inviteLabel(code: string): string {
   return `MIW-${code}`;
 }
 
+/**
+ * Copy that survives the Portals editor's sandboxed preview iframe, where the
+ * async clipboard API is denied outright (no clipboard-write permission is
+ * ever granted). The selection-based command rides the click gesture instead
+ * of a permission, so it still works there.
+ */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const scratch = document.createElement("textarea");
+      scratch.value = text;
+      scratch.setAttribute("readonly", "");
+      scratch.style.position = "fixed";
+      scratch.style.opacity = "0";
+      document.body.appendChild(scratch);
+      scratch.select();
+      const done = document.execCommand("copy");
+      scratch.remove();
+      return done;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function courseLabel(title: string | null): string {
+  return title ? `🗺 ${title}` : "🎲 Clean Map";
+}
+
+/** The host's course picker: their published maps, or a random clean course. */
+function CoursePicker({ duel }: { duel: DuelApi }) {
+  if (duel.mapChoices.length === 0) return null;
+  return (
+    <label className="duel-map-pick">
+      <span>Course</span>
+      <select
+        aria-label="Duel course"
+        value={duel.courseChoice ?? ""}
+        onChange={(event) => duel.chooseCourse(event.target.value || null)}
+      >
+        <option value="">🎲 Clean map (random each round)</option>
+        {duel.mapChoices.map((map) => (
+          <option key={map.versionId} value={map.versionId}>
+            🗺 {map.title}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function clockLabel(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -98,7 +152,7 @@ export function DuelMatchmakingPanel({
 }) {
   const [codeDraft, setCodeDraft] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "manual">("idle");
   const stage = duel.stage;
   return (
     <>
@@ -116,6 +170,7 @@ export function DuelMatchmakingPanel({
                 🔁 Rejoin {inviteLabel(duel.rejoinableCode)}
               </button>
             )}
+            <CoursePicker duel={duel} />
             <button className="button danger" onClick={duel.hostPrivate}>
               🔒 Host a private duel
             </button>
@@ -151,17 +206,25 @@ export function DuelMatchmakingPanel({
         <>
           <p className="portals-lede">Send this code to your opponent:</p>
           <p className="duel-invite-code">{inviteLabel(stage.code)}</p>
+          {duel.match && (
+            <p className="duel-course-label">{courseLabel(duel.match.courseTitle)}</p>
+          )}
           <button
             className="button primary"
             onClick={() => {
-              void navigator.clipboard?.writeText(inviteLabel(stage.code)).then(
-                () => setCopied(true),
-                () => setCopied(false),
+              void copyText(inviteLabel(stage.code)).then((done) =>
+                setCopyState(done ? "copied" : "manual"),
               );
             }}
           >
-            {copied ? "✓ Copied" : "📋 Copy invite code"}
+            {copyState === "copied" ? "✓ Copied" : "📋 Copy invite code"}
           </button>
+          {copyState === "manual" && (
+            <p className="portals-notice" role="status">
+              Copying is blocked here. Tap the code above to select it, then
+              copy it yourself.
+            </p>
+          )}
           <p className="portals-notice" role="status">
             Waiting for an opponent to join…
           </p>
@@ -219,25 +282,28 @@ export function DuelMatchmakingPanel({
               </button>
             </div>
           ) : (
-            <div className="duel-code-row">
-              <input
-                value={noteDraft}
-                placeholder="Anyone want to lose? (optional note)"
-                aria-label="Lobby post note"
-                maxLength={120}
-                onChange={(event) => setNoteDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") duel.postToLobby(noteDraft);
-                }}
-              />
-              <button
-                className="button danger"
-                type="button"
-                onClick={() => duel.postToLobby(noteDraft)}
-              >
-                Post it
-              </button>
-            </div>
+            <>
+              <CoursePicker duel={duel} />
+              <div className="duel-code-row">
+                <input
+                  value={noteDraft}
+                  placeholder="Anyone want to lose? (optional note)"
+                  aria-label="Lobby post note"
+                  maxLength={120}
+                  onChange={(event) => setNoteDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") duel.postToLobby(noteDraft);
+                  }}
+                />
+                <button
+                  className="button danger"
+                  type="button"
+                  onClick={() => duel.postToLobby(noteDraft)}
+                >
+                  Post it
+                </button>
+              </div>
+            </>
           )}
           <div className="duel-posts">
             {duel.posts.length === 0 && (
@@ -255,6 +321,7 @@ export function DuelMatchmakingPanel({
               >
                 <strong>{post.name}</strong>
                 <span>{post.note || "wants to duel"}</span>
+                <span className="duel-post-course">{courseLabel(post.courseTitle)}</span>
               </button>
             ))}
           </div>
@@ -316,6 +383,7 @@ export function DuelHud({
       <span className="duel-strip-score">
         ROUND {match.round} · YOU {myScore}–{theirScore} {duel.opponentName.toUpperCase()}
       </span>
+      <span className="duel-strip-course">{courseLabel(match.courseTitle)}</span>
       <Hearts count={turn.heartsLeft} max={match.rules.hearts} />
       {!duel.peerConnected && !match.result && (
         <span className="duel-strip-warn">⚠ {duel.opponentName} disconnected</span>

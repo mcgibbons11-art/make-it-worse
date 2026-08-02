@@ -1027,3 +1027,36 @@ summary:focus-visible {
   font-size: 0.84rem;
   font-weight: 750;
 }
+.duel-map-pick {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.duel-map-pick select {
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font: inherit;
+  font-weight: 750;
+  background: white;
+  color: var(--ink);
+}
+.duel-course-label {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.duel-post-course {
+  font-size: 0.78rem;
+}
+.duel-strip-course {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}

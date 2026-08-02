@@ -211,6 +211,52 @@ describe("wire hygiene", () => {
     expect(parseLobbyPost({ ...post, note: "x".repeat(400) })).toBeNull();
   });
 
+  it("carries a custom base course through rounds, rematches, and the wire", () => {
+    const base = { title: "Lava Loft", version: "map-42" };
+    const custom = joinMatch(createMatch(host, NOW, base), guest)!;
+    expect(custom.courseTitle).toBe("Lava Loft");
+    expect(custom.courseBaseVersion).toBe("map-42");
+    // Losing a round resets the course but never the chosen base.
+    let burned = beginRun(custom, NOW);
+    for (let heart = 0; heart < HEARTS_PER_TURN - 1; heart += 1)
+      burned = failAttempt(burned, NOW).match;
+    const reset = failAttempt(burned, NOW);
+    expect(reset.kind).toBe("round-lost");
+    expect(reset.match.courseCode).toBeNull();
+    expect(reset.match.courseTitle).toBe("Lava Loft");
+    expect(reset.match.courseBaseVersion).toBe("map-42");
+    // The record round-trips validation with the base aboard.
+    expect(parseDuelMatch(JSON.parse(JSON.stringify(custom)))).toMatchObject({
+      courseTitle: "Lava Loft",
+      courseBaseVersion: "map-42",
+    });
+    // A rematch swaps seats but keeps playing the same map.
+    const over = concede(custom, "b");
+    expect(rematch(over, NOW)).toMatchObject({
+      courseTitle: "Lava Loft",
+      courseBaseVersion: "map-42",
+    });
+  });
+
+  it("reads records and posts written before custom courses existed", () => {
+    const legacyMatch = JSON.parse(JSON.stringify(fullMatch())) as Record<string, unknown>;
+    delete legacyMatch.courseTitle;
+    delete legacyMatch.courseBaseVersion;
+    expect(parseDuelMatch(legacyMatch)).toMatchObject({
+      courseTitle: null,
+      courseBaseVersion: null,
+    });
+    const legacyPost = {
+      v: DUEL_PROTOCOL, connId: "conn-a", name: "Ava", avatarCode: null,
+      note: "come lose", createdAt: NOW, heartbeatAt: NOW,
+    };
+    expect(parseLobbyPost(legacyPost)).toMatchObject({ courseTitle: null });
+    expect(parseLobbyPost({ ...legacyPost, courseTitle: "Lava Loft" })).toMatchObject({
+      courseTitle: "Lava Loft",
+    });
+    expect(parseLobbyPost({ ...legacyPost, courseTitle: "x".repeat(200) })).toBeNull();
+  });
+
   it("rejects a match record whose players are malformed", () => {
     const match = fullMatch() as unknown as Record<string, unknown>;
     expect(parseDuelMatch({ ...match, players: { a: null, b: null } })).toBeNull();

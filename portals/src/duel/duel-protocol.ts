@@ -98,10 +98,20 @@ export interface DuelMatch {
   score: { a: number; b: number };
   round: number;
   turn: DuelTurn;
-  /** MIW-MAP-1 code of the course the current turn runs. */
+  /** Challenge code of the course the current turn runs. */
   courseCode: string | null;
   /** Challenge slug of courseCode, for cheap change detection. */
   courseVersion: string | null;
+  /**
+   * The host's chosen base course. Null plays a fresh random course each
+   * round; a custom map opens every round from that exact map before the
+   * worsening begins. Only the title and version ride the record - the 8 KB
+   * wire budget cannot carry the base map's code alongside the current
+   * course, so each client caches the code the first time it sees the
+   * pristine base run (courseVersion === courseBaseVersion).
+   */
+  courseTitle: string | null;
+  courseBaseVersion: string | null;
   result: DuelResult | null;
 }
 
@@ -111,6 +121,8 @@ export interface LobbyPost {
   name: string;
   avatarCode: string | null;
   note: string;
+  /** Title of the poster's chosen map, or null for a random clean course. */
+  courseTitle: string | null;
   createdAt: number;
   heartbeatAt: number;
 }
@@ -216,12 +228,18 @@ export function parseDuelMatch(value: unknown): DuelMatch | null {
   if (!finiteNumber(match.round)) return null;
   if (match.courseCode !== null && !shortText(match.courseCode, 8_000)) return null;
   if (match.courseVersion !== null && !shortText(match.courseVersion, 80)) return null;
+  // Absent on records written before custom courses existed; normalized to
+  // null so every parsed record has the full shape.
+  const courseTitle = match.courseTitle ?? null;
+  const courseBaseVersion = match.courseBaseVersion ?? null;
+  if (courseTitle !== null && !shortText(courseTitle, 80)) return null;
+  if (courseBaseVersion !== null && !shortText(courseBaseVersion, 80)) return null;
   const result = match.result as DuelResult | null | undefined;
   if (result !== null && result !== undefined) {
     if ((result.winner !== "a" && result.winner !== "b") ||
       !["rounds", "forfeit", "left"].includes(result.reason)) return null;
   }
-  return match as DuelMatch;
+  return { ...(match as DuelMatch), courseTitle, courseBaseVersion };
 }
 
 export function seatOf(match: DuelMatch, token: string): DuelSeat | null {
@@ -245,7 +263,11 @@ export function supersedes(candidate: DuelMatch, current: DuelMatch | null): boo
 // The transport enforces nothing; the UI simply never offers an illegal move,
 // and an illegal record arriving off the wire loses on validation or seq.
 
-export function createMatch(host: DuelPlayer, now: number): DuelMatch {
+export function createMatch(
+  host: DuelPlayer,
+  now: number,
+  base: { title: string; version: string } | null = null,
+): DuelMatch {
   return {
     v: DUEL_PROTOCOL,
     seq: 1,
@@ -256,6 +278,8 @@ export function createMatch(host: DuelPlayer, now: number): DuelMatch {
     turn: { number: 1, runner: "a", heartsLeft: HEARTS_PER_TURN, phase: "handoff", deadlineAt: now + HANDOFF_DEADLINE_MS },
     courseCode: null,
     courseVersion: null,
+    courseTitle: base?.title.slice(0, 80) ?? null,
+    courseBaseVersion: base?.version ?? null,
     result: null,
   };
 }
@@ -405,11 +429,15 @@ export function concede(match: DuelMatch, leaver: DuelSeat): DuelMatch {
   };
 }
 
-/** Swap seats and reset for a rematch on the same channel. */
+/** Swap seats and reset for a rematch on the same channel, same base course. */
 export function rematch(match: DuelMatch, now: number): DuelMatch | null {
   if (!match.result || !match.players.b) return null;
+  const base =
+    match.courseTitle !== null && match.courseBaseVersion !== null
+      ? { title: match.courseTitle, version: match.courseBaseVersion }
+      : null;
   return {
-    ...createMatch(match.players.b, now),
+    ...createMatch(match.players.b, now, base),
     seq: match.seq + 1,
     players: { a: match.players.b, b: match.players.a },
   };
@@ -429,8 +457,11 @@ export function parseLobbyPost(value: unknown): LobbyPost | null {
   if (!shortText(post.name, 40)) return null;
   if (post.avatarCode !== null && !shortText(post.avatarCode, 64)) return null;
   if (!shortText(post.note, 120)) return null;
+  // Absent on posts written before custom courses existed.
+  const courseTitle = post.courseTitle ?? null;
+  if (courseTitle !== null && !shortText(courseTitle, 80)) return null;
   if (!finiteNumber(post.createdAt) || !finiteNumber(post.heartbeatAt)) return null;
-  return post as unknown as LobbyPost;
+  return { ...(post as unknown as LobbyPost), courseTitle: courseTitle as string | null };
 }
 
 export type LobbyFreshness = "fresh" | "dim" | "stale";

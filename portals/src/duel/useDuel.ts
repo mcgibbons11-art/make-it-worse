@@ -53,6 +53,10 @@ import {
   type DuelChannelConnection,
   type DuelLobbyConnection,
 } from "./duel-session";
+import {
+  listRememberedPublishedMaps,
+  type PublishedMapRecord,
+} from "../published-map-catalog";
 
 const ACTIVE_DUEL_STORAGE_KEY = "miw:duel-active-code";
 /** Streamed run positions: every other 15Hz ghost sample, ~7.5 msgs/s. */
@@ -125,6 +129,11 @@ export interface DuelApi {
   spectateSampleRef: { current: DecodedGhostSample | null };
   /** The course the current turn runs, decoded once per version. */
   course: DuelCourse | null;
+  /** This player's published maps, offered as duel courses. */
+  mapChoices: PublishedMapRecord[];
+  /** versionId of the chosen map, or null for a random clean course. */
+  courseChoice: string | null;
+  chooseCourse(versionId: string | null): void;
   forfeitClaimable: boolean;
   /** Whole seconds until the current turn's deadline, clamped at zero. */
   deadlineSeconds: number;
@@ -203,6 +212,15 @@ export function useDuel(input: {
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [mapChoices, setMapChoices] = useState<PublishedMapRecord[]>([]);
+  const [courseChoice, setCourseChoice] = useState<string | null>(null);
+  // The chosen base at the moment a match is created, read inside
+  // enterChannel where createMatch runs.
+  const chosenBaseRef = useRef<{ title: string; version: string } | null>(null);
+  // The pristine base course's challenge code, cached so the round-loser can
+  // re-mint later rounds from it. Seeded by the chooser at host time and by
+  // both players whenever the record shows the base itself running.
+  const baseCourseRef = useRef<{ version: string; code: string } | null>(null);
   const token = useMemo(() => duelToken(), []);
   const lobby = useRef<DuelLobbyConnection | null>(null);
   const channel = useRef<DuelChannelConnection | null>(null);
@@ -243,6 +261,18 @@ export function useDuel(input: {
   useEffect(() => {
     spectateSampleRef.current = null;
   }, [courseVersion]);
+  // Whenever the record shows the pristine base itself running (round
+  // openers), remember its code: the wire budget cannot carry the base
+  // alongside the current course, and whichever player opens the next round
+  // needs it to re-mint. Both players witness round 1, so both learn it.
+  useEffect(() => {
+    if (
+      match?.courseBaseVersion &&
+      match.courseCode &&
+      match.courseVersion === match.courseBaseVersion
+    )
+      baseCourseRef.current = { version: match.courseBaseVersion, code: match.courseCode };
+  }, [match]);
 
   const pushFeed = useCallback((text: string) => {
     setFeed((entries) => [...entries.slice(-(FEED_LIMIT - 1)), { id: (serial.current += 1), text }]);
@@ -409,12 +439,15 @@ export function useDuel(input: {
         // A finished or foreign record squatting in the channel: the HOST
         // resets it. seq continues past the stale record - a fresh seq 1
         // would lose every supersedes() comparison and be invisible.
-        publish({ ...createMatch(player, Date.now()), seq: existing.seq + 1 });
+        publish({
+          ...createMatch(player, Date.now(), chosenBaseRef.current),
+          seq: existing.seq + 1,
+        });
         setStage({ kind: "waiting", code });
         return;
       }
       if (role === "host") {
-        publish(createMatch(player, Date.now()));
+        publish(createMatch(player, Date.now(), chosenBaseRef.current));
         setStage({ kind: "waiting", code });
       } else {
         // Joining an empty channel: the host's record may still be in flight.
@@ -446,14 +479,40 @@ export function useDuel(input: {
     return () => globalThis.clearTimeout(timer);
   }, [match, me, publish, stage, token]);
 
-  // The runner mints the round's fresh course when none exists yet: round 1
-  // right after both seats fill, later rounds right after the reset. Deferred
-  // one tick so the mint-and-publish reacts to the settled record rather than
-  // cascading inside the render that delivered it.
+  // The runner mints the round's course when none exists yet: round 1 right
+  // after both seats fill, later rounds right after the reset. A custom base
+  // map opens every round from its cached code; otherwise a random clean
+  // course is generated. Deferred one tick so the mint-and-publish reacts to
+  // the settled record rather than cascading inside the render that
+  // delivered it.
   useEffect(() => {
     if (!match || !myTurn || match.courseCode !== null || match.turn.phase !== "handoff") return;
     if (!match.players.b) return;
     const timer = globalThis.setTimeout(() => {
+      if (match.courseBaseVersion !== null) {
+        // Rejoined mid-match without witnessing round 1: the chooser's own
+        // catalog still has the map, so try that before giving up.
+        const cached =
+          baseCourseRef.current?.version === match.courseBaseVersion
+            ? baseCourseRef.current
+            : (() => {
+                const record = listRememberedPublishedMaps().find(
+                  (entry) => entry.versionId === match.courseBaseVersion,
+                );
+                return record
+                  ? { version: record.versionId, code: record.challengeCode }
+                  : null;
+              })();
+        if (cached) {
+          baseCourseRef.current = cached;
+          publish(setCourse(match, cached.code, cached.version, Date.now()));
+          pushFeed(`Round ${match.round}: ${match.courseTitle ?? "the map"} opens.`);
+          return;
+        }
+        pushFeed(
+          `Could not recover ${match.courseTitle ?? "the chosen map"} on this side. A fresh course stands in.`,
+        );
+      }
       const seed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
       try {
         const runtime = runtimeMap(
@@ -499,11 +558,29 @@ export function useDuel(input: {
     matchRef.current = null;
     activeCodeRef.current = null;
     spectateSampleRef.current = null;
+    chosenBaseRef.current = null;
+    baseCourseRef.current = null;
     setMatch(null);
     setChat([]);
     setFeed([]);
     setPeerConnected(false);
   }, [dropChannel, dropLobby]);
+
+  // Arm the chooser's selection right before a match record is created, and
+  // seed the base-code cache from the local catalog so the chooser can open
+  // round 1 without waiting on anything.
+  const armChosenCourse = useCallback(() => {
+    const record = courseChoice
+      ? mapChoices.find((entry) => entry.versionId === courseChoice) ?? null
+      : null;
+    chosenBaseRef.current = record
+      ? { title: record.title, version: record.versionId }
+      : null;
+    baseCourseRef.current = record
+      ? { version: record.versionId, code: record.challengeCode }
+      : null;
+    return record;
+  }, [courseChoice, mapChoices]);
 
   const api: DuelApi = {
     stage,
@@ -523,17 +600,32 @@ export function useDuel(input: {
     feed,
     spectateSampleRef,
     course,
+    mapChoices,
+    courseChoice,
+    chooseCourse: (versionId) => setCourseChoice(versionId),
     forfeitClaimable,
     deadlineSeconds,
     rejoinableCode,
 
-    open: () => setStage((current) => (current.kind === "closed" ? { kind: "menu" } : current)),
+    open: () => {
+      // Refresh the catalog on every open: a map published since the last
+      // duel should be offerable without a reload.
+      const maps = listRememberedPublishedMaps();
+      setMapChoices(maps);
+      setCourseChoice((current) =>
+        current && maps.some((entry) => entry.versionId === current) ? current : null,
+      );
+      setStage((current) => (current.kind === "closed" ? { kind: "menu" } : current));
+    },
     close: () => {
       void teardown();
       activeCodeWrite(null);
       setStage({ kind: "closed" });
     },
-    hostPrivate: () => void enterChannel(mintDuelCode(), "host"),
+    hostPrivate: () => {
+      armChosenCourse();
+      void enterChannel(mintDuelCode(), "host");
+    },
     joinWithCode: (raw) => {
       const code = normalizeDuelCode(raw);
       if (!code) {
@@ -600,10 +692,14 @@ export function useDuel(input: {
       setStage({ kind: "menu" });
     },
     postToLobby: (note) => {
+      const record = courseChoice
+        ? mapChoices.find((entry) => entry.versionId === courseChoice) ?? null
+        : null;
       lobby.current?.post({
         name: playerName,
         avatarCode: avatar ? avatarToCode(avatar) : null,
         note,
+        courseTitle: record?.title ?? null,
       });
       setStage({ kind: "lobby", posted: true });
     },
@@ -641,6 +737,8 @@ export function useDuel(input: {
       const connection = lobby.current;
       if (!target || !connection) return;
       const code = mintDuelCode();
+      // The poster becomes the host, so the course they advertised applies.
+      armChosenCourse();
       connection.unpost();
       connection.accept(target, code);
       clearHostClaim();

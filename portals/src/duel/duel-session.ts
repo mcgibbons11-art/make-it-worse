@@ -118,7 +118,7 @@ export interface DuelLobbyHandlers {
   /** Fresh full snapshot of live posts (stale ones already dropped). */
   onPosts(posts: LobbyPost[]): void;
   /** Someone claimed OUR post. The poster arbitrates: accept or deny. */
-  onClaim(fromConnId: string): void;
+  onClaim(fromConnId: string, name: string | null): void;
   /** Our claim on someone's post was accepted; join this code's channel. */
   onAccept(code: string): void;
   onDeny(reason: "taken" | "closed"): void;
@@ -136,7 +136,7 @@ export interface DuelLobbyConnection {
     courseTitle?: string | null;
   }): void;
   unpost(): void;
-  claim(toConnId: string): void;
+  claim(toConnId: string, name: string): void;
   accept(toConnId: string, code: string): void;
   deny(toConnId: string, denyReason: "taken" | "closed"): void;
   close(): Promise<void>;
@@ -189,7 +189,8 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
     const messageHandler = (value: unknown, fromId: string) => {
       const message = parseDuelMessage(value);
       if (!message) return;
-      if (message.k === "duel-claim" && message.to === selfConnId && myPost) handlers.onClaim(fromId);
+      if (message.k === "duel-claim" && message.to === selfConnId && myPost)
+        handlers.onClaim(fromId, message.name ?? null);
       if (message.k === "duel-accept" && message.to === selfConnId) handlers.onAccept(message.code);
       if (message.k === "duel-deny" && message.to === selfConnId) handlers.onDeny(message.reason);
     };
@@ -248,8 +249,13 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         }, LOBBY_HEARTBEAT_MS);
       },
       unpost: clearPost,
-      claim(toConnId) {
-        const message: DuelWireMessage = { k: "duel-claim", v: DUEL_PROTOCOL, to: toConnId };
+      claim(toConnId, name) {
+        const message: DuelWireMessage = {
+          k: "duel-claim",
+          v: DUEL_PROTOCOL,
+          to: toConnId,
+          name: name.trim().slice(0, 40),
+        };
         if (parseDuelMessage(message)) host.net.send(message);
       },
       accept(toConnId, code) {

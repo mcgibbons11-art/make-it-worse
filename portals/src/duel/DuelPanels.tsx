@@ -247,7 +247,9 @@ export function DuelMatchmakingPanel({
           </p>
           {duel.claimFrom && (
             <div className="duel-claim-card">
-              <p>Someone wants to duel you.</p>
+              <p>
+                <strong>{duel.claimFrom.name}</strong> wants to duel you.
+              </p>
               <div className="portals-buttons">
                 <button className="button danger" onClick={duel.acceptClaim}>
                   ⚔️ Accept

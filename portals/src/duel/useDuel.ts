@@ -119,7 +119,8 @@ export interface DuelApi {
   opponentAvatar: AvatarConfig | null;
   peerConnected: boolean;
   posts: DuelLobbyPostView[];
-  claimFrom: string | null;
+  /** The player currently claiming this poster's challenge, or null. */
+  claimFrom: { connId: string; name: string } | null;
   /** The claim this player sent and is still waiting on. */
   pendingClaim: DuelPendingClaim | null;
   /** Whole seconds until the pending claim lapses, clamped at zero. */
@@ -209,7 +210,7 @@ export function useDuel(input: {
   const [stage, setStage] = useState<DuelStage>({ kind: "closed" });
   const [match, setMatch] = useState<DuelMatch | null>(null);
   const [posts, setPosts] = useState<DuelLobbyPostView[]>([]);
-  const [claimFrom, setClaimFrom] = useState<string | null>(null);
+  const [claimFrom, setClaimFrom] = useState<{ connId: string; name: string } | null>(null);
   const [pendingClaim, setPendingClaim] = useState<DuelPendingClaim | null>(null);
   const [lobbyNotice, setLobbyNotice] = useState<string | null>(null);
   const pendingClaimRef = useRef<DuelPendingClaim | null>(null);
@@ -743,11 +744,11 @@ export function useDuel(input: {
             const now = Date.now();
             setPosts(list.map((post) => ({ ...post, dim: lobbyFreshness(post, now) === "dim" })));
           },
-          onClaim: (fromConnId) => {
+          onClaim: (fromConnId, name) => {
             // The host gets the same window the claimant watches: an ignored
             // request card clears itself rather than going stale forever.
             if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
-            setClaimFrom(fromConnId);
+            setClaimFrom({ connId: fromConnId, name: name ?? "A challenger" });
             hostClaimLapseTimer.current = globalThis.setTimeout(() => {
               hostClaimLapseTimer.current = null;
               setClaimFrom(null);
@@ -806,7 +807,7 @@ export function useDuel(input: {
     claimPost: (connId) => {
       const connection = lobby.current;
       if (!connection) return;
-      connection.claim(connId);
+      connection.claim(connId, playerName);
       clearPendingClaim();
       setLobbyNotice(null);
       const claim: DuelPendingClaim = {
@@ -836,12 +837,12 @@ export function useDuel(input: {
       // The poster becomes the host, so the course they advertised applies.
       armChosenCourse();
       connection.unpost();
-      connection.accept(target, code);
+      connection.accept(target.connId, code);
       clearHostClaim();
       void enterChannel(code, "host");
     },
     denyClaim: () => {
-      if (claimFrom) lobby.current?.deny(claimFrom, "taken");
+      if (claimFrom) lobby.current?.deny(claimFrom.connId, "taken");
       clearHostClaim();
     },
     sendChat: (text) => {

@@ -62,7 +62,9 @@ export function GhostRunner({
   return (
     <group ref={group}>
       <PlayerVisual avatarSeed={avatarSeed} ghost motion={motion} />
-      <Html position={[0, 1.7, 0]} center distanceFactor={12}>
+      {/* Bounded so the tag can never stack above result cards and dialogs;
+          drei's default z-index is ~16 million. */}
+      <Html position={[0, 1.7, 0]} center distanceFactor={12} zIndexRange={[5, 0]}>
         <span ref={label} className="ghost-label">{name}&apos;s ghost</span>
       </Html>
     </group>

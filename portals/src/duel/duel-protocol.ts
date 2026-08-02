@@ -160,7 +160,7 @@ export type DuelWireMessage =
   | { k: "evt"; v: typeof DUEL_PROTOCOL; type: "start" | "death" | "clear" | "trap-hit" | "place"; label?: string }
   | { k: "chat"; v: typeof DUEL_PROTOCOL; text: string }
   | { k: "react"; v: typeof DUEL_PROTOCOL; emoji: string }
-  | { k: "duel-claim"; v: typeof DUEL_PROTOCOL; to: string }
+  | { k: "duel-claim"; v: typeof DUEL_PROTOCOL; to: string; name?: string }
   | { k: "duel-accept"; v: typeof DUEL_PROTOCOL; to: string; code: string }
   | { k: "duel-deny"; v: typeof DUEL_PROTOCOL; to: string; reason: "taken" | "closed" };
 
@@ -214,7 +214,13 @@ export function parseDuelMessage(value: unknown): DuelWireMessage | null {
         : null;
     case "duel-claim":
       return shortText(message.to, 80) && (message.to as string).length > 0
-        ? { k: "duel-claim", v: DUEL_PROTOCOL, to: message.to as string }
+        ? {
+            k: "duel-claim", v: DUEL_PROTOCOL, to: message.to as string,
+            // The claimant announces who they are; absent on older builds.
+            ...(shortText(message.name, 40) && (message.name as string).trim()
+              ? { name: (message.name as string).trim() }
+              : {}),
+          }
         : null;
     case "duel-accept":
       return shortText(message.to, 80) && normalizeDuelCode((message.code as string) ?? "") !== null

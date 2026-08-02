@@ -180,10 +180,14 @@ describe("duel lobby", () => {
     await vi.advanceTimersByTimeAsync(21_000);
     expect((host.sharedState[lobbyPostKey("self")] as { heartbeatAt: number }).heartbeatAt).toBeGreaterThan(100_000);
 
-    // A claim addressed to us reaches the arbitration handler; noise does not.
+    // A claim addressed to us reaches the arbitration handler with the
+    // claimant's announced name; noise does not. A nameless claim from an
+    // older build still arrives, as null.
+    host.handlers.message[0]?.({ k: "duel-claim", v: DUEL_PROTOCOL, to: "self", name: "Ava" }, "peer");
+    host.handlers.message[0]?.({ k: "duel-claim", v: DUEL_PROTOCOL, to: "someone-else", name: "Ava" }, "peer");
+    expect(handlers.onClaim).toHaveBeenCalledExactlyOnceWith("peer", "Ava");
     host.handlers.message[0]?.({ k: "duel-claim", v: DUEL_PROTOCOL, to: "self" }, "peer");
-    host.handlers.message[0]?.({ k: "duel-claim", v: DUEL_PROTOCOL, to: "someone-else" }, "peer");
-    expect(handlers.onClaim).toHaveBeenCalledExactlyOnceWith("peer");
+    expect(handlers.onClaim).toHaveBeenLastCalledWith("peer", null);
 
     result.connection.accept("peer", "AB23");
     expect(host.sent.at(-1)).toMatchObject({ k: "duel-accept", to: "peer", code: "AB23" });

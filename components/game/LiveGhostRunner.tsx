@@ -176,7 +176,9 @@ export function LiveGhostRunner({ sampleRef, avatarSeed, avatar, name, followCam
   return (
     <group ref={group} visible={false}>
       <PlayerVisual avatarSeed={avatarSeed} avatar={avatar} ghost motion={motion} />
-      <Html position={[0, 1.7, 0]} center distanceFactor={12}>
+      {/* Without the bound, drei's default z-index (~16 million) floats this
+          name tag OVER every dialog, including the match-over card. */}
+      <Html position={[0, 1.7, 0]} center distanceFactor={12} zIndexRange={[5, 0]}>
         <span ref={label} className="ghost-label">{name}</span>
       </Html>
     </group>

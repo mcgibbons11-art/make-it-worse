@@ -34,6 +34,16 @@ export const FORFEIT_GRACE_MS = 10_000;
  * short enough that nobody plays on against an empty seat for long.
  */
 export const ABANDON_TIMEOUT_MS = 60_000;
+/**
+ * In-match liveness. The platform does not reliably report a peer whose page
+ * died abruptly (a closed tab sends no goodbye), so each player sends a tiny
+ * heartbeat message and the opponent is presumed gone on SILENCE: no
+ * heartbeat, position, chat, or event for the stale window. Three missed
+ * beats plus margin, so ordinary background-tab timer throttling cannot fake
+ * an abandonment.
+ */
+export const HEARTBEAT_MS = 10_000;
+export const PEER_STALE_MS = 35_000;
 
 /** Lobby posts older than this render dimmed; older than stale are ignored. */
 export const LOBBY_HEARTBEAT_MS = 20_000;
@@ -135,6 +145,7 @@ export interface LobbyPost {
 }
 
 export type DuelWireMessage =
+  | { k: "hb"; v: typeof DUEL_PROTOCOL }
   | { k: "pos"; v: typeof DUEL_PROTOCOL; x: number; y: number; z: number; yaw: number; flags: number }
   | { k: "evt"; v: typeof DUEL_PROTOCOL; type: "start" | "death" | "clear" | "trap-hit" | "place"; label?: string }
   | { k: "chat"; v: typeof DUEL_PROTOCOL; text: string }
@@ -167,6 +178,8 @@ export function parseDuelMessage(value: unknown): DuelWireMessage | null {
   const message = value as Record<string, unknown>;
   if (message.v !== DUEL_PROTOCOL) return null;
   switch (message.k) {
+    case "hb":
+      return { k: "hb", v: DUEL_PROTOCOL };
     case "pos":
       return finiteNumber(message.x) && finiteNumber(message.y) && finiteNumber(message.z) &&
         finiteNumber(message.yaw) && finiteNumber(message.flags)

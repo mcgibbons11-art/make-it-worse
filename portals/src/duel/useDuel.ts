@@ -25,6 +25,8 @@ import {
   ABANDON_TIMEOUT_MS,
   DUEL_PROTOCOL,
   FORFEIT_GRACE_MS,
+  HEARTBEAT_MS,
+  PEER_STALE_MS,
   beginRun,
   claimForfeit,
   clearRun,
@@ -214,8 +216,10 @@ export function useDuel(input: {
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
-  /** When the opponent's connection dropped, for the abandonment clock. */
+  /** When the opponent was last presumed gone, for the abandonment clock. */
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
+  /** Last proof of life off the wire: join, any message, or initial peers. */
+  const peerSignalAt = useRef(0);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [mapChoices, setMapChoices] = useState<PublishedMapRecord[]>([]);
   const [courseChoice, setCourseChoice] = useState<string | null>(null);
@@ -358,6 +362,7 @@ export function useDuel(input: {
           if (record.players.b && !record.result) setStage({ kind: "match", code });
         },
         onMessage: (message) => {
+          peerSignalAt.current = Date.now();
           switch (message.k) {
             case "pos":
               spectateSampleRef.current = {
@@ -395,12 +400,11 @@ export function useDuel(input: {
         // different players.b) and last-write-wins could leave the joiner
         // seatless in its own match.
         onPeerJoin: () => {
+          peerSignalAt.current = Date.now();
           setPeerConnected(true);
-          setPeerLostAt(null);
         },
         onPeerLeave: () => {
           setPeerConnected(false);
-          setPeerLostAt(Date.now());
           spectateSampleRef.current = null;
           pushFeed("Opponent disconnected. They can rejoin with the same code.");
         },
@@ -420,10 +424,10 @@ export function useDuel(input: {
       }
       channel.current = result.connection;
       setPeerConnected(result.peers.length > 0);
-      // Rejoining a match whose opponent is currently gone starts their
-      // abandonment clock from now; this side cannot know how long they have
-      // already been away.
-      setPeerLostAt(result.peers.length > 0 ? null : Date.now());
+      // A peer present at connect counts as a fresh signal; an absent one
+      // leaves the signal clock at zero, so the silence watcher starts their
+      // abandonment countdown almost immediately after the match resumes.
+      if (result.peers.length > 0) peerSignalAt.current = Date.now();
       activeCodeWrite(code);
       const player = me(result.connection.selfConnId);
       const existing = matchRef.current;
@@ -551,6 +555,33 @@ export function useDuel(input: {
     const timer = globalThis.setInterval(() => setNowTick(Date.now()), 1_000);
     return () => globalThis.clearInterval(timer);
   }, [pendingClaim, stage.kind]);
+
+  // In-match liveness, both directions. This side heartbeats so the opponent
+  // can tell silence from idleness; a watcher presumes the opponent gone when
+  // NOTHING has arrived for the stale window, because the platform does not
+  // reliably report a peer whose page died abruptly (measured live: a killed
+  // preview pane produced no peer-leave event at all). A late signal from a
+  // throttled-but-alive tab clears the presumption before the clock below
+  // can act on it.
+  useEffect(() => {
+    if (stage.kind !== "match") return;
+    const beat = globalThis.setInterval(
+      () => channel.current?.send({ k: "hb", v: DUEL_PROTOCOL }),
+      HEARTBEAT_MS,
+    );
+    const watch = globalThis.setInterval(() => {
+      const record = matchRef.current;
+      if (!record || record.result || !record.players.b) return;
+      const silentFor = Date.now() - peerSignalAt.current;
+      if (silentFor > PEER_STALE_MS)
+        setPeerLostAt((current) => current ?? Date.now());
+      else setPeerLostAt((current) => (current === null ? current : null));
+    }, 1_000);
+    return () => {
+      globalThis.clearInterval(beat);
+      globalThis.clearInterval(watch);
+    };
+  }, [stage.kind]);
 
   // A vanished opponent forfeits the whole match once their clock runs out:
   // a reload-and-rejoin reconnects well inside the window, and anything

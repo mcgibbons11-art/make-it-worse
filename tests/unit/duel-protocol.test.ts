@@ -179,6 +179,14 @@ describe("forfeits, concession, rematch", () => {
 });
 
 describe("wire hygiene", () => {
+  it("round-trips the liveness heartbeat", () => {
+    expect(parseDuelMessage({ k: "hb", v: DUEL_PROTOCOL })).toEqual({
+      k: "hb",
+      v: DUEL_PROTOCOL,
+    });
+    expect(parseDuelMessage({ k: "hb", v: 99 })).toBeNull();
+  });
+
   it("accepts every legal message shape and rejects the rest", () => {
     expect(parseDuelMessage({ k: "pos", v: DUEL_PROTOCOL, x: 1, y: 2, z: 3, yaw: 0.5, flags: 1 })).not.toBeNull();
     expect(parseDuelMessage({ k: "evt", v: DUEL_PROTOCOL, type: "clear" })).not.toBeNull();

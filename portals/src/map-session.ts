@@ -48,6 +48,8 @@ export type MapSessionResult =
   | { status: "error"; message: string };
 
 export interface MapSessionConnection {
+  /** The platform's display name for this player, when the host knows one. */
+  selfName: string | null;
   announce(input: {
     challenge: ChallengeDTO;
     track: BuiltTrack;
@@ -223,6 +225,7 @@ export async function connectMapSession(
     net.send({ kind: "miw-latest-map-request", v: MAP_SESSION_PROTOCOL });
 
     const connection: MapSessionConnection = {
+      selfName: joined.self?.displayName ?? null,
       announce({ challenge, track, avatar, title, publishedAt }) {
         const announcement: MapAnnouncement = {
           kind: "miw-map-announcement",

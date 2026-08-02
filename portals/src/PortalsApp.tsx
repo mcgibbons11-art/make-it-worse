@@ -525,34 +525,40 @@ export function PortalsApp() {
   // touches - trap ownership, publishes, duel seats, lobby posts, chat -
   // without threading a second name source through each of them. Tried once
   // per distinct platform name, because the profile sanitizer may legally
-  // settle on a cleaned variant that must not retrigger the rename.
+  // settle on a cleaned variant that must not retrigger the rename. Fed from
+  // BOTH identity sources: getPlayer() answers at boot when it knows the
+  // player, and the net relay's join answers the moment a session opens -
+  // measured in the editor preview, the relay knows the username in cases
+  // where getPlayer() reports nobody.
   const adoptedUsername = useRef<string | null>(null);
-  useEffect(() => {
-    const username = player?.displayName?.trim();
-    if (!username || !guest || adoptedUsername.current === username) return;
-    if (guest.displayName === username) {
+  const adoptUsername = useCallback(
+    (raw: string | null | undefined) => {
+      const username = raw?.trim();
+      if (!username || adoptedUsername.current === username) return;
       adoptedUsername.current = username;
-      return;
-    }
-    adoptedUsername.current = username;
-    void (async () => {
-      try {
-        setGuest(await repository.updateProfile(username.slice(0, 24)));
-      } catch {
+      void (async () => {
         try {
-          const cleaned = username
-            .replace(/[^\p{L}\p{N} '._-]/gu, " ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 24);
-          if (cleaned.length >= 2)
-            setGuest(await repository.updateProfile(cleaned));
+          setGuest(await repository.updateProfile(username.slice(0, 24)));
         } catch {
-          // A platform name the sanitizer cannot accept keeps the generated one.
+          try {
+            const cleaned = username
+              .replace(/[^\p{L}\p{N} '._-]/gu, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 24);
+            if (cleaned.length >= 2)
+              setGuest(await repository.updateProfile(cleaned));
+          } catch {
+            // A name the sanitizer cannot accept keeps the generated one.
+          }
         }
-      }
-    })();
-  }, [guest, player, repository]);
+      })();
+    },
+    [repository],
+  );
+  useEffect(() => {
+    adoptUsername(player?.displayName);
+  }, [adoptUsername, player]);
   useEffect(() => {
     // The splash is a pre-game/loading surface, not an active multiplayer
     // player. Waiting for Start keeps an unopened second 2p preview from
@@ -588,6 +594,7 @@ export function PortalsApp() {
     mapSessionReady.current = connecting;
     void connecting.then((result) => {
       if (result.status !== "ok") return;
+      adoptUsername(result.connection.selfName);
       if (!active) void result.connection.close();
       else close = () => void result.connection.close();
     });
@@ -596,7 +603,7 @@ export function PortalsApp() {
       mapSessionReady.current = null;
       close();
     };
-  }, [duel.netActive, repository, showStartSplash]);
+  }, [adoptUsername, duel.netActive, repository, showStartSplash]);
   const loadBoard = useCallback(async (roomSlug: string) => {
     setBoardLoading(true);
     setBoard(await fetchClearTimes(roomSlug));

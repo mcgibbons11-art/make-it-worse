@@ -55,6 +55,11 @@
 
 /* Run start. GameClient unmounts the HUD between attempts, so mount-time
    animations replay on every run without any JS. */
+/* Fades over the camera's settle so the course arrives as a reveal, not a
+   pop. Fixed, because the HUD header box is only the top strip. */
+/* Base opacity 0 so reduced-motion (animation:none) leaves no stuck veil. */
+.run-start-veil{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0;background:linear-gradient(180deg,#8fd6f7 0%,#b5e6ff 60%,#e6f7ff 100%);animation:run-veil .62s ease-out both}
+@keyframes run-veil{0%{opacity:1}45%{opacity:1}100%{opacity:0}}
 .run-start-sting{position:absolute;left:50%;top:min(24vh,190px);display:grid;place-items:center;width:260px;margin-left:-130px;opacity:0;animation:go-sting 1.05s cubic-bezier(.16,.86,.3,1.2) both}
 .run-start-sting b{padding:8px 26px;border:5px solid var(--ink);border-radius:20px;background:var(--yellow);color:var(--ink);font-size:2.5rem;font-weight:1000;letter-spacing:.06em;box-shadow:0 8px 0 var(--ink)}
 .game-hud .hud-pill,.game-hud .hud-actions{animation:hud-drop .42s cubic-bezier(.2,.9,.3,1.25) backwards}
@@ -153,6 +158,7 @@
    this section styles rather than blanketed over .modal-backdrop, so a rule
    added later by someone else is not silently disabled. Removing the animation
    is safe because each base state is already the resting state. */
+:root[data-reduced-motion="true"] .run-start-veil,
 :root[data-reduced-motion="true"] .run-start-sting,
 :root[data-reduced-motion="true"] .game-hud .hud-pill,
 :root[data-reduced-motion="true"] .game-hud .hud-actions,

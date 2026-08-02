@@ -954,13 +954,13 @@ summary:focus-visible {
 }
 .duel-chat {
   display: grid;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 12px;
 }
 .duel-chat-log {
   display: grid;
-  gap: 2px;
-  max-height: 108px;
+  gap: 3px;
+  max-height: 150px;
   overflow-y: auto;
   font-size: 0.82rem;
 }
@@ -972,6 +972,7 @@ summary:focus-visible {
 }
 .duel-reactions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 .duel-reactions button {
@@ -1026,6 +1027,109 @@ summary:focus-visible {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 750;
+}
+/* Every duel dialog shares one roomier frame: the stock panel's clamp-4rem
+   headline plus chat, feed, reactions, and buttons stacked into a preview
+   pane left sections sitting on top of each other. A taller minimum with
+   flex gaps spreads the same content out, and the headline comes down to a
+   size the panel can afford. */
+.portals-overlay .panel.portals-duel {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: min(560px, calc(100svh - 40px));
+  padding: 26px 30px;
+}
+.portals-overlay .panel.portals-duel h2 {
+  font-size: clamp(1.7rem, 4.6vw, 2.6rem);
+  margin: 0.1em 0;
+}
+.portals-duel .portals-lede {
+  margin: 0;
+}
+.portals-duel .portals-buttons {
+  margin-top: auto;
+}
+.duel-over-stamp {
+  align-self: center;
+  padding: 6px 22px;
+  border: 5px solid var(--ink);
+  border-radius: 16px;
+  font-size: 2rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  transform: rotate(-3deg);
+  animation: duel-stamp-slam 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.4) 0.1s backwards;
+}
+.duel-over-stamp.is-win {
+  background: #ffd94d;
+  color: var(--ink);
+  box-shadow: 0 7px 0 var(--ink);
+}
+.duel-over-stamp.is-loss {
+  background: #b3123c;
+  color: white;
+  box-shadow: 0 7px 0 var(--ink);
+}
+@keyframes duel-stamp-slam {
+  0% { opacity: 0; transform: scale(2.1) rotate(-14deg); }
+  60% { opacity: 1; transform: scale(0.94) rotate(1deg); }
+  100% { opacity: 1; transform: rotate(-3deg); }
+}
+.duel-rounds {
+  display: grid;
+  gap: 4px;
+  border: 2px dashed var(--ink);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 750;
+  color: var(--muted);
+}
+.duel-rounds p {
+  margin: 0;
+}
+.duel-rounds .is-you {
+  color: var(--ink);
+}
+.duel-spectate-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 4px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.duel-trap-incoming {
+  color: #b3123c;
+  animation: duel-trap-pulse 0.8s ease-in-out infinite;
+}
+@keyframes duel-trap-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.duel-minting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.duel-minting-spinner {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--ink);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: duel-minting-spin 0.8s linear infinite;
+}
+@keyframes duel-minting-spin {
+  to { transform: rotate(360deg); }
+}
+:root[data-reduced-motion="true"] .duel-over-stamp,
+:root[data-reduced-motion="true"] .duel-trap-incoming,
+:root[data-reduced-motion="true"] .duel-minting-spinner {
+  animation: none !important;
 }
 .duel-map-pick {
   display: grid;

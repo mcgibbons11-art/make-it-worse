@@ -130,6 +130,8 @@ export interface DuelApi {
   feed: DuelFeedEntry[];
   /** Latest streamed opponent position, for the live spectator ghost. */
   spectateSampleRef: { current: DecodedGhostSample | null };
+  /** Whole seconds since the spectated run started, or null between runs. */
+  spectateSeconds: number | null;
   /** The course the current turn runs, decoded once per version. */
   course: DuelCourse | null;
   /** This player's published maps, offered as duel courses. */
@@ -220,6 +222,8 @@ export function useDuel(input: {
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   /** Last proof of life off the wire: join, any message, or initial peers. */
   const peerSignalAt = useRef(0);
+  /** When the opponent's current run began, for the spectator clock. */
+  const [spectateStartedAt, setSpectateStartedAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [mapChoices, setMapChoices] = useState<PublishedMapRecord[]>([]);
   const [courseChoice, setCourseChoice] = useState<string | null>(null);
@@ -370,6 +374,11 @@ export function useDuel(input: {
               };
               break;
             case "evt": {
+              // The spectator clock keys off the runner's own announcements;
+              // network skew of a message hop is invisible at whole seconds.
+              if (message.type === "start") setSpectateStartedAt(Date.now());
+              if (message.type === "death" || message.type === "clear")
+                setSpectateStartedAt(null);
               const current = matchRef.current;
               const runnerName =
                 current && seatOf(current, token)
@@ -611,6 +620,10 @@ export function useDuel(input: {
   const claimSecondsLeft = pendingClaim
     ? Math.max(0, Math.ceil((pendingClaim.expiresAt - nowTick) / 1000))
     : 0;
+  const spectateSeconds =
+    spectateStartedAt !== null
+      ? Math.max(0, Math.floor((nowTick - spectateStartedAt) / 1000))
+      : null;
   const abandonSecondsLeft =
     peerLostAt !== null &&
     stage.kind === "match" &&
@@ -637,6 +650,7 @@ export function useDuel(input: {
     setFeed([]);
     setPeerConnected(false);
     setPeerLostAt(null);
+    setSpectateStartedAt(null);
   }, [dropChannel, dropLobby]);
 
   // Arm the chooser's selection right before a match record is created, and
@@ -672,6 +686,7 @@ export function useDuel(input: {
     chat,
     feed,
     spectateSampleRef,
+    spectateSeconds,
     course,
     mapChoices,
     courseChoice,

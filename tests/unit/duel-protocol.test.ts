@@ -246,6 +246,23 @@ describe("wire hygiene", () => {
     });
   });
 
+  it("keeps a round-by-round history for the end-of-match summary", () => {
+    let match = beginRun(fullMatch(), NOW);
+    for (let burn = 0; burn < HEARTS_PER_TURN; burn += 1)
+      match = failAttempt(match, NOW).match;
+    expect(match.history).toEqual([{ winner: "b", turns: 1, reason: "hearts" }]);
+    // Round 2 dies on the clock instead: the waiting player claims it.
+    const late = NOW + HANDOFF_DEADLINE_MS + FORFEIT_GRACE_MS + 1;
+    const claimed = claimForfeit(match, "b", late)!;
+    expect(claimed.kind).toBe("match-over");
+    expect(claimed.match.history).toHaveLength(2);
+    expect(claimed.match.history[1]).toMatchObject({ winner: "b", reason: "forfeit" });
+    // Records written before the summary existed read as an empty history.
+    const legacy = JSON.parse(JSON.stringify(fullMatch())) as Record<string, unknown>;
+    delete legacy.history;
+    expect(parseDuelMatch(legacy)).toMatchObject({ history: [] });
+  });
+
   it("reads records and posts written before custom courses existed", () => {
     const legacyMatch = JSON.parse(JSON.stringify(fullMatch())) as Record<string, unknown>;
     delete legacyMatch.courseTitle;

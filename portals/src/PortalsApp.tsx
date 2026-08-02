@@ -1261,6 +1261,7 @@ export function PortalsApp() {
       <DuelHud
         duel={duel}
         phase={phase}
+        playerName={guest?.displayName ?? "Runner"}
         onStartRun={() => void startDuelTurn()}
         onRetry={() => {
           void start().then(() => duelRef.current.noteRunStarted());

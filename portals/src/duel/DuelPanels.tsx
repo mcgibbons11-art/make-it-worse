@@ -3,7 +3,8 @@
 // in useDuel and the protocol; these components only render the record and
 // forward clicks.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AudioManager } from "@/lib/audio/AudioManager";
 import type { GamePhase } from "@/lib/game/types";
 import { Overlay } from "../menu/ShellPanels";
 import { REACTION_EMOJI } from "./duel-protocol";
@@ -353,6 +354,7 @@ export function DuelMatchmakingPanel({
 export function DuelHud({
   duel,
   phase,
+  playerName,
   onStartRun,
   onRetry,
   onMakeWorse,
@@ -362,6 +364,8 @@ export function DuelHud({
 }: {
   duel: DuelApi;
   phase: GamePhase;
+  /** This player's display name, for spotting their own traps on the course. */
+  playerName: string;
   onStartRun(): void;
   onRetry(): void;
   onMakeWorse(): void;
@@ -370,6 +374,55 @@ export function DuelHud({
   onLeave(): void;
 }) {
   const match = duel.match;
+  // Hooks live above the early return, as they must.
+  //
+  // The match's ending gets its sting exactly once: the guard key survives
+  // repeated records carrying the same result and resets when the result
+  // clears for a rematch.
+  const stungFor = useRef<string | null>(null);
+  useEffect(() => {
+    const result = duel.match?.result ?? null;
+    if (!result) {
+      stungFor.current = null;
+      return;
+    }
+    const key = `${result.winner}:${result.reason}`;
+    if (stungFor.current === key || !duel.mySeat) return;
+    stungFor.current = key;
+    if (result.winner === duel.mySeat) AudioManager.finish();
+    else AudioManager.fail();
+  }, [duel.match?.result, duel.mySeat]);
+  // While spectating, watch the streamed position against the traps this
+  // player owns: the payoff of placing one is seeing your opponent walk into
+  // it, and the flash says "look now".
+  const spectatingRun =
+    match !== null &&
+    duel.mySeat !== null &&
+    !match.result &&
+    match.turn.runner !== duel.mySeat &&
+    match.turn.phase === "running";
+  // State only ever changes from the interval callback; the render below
+  // additionally gates on spectatingRun, so a stale value between runs is
+  // never shown.
+  const [trapNear, setTrapNear] = useState(false);
+  useEffect(() => {
+    if (!spectatingRun) return;
+    const mine =
+      duel.course?.challenge.traps.filter((trap) => trap.ownerName === playerName) ?? [];
+    if (mine.length === 0) return;
+    const timer = globalThis.setInterval(() => {
+      const sample = duel.spectateSampleRef.current;
+      setTrapNear(
+        sample !== null &&
+          mine.some(
+            (trap) =>
+              Math.hypot(trap.position[0] - sample.x, trap.position[2] - sample.z) < 7 &&
+              Math.abs(trap.position[1] - sample.y) < 5,
+          ),
+      );
+    }, 250);
+    return () => globalThis.clearInterval(timer);
+  }, [duel.course, duel.spectateSampleRef, playerName, spectatingRun]);
   if (!match || !duel.mySeat) return null;
   const mySeat = duel.mySeat;
   const turn = match.turn;
@@ -399,14 +452,33 @@ export function DuelHud({
   if (match.result) {
     const won = match.result.winner === mySeat;
     return (
-      <Overlay labelledBy="duel-over-title">
-        <div className="eyebrow">DUEL OVER</div>
+      <Overlay
+        labelledBy="duel-over-title"
+        panelClassName={`portals-duel duel-over ${won ? "is-victory" : "is-defeat"}`}
+      >
+        <div className={`impact-stamp duel-over-stamp ${won ? "is-win" : "is-loss"}`}>
+          {won ? "VICTORY" : "DEFEAT"}
+        </div>
         <h2 id="duel-over-title">{won ? "You took the match." : `${duel.opponentName} took the match.`}</h2>
         <p className="portals-lede">
           Final score {myScore}–{theirScore}
           {match.result.reason === "forfeit" ? " · decided on the clock" : ""}
           {match.result.reason === "left" ? " · your opponent left" : ""}
         </p>
+        {match.history.length > 0 && (
+          <div className="duel-rounds" aria-label="Round by round">
+            {match.history.map((round, index) => (
+              <p key={index} className={round.winner === mySeat ? "is-you" : undefined}>
+                <strong>Round {index + 1}</strong>
+                {" · "}
+                {round.winner === mySeat ? "you" : duel.opponentName} took it{" "}
+                {round.reason === "forfeit"
+                  ? "on the clock"
+                  : `after ${round.turns} ${round.turns === 1 ? "turn" : "turns"}`}
+              </p>
+            ))}
+          </div>
+        )}
         <DuelFeed duel={duel} />
         <DuelChat duel={duel} />
         <div className="portals-buttons">
@@ -426,7 +498,7 @@ export function DuelHud({
       return (
         <>
           {strip}
-          <Overlay labelledBy="duel-turn-title">
+          <Overlay labelledBy="duel-turn-title" panelClassName="portals-duel">
             <div className="eyebrow">ROUND {match.round} · TURN {turn.number}</div>
             <h2 id="duel-turn-title">Your run.</h2>
             <p className="portals-lede">
@@ -434,7 +506,10 @@ export function DuelHud({
               three and the round goes to {duel.opponentName}.
             </p>
             {!duel.course && (
-              <p className="portals-notice" role="status">Minting a fresh course…</p>
+              <p className="portals-notice duel-minting" role="status">
+                <span className="duel-minting-spinner" aria-hidden="true" />
+                Minting a fresh course…
+              </p>
             )}
             <button
               className="button danger huge"
@@ -484,7 +559,7 @@ export function DuelHud({
       return (
         <>
           {strip}
-          <Overlay labelledBy="duel-worsen-title">
+          <Overlay labelledBy="duel-worsen-title" panelClassName="portals-duel">
             <div className="eyebrow">CLEARED IT</div>
             <h2 id="duel-worsen-title">Now make it worse.</h2>
             <p className="portals-lede">
@@ -510,7 +585,7 @@ export function DuelHud({
       return (
         <>
           {strip}
-          <Overlay labelledBy="duel-resume-title">
+          <Overlay labelledBy="duel-resume-title" panelClassName="portals-duel">
             <div className="eyebrow">ROUND {match.round} · TURN {turn.number}</div>
             <h2 id="duel-resume-title">Your run is waiting.</h2>
             <p className="portals-lede">
@@ -549,11 +624,19 @@ export function DuelHud({
             👁 {duel.opponentName} is running
             <Hearts count={turn.heartsLeft} max={match.rules.hearts} />
           </p>
+          <p className="duel-spectate-meta">
+            {duel.spectateSeconds !== null && (
+              <span>⏱ {clockLabel(duel.spectateSeconds)}</span>
+            )}
+            {spectatingRun && trapNear && (
+              <span className="duel-trap-incoming">🪤 heading for your trap…</span>
+            )}
+          </p>
           <DuelFeed duel={duel} />
           <DuelChat duel={duel} />
         </aside>
       ) : (
-        <Overlay labelledBy="duel-wait-title">
+        <Overlay labelledBy="duel-wait-title" panelClassName="portals-duel">
           <div className="eyebrow">ROUND {match.round} · TURN {turn.number}</div>
           <h2 id="duel-wait-title">{waitingCopy}</h2>
           <p className="portals-lede">

@@ -149,9 +149,17 @@ export function GameHud({
           the pause card remounts the HUD too, hence the clock check: the sting
           belongs to a fresh run, not to picking up a run already underway. */}
       {elapsedMs < 1200 && (
-        <div className="run-start-sting" aria-hidden="true">
-          <b>GO</b>
-        </div>
+        <>
+          {/* The camera spends the first beats settling behind the runner, so
+              the very first frames are sky and a course popping in. A veil
+              that fades out over that settle makes the load read as a reveal
+              instead of a glitch. Same mount-per-attempt lifetime as the
+              sting above. */}
+          <div className="run-start-veil" aria-hidden="true" />
+          <div className="run-start-sting" aria-hidden="true">
+            <b>GO</b>
+          </div>
+        </>
       )}
       {/* Without a label these announce as a bare "00:12.34" and "DISASTER 3".
           The timer is deliberately not in a live region: it updates 20x a

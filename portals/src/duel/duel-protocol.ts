@@ -106,6 +106,14 @@ export interface DuelResult {
   reason: "rounds" | "forfeit" | "left";
 }
 
+/** One decided round, for the end-of-match summary. */
+export interface DuelRoundSummary {
+  winner: DuelSeat;
+  /** Turns the round lasted before it was decided. */
+  turns: number;
+  reason: "hearts" | "forfeit";
+}
+
 export interface DuelMatch {
   v: typeof DUEL_PROTOCOL;
   /** Monotonic write counter; readers ignore anything not newer. */
@@ -129,6 +137,8 @@ export interface DuelMatch {
    */
   courseTitle: string | null;
   courseBaseVersion: string | null;
+  /** Every decided round so far, oldest first. */
+  history: DuelRoundSummary[];
   result: DuelResult | null;
 }
 
@@ -254,12 +264,25 @@ export function parseDuelMatch(value: unknown): DuelMatch | null {
   const courseBaseVersion = match.courseBaseVersion ?? null;
   if (courseTitle !== null && !shortText(courseTitle, 80)) return null;
   if (courseBaseVersion !== null && !shortText(courseBaseVersion, 80)) return null;
+  const history = match.history ?? [];
+  if (
+    !Array.isArray(history) ||
+    history.length > 16 ||
+    !history.every(
+      (round: unknown) =>
+        !!round &&
+        typeof round === "object" &&
+        ((round as DuelRoundSummary).winner === "a" || (round as DuelRoundSummary).winner === "b") &&
+        finiteNumber((round as DuelRoundSummary).turns) &&
+        ["hearts", "forfeit"].includes((round as DuelRoundSummary).reason),
+    )
+  ) return null;
   const result = match.result as DuelResult | null | undefined;
   if (result !== null && result !== undefined) {
     if ((result.winner !== "a" && result.winner !== "b") ||
       !["rounds", "forfeit", "left"].includes(result.reason)) return null;
   }
-  return { ...(match as DuelMatch), courseTitle, courseBaseVersion };
+  return { ...(match as DuelMatch), courseTitle, courseBaseVersion, history };
 }
 
 export function seatOf(match: DuelMatch, token: string): DuelSeat | null {
@@ -300,6 +323,7 @@ export function createMatch(
     courseVersion: null,
     courseTitle: base?.title.slice(0, 80) ?? null,
     courseBaseVersion: base?.version ?? null,
+    history: [],
     result: null,
   };
 }
@@ -358,7 +382,7 @@ export function failAttempt(match: DuelMatch, now: number): FailOutcome {
       },
     };
   }
-  return roundWonBy(match, otherSeat(match.turn.runner), now);
+  return roundWonBy(match, otherSeat(match.turn.runner), now, "hearts");
 }
 
 /** Runner cleared the course and now owns the worsening phase. */
@@ -387,8 +411,17 @@ export function handOff(match: DuelMatch, code: string, version: string, now: nu
   };
 }
 
-function roundWonBy(match: DuelMatch, winner: DuelSeat, now: number): FailOutcome {
+function roundWonBy(
+  match: DuelMatch,
+  winner: DuelSeat,
+  now: number,
+  how: DuelRoundSummary["reason"],
+): FailOutcome {
   const score = { ...match.score, [winner]: match.score[winner] + 1 };
+  const history = [
+    ...match.history,
+    { winner, turns: match.turn.number, reason: how },
+  ];
   if (score[winner] >= match.rules.roundsToWin) {
     return {
       kind: "match-over",
@@ -396,6 +429,7 @@ function roundWonBy(match: DuelMatch, winner: DuelSeat, now: number): FailOutcom
         ...match,
         seq: match.seq + 1,
         score,
+        history,
         result: { winner, reason: "rounds" },
       },
     };
@@ -409,6 +443,7 @@ function roundWonBy(match: DuelMatch, winner: DuelSeat, now: number): FailOutcom
       ...match,
       seq: match.seq + 1,
       score,
+      history,
       round: match.round + 1,
       courseCode: null,
       courseVersion: null,
@@ -437,7 +472,7 @@ export function mayClaimForfeit(match: DuelMatch, claimant: DuelSeat, now: numbe
 
 export function claimForfeit(match: DuelMatch, claimant: DuelSeat, now: number): FailOutcome | null {
   if (!mayClaimForfeit(match, claimant, now)) return null;
-  return roundWonBy(match, claimant, now);
+  return roundWonBy(match, claimant, now, "forfeit");
 }
 
 /** A player leaving mid-match concedes it. */

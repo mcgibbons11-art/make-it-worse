@@ -59,6 +59,8 @@ const ACTIVE_DUEL_STORAGE_KEY = "miw:duel-active-code";
 const POS_SEND_DIVISOR = 2;
 const CHAT_LIMIT = 60;
 const FEED_LIMIT = 24;
+/** How long a lobby claim waits for the poster before it lapses, both sides. */
+const CLAIM_TIMEOUT_MS = 5 * 60_000;
 
 export type DuelStage =
   | { kind: "closed" }
@@ -92,6 +94,13 @@ export interface DuelCourse {
   version: string;
 }
 
+/** An outgoing lobby claim, visible until answered, cancelled, or lapsed. */
+export interface DuelPendingClaim {
+  connId: string;
+  posterName: string;
+  expiresAt: number;
+}
+
 export interface DuelApi {
   stage: DuelStage;
   /** True while this hook owns the single Portals.net connection. */
@@ -104,6 +113,12 @@ export interface DuelApi {
   peerConnected: boolean;
   posts: DuelLobbyPostView[];
   claimFrom: string | null;
+  /** The claim this player sent and is still waiting on. */
+  pendingClaim: DuelPendingClaim | null;
+  /** Whole seconds until the pending claim lapses, clamped at zero. */
+  claimSecondsLeft: number;
+  /** One-line lobby status, e.g. that a request expired unanswered. */
+  lobbyNotice: string | null;
   chat: DuelChatEntry[];
   feed: DuelFeedEntry[];
   /** Latest streamed opponent position, for the live spectator ghost. */
@@ -125,6 +140,7 @@ export interface DuelApi {
   postToLobby(note: string): void;
   unpost(): void;
   claimPost(connId: string): void;
+  cancelClaim(): void;
   acceptClaim(): void;
   denyClaim(): void;
   sendChat(text: string): void;
@@ -178,6 +194,11 @@ export function useDuel(input: {
   const [match, setMatch] = useState<DuelMatch | null>(null);
   const [posts, setPosts] = useState<DuelLobbyPostView[]>([]);
   const [claimFrom, setClaimFrom] = useState<string | null>(null);
+  const [pendingClaim, setPendingClaim] = useState<DuelPendingClaim | null>(null);
+  const [lobbyNotice, setLobbyNotice] = useState<string | null>(null);
+  const pendingClaimRef = useRef<DuelPendingClaim | null>(null);
+  const claimLapseTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const hostClaimLapseTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
@@ -247,13 +268,27 @@ export function useDuel(input: {
     }
   }, []);
 
+  const clearPendingClaim = useCallback(() => {
+    if (claimLapseTimer.current !== null) globalThis.clearTimeout(claimLapseTimer.current);
+    claimLapseTimer.current = null;
+    pendingClaimRef.current = null;
+    setPendingClaim(null);
+  }, []);
+  const clearHostClaim = useCallback(() => {
+    if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
+    hostClaimLapseTimer.current = null;
+    setClaimFrom(null);
+  }, []);
+
   const dropLobby = useCallback(async () => {
     const connection = lobby.current;
     lobby.current = null;
     setPosts([]);
-    setClaimFrom(null);
+    setLobbyNotice(null);
+    clearPendingClaim();
+    clearHostClaim();
     if (connection) await connection.close().catch(() => undefined);
-  }, []);
+  }, [clearHostClaim, clearPendingClaim]);
   const dropChannel = useCallback(async () => {
     const connection = channel.current;
     channel.current = null;
@@ -437,17 +472,21 @@ export function useDuel(input: {
     return () => globalThis.clearTimeout(timer);
   }, [avatar, avatarSeed, match, myTurn, playerName, publish, pushFeed]);
 
-  // One 1s tick drives the deadline countdown and the forfeit gate.
+  // One 1s tick drives the turn-deadline countdown, the forfeit gate, and
+  // the lobby claim countdown.
   useEffect(() => {
-    if (stage.kind !== "match") return;
+    if (stage.kind !== "match" && !pendingClaim) return;
     const timer = globalThis.setInterval(() => setNowTick(Date.now()), 1_000);
     return () => globalThis.clearInterval(timer);
-  }, [stage.kind]);
+  }, [pendingClaim, stage.kind]);
 
   const forfeitClaimable =
     match !== null && mySeat !== null && mayClaimForfeit(match, mySeat, nowTick);
   const deadlineSeconds = match
     ? Math.max(0, Math.ceil((match.turn.deadlineAt + FORFEIT_GRACE_MS - nowTick) / 1000))
+    : 0;
+  const claimSecondsLeft = pendingClaim
+    ? Math.max(0, Math.ceil((pendingClaim.expiresAt - nowTick) / 1000))
     : 0;
 
   const sendWire = useCallback((message: DuelWireMessage) => {
@@ -477,6 +516,9 @@ export function useDuel(input: {
     peerConnected,
     posts,
     claimFrom,
+    pendingClaim,
+    claimSecondsLeft,
+    lobbyNotice,
     chat,
     feed,
     spectateSampleRef,
@@ -513,13 +555,30 @@ export function useDuel(input: {
             const now = Date.now();
             setPosts(list.map((post) => ({ ...post, dim: lobbyFreshness(post, now) === "dim" })));
           },
-          onClaim: (fromConnId) => setClaimFrom(fromConnId),
-          onAccept: (code) => void enterChannel(code, "join"),
-          onDeny: (deny) =>
+          onClaim: (fromConnId) => {
+            // The host gets the same window the claimant watches: an ignored
+            // request card clears itself rather than going stale forever.
+            if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
+            setClaimFrom(fromConnId);
+            hostClaimLapseTimer.current = globalThis.setTimeout(() => {
+              hostClaimLapseTimer.current = null;
+              setClaimFrom(null);
+            }, CLAIM_TIMEOUT_MS);
+          },
+          onAccept: (code) => {
+            // Only honour an accept for a request that still stands - a
+            // cancelled or lapsed claim must not yank the player into a match.
+            if (!pendingClaimRef.current) return;
+            clearPendingClaim();
+            void enterChannel(code, "join");
+          },
+          onDeny: (deny) => {
+            clearPendingClaim();
             setStage({
               kind: "error",
               message: deny === "taken" ? "Someone else got there first." : "That post just closed.",
-            }),
+            });
+          },
           onStatus: () => undefined,
         });
         if (result.status !== "ok") {
@@ -553,7 +612,29 @@ export function useDuel(input: {
       setStage({ kind: "lobby", posted: false });
     },
     claimPost: (connId) => {
-      lobby.current?.claim(connId);
+      const connection = lobby.current;
+      if (!connection) return;
+      connection.claim(connId);
+      clearPendingClaim();
+      setLobbyNotice(null);
+      const claim: DuelPendingClaim = {
+        connId,
+        posterName: posts.find((post) => post.connId === connId)?.name ?? "the poster",
+        expiresAt: Date.now() + CLAIM_TIMEOUT_MS,
+      };
+      pendingClaimRef.current = claim;
+      setPendingClaim(claim);
+      setNowTick(Date.now());
+      claimLapseTimer.current = globalThis.setTimeout(() => {
+        claimLapseTimer.current = null;
+        pendingClaimRef.current = null;
+        setPendingClaim(null);
+        setLobbyNotice("No answer after five minutes. The request expired.");
+      }, CLAIM_TIMEOUT_MS);
+    },
+    cancelClaim: () => {
+      clearPendingClaim();
+      setLobbyNotice(null);
     },
     acceptClaim: () => {
       const target = claimFrom;
@@ -562,12 +643,12 @@ export function useDuel(input: {
       const code = mintDuelCode();
       connection.unpost();
       connection.accept(target, code);
-      setClaimFrom(null);
+      clearHostClaim();
       void enterChannel(code, "host");
     },
     denyClaim: () => {
       if (claimFrom) lobby.current?.deny(claimFrom, "taken");
-      setClaimFrom(null);
+      clearHostClaim();
     },
     sendChat: (text) => {
       const trimmed = text.trim().slice(0, 300);

@@ -13,6 +13,12 @@ function inviteLabel(code: string): string {
   return `MIW-${code}`;
 }
 
+function clockLabel(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 function Hearts({ count, max }: { count: number; max: number }) {
   return (
     <span className="duel-hearts" aria-label={`${count} of ${max} hearts left`}>
@@ -188,6 +194,23 @@ export function DuelMatchmakingPanel({
               </div>
             </div>
           )}
+          {duel.pendingClaim && (
+            <div className="duel-claim-card" role="status">
+              <p>
+                ⏳ Request sent to <strong>{duel.pendingClaim.posterName}</strong>.
+              </p>
+              <p className="duel-claim-countdown">
+                They have <strong>{clockLabel(duel.claimSecondsLeft)}</strong> to
+                answer before the request expires.
+              </p>
+              <button className="button secondary" onClick={duel.cancelClaim}>
+                Cancel the request
+              </button>
+            </div>
+          )}
+          {duel.lobbyNotice && (
+            <p className="portals-notice" role="status">{duel.lobbyNotice}</p>
+          )}
           {stage.posted ? (
             <div className="duel-claim-card">
               <p>Your challenge is posted. Anyone here can claim it.</p>
@@ -226,6 +249,8 @@ export function DuelMatchmakingPanel({
               <button
                 key={post.connId}
                 className={`duel-post${post.dim ? " is-dim" : ""}`}
+                // One request at a time: the pending card above owns the wait.
+                disabled={duel.pendingClaim !== null}
                 onClick={() => duel.claimPost(post.connId)}
               >
                 <strong>{post.name}</strong>

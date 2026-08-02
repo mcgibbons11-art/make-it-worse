@@ -13,6 +13,14 @@ import { PlayerVisual, type PlayerMotionState } from "./PlayerVisual";
 const LOOK_SENSITIVITY = 0.006;
 const SPECTATE_DISTANCE = 5.2;
 const SPECTATE_HEIGHT = 3.1;
+/** Bounds on the observed inter-sample gap, absorbing network jitter. */
+const MIN_SAMPLE_GAP_MS = 50;
+const MAX_SAMPLE_GAP_MS = 400;
+
+interface TimedSample {
+  sample: DecodedGhostSample;
+  at: number;
+}
 
 export interface LiveGhostFeed {
   /** Latest network sample; the transport overwrites it, this component reads it. */
@@ -77,7 +85,8 @@ export function LiveGhostRunner({ sampleRef, avatarSeed, avatar, name, followCam
     yaw: 0,
     stunned: false,
   });
-  const settled = useRef(false);
+  const older = useRef<TimedSample | null>(null);
+  const newest = useRef<TimedSample | null>(null);
   const cameraGoal = useRef(new Vector3());
   const lookGoal = useRef(new Vector3());
   useFrame(({ camera }, delta) => {
@@ -88,29 +97,64 @@ export function LiveGhostRunner({ sampleRef, avatarSeed, avatar, name, followCam
     if (label.current) label.current.style.display = sample === null ? "none" : "";
     if (!sample) return;
     const dt = Math.min(Math.max(delta, 1 / 240), 0.25);
-    if (!settled.current) {
-      // First sample: snap, so the runner does not glide in from the origin.
-      target.position.set(sample.x, sample.y, sample.z);
-      settled.current = true;
+    const now = performance.now();
+    if (newest.current?.sample !== sample) {
+      older.current = newest.current;
+      newest.current = { sample, at: now };
     }
-    const previous = target.position.clone();
-    // Samples arrive at roughly 7-8Hz; a fixed exponential ease toward the
-    // newest one reads as continuous motion at 60fps without extrapolating
-    // into positions the runner never reported.
-    const ease = 1 - Math.exp(-dt * 10);
-    target.position.x += (sample.x - target.position.x) * ease;
-    target.position.y += (sample.y - target.position.y) * ease;
-    target.position.z += (sample.z - target.position.z) * ease;
-    target.rotation.y = sample.yaw;
-    motion.current = {
-      speed: Math.hypot(target.position.x - previous.x, target.position.z - previous.z) / dt,
-      verticalVelocity: (target.position.y - previous.y) / dt,
-      grounded: (sample.flags & 1) === 1,
-      // Zero for the same reason GhostRunner's is: the group already carries
-      // sample.yaw, and PlayerVisual eases its own child toward motion.yaw.
-      yaw: 0,
-      stunned: false,
-    };
+    const head = newest.current!;
+    const tail = older.current;
+    // Interpolate between the last two REAL samples on their actual timing,
+    // the same idea the replay ghost uses. The first version eased toward the
+    // newest sample instead, and at ~7.5 samples a second the model glided
+    // between reports with almost no leg animation - the runner looked like
+    // it was ice-skating around the course, then slid on after stopping.
+    // Rendering one interval behind trades ~130ms of latency for motion that
+    // only ever visits positions the runner actually reported, and a
+    // sample-to-sample speed that drives an honest gait.
+    if (!tail) {
+      target.position.set(head.sample.x, head.sample.y, head.sample.z);
+      target.rotation.y = head.sample.yaw;
+      motion.current = {
+        speed: 0,
+        verticalVelocity: 0,
+        grounded: (head.sample.flags & 1) === 1,
+        yaw: 0,
+        stunned: false,
+      };
+    } else {
+      const gapMs = Math.min(
+        MAX_SAMPLE_GAP_MS,
+        Math.max(MIN_SAMPLE_GAP_MS, head.at - tail.at),
+      );
+      const t = Math.min(1, (now - head.at) / gapMs);
+      const a = tail.sample;
+      const b = head.sample;
+      target.position.set(
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        a.z + (b.z - a.z) * t,
+      );
+      // Shortest-arc yaw blend so a turn through the wrap does not spin the
+      // model the long way round.
+      const turn = Math.atan2(Math.sin(b.yaw - a.yaw), Math.cos(b.yaw - a.yaw));
+      target.rotation.y = a.yaw + turn * t;
+      const gapSeconds = gapMs / 1000;
+      motion.current = {
+        // True reported velocity, held steady across the whole interval, so
+        // the legs run at the speed the runner actually moved. Zero once the
+        // interval is spent and no fresh sample arrived: a stopped runner
+        // stands still instead of jogging in place.
+        speed: t < 1 ? Math.hypot(b.x - a.x, b.z - a.z) / gapSeconds : 0,
+        verticalVelocity: t < 1 ? (b.y - a.y) / gapSeconds : 0,
+        grounded: (b.flags & 1) === 1,
+        // Zero for the same reason GhostRunner's is: the group already
+        // carries the yaw, and PlayerVisual eases its own child toward
+        // motion.yaw, so feeding it again would spin the model twice.
+        yaw: 0,
+        stunned: false,
+      };
+    }
     if (followCamera) {
       // The chase framing CameraRig would give the runner, orbited by the
       // shared look yaw so a held left-drag swings the view a full 360

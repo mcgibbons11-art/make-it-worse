@@ -102,12 +102,22 @@ function surfaceUnder(
   x: number,
   z: number,
   margin: number,
+  // Ignore tops above this height. Without the bound, standing on a deck
+  // BENEATH a taller overlapping piece (a bridge, a stacked platform, a
+  // crate overhang - generated courses are full of them) reported the roof
+  // overhead as "the surface", the grounded window failed against it, and
+  // the runner was stuck airborne on the ground: air-control steering that
+  // read as uncontrollable sliding, and no jump. The default keeps the old
+  // behaviour for callers like the step assist that bound the rise
+  // themselves.
+  maxTop = Infinity,
 ): number | null {
   let highest: number | null = null;
   for (const piece of pieces) {
     if (Math.abs(x - piece.center[0]) > piece.size[0] / 2 + margin) continue;
     if (Math.abs(z - piece.center[2]) > piece.size[2] / 2 + margin) continue;
     const top = piece.center[1] + piece.size[1] / 2;
+    if (top > maxTop) continue;
     if (highest === null || top > highest) highest = top;
   }
   return highest;
@@ -317,7 +327,17 @@ export const PlayerController = forwardRef<
     const now = performance.now();
     const position = rigidBody.translation();
     const velocity = rigidBody.linvel();
-    const surface = surfaceUnder(pieces, position.x, position.z, GROUND_MARGIN);
+    // The ceiling is the grounded window's own upper bound (surface tops
+    // above it could never satisfy the check below), so this changes no
+    // accepted grounded state - it only stops an overhead piece from
+    // masking the real support underfoot.
+    const surface = surfaceUnder(
+      pieces,
+      position.x,
+      position.z,
+      GROUND_MARGIN,
+      position.y - (PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius) + 0.18,
+    );
     const grounded =
       surface !== null &&
       position.y >=

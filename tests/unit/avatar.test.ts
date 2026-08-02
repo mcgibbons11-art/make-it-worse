@@ -5,6 +5,7 @@
 // the test has set up.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { inflateRawSync } from "node:zlib";
 import { createElement } from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -32,6 +33,7 @@ import {
   usableColors,
 } from "@/lib/game/avatar";
 import {
+  COMPRESSED_CODE_PREFIX,
   decodeChallengeAvatar,
   decodeChallengeLink,
   encodeChallengeLink,
@@ -411,31 +413,28 @@ describe("avatars in challenge links", () => {
     expect(decoded.stats.survivalRate).toBeCloseTo(0.25, 6);
   });
 
+  // Codes ship compressed now; unpack through the marker to reach the JSON.
+  const json = (payload: string) =>
+    inflateRawSync(
+      Buffer.from(payload.slice(COMPRESSED_CODE_PREFIX.length), "base64url"),
+    ).toString("utf8");
+
   it("still emits version 3 when nobody has chosen a runner", () => {
-    const version = (payload: string) =>
-      JSON.parse(
-        Buffer.from(
-          payload.replace(/-/g, "+").replace(/_/g, "/"),
-          "base64",
-        ).toString("utf8"),
-      )[0];
+    const version = (payload: string) => JSON.parse(json(payload))[0];
     expect(version(encodeChallengeLink(challenge()))).toBe(3);
     expect(version(encodeChallengeLink(challenge(), null))).toBe(3);
     expect(version(encodeChallengeLink(challenge(), mine))).toBe(4);
   });
 
   it("costs a handful of characters", () => {
-    const json = (payload: string) =>
-      Buffer.from(
-        payload.replace(/-/g, "+").replace(/_/g, "/"),
-        "base64",
-      ).toString("utf8");
     const without = encodeChallengeLink(challenge());
     const with_ = encodeChallengeLink(challenge(), mine);
     // Four one-digit integers, a bracket pair, three separators, and the comma
     // that joins them to the payload.
     expect(json(with_).length - json(without).length).toBe(10);
-    expect(with_.length - without.length).toBeLessThanOrEqual(14);
+    // Post-compression the exact shipped delta wobbles with the byte stream,
+    // but carrying a runner must stay cheap.
+    expect(with_.length - without.length).toBeLessThanOrEqual(20);
   });
 
   it("keeps decoding links that predate runners", () => {

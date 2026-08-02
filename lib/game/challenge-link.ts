@@ -11,6 +11,12 @@
 // rejected, so a hand-crafted URL cannot smuggle in an unplayable level.
 
 import { z } from "zod";
+import {
+  deflateSync,
+  inflateSync,
+  strFromU8,
+  strToU8,
+} from "three/examples/jsm/libs/fflate.module.js";
 import { sanitizeDisplayName } from "@/lib/auth/profanity";
 import {
   AVATAR_TUPLE_BOUNDS,
@@ -191,20 +197,63 @@ const payloadSchema = z.union([
 
 type Payload = z.infer<typeof payloadSchema>;
 
-function toBase64Url(text: string): string {
-  const bytes = new TextEncoder().encode(text);
+/**
+ * Marker for the compressed outer format: raw-deflated JSON, base64url'd.
+ * Every legacy code is bare base64url of a JSON array, and "[" encodes to a
+ * leading "W", so any prefix that cannot begin a legacy code makes the two
+ * formats unambiguous. Decode accepts both forever; encode emits only this.
+ */
+export const COMPRESSED_CODE_PREFIX = "MIWZ1.";
+/**
+ * Ceiling on what an inflated payload may expand to. The input is already
+ * capped at CHALLENGE_CODE_MAX_LENGTH; this stops a crafted code from
+ * ballooning far past what any real map produces before JSON.parse sees it.
+ */
+const MAX_INFLATED_BYTES = 4 * CHALLENGE_CODE_MAX_LENGTH;
+
+function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function fromBase64Url(payload: string): string {
+function base64UrlToBytes(payload: string): Uint8Array {
   const standard = payload.replace(/-/g, "+").replace(/_/g, "/");
   const padding = "=".repeat((4 - (standard.length % 4)) % 4);
   const binary = atob(standard + padding);
-  return new TextDecoder().decode(
-    Uint8Array.from(binary, (character) => character.charCodeAt(0)),
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+function fromBase64Url(payload: string): string {
+  return new TextDecoder().decode(base64UrlToBytes(payload));
+}
+
+/** JSON text to shipped code: deflate, then base64url behind the marker. */
+function packPayload(json: string): string {
+  const bytes = strToU8(json);
+  // The exact mirror of decode's inflate ceiling, enforced at the sender with
+  // the honest message (and before paying for the deflate). Without this, a
+  // map whose code compresses under the length cap but inflates past the
+  // ceiling would pass here and die in the recipient's decoder.
+  if (bytes.byteLength > MAX_INFLATED_BYTES)
+    throw new Error(
+      "CHALLENGE_LINK_UNENCODABLE: this room is too large for a challenge code",
+    );
+  return (
+    COMPRESSED_CODE_PREFIX +
+    bytesToBase64Url(deflateSync(bytes, { level: 9 }))
   );
+}
+
+/** Shipped code to JSON text, accepting both formats. Throws on garbage. */
+function unpackPayload(payload: string): string {
+  if (!payload.startsWith(COMPRESSED_CODE_PREFIX)) return fromBase64Url(payload);
+  const inflated = inflateSync(
+    base64UrlToBytes(payload.slice(COMPRESSED_CODE_PREFIX.length)),
+  );
+  if (inflated.byteLength > MAX_INFLATED_BYTES)
+    throw new Error("CHALLENGE_LINK_INVALID");
+  return strFromU8(inflated);
 }
 
 function allowedMask(types: readonly (typeof TRAP_TYPES)[number][]): string {
@@ -354,7 +403,7 @@ export function encodeChallengeLink(
       );
   }
   if (runtimeTrack) {
-    const encoded = toBase64Url(
+    const encoded = packPayload(
       JSON.stringify([
         5,
         ...body,
@@ -376,13 +425,13 @@ export function encodeChallengeLink(
     }
     return encoded;
   }
-  if (!avatar) return toBase64Url(JSON.stringify([3, ...body, ...tail]));
+  if (!avatar) return packPayload(JSON.stringify([3, ...body, ...tail]));
   // Emitting an unreadable runner would hand the recipient a figure they cannot
   // see against the floor, and they would have no idea why. Fail where the
   // sender is, the way an unplaceable trap already does.
   // Version 4 appends the sender's runner. Four integers, and the recipient
   // finally beats a person rather than an anonymous shape.
-  return toBase64Url(
+  return packPayload(
     JSON.stringify([4, ...body, ...tail, avatarToTuple(avatar)]),
   );
 }
@@ -392,7 +441,7 @@ function parsePayload(payload: string): Payload {
     throw new Error("CHALLENGE_LINK_INVALID");
   let parsed: unknown;
   try {
-    parsed = JSON.parse(fromBase64Url(payload));
+    parsed = JSON.parse(unpackPayload(payload));
   } catch {
     throw new Error("CHALLENGE_LINK_INVALID");
   }

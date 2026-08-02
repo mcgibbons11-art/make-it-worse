@@ -156,28 +156,37 @@ describe("authored map cross-player chain", () => {
     expect(() => decodeChallengeLink(code.slice(0, -1) + replacement)).toThrow("CHALLENGE_LINK_INVALID");
   });
 
-  it("keeps only a generous pasted-data byte guard, not a map-piece count cap", () => {
+  // Deflating the deliberately huge fixture dominates this test's runtime.
+  it("keeps only a generous pasted-data byte guard, not a map-piece count cap", { timeout: 20_000 }, () => {
     const items = generateRandomRoom(6666).filter((item) => !item.asset.startsWith("trap:"));
     const base = runtimeMap(items, 55, 6666, "Map Author");
-    const pieces = Array.from({ length: 30_000 }, (_, index) => ({
-      ...base.track.pieces[index % base.track.pieces.length]!,
-      id: `huge-${index}`,
-      center: [index * 2 + 0.123456789, index % 4 + 0.234567891, -index * 2 - 0.345678912] as const,
-      size: [4.123456789, 0.654321987, 3.234567891] as const,
-      color: `#${index.toString(16).padStart(6, "0")}`,
-    }));
-    const zones = Array.from({ length: 30_000 }, (_, index) => ({
-      id: `huge-zone-${index}`,
-      label: `Huge surface ${index}`,
-      minX: index + 0.123456789,
-      maxX: index + 3.987654321,
-      minZ: -index - 3.876543219,
-      maxZ: -index - 0.234567891,
-      groundY: index % 7 + 0.345678912,
-      maxOccupants: 32,
-      allowedTypes: base.track.zones[0]!.allowedTypes,
-    }));
-    const huge = { ...base.track, pieces, zones };
-    expect(() => encodeChallengeLink(base.challenge, null, huge)).toThrow(/too large/i);
+    const bigTrack = (count: number) => ({
+      ...base.track,
+      pieces: Array.from({ length: count }, (_, index) => ({
+        ...base.track.pieces[index % base.track.pieces.length]!,
+        id: `huge-${index}`,
+        center: [index * 2 + 0.123456789, index % 4 + 0.234567891, -index * 2 - 0.345678912] as const,
+        size: [4.123456789, 0.654321987, 3.234567891] as const,
+        color: `#${index.toString(16).padStart(6, "0")}`,
+      })),
+      zones: Array.from({ length: count }, (_, index) => ({
+        id: `huge-zone-${index}`,
+        label: `Huge surface ${index}`,
+        minX: index + 0.123456789,
+        maxX: index + 3.987654321,
+        minZ: -index - 3.876543219,
+        maxZ: -index - 0.234567891,
+        groundY: index % 7 + 0.345678912,
+        maxOccupants: 32,
+        allowedTypes: base.track.zones[0]!.allowedTypes,
+      })),
+    });
+    // A 10,000-piece room overflowed the old uncompressed format; compression
+    // carries it comfortably, and encode's own self-check decodes it, so this
+    // single call proves the round trip.
+    expect(() => encodeChallengeLink(base.challenge, null, bigTrack(10_000))).not.toThrow();
+    // The byte guard itself survives: a room past any sane authored size is
+    // still refused at the sender, however well its bytes compress.
+    expect(() => encodeChallengeLink(base.challenge, null, bigTrack(40_000))).toThrow(/too large/i);
   });
 });

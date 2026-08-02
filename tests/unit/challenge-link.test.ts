@@ -1,6 +1,8 @@
+import { inflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import {
   CHALLENGE_LINK_PARAM,
+  COMPRESSED_CODE_PREFIX,
   challengeLinkUrl,
   decodeChallengeLink,
   encodeChallengeLink,
@@ -228,8 +230,16 @@ describe("challenge links", () => {
     // record. What matters is that older links still decode, since any already
     // shared in a chat must keep working.
     const classicPayload = encodeChallengeLink(buildChallenge([]));
+    expect(classicPayload.startsWith(COMPRESSED_CODE_PREFIX)).toBe(true);
     expect(
-      JSON.parse(atob(classicPayload.replace(/-/g, "+").replace(/_/g, "/")))[0],
+      JSON.parse(
+        inflateRawSync(
+          Buffer.from(
+            classicPayload.slice(COMPRESSED_CODE_PREFIX.length),
+            "base64url",
+          ),
+        ).toString("utf8"),
+      )[0],
     ).toBe(3);
     const v1 = "WzEsIndvcnNlLWxpbmt0ZXN0Iiw5ODc2NTQsMCwxMixbIkNoZWVreSBLZXR0bGUiLCJUdXJibyBPdHRlciJdLFtbMiwxLDAsMCwwLDEsMTEsNTAwMF0sWzcsNiwwLDAsMCwwLDEyLDUwMDFdXV0";
     const decodedV1 = decodeChallengeLink(v1);
@@ -259,6 +269,31 @@ describe("challenge links", () => {
     // Derived, not carried, so a hand-edited link cannot claim a survival rate
     // its own counts contradict.
     expect(decoded.stats.survivalRate).toBeCloseTo(6 / 47, 6);
+  });
+
+  it("emits the compressed format and still decodes the legacy one", () => {
+    const challenge = buildChallenge([
+      { type: "floor_fan", zoneId: "runway_mid", owner: "Wobbly Badger" },
+    ]);
+    const compressed = encodeChallengeLink(challenge);
+    expect(compressed.startsWith(COMPRESSED_CODE_PREFIX)).toBe(true);
+    // Rebuild the exact legacy encoding of the same payload: inflate the
+    // shipped bytes back to JSON and base64url it the way old builds did. A
+    // code minted before compression must decode to the identical challenge.
+    const json = inflateRawSync(
+      Buffer.from(
+        compressed.slice(COMPRESSED_CODE_PREFIX.length),
+        "base64url",
+      ),
+    ).toString("utf8");
+    const legacy = Buffer.from(json, "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    expect(decodeChallengeLink(legacy)).toEqual(decodeChallengeLink(compressed));
+    // The point of the format: the same payload travels smaller.
+    expect(compressed.length).toBeLessThan(legacy.length);
   });
 
   it("refuses a link whose track could never be finished", () => {

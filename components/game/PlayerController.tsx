@@ -327,24 +327,35 @@ export const PlayerController = forwardRef<
     const now = performance.now();
     const position = rigidBody.translation();
     const velocity = rigidBody.linvel();
-    // The ceiling is the grounded window's own upper bound (surface tops
-    // above it could never satisfy the check below), so this changes no
-    // accepted grounded state - it only stops an overhead piece from
-    // masking the real support underfoot.
+    const soleDrop = PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius;
+    // A capsule perched on a deck lip rests its round bottom on the CORNER,
+    // so its centre sags below flat rest by up to the full radius - far past
+    // the 0.18 the window below tolerates. That marked a runner standing at
+    // any platform edge as airborne: air-control steering that read as
+    // uncontrollable sliding, and no jump, exactly where a player lines one
+    // up. The sag allowance is geometry, not tuning: the deepest sag a
+    // corner contact can produce, plus a whisker.
+    const perchSag = PLAYER.capsuleRadius + 0.04;
+    // The ceiling stops an overhead piece (a bridge, a stacked platform)
+    // from masking the real support underfoot; anything higher than the
+    // deepest acceptable perch could never be what the runner stands on.
     const surface = surfaceUnder(
       pieces,
       position.x,
       position.z,
       GROUND_MARGIN,
-      position.y - (PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius) + 0.18,
+      position.y - soleDrop + perchSag,
     );
     const grounded =
       surface !== null &&
-      position.y >=
-        surface + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius - 0.18 &&
-      position.y <=
-        surface + PLAYER.capsuleHalfHeight + PLAYER.capsuleRadius + 0.12 &&
-      velocity.y <= 0.8;
+      position.y <= surface + soleDrop + 0.12 &&
+      velocity.y <= 0.8 &&
+      // Flat rest keeps the original tight band. The perch branch accepts
+      // the deeper corner sag only while the capsule is actually RESTING:
+      // a genuine fall beside the deck blows through the 0.2 rest ceiling
+      // within a frame at this gravity, so it cannot fake groundedness.
+      (position.y >= surface + soleDrop - 0.18 ||
+        (Math.abs(velocity.y) <= 0.2 && position.y >= surface + soleDrop - perchSag));
     if (grounded) lastGrounded.current = now;
     const input = getInput();
     if (consumeJumpPress()) {

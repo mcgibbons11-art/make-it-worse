@@ -2,6 +2,19 @@
 
 Updated continuously from playtest feedback. New requests are added here before being closed.
 
+## Polish round — 2026-08-03
+
+- [x] Persist times through the Portals SDK per-player save (saveState/loadState), reconciling the local ledger with the host copy at sign-in and mirroring every later run. Root cause of the user-reported "times aren't being stored": the ledger lived only in localStorage and the SDK save was declared but never called.
+- [x] Fix the stale FELL OUT card resurfacing after wardrobe/apartment visits; the menu view stack now survives the full-screen tools.
+- [x] Unify menu/help icons on the licensed vector pack (monochrome ⚔️ and the Discord-logo help icon replaced), animate drifting clouds on the splash and menu, sun halo, wardrobe QA captions removed, Trending empty-state action, duel popup fit, apartment wall-art motif.
+- [x] Make trap hits genuinely punishing: uniform feel pass 1.18 → 1.45, 900ms stun ceiling, harder push/lift, stunned steering 20% → 15%, bigger impact burst. Roster-wide, so riskWeight pricing is unmoved.
+- [x] Compose longer, higher random courses: ten slots (mean 121u vs 95u), full difficulty by 60% of the course, roughly half of courses include a vertical room, all behind the playability gate.
+- [x] Free colour mixer in the wardrobe (any #rrggbb beside the roster, themed sliders + hex field); challenge links carry exact hex via payload versions 6/7, roster-only runners keep emitting old formats.
+- [x] Rest apartment furniture on the floor or on the solid piece under it; wall pieces alone keep fixed heights (user-reported floating toaster/lamp).
+- [x] Fix the six live-reported wearable defects (visor rebuild, cowboy-hat coverage, harness over thick tops, overalls bleed, poncho shoulder pierce, glasses temple arms) with retained capture evidence in `artifacts/wearable-defects-2026-08-03*`.
+- [ ] Regenerate the sky plane silhouette through the img2threejs pipeline (spec edit in `assets/reference/environment-ambience/author_ambience_spec.py`); the current model reads oddly at distance.
+- [ ] Design spice follow-up: let a worn shirt's collar peek from the hoodie and puffer necklines instead of vanishing entirely.
+
 ## Full polish pass — 2026-07-30
 
 - [x] Add a lightweight, broad sky setting to generated rooms: attractive layered clouds, a sun, distant birds, and an occasional passing plane. These elements are visual-only, non-interactable, restrained, and kept outside the playable course.

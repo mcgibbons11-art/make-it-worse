@@ -164,6 +164,11 @@ function host(): PortalsSdk | null {
   return typeof window === "undefined" ? null : (window.Portals ?? null);
 }
 
+/** The injected SDK, for callers that need more of it than this adapter wraps. */
+export function portalsHost(): PortalsSdk | null {
+  return host();
+}
+
 // Caching the handshake avoids a round trip per call, but a cached rejection
 // would make one transient failure permanent, so drop it and let the next
 // caller retry.

@@ -40,6 +40,12 @@ interface ProgressionState {
   recordRunEnd(run: Omit<RunRecord, "atMs">): RunSummary;
   /** Returns any traps the placement just earned, for the caller to announce. */
   recordTrapPlaced(type: TrapType): readonly TrapType[];
+  /**
+   * Replace the ledger with one reconciled against an outside copy, such as
+   * the Portals per-player save. The caller merges; this only adopts and
+   * writes through, so a sync can never bypass the local persistence rules.
+   */
+  adoptStats(stats: ProgressionStats): void;
   clearSummary(): void;
 }
 
@@ -79,6 +85,12 @@ export const useProgressionStore = create<ProgressionState>()((set, get) => {
       const result = applyTrapPlaced(ready(), type);
       commit(result.stats);
       return result.unlocked;
+    },
+    adoptStats: (stats) => {
+      // Hydrate first: adopting over the unread defaults would erase the very
+      // history the caller just merged against.
+      ready();
+      commit(stats);
     },
     clearSummary: () => set({ lastSummary: null }),
   };

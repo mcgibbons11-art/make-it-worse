@@ -432,8 +432,12 @@ function readCounts<K extends string>(
  * Turn whatever is in storage into a usable ledger. Anything unrecognised is
  * dropped field by field rather than rejected wholesale, so a ledger written by
  * a later build loses only the parts this build does not understand.
+ *
+ * Exported for the Portals save-state sync, which receives the same shape from
+ * the host's per-player store and must not trust it any further than local
+ * storage is trusted here.
  */
-function normalize(value: unknown): ProgressionStats {
+export function normalizeStats(value: unknown): ProgressionStats {
   if (typeof value !== "object" || value === null) return defaultStats();
   const source = value as Record<string, unknown>;
   if (source["version"] !== 1) return defaultStats();
@@ -461,7 +465,7 @@ export function loadStats(): ProgressionStats {
   if (!store) return defaultStats();
   try {
     const raw = store.getItem(PROGRESSION_STORAGE_KEY);
-    return raw === null ? defaultStats() : normalize(JSON.parse(raw));
+    return raw === null ? defaultStats() : normalizeStats(JSON.parse(raw));
   } catch {
     // Storage that throws on read, or a value that is not JSON. Either way the
     // player starts a fresh ledger rather than meeting an error page.
@@ -479,4 +483,62 @@ export function saveStats(stats: ProgressionStats): boolean {
   } catch {
     return false;
   }
+}
+
+function mergeCounts<K extends string>(
+  a: Partial<Record<K, number>>,
+  b: Partial<Record<K, number>>,
+): Partial<Record<K, number>> {
+  const out: Partial<Record<K, number>> = { ...a };
+  for (const [key, total] of Object.entries(b) as [K, number][]) {
+    out[key] = Math.max(out[key] ?? 0, total);
+  }
+  return out;
+}
+
+/**
+ * Reconcile two ledgers that may share history, for the Portals save-state
+ * sync: one came from this browser's storage, the other from the host's
+ * per-player store, and nothing records which runs each has seen.
+ *
+ * Counters take the maximum rather than the sum. Two ledgers that both watched
+ * the same runs would double every number under addition; under max, history
+ * unique to the smaller ledger is forfeited, which only understates. Bests keep
+ * the faster time per room and the larger clear count. The current streak is a
+ * statement about now, so it follows whichever ledger ran more recently.
+ */
+export function mergeStats(
+  a: ProgressionStats,
+  b: ProgressionStats,
+): ProgressionStats {
+  const newer = (b.lastRunAtMs ?? 0) >= (a.lastRunAtMs ?? 0) ? b : a;
+  const bests: Record<string, PersonalBest> = { ...a.bests };
+  for (const [slug, remote] of Object.entries(b.bests)) {
+    const local = bests[slug];
+    bests[slug] = local
+      ? {
+          timeMs: Math.min(local.timeMs, remote.timeMs),
+          atMs: Math.max(local.atMs, remote.atMs),
+          clears: Math.max(local.clears, remote.clears),
+        }
+      : remote;
+  }
+  const firstRuns = [a.firstRunAtMs, b.firstRunAtMs].filter(
+    (value): value is number => value !== null,
+  );
+  return {
+    version: 1,
+    clears: Math.max(a.clears, b.clears),
+    resets: Math.max(a.resets, b.resets),
+    currentStreak: newer.currentStreak,
+    bestStreak: Math.max(a.bestStreak, b.bestStreak),
+    deepestClearedDepth: Math.max(a.deepestClearedDepth, b.deepestClearedDepth),
+    trapsPlaced: Math.max(a.trapsPlaced, b.trapsPlaced),
+    trapsPlacedByType: mergeCounts(a.trapsPlacedByType, b.trapsPlacedByType),
+    deathsByCause: mergeCounts(a.deathsByCause, b.deathsByCause),
+    bests: prune(bests),
+    closeCalls: Math.max(a.closeCalls, b.closeCalls),
+    firstRunAtMs: firstRuns.length ? Math.min(...firstRuns) : null,
+    lastRunAtMs: newer.lastRunAtMs,
+  };
 }

@@ -18,6 +18,8 @@ import {
   isUnlocked,
   loadStats,
   lockedTraps,
+  mergeStats,
+  normalizeStats,
   personalBest,
   saveStats,
   storageAvailable,
@@ -501,5 +503,93 @@ describe("progression store", () => {
     expect(useProgressionStore.getState().lastSummary?.closeCallProgress).toBe(0.93);
     useProgressionStore.getState().clearSummary();
     expect(useProgressionStore.getState().lastSummary).toBeNull();
+  });
+
+  it("adopts a reconciled ledger and writes it through to storage", () => {
+    const store = memoryStorage();
+    install(store);
+    const merged = applyRunEnd(defaultStats(), run({ durationMs: 9_000 })).stats;
+    useProgressionStore.getState().adoptStats(merged);
+    expect(useProgressionStore.getState().stats.clears).toBe(1);
+    expect(personalBest(loadStats(), "worse-abc")?.timeMs).toBe(9_000);
+  });
+});
+
+describe("merging two ledgers that may share history", () => {
+  const ledger = (overrides: Partial<ProgressionStats>): ProgressionStats => ({
+    ...defaultStats(),
+    ...overrides,
+  });
+
+  it("takes the maximum of every counter rather than the sum", () => {
+    // Both sides may have watched the same runs; adding would double them.
+    const merged = mergeStats(
+      ledger({ clears: 5, resets: 2, trapsPlaced: 7, deathsByCause: { void: 3 } }),
+      ledger({ clears: 3, resets: 4, trapsPlaced: 7, deathsByCause: { void: 1, timeout: 2 } }),
+    );
+    expect(merged.clears).toBe(5);
+    expect(merged.resets).toBe(4);
+    expect(merged.trapsPlaced).toBe(7);
+    expect(merged.deathsByCause).toEqual({ void: 3, timeout: 2 });
+  });
+
+  it("keeps the faster time and the larger clear count per room", () => {
+    const merged = mergeStats(
+      ledger({ bests: { "worse-abc": { timeMs: 12_000, atMs: 50, clears: 2 } } }),
+      ledger({
+        bests: {
+          "worse-abc": { timeMs: 9_000, atMs: 80, clears: 1 },
+          "worse-def": { timeMs: 30_000, atMs: 10, clears: 4 },
+        },
+      }),
+    );
+    expect(merged.bests["worse-abc"]).toEqual({ timeMs: 9_000, atMs: 80, clears: 2 });
+    expect(merged.bests["worse-def"]?.clears).toBe(4);
+  });
+
+  it("takes the current streak from whichever ledger ran more recently", () => {
+    const merged = mergeStats(
+      ledger({ currentStreak: 6, bestStreak: 6, lastRunAtMs: 100 }),
+      ledger({ currentStreak: 1, bestStreak: 2, lastRunAtMs: 900 }),
+    );
+    expect(merged.currentStreak).toBe(1);
+    expect(merged.bestStreak).toBe(6);
+    expect(merged.lastRunAtMs).toBe(900);
+  });
+
+  it("spans the earliest first run and the latest last run", () => {
+    const merged = mergeStats(
+      ledger({ firstRunAtMs: 500, lastRunAtMs: 700 }),
+      ledger({ firstRunAtMs: 200, lastRunAtMs: 400 }),
+    );
+    expect(merged.firstRunAtMs).toBe(200);
+    expect(merged.lastRunAtMs).toBe(700);
+  });
+
+  it("stays within the tracked-bests cap after a union", () => {
+    const many = (offset: number): Record<string, { timeMs: number; atMs: number; clears: number }> =>
+      Object.fromEntries(
+        Array.from({ length: MAX_TRACKED_BESTS }, (_, index) => [
+          `worse-${offset + index}`,
+          { timeMs: 10_000, atMs: offset + index, clears: 1 },
+        ]),
+      );
+    const merged = mergeStats(
+      ledger({ bests: many(0) }),
+      ledger({ bests: many(MAX_TRACKED_BESTS) }),
+    );
+    expect(Object.keys(merged.bests)).toHaveLength(MAX_TRACKED_BESTS);
+  });
+
+  it("normalizes an untrusted remote blob exactly like stored JSON", () => {
+    expect(normalizeStats({ version: 2, clears: 5 })).toEqual(defaultStats());
+    expect(normalizeStats(null)).toEqual(defaultStats());
+    const read = normalizeStats({
+      version: 1,
+      clears: 3,
+      bests: { "worse-abc": { timeMs: 8_000, atMs: 40, clears: 2 } },
+    });
+    expect(read.clears).toBe(3);
+    expect(read.bests["worse-abc"]?.timeMs).toBe(8_000);
   });
 });

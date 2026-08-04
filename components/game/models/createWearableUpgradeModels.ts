@@ -602,14 +602,16 @@ function sandal(root: THREE.Group) {
   // The sandal shares the bare last rather than carrying a second outline of
   // its own, so the ankle fix and the deck plane reach it too. The bed is what
   // stands on the ground, and the foot rides on top of the bed.
-  const bedThickness = 0.030;
+  // 0.044, up from 0.030, with the straps to match: at catalogue scale the
+  // 2026-08-04 evidence showed a nearly bare foot over a dark sliver.
+  const bedThickness = 0.044;
   const bed: readonly [number, number][] = [
     [-0.062, -0.126], [0.062, -0.126], [0.088, -0.062], [0.100, 0.020],
     [0.104, 0.090], [0.092, 0.160], [0.056, 0.208], [-0.056, 0.208],
     [-0.092, 0.160], [-0.104, 0.090], [-0.100, 0.020], [-0.088, -0.062],
   ];
   add(root,
-    plate(bed, bedThickness, "rubber", "sandal-fitted-bed", DECK + bedThickness / 2, 0.02),
+    plate(bed, bedThickness, "cream", "sandal-fitted-bed", DECK + bedThickness / 2, 0.02),
     ...bareFootParts(bedThickness, "skin", "sandal-foot"),
   );
 
@@ -618,11 +620,11 @@ function sandal(root: THREE.Group) {
     add(root, pathTube([
       [side * 0.086, -0.086, 0.000], [side * 0.056, -0.026, 0.046],
       [0, -0.004, 0.086], [-side * 0.056, -0.026, 0.126],
-    ], 0.018, "main", `sandal-cross-strap-${side}`));
+    ], 0.028, "main", `sandal-cross-strap-${side}`));
   add(root, pathTube([
     [-0.076, -0.094, -0.070], [-0.088, -0.040, -0.104], [0, -0.012, -0.128],
     [0.088, -0.040, -0.104], [0.076, -0.094, -0.070],
-  ], 0.014, "main", "sandal-heel-sling"));
+  ], 0.021, "main", "sandal-heel-sling"));
 }
 
 // --- Shoes -------------------------------------------------------------------
@@ -744,7 +746,7 @@ function boot(root: THREE.Group) {
     ], 0.054, "cream", "boot-heel-block", lugTop + 0.071),
     mesh(loftShell(BOOT_UPPER), "leather", "boot-upper", [0, 0, 0]),
   );
-  add(root, toeRand(BOOT_UPPER, 0.013, "trim", "boot-toe-rand"));
+  add(root, toeRand(BOOT_UPPER, 0.02, "cream", "boot-toe-rand"));
   // The fold-over cuff flares upward and outward, so it reads as turned-down
   // leather instead of a band clamped round the ankle.
   add(root, lathed([
@@ -752,7 +754,7 @@ function boot(root: THREE.Group) {
     [0.093, 0.110], [0.083, 0.100], [0.078, 0.078], [0.076, 0.054],
   ], "trim", "boot-cuff", [0, 0, -0.044], 0.86));
   add(root,
-    mesh(box(0.032, 0.052, 0.014, 0.006), "trim", "boot-pull-tab", [0, 0.100, -0.112]),
+    mesh(box(0.032, 0.052, 0.014, 0.006), "cream", "boot-pull-tab", [0, 0.100, -0.112]),
     ...lacing("boot", BOOT_UPPER, [0.020, 0.052, 0.082, 0.110], "metal", "cream"),
   );
 }

@@ -992,34 +992,52 @@ function facePartsFor(id: AvatarFaceId): THREE.Object3D[] {
       return [createHeadwearUpgradeModel("beard")];
     }
     case "goatee": {
-      // One material and one mass. The three-cone version tinted its outer
-      // tufts "trim", which rendered lighter and read as tusks, and its tips
-      // hung to -0.34 against a chin at -0.22 - into the neck. The tuft now
-      // tapers to a tip that stays inside the jaw's forward extent.
-      const chin = part(ball(0.068, 0.055, 0.026), "main", {
-        x: 0, y: -0.218, z: 0.292,
+      // Fuller after the 2026-08-04 evidence: the lone small chin ball read
+      // as a soot smudge at catalogue scale. The patch now has real width
+      // across the chin, short arms climbing the jaw on both sides, and a
+      // soul patch under the lip - the parts that make "goatee" legible as
+      // facial hair - while the tapered point stays inside the jaw's reach.
+      const chin = part(ball(0.086, 0.06, 0.032), "main", {
+        x: 0, y: -0.214, z: 0.288,
       });
-      const tuft = part(new THREE.ConeGeometry(0.034, 0.075, 12), "main", {
-        x: 0, y: -0.268, z: 0.284,
+      const jawArm = (side: -1 | 1) => {
+        const arm = part(ball(0.032, 0.05, 0.024), "main", {
+          x: side * 0.074, y: -0.196, z: 0.268,
+        });
+        arm.rotation.z = -side * 0.35;
+        arm.rotation.y = side * 0.3;
+        return arm;
+      };
+      const soul = part(ball(0.02, 0.02, 0.016), "main", {
+        x: 0, y: -0.156, z: 0.297,
+      });
+      const tuft = part(new THREE.ConeGeometry(0.04, 0.09, 12), "main", {
+        x: 0, y: -0.276, z: 0.282,
       });
       tuft.rotation.z = Math.PI;
       tuft.rotation.x = 0.15;
-      return [chin, tuft];
+      return [chin, jawArm(-1), jawArm(1), soul, tuft];
     }
     case "freckles": {
       // Larger, deeper, and deliberately unmirrored: at 0.004 depth only two
       // of six dots survived catalog scale, and the perfect left-right mirror
-      // read as machined. One dot crosses the nose bridge.
-      const dot = (x: number, y: number, r = 0.016) =>
-        part(ball(r, r * 0.82, 0.008), "main", { x, y, z: 0.268 });
+      // read as machined. One dot crosses the nose bridge. Densified again
+      // 2026-08-04 - seven faint dots still read as stray specks, so each
+      // cheek now carries a proper cluster and every dot grew a step.
+      const dot = (x: number, y: number, r = 0.018) =>
+        part(ball(r, r * 0.82, 0.009), "main", { x, y, z: 0.268 });
       return [
-        dot(-0.098, -0.092),
-        dot(-0.064, -0.122, 0.013),
-        dot(-0.122, -0.128, 0.014),
-        dot(0.09, -0.1),
-        dot(0.072, -0.126, 0.014),
-        dot(0.124, -0.118, 0.013),
-        dot(0.01, -0.108, 0.012),
+        dot(-0.098, -0.09),
+        dot(-0.062, -0.12, 0.015),
+        dot(-0.124, -0.126, 0.016),
+        dot(-0.088, -0.148, 0.013),
+        dot(-0.142, -0.098, 0.013),
+        dot(0.09, -0.098),
+        dot(0.07, -0.126, 0.016),
+        dot(0.126, -0.116, 0.015),
+        dot(0.104, -0.146, 0.013),
+        dot(0.146, -0.092, 0.012),
+        dot(0.012, -0.106, 0.014),
       ];
     }
     case "warpaint": {
@@ -2350,8 +2368,11 @@ function footwearFootParts(id: AvatarFootwearId): THREE.Object3D[] {
         if (node.userData["wardrobeTint"] === "skin")
           node.userData["wardrobeTint"] = "main";
       });
-      const heel = part(ball(0.07, 0.055, 0.055), "cream", { x: 0, y: -0.076, z: -0.1 });
-      const toe = part(ball(0.078, 0.05, 0.055), "cream", { x: 0, y: -0.108, z: 0.185 });
+      // The toe panel tucks INSIDE the sock silhouette: at z 0.185 it stood
+      // proud of the knit and photographed as bare toes sticking out of a
+      // torn sock (2026-08-04 evidence).
+      const heel = part(ball(0.062, 0.05, 0.05), "cream", { x: 0, y: -0.08, z: -0.096 });
+      const toe = part(ball(0.06, 0.042, 0.044), "cream", { x: 0, y: -0.112, z: 0.152 });
       return [sockFoot, heel, toe];
     }
   }

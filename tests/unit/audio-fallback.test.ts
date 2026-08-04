@@ -204,10 +204,11 @@ describe("AudioManager sample loading", () => {
 
   it("synthesises the hazard while the sample is still in flight", async () => {
     // A fetch that never settles is the state the game is in for the first
-    // moments of every session.
+    // moments of every session. Two oscillators, not one: a hard discrete hit
+    // now carries the shared sub-thump under the trap's own voice.
     const { manager, recorder } = await setup(() => new Promise(() => {}));
     manager.hazard("mousetrap", 14);
-    expect(recorder.oscillators).toBe(1);
+    expect(recorder.oscillators).toBe(2);
     expect(recorder.sources.some((source) => source.buffer?.origin === "created")).toBe(
       true,
     );
@@ -220,7 +221,11 @@ describe("AudioManager sample loading", () => {
     await settle();
     const oscillators = recorder.oscillators;
     manager.hazard("swinging_hammer", 14);
-    expect(recorder.oscillators).toBe(oscillators + 1);
+    // One voice for the hammer, plus at most one more if the shared
+    // sub-thump's real-time throttle has reopened between the two calls -
+    // this test cannot pin the wall clock, so it pins the honest range.
+    expect(recorder.oscillators - oscillators).toBeGreaterThanOrEqual(1);
+    expect(recorder.oscillators - oscillators).toBeLessThanOrEqual(2);
     expect(recorder.sources.every((source) => source.buffer?.origin !== "decoded")).toBe(
       true,
     );
@@ -311,8 +316,13 @@ describe("AudioManager sample loading", () => {
     await settle();
     manager.hazard("rolling_fridge", 1);
     manager.hazard("rolling_fridge", 20);
-    const light = recorder.sources.at(-2)?.playbackRate.value ?? 0;
-    const heavy = recorder.sources.at(-1)?.playbackRate.value ?? 0;
+    // Selected by origin rather than by position: the heavy hit also fires
+    // the sub-thump's noise burst, so the last raw source is not the sample.
+    const samples = recorder.sources.filter(
+      (source) => source.buffer?.origin === "decoded",
+    );
+    const light = samples.at(-2)?.playbackRate.value ?? 0;
+    const heavy = samples.at(-1)?.playbackRate.value ?? 0;
     expect(light).toBeGreaterThan(heavy);
   });
 });
@@ -470,9 +480,10 @@ describe("standing in a continuous trap", () => {
   it("used to hold almost the whole voice budget on one trap", async () => {
     const { manager, recorder } = await stand("rolling_fridge");
     // Six seconds of recording started every 450 ms, played a little slow
-    // because a hard hit pitches down, is fifteen copies over one another out
-    // of a MAX_VOICES of sixteen.
-    expect(peakOverlapping(recorder, STAND_MS)).toBe(15);
+    // because a hard hit pitches down, is fourteen copies over one another
+    // out of a MAX_VOICES of sixteen - one fewer than before the shared hit
+    // sub-thump, whose short bursts transiently claim from the same budget.
+    expect(peakOverlapping(recorder, STAND_MS)).toBe(14);
     // One voice left for the whole rest of the game, so a short burst of an
     // ordinary cue runs out of them. What does not fit is silence rather than
     // synthesis, because the fallback claims from the same budget.

@@ -411,6 +411,8 @@ class AudioManagerClass {
   private active = 0;
   private muted = false;
   private volume = 1;
+  /** Throttle for the shared hit sub-thump, so repeat gates cannot drumroll it. */
+  private lastThumpAt = 0;
   private music: MusicEngine | null = null;
   private scene: MusicScene = "silent";
   private musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -1109,7 +1111,24 @@ class AudioManagerClass {
    */
   hazard(type: TrapType, impulse: number): void {
     const weight = Math.min(1, impulse / 14);
+    // Every hard DISCRETE hit lands on a shared sub-thump under its own
+    // voice: the per-trap sound says what got you, the low end says how
+    // hard. Deliberately after the sustained branch below and throttled,
+    // because a fan reporting every 450ms must stay a bed, not a drumroll,
+    // and the voice budget the sustained tests protect is real.
     const sustained = SUSTAINED_TRAPS[type];
+    if (!sustained || sustained.strike) {
+      const now = performance.now();
+      if (impulse >= 8 && now - this.lastThumpAt > 220) {
+        this.lastThumpAt = now;
+        this.tone(82, 0.16 + weight * 0.1, { to: 46, wave: "sine", gain: 0.05 + weight * 0.05 });
+        this.noiseBurst(0.07 + weight * 0.05, {
+          filter: "lowpass",
+          frequency: 320,
+          gain: 0.03 + weight * 0.035,
+        });
+      }
+    }
     if (sustained) {
       this.sustainedHazard(type, sustained.build, weight);
       // A bed already sits under the mix rather than on top of it, and a fan

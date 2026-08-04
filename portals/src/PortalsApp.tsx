@@ -371,6 +371,9 @@ export function PortalsApp() {
   // The added-trap fly-through, armed by the intro card's start button on a
   // friend's worsened map and cleared the moment it hands over to the run.
   const [trapReveal, setTrapReveal] = useState<TrapRevealSpec | null>(null);
+  // Bumped on every hard hit; the value is only a React key, so each hit
+  // restarts the flash overlay's CSS animation.
+  const [hitFlash, setHitFlash] = useState(0);
   const [showStartSplash, setShowStartSplash] = useState(true);
   // The name the game hands you rides on every trap you add and into every
   // message you send, and the first time a reviewer saw theirs was inside the
@@ -1765,6 +1768,8 @@ export function PortalsApp() {
           }}
           onCleanHazard={(contact) => {
             lastHazard.current = contact;
+            if (contact.impulseMagnitude >= 8 && !settings.reducedMotion)
+              setHitFlash((value) => value + 1);
           }}
           onCleanFinish={() => {
             setEditorOpen(false);
@@ -1785,6 +1790,9 @@ export function PortalsApp() {
             setRandomRoomSeed(null);
           }}
         />
+        {hitFlash > 0 && randomRoomSeed !== null && (
+          <div key={hitFlash} className="hit-flash hit-flash-fixed" aria-hidden="true" />
+        )}
       </Suspense>
     );
   if (apartmentOpen)
@@ -1899,6 +1907,11 @@ export function PortalsApp() {
           onFail={(outcome) => void fail(outcome)}
           onHazard={(contact) => {
             lastHazard.current = contact;
+            // The red edge flash that sells a hard hit. Keyed so a repeat
+            // within the fade restarts the animation; reduced motion drops it
+            // with the shake and the spinning rays.
+            if (contact.impulseMagnitude >= 8 && !settings.reducedMotion)
+              setHitFlash((value) => value + 1);
           }}
           onSelectZone={(zoneId) => {
             if (placement)
@@ -2046,6 +2059,9 @@ export function PortalsApp() {
         </header>
       )}
       {runPanel === "playing" && <MobileControls />}
+      {hitFlash > 0 && runPanel === "playing" && (
+        <div key={hitFlash} className="hit-flash" aria-hidden="true" />
+      )}
       {runPanel === "failed" && !duelActive && (
         <Overlay
           className="failure-backdrop"

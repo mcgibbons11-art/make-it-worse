@@ -13,6 +13,7 @@ import type {
 import { GameScene } from "./GameScene";
 import { Suspense } from "react";
 import { AssetReadinessGate } from "./AssetModel";
+import { useEffect, useRef, useState } from "react";
 import { ACESFilmicToneMapping } from "three";
 import { TONE_EXPOSURE } from "./render/tone";
 import type { TrapMechanicEvent } from "./TrapRenderer";
@@ -52,6 +53,26 @@ interface Props {
   onTrapRevealDone?(): void;
 }
 export default function GameCanvas(props: Props) {
+  // Hitstop: a hard hit freezes the physics world for a few frames before the
+  // knockback plays out, which is the single strongest "that HURT" signal a
+  // game can send. Duration scales with the impulse and is capped well under
+  // the run clock's perception threshold.
+  const [hitstopped, setHitstopped] = useState(false);
+  const hitstopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (hitstopTimer.current) clearTimeout(hitstopTimer.current);
+  }, []);
+  const onHazard = (contact: HazardContact) => {
+    if (contact.impulseMagnitude >= 9) {
+      setHitstopped(true);
+      if (hitstopTimer.current) clearTimeout(hitstopTimer.current);
+      hitstopTimer.current = setTimeout(
+        () => setHitstopped(false),
+        Math.min(110, 40 + contact.impulseMagnitude * 4),
+      );
+    }
+    props.onHazard(contact);
+  };
   return (
     <Canvas
       className="game-canvas"
@@ -96,8 +117,8 @@ export default function GameCanvas(props: Props) {
         <AssetReadinessGate onReady={props.onAssetsReady} />
       </Suspense>
       <Suspense fallback={null}>
-        <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} interpolate>
-          <GameScene {...props} />
+        <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} interpolate paused={hitstopped}>
+          <GameScene {...props} onHazard={onHazard} />
         </Physics>
       </Suspense>
     </Canvas>

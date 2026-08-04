@@ -798,43 +798,51 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       return [crown, cuff];
     }
     case "visor": {
-      // 0.353, not 0.332: the skull's own section at this height is 0.342
-      // across, so the old band ran INSIDE the head and the visor read as a
-      // floating brim with no band holding it on.
-      const band = part(ring(0.353, 0.03), "trim", { x: 0, y: 0.075, z: -0.01 });
+      // Rebuilt from the 2026-08-03 report ("the brim should be connected to
+      // the band"). The old circular band (0.353) hid completely inside the
+      // classic-crop hair, the 200-degree paper-thin brim sliced through the
+      // hair with its tips out the back of the skull, and the band and brim
+      // carried different x-squashes, so they parted company at the temples.
+      // One group now owns band and brim under a single ellipse: the band
+      // rides outside the hair, the brim's inner edge starts inside the
+      // band's tube, and the arc stops at the temples.
+      const seat = new THREE.Group();
+      // 0.44: outside the classic crop's fringe, which swallowed the 0.40
+      // band at the brow and cut the brim off from it.
+      const band = part(ring(0.44, 0.036), "trim", { x: 0, y: 0, z: 0 });
       band.rotation.x = Math.PI / 2;
-      // The brim is a 200-degree annular sector canted down at the front -
-      // deepest at centre, vanishing behind the temples - in place of the
-      // flat rectangular slab that read as a spatula from every angle. Its
-      // inner edge (0.32) tucks under the band; the cant drops the leading
-      // edge 0.11u so the profile finally slopes the way a visor does.
+      const ARC = 2.7;
+      const ARC_START = Math.PI / 2 - ARC / 2;
       const brimSeat = new THREE.Group();
       const brim = part(
-        new THREE.RingGeometry(0.32, 0.52, 28, 1, Math.PI / 2 - 1.75, 3.5),
+        new THREE.RingGeometry(0.41, 0.56, 28, 1, ARC_START, ARC),
         "main",
         { x: 0, y: 0, z: 0 },
       );
       // A second skin 0.012 below the first: a lone RingGeometry is a
       // zero-thickness plane and the brim vanished edge-on from the front.
       const brimUnder = part(
-        new THREE.RingGeometry(0.32, 0.52, 28, 1, Math.PI / 2 - 1.75, 3.5),
+        new THREE.RingGeometry(0.41, 0.56, 28, 1, ARC_START, ARC),
         "main",
         { x: 0, y: 0, z: 0.012 },
       );
-      const edgeRoll = part(ring(0.508, 0.013, 3.5), "main", { x: 0, y: 0, z: 0.006 });
-      edgeRoll.rotation.z = Math.PI / 2 - 1.75;
+      const edgeRoll = part(ring(0.548, 0.013, ARC), "main", { x: 0, y: 0, z: 0.006 });
+      edgeRoll.rotation.z = ARC_START;
       brimSeat.add(brim, brimUnder, edgeRoll);
-      brimSeat.position.set(0, 0.075, -0.01);
-      brimSeat.rotation.x = Math.PI / 2 + 0.22;
+      brimSeat.position.set(0, -0.006, 0);
+      brimSeat.rotation.x = Math.PI / 2 + 0.21;
+      const adjuster = part(slab(0.055, 0.045, 0.02), "cream", {
+        x: 0, y: 0, z: -0.455,
+      });
+      seat.add(band, brimSeat, adjuster);
+      seat.position.set(0, 0.075, -0.01);
       // Elliptical, not circular: the silhouette suite caps |x| at 0.47 in
       // world units and the head socket's cancelled scale amplifies authored
-      // x by ~1.16, so the sides pull in to 0.39 while the front keeps the
-      // full 0.52 reach - which is also just how visor brims are shaped.
-      brimSeat.scale.x = 0.75;
-      const adjuster = part(slab(0.055, 0.045, 0.02), "cream", {
-        x: 0, y: 0.075, z: -0.372,
-      });
-      return [band, brimSeat, adjuster];
+      // x by ~1.16. Applied to the whole seat so the band squashes WITH the
+      // brim instead of parting from it at the temples; 0.71 with the 0.56
+      // outer edge is what keeps the whole hat inside that cap.
+      seat.scale.x = 0.71;
+      return [seat];
     }
     case "helmet": {
       return [createHeadwearUpgradeModel("helmet")];
@@ -853,7 +861,17 @@ function headwearParts(id: AvatarHeadwearId): THREE.Object3D[] {
       return [createHeadwearUpgradeModel("crown")];
     }
     case "cowboy": {
-      return [createHeadwearUpgradeModel("cowboy")];
+      // Seat transform on the CALLER, not in the generated factory: the
+      // authored crown is narrower than the runner's skull, and the
+      // 2026-08-03 report showed the head bulging out BEHIND the brim. The
+      // stretch is almost entirely front-to-back because that is where the
+      // bleed was, and because the silhouette suite caps |x| at 0.47 - the
+      // authored hat already reaches 0.46 there. The generated file itself
+      // stays untouched.
+      const hat = createHeadwearUpgradeModel("cowboy");
+      hat.scale.set(1.02, 1.06, 1.18);
+      hat.position.y = -0.025;
+      return [hat];
     }
     case "earmuffs": {
       return [createHeadwearUpgradeModel("earmuffs")];
@@ -1040,16 +1058,20 @@ function eyewearParts(id: AvatarEyewearId): THREE.Object3D[] {
   // head's own surface is at z 0.274, so 91 percent of the old arm was inside
   // the skull and the glasses had no arms in profile - measured, not eyeballed.
   const temple = (side: -1 | 1) => {
-    const arm = part(slab(0.016, 0.02, 0.16), "main", {
-      x: side * 0.295, y: HEAD.eye.y, z: 0.16,
+    // 0.352, not 0.295: the skull is wider than that at eye height, so the
+    // arm ran INSIDE the head and only the hinge piece surfaced - which
+    // photographed as a rod stuck through the temples (2026-08-03 report).
+    // The arm now hugs the outside of the head on its way back to the ear.
+    const arm = part(slab(0.016, 0.02, 0.17), "main", {
+      x: side * 0.352, y: HEAD.eye.y, z: 0.17,
     });
-    arm.rotation.y = -side * 0.28;
+    arm.rotation.y = -side * 0.22;
     // The end piece carries the frame's outer corner back to the arm, the
     // joint a hinge would occupy on real glasses.
-    const endPiece = part(slab(0.1, 0.018, 0.016), "main", {
-      x: side * 0.225, y: HEAD.eye.y, z: 0.265,
+    const endPiece = part(slab(0.12, 0.018, 0.016), "main", {
+      x: side * 0.27, y: HEAD.eye.y, z: 0.272,
     });
-    endPiece.rotation.y = -side * 0.5;
+    endPiece.rotation.y = -side * 0.72;
     return group(arm, endPiece);
   };
   const bridge = (width: number, y: number) =>
@@ -1342,13 +1364,17 @@ function topShellParts(id: AvatarTopId): THREE.Object3D[] {
     case "overalls": {
       // wear-overalls.png: a bib with a patch pocket on it and one square
       // buckle where each strap meets the bib. The buckles are the light piece.
-      shell.add(part(torsoShell(HEM, 0.08, 0.016), "denim"));
-      shell.add(part(plate(0.28, 0.17, 1.2), "denim", { x: 0, y: 0.16, z: 0 }));
-      shell.add(part(plate(0.292, 0.1, 0.72), "trim", { x: 0, y: 0.155, z: 0 }));
+      // Shell stand-off 0.02, up from 0.016, and the trouser top raised to
+      // 0.10: at 0.016 the run cycle's torso lean pushed the body through the
+      // denim (2026-08-03 report), and the taller waist keeps the bib's
+      // sides from opening a bare band at the hip.
+      shell.add(part(torsoShell(HEM, 0.1, 0.02), "denim"));
+      shell.add(part(plate(0.28, 0.17, 1.35), "denim", { x: 0, y: 0.16, z: 0 }));
+      shell.add(part(plate(0.292, 0.1, 0.8), "trim", { x: 0, y: 0.155, z: 0 }));
       // The bib is the same denim as the body panel behind it, so its top
       // edge carries a cream stitch line to separate the two, and a button
       // fastens each hip the way real overalls close.
-      shell.add(part(plate(0.287, 0.012, 1.16), "cream", { x: 0, y: 0.238, z: 0 }));
+      shell.add(part(plate(0.287, 0.012, 1.3), "cream", { x: 0, y: 0.238, z: 0 }));
       for (const side of [-1, 1] as const) {
         const angle = side * 1.05;
         const radius = torsoRadius(0.045) + 0.024;
@@ -1653,11 +1679,16 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       // Wide enough that a turtleneck (torso + 0.022, hem rib + 0.032) stays
       // INSIDE at every shared height - the first profile dipped under the
       // sweater between chest and neck and the blue poked through the cloth.
+      // The shoulder band then widened again (0.242 -> 0.278 at 0.21): a worn
+      // top's SLEEVE caps sit further out than its torso shell, and the
+      // 2026-08-03 seam matrix caught a turtleneck shoulder piercing the
+      // cape's upper slope. A poncho covers the shoulders by definition, so
+      // the cloth now clears the sleeve caps too.
       const PONCHO_PROFILE: readonly (readonly [number, number])[] = [
         [shoulder, neckRadius],
-        [0.21, 0.242],
-        [0.1, 0.264],
-        [-0.02, 0.302],
+        [0.21, 0.278],
+        [0.1, 0.292],
+        [-0.02, 0.312],
         [-0.11, 0.344],
         [HEM, hemRadius],
       ];
@@ -1726,10 +1757,16 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
       // the sternum under a metal chest ring, and a padded belt with a
       // buckle. What was here before was two near-vertical slabs meeting at
       // the collarbone, which photographed as a letter A drawn on the chest.
+      // Every stand-off below cleared a bare torso and a tee, and the
+      // 2026-08-03 report showed why that was not enough: over a turtleneck
+      // (shell +0.022, hem rib +0.032) the shoulder straps sank into the knit
+      // and surfaced as fragments. The rig now stands clear of the thickest
+      // top in the catalogue, which reads as a harness worn over the sweater
+      // rather than embedded in it.
       const wrap = shellGroup();
-      wrap.add(part(torsoShell(-0.12, -0.05, 0.032), "leather"));
+      wrap.add(part(torsoShell(-0.12, -0.05, 0.044), "leather"));
       const shoulder = (side: -1 | 1) => {
-        const strap = part(ring(0.118, 0.028, Math.PI), "leather", {
+        const strap = part(ring(0.142, 0.032, Math.PI), "leather", {
           x: side * 0.15,
           y: 0.155,
           z: 0,
@@ -1744,20 +1781,20 @@ function outerwearParts(id: AvatarOuterwearId): THREE.Object3D[] {
         const strap = part(roundedSlab(0.052, 0.36, 0.022), "leather", {
           x: 0,
           y: 0.045,
-          z: 0.208,
+          z: 0.222,
         });
         strap.rotation.z = side * 0.82;
         return strap;
       };
-      const chestRing = part(ring(0.046, 0.012), "metal", { x: 0, y: 0.045, z: 0.228 });
-      // The belt's own front face sits at 0.224 world, so hardware on it
+      const chestRing = part(ring(0.046, 0.012), "metal", { x: 0, y: 0.045, z: 0.242 });
+      // The belt's own front face sits at 0.236 world, so hardware on it
       // starts there and stands proud, not inside it.
-      const buckle = part(slab(0.06, 0.045, 0.02), "steel", { x: 0, y: -0.085, z: 0.236 });
+      const buckle = part(slab(0.06, 0.045, 0.02), "steel", { x: 0, y: -0.085, z: 0.248 });
       const keeper = (side: -1 | 1) => {
         const tab = part(slab(0.045, 0.03, 0.018), "trim", {
           x: side * 0.14,
           y: -0.075,
-          z: 0.206,
+          z: 0.218,
         });
         tab.rotation.y = side * 0.55;
         return tab;

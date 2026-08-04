@@ -660,6 +660,23 @@ export function addApartmentFurnishing(context: FurnishingContext): void {
       axis: "z",
       center: true,
     });
+    // The bare field read as an empty coloured rectangle rather than a
+    // picture. A cream sun high on one side and a navy ridge across the lower
+    // third turn it into a minimal landscape from the same measured material
+    // set; the accent colour still owns the frame's interior.
+    solid(
+      "art-motif-sun",
+      "Wall canvas sun",
+      "furniture-cream",
+      [centre[0] + halfWide * 0.45, centre[1] + halfTall * 0.3, -1.879],
+      new THREE.CircleGeometry(Math.min(halfWide, halfTall) * 0.38, 20),
+    );
+    part("art-motif-ridge", "Wall canvas ridge", "trim-navy", [centre[0], centre[1] - halfTall * 0.58, -1.878], {
+      points: rect(halfWide * 0.96, halfTall * 0.2),
+      depth: 0.012,
+      axis: "z",
+      center: true,
+    });
   };
   const canvasSlot = {
     living: { centre: [0.45, 2.06] as const, halfWide: 0.5, halfTall: 0.3 },

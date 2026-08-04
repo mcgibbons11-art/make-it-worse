@@ -38,6 +38,7 @@ import {
   ConfirmDialog,
   ControlsPanel,
   MapCodePanel,
+  MenuIcon,
   Overlay,
   SettingsMenu,
 } from "./menu/ShellPanels";
@@ -75,6 +76,7 @@ import {
   fetchClearTimes,
   fetchPublishedMapPopularity,
   onPlayerChange,
+  portalsHost,
   signIn,
   submitClearTime,
   submitPublishedMapSignal,
@@ -82,6 +84,7 @@ import {
   type PortalsPlayer,
   type SubmitResult,
 } from "./leaderboard";
+import { startLedgerSync, type LedgerSyncHandle } from "./progression-sync";
 import {
   connectMapSession,
   type MapSessionResult,
@@ -113,7 +116,6 @@ const AvatarApartment = lazy(() =>
     default: module.AvatarApartment,
   })),
 );
-const MENU_ICON_BASE = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/menu-icons/`;
 
 class RunnerEditorBoundary extends Component<
   { children: ReactNode; safeFallback: ReactNode },
@@ -154,15 +156,6 @@ class ToolBoundary extends Component<
       </main>
     );
   }
-}
-function MenuIcon({ name }: { name: "apartment" | "build" | "controls" | "runner" | "settings" }) {
-  return (
-    <span
-      className="portals-menu-icon"
-      style={{ backgroundImage: `url(${MENU_ICON_BASE}${name}.png)` }}
-      aria-hidden="true"
-    />
-  );
 }
 // Seconds left when the timer turns warm and the countdown pill appears. The
 // screen-reader warning fires on this same value, so the spoken "Ten seconds
@@ -264,6 +257,8 @@ function StartSplash({ onStart }: { onStart(): void }) {
     <main className="start-splash">
       <div className="start-cloud start-cloud-left" aria-hidden="true" />
       <div className="start-cloud start-cloud-right" aria-hidden="true" />
+      <div className="start-cloud start-cloud-mid" aria-hidden="true" />
+      <div className="start-cloud start-cloud-low" aria-hidden="true" />
       <section className="start-splash-copy" aria-labelledby="start-splash-title">
         <p className="start-splash-kicker">A FRIENDSHIP-STRESS TEST</p>
         <h1 className="start-splash-title" id="start-splash-title">
@@ -519,6 +514,42 @@ export function PortalsApp() {
     });
     return onPlayerChange(setPlayer);
   }, []);
+  // The ledger's durable home. The processed iframe does not promise to keep
+  // local storage, which is why times were not surviving on Portals, so once a
+  // signed-in player is known the ledger is reconciled with the host's
+  // per-player save and mirrored into it from then on.
+  useEffect(() => {
+    const sdk = portalsHost();
+    if (!sdk || !player?.playerId) return;
+    const progression = useProgressionStore.getState();
+    progression.hydrate();
+    let handle: LedgerSyncHandle | null = null;
+    let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
+    const flushOnHide = () => void handle?.flush();
+    void startLedgerSync({
+      sdk,
+      local: useProgressionStore.getState().stats,
+      adopt: (merged) => useProgressionStore.getState().adoptStats(merged),
+    }).then((started) => {
+      if (!started) return;
+      if (cancelled) {
+        started.dispose();
+        return;
+      }
+      handle = started;
+      unsubscribe = useProgressionStore.subscribe((state, previous) => {
+        if (state.stats !== previous.stats) started.push(state.stats);
+      });
+      window.addEventListener("pagehide", flushOnHide);
+    });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pagehide", flushOnHide);
+      unsubscribe?.();
+      void handle?.flush().then(() => handle?.dispose());
+    };
+  }, [player?.playerId]);
   // The Portals username is the name players actually recognise; the generated
   // guest name ("Bouncy Otter") survives only while signed out. Renaming the
   // stored guest routes the username onto everything the profile already
@@ -1213,6 +1244,11 @@ export function PortalsApp() {
   );
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // The wardrobe and apartment render as full-screen early returns and
+      // close themselves on Escape. While one is open the menu view is still
+      // on the stack waiting to come back, so this handler acting on the same
+      // keypress would pop it invisibly.
+      if (wardrobeOpen || apartmentOpen) return;
       // Escape is read before the interface guard below. That guard treats a
       // focused button as "the player is in the interface", which is exactly
       // where a trapped modal keeps them, so gating Escape on it made Escape
@@ -1252,6 +1288,7 @@ export function PortalsApp() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [
+    apartmentOpen,
     closeView,
     editorOpen,
     fail,
@@ -1262,6 +1299,7 @@ export function PortalsApp() {
     resume,
     settings,
     view,
+    wardrobeOpen,
   ]);
   // Focus is restored when a dialog closes, which for the pause panel means the
   // HUD button that opened it. isInterfaceTarget counts a focused button as the
@@ -1366,13 +1404,13 @@ export function PortalsApp() {
             )
           }
         >
-          ⚔️ 1v1 duel
+          <MenuIcon name="duel" /> 1v1 duel
         </button>
         <button
           className="button secondary"
           onClick={() => void browseTrending()}
         >
-          🔥 Trending games
+          <MenuIcon name="trending" /> Trending games
         </button>
         <button
           className="button secondary"
@@ -1387,23 +1425,22 @@ export function PortalsApp() {
             openView("map-code");
           }}
         >
-          📥 Use map code
+          <MenuIcon name="code" /> Use map code
         </button>
+        {/* The view stack stays as it is: these tools render as full-screen
+            early returns, so nothing behind them mounts while they are open,
+            and closing them must land back on this menu. Clearing the stack
+            here was the bug that resurfaced a dead failure card after a
+            wardrobe save. */}
         <button
           className="button secondary"
-          onClick={() => {
-            setViews([]);
-            setWardrobeOpen(true);
-          }}
+          onClick={() => setWardrobeOpen(true)}
         >
           <MenuIcon name="runner" /> Build your runner
         </button>
         <button
           className="button secondary"
-          onClick={() => {
-            setViews([]);
-            setApartmentOpen(true);
-          }}
+          onClick={() => setApartmentOpen(true)}
         >
           <MenuIcon name="apartment" /> Visit your apartment
         </button>
@@ -1490,7 +1527,28 @@ export function PortalsApp() {
           <div className="portals-maps" aria-busy={trendingLoading}>
             {trendingLoading && <p>Finding the worst ideas…</p>}
             {!trendingLoading && trendingItems.length === 0 && (
-              <p>No published maps are known here yet. Publish one in Build your game.</p>
+              <>
+                <p>No published maps are known here yet. Build a course, publish it, and it appears right here.</p>
+                <button
+                  className="button primary"
+                  onClick={() =>
+                    guard(
+                      () => {
+                        quitToTitle();
+                        setRandomRoomSeed(null);
+                        setEditorOpen(true);
+                      },
+                      {
+                        title: "Leave this run?",
+                        body: "Building a track ends the run you are on. This run does not come back.",
+                        confirmLabel: "Open the editor",
+                      },
+                    )
+                  }
+                >
+                  <MenuIcon name="build" /> Build your game
+                </button>
+              </>
             )}
             {trendingItems.map((item, index) => (
               <button
@@ -1512,7 +1570,7 @@ export function PortalsApp() {
             ))}
           </div>
           <p className="portals-notice" role="status" aria-live="polite">{notice}</p>
-          <button className="button secondary" onClick={closeView}>Back</button>
+          <button className="button secondary" onClick={closeView}>↩️ Back</button>
         </Overlay>
       )}
       {view === "map-code" && (
@@ -1533,7 +1591,7 @@ export function PortalsApp() {
         </Overlay>
       )}
       {view === "duel" && (
-        <Overlay labelledBy="portals-duel-title" panelClassName="portals-duel">
+        <Overlay labelledBy="portals-duel-title" panelClassName="portals-duel duel-matchmaking">
           <DuelMatchmakingPanel
             duel={duel}
             onBack={() => {

@@ -210,10 +210,24 @@ function SkyAmbience() {
 
   return (
     <group ref={root}>
-      <mesh position={[-9, 7.1, 3]} raycast={() => undefined} renderOrder={-5} frustumCulled={false}>
-        <sphereGeometry args={[1.95, 24, 16]} />
-        <meshBasicMaterial color="#fff1a8" fog={false} depthTest={false} depthWrite={false} />
-      </mesh>
+      {/* The sun reads as a flat paper disc without a halo. Two translucent
+          shells behind the core fake a soft glow for the cost of two draw
+          calls; with depthTest off, paint order is renderOrder, so the halos
+          (-7, -6) land under the core (-5). */}
+      <group position={[-9, 7.1, 3]}>
+        <mesh raycast={() => undefined} renderOrder={-7} frustumCulled={false}>
+          <sphereGeometry args={[3.9, 24, 16]} />
+          <meshBasicMaterial color="#ffe9c4" transparent opacity={0.14} fog={false} depthTest={false} depthWrite={false} />
+        </mesh>
+        <mesh raycast={() => undefined} renderOrder={-6} frustumCulled={false}>
+          <sphereGeometry args={[2.7, 24, 16]} />
+          <meshBasicMaterial color="#fff1a8" transparent opacity={0.3} fog={false} depthTest={false} depthWrite={false} />
+        </mesh>
+        <mesh raycast={() => undefined} renderOrder={-5} frustumCulled={false}>
+          <sphereGeometry args={[1.95, 24, 16]} />
+          <meshBasicMaterial color="#fff1a8" fog={false} depthTest={false} depthWrite={false} />
+        </mesh>
+      </group>
       <group ref={clouds}>
         <Cloud position={[-13.5, 5.4, -4]} scale={1.7} />
         <Cloud position={[10.5, 6.2, 1]} scale={1.35} />

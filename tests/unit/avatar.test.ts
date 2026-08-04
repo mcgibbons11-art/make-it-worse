@@ -385,10 +385,15 @@ describe("the picker", () => {
   });
 
   it("shows every color as available", () => {
-    const html = open(DEFAULT_AVATAR).innerHTML;
-    expect(html).not.toContain("disabled");
-    expect(html).toContain("All avatar colors available");
-    expect(html).toContain("Every color is available");
+    // The old proof was a visible caption ("All avatar colors available"),
+    // which read as an internal QA note and was cut. The invariant it stood
+    // for is asserted directly: every authored color renders as a body swatch
+    // and nothing in the panel is disabled.
+    const container = open(DEFAULT_AVATAR);
+    expect(container.innerHTML).not.toContain("disabled");
+    expect(
+      container.querySelectorAll('input[name="avatar-body"]'),
+    ).toHaveLength(AVATAR_COLORS.length);
   });
 });
 

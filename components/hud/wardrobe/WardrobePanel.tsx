@@ -261,9 +261,6 @@ export function WardrobePanel({
             </div>
           )}
           {previewEnabled && <small className="avatar-turn-hint">Drag or use arrow keys to turn them</small>}
-          <p className="avatar-reading">
-            All avatar colors available
-          </p>
         </div>
         {/* A grid item defaults to min-height:auto, which is tall enough for
             all ten slots' worth of controls and drags the row - and with it
@@ -308,9 +305,6 @@ export function WardrobePanel({
               onPick={chooseBody}
               focusFirst={firstControl}
             />
-            <p className="avatar-note">
-              Every color is available. Pick the runner you actually want.
-            </p>
           </fieldset>
 
           <fieldset className="avatar-group">

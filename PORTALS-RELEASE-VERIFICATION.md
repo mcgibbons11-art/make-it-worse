@@ -45,6 +45,10 @@ User testing surfaced that Join, lobby Post, and chat Send did nothing in the ed
 
 With those fixes synced, a full best-of-3 match ran to completion in the processed editor 2p preview over real Portals.net: player 1 hosted `MIW-NRLH` (status line: record #1, seat A, opponent open), player 2 typed the code and joined, both panes flipped to Round 1 · Turn 1 with the host as runner and a freshly minted course. The spectator pane rendered the runner as a live streamed ghost with a floating name label and follow camera, with "started a run" and "went down" events arriving in its feed. Three burned hearts handed round 1 over, round 2 opened with the round loser running first on a fresh course and mirrored score strips (`YOU 0-1` vs `YOU 1-0`), and three more burns ended the match with mirrored result screens ("Bouncy Otter took the match. Final score 0-2" / "You took the match. Final score 2-0") and rematch offered. Not exercised live in this pass: the worsening hand-off (clear -> trap picker -> opponent runs the worsened course), the open lobby, forfeit claims, and rematch - their logic is unit-tested but has not been driven in the editor.
 
+### User-confirmed live play — 2026-08-03
+
+The user played 1v1 duels for real and reports the mode working. This is a user-reported result, not an agent-driven editor pass, so the specific sub-flows exercised (worsening hand-off, open lobby, forfeit, rematch) were not itemized.
+
 ## Deliberately not performed
 
 - The final Portals **Publish Game** action was not pressed.

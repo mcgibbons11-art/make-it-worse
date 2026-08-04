@@ -379,3 +379,26 @@ describe("the dialog wrapper", () => {
     expect(focusedLabel()).toBe("Finish the chain");
   });
 });
+
+describe("returning from the wardrobe and the apartment", () => {
+  // The regression this pins: after a death, Main menu stacked the menu over
+  // the failed run, and opening the wardrobe cleared that stack. Closing the
+  // wardrobe then exposed the dead "The void got you." card instead of the
+  // menu the player left from. The tools are full-screen early returns, so
+  // the stack they were opened over must survive them.
+  const source = readFileSync(
+    resolve(process.cwd(), "portals/src/PortalsApp.tsx"),
+    "utf8",
+  );
+
+  it("keeps the view stack when a menu action opens a tool", () => {
+    expect(source).not.toMatch(/setViews\(\[\]\);\s*setWardrobeOpen\(true\)/);
+    expect(source).not.toMatch(/setViews\(\[\]\);\s*setApartmentOpen\(true\)/);
+  });
+
+  it("stands the shell's Escape handler down while a tool is open", () => {
+    // Both tools close themselves on Escape; the shell acting on the same
+    // keypress would pop the waiting menu view invisibly.
+    expect(source).toMatch(/if \(wardrobeOpen \|\| apartmentOpen\) return;/);
+  });
+});

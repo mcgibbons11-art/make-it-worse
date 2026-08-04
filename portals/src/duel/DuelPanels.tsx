@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import type { GamePhase } from "@/lib/game/types";
-import { Overlay } from "../menu/ShellPanels";
+import { MenuIcon, Overlay } from "../menu/ShellPanels";
 import { REACTION_EMOJI } from "./duel-protocol";
 import type { DuelApi } from "./useDuel";
 
@@ -191,7 +191,7 @@ export function DuelMatchmakingPanel({
                 type="button"
                 onClick={() => duel.joinWithCode(codeDraft)}
               >
-                Join
+                <MenuIcon name="duel" /> Join
               </button>
             </div>
             <button className="button secondary" onClick={duel.enterLobby}>
@@ -252,10 +252,10 @@ export function DuelMatchmakingPanel({
               </p>
               <div className="portals-buttons">
                 <button className="button danger" onClick={duel.acceptClaim}>
-                  ⚔️ Accept
+                  <MenuIcon name="duel" /> Accept
                 </button>
                 <button className="button secondary" onClick={duel.denyClaim}>
-                  Not now
+                  🙅 Not now
                 </button>
               </div>
             </div>
@@ -336,11 +336,11 @@ export function DuelMatchmakingPanel({
       <div className="portals-buttons">
         {stage.kind === "lobby" ? (
           <button className="button secondary" onClick={duel.leaveLobby}>
-            ← Back
+            ↩️ Back
           </button>
         ) : (
           <button className="button secondary" onClick={onBack}>
-            {stage.kind === "menu" ? "Back" : "Cancel"}
+            {stage.kind === "menu" ? "↩️ Back" : "❌ Cancel"}
           </button>
         )}
       </div>

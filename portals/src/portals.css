@@ -48,19 +48,25 @@
   font-weight: 950;
 }
 .start-splash-button {
-  min-width: min(310px, 100%);
-  padding: 20px 34px;
-  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  min-width: min(360px, 100%);
+  padding: 24px 40px;
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
   box-shadow: 0 8px 0 #171a2b;
 }
 .start-cloud {
   position: absolute;
   z-index: 1;
+  left: 0;
   width: 180px;
   height: 68px;
   border-radius: 46px;
   background: rgba(255, 255, 255, 0.76);
   box-shadow: 0 14px 0 rgba(255, 255, 255, 0.2);
+  /* Each cloud crosses the whole screen on its own clock; the large negative
+     delays mean the sky is already populated on the first frame instead of
+     every cloud entering from the left together. */
+  animation: start-cloud-drift 70s linear infinite;
+  will-change: transform;
 }
 .start-cloud::before,
 .start-cloud::after {
@@ -72,8 +78,21 @@
 }
 .start-cloud::before { left: 34px; width: 82px; height: 82px; }
 .start-cloud::after { right: 25px; width: 105px; height: 105px; }
-.start-cloud-left { left: -70px; top: 16%; transform: scale(0.82); }
-.start-cloud-right { right: 5%; top: 7%; transform: scale(1.12); }
+.start-cloud-left { top: 16%; --cloud-scale: 0.82; animation-delay: -12s; }
+.start-cloud-right { top: 7%; --cloud-scale: 1.12; animation-duration: 88s; animation-delay: -58s; }
+.start-cloud-mid { top: 44%; --cloud-scale: 0.6; opacity: 0.75; animation-duration: 110s; animation-delay: -80s; }
+.start-cloud-low { top: 74%; --cloud-scale: 1.35; opacity: 0.55; animation-duration: 96s; animation-delay: -34s; }
+@keyframes start-cloud-drift {
+  from { transform: translate3d(-340px, 0, 0) scale(var(--cloud-scale, 1)); }
+  to { transform: translate3d(calc(100vw + 120px), 0, 0) scale(var(--cloud-scale, 1)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-cloud { animation: none; }
+  .start-cloud-left { left: -70px; }
+  .start-cloud-right { left: auto; right: 5%; }
+  .start-cloud-mid { left: 30%; }
+  .start-cloud-low { left: 55%; }
+}
 .start-course-card {
   position: relative;
   z-index: 2;
@@ -215,27 +234,30 @@
   pointer-events: none;
   will-change: transform;
 }
+/* The old bob (±20px over 9s) read as static. The clouds now genuinely cross
+   the screen behind the card, on different clocks so they never sync up; the
+   negative delay starts the second one mid-crossing. */
 .portals-home::before {
   --cloud-scale: 0.92;
-  left: -112px;
+  left: 0;
   top: 13%;
-  animation: menu-cloud-left 9s ease-in-out infinite alternate;
+  animation: menu-cloud-drift 80s linear infinite;
+  animation-delay: -14s;
 }
 .portals-home::after {
   --cloud-scale: 1.12;
-  right: 2.5%;
+  left: 0;
   top: 4%;
-  animation: menu-cloud-right 11s ease-in-out infinite alternate;
+  animation: menu-cloud-drift 104s linear infinite;
+  animation-delay: -66s;
 }
-@keyframes menu-cloud-left {
-  0% { transform: translate3d(-8px, 5px, 0) scale(var(--cloud-scale)); }
-  48% { transform: translate3d(12px, -7px, 0) scale(var(--cloud-scale)); }
-  100% { transform: translate3d(30px, 3px, 0) scale(var(--cloud-scale)); }
+@keyframes menu-cloud-drift {
+  from { transform: translate3d(-320px, 0, 0) scale(var(--cloud-scale)); }
+  to { transform: translate3d(calc(100vw + 140px), 0, 0) scale(var(--cloud-scale)); }
 }
-@keyframes menu-cloud-right {
-  0% { transform: translate3d(10px, -4px, 0) scale(var(--cloud-scale)); }
-  55% { transform: translate3d(-10px, 7px, 0) scale(var(--cloud-scale)); }
-  100% { transform: translate3d(-28px, -2px, 0) scale(var(--cloud-scale)); }
+@media (prefers-reduced-motion: reduce) {
+  .portals-home::before { animation: none; left: -112px; }
+  .portals-home::after { animation: none; left: auto; right: 2.5%; }
 }
 .portals-card {
   position: relative;
@@ -1050,6 +1072,15 @@ summary:focus-visible {
 }
 .portals-duel .portals-buttons {
   margin-top: auto;
+}
+/* The matchmaking popup's menu stage is four controls tall; the shared 560px
+   frame left a dead band between Open lobby and Back. Match dialogs keep the
+   roomy frame, this one hugs its content. */
+.portals-overlay .panel.portals-duel.duel-matchmaking {
+  min-height: 0;
+}
+.portals-duel.duel-matchmaking .portals-buttons {
+  margin-top: 6px;
 }
 .duel-over-stamp {
   align-self: center;

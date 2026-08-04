@@ -205,7 +205,8 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     size: [1.6, 2, 0.6], solid: true,
   },
   "wall-art": {
-    label: "Wall art", emoji: "🖼️", variant: "living", nodeIds: ["art-frame", "art-field"],
+    label: "Wall art", emoji: "🖼️", variant: "living",
+    nodeIds: ["art-frame", "art-field", "art-motif-sun", "art-motif-ridge"],
     size: [1.4, 0.9, 0.12], elevation: 1.35, solid: false,
   },
   curtains: {

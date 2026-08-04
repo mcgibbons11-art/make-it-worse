@@ -19,6 +19,39 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
+const MENU_ICON_BASE = `${process.env.NEXT_PUBLIC_ASSET_BASE ?? "/"}assets/menu-icons/`;
+
+/**
+ * A vector icon from the licensed pack in public/assets/menu-icons.
+ *
+ * Native emoji are kept only where every desktop platform renders them in
+ * color; glyphs like the crossed swords fall back to monochrome text
+ * presentation on Windows, which on a flagship button reads as broken.
+ */
+export function MenuIcon({
+  name,
+}: {
+  name:
+    | "apartment"
+    | "build"
+    | "code"
+    | "controls"
+    | "duel"
+    | "finish"
+    | "records"
+    | "runner"
+    | "settings"
+    | "trending";
+}) {
+  return (
+    <span
+      className="portals-menu-icon"
+      style={{ backgroundImage: `url(${MENU_ICON_BASE}${name}.png)` }}
+      aria-hidden="true"
+    />
+  );
+}
+
 /**
  * Tab stops inside a dialog, in document order.
  *
@@ -296,7 +329,7 @@ export function SettingsMenu({ onBack }: { readonly onBack: () => void }) {
         </select>
       </div>
       <button className="button primary huge" onClick={onBack}>
-        Done
+        ✅ Done
       </button>
     </>
   );
@@ -350,23 +383,23 @@ export function ControlsPanel({
       </dl>
       <div className="portals-help-sections">
         <article>
-          <h3>🏁 Finish the room</h3>
+          <h3><MenuIcon name="finish" /> Finish the room</h3>
           <p>Reach the EXIT before the clock expires. Falling into the void ends the attempt; Try Again always starts a fresh runner at the room&apos;s spawn.</p>
         </article>
         <article>
-          <h3>🪤 Make it worse</h3>
+          <h3><MenuIcon name="build" /> Make it worse</h3>
           <p>Beat a room to choose one trap. Left-click and drag it anywhere on a real block, or click it and use WASD/arrow keys for precise nudges. Rotate it if needed and add it only when the placement message is green. Traps keep their authored colors.</p>
         </article>
         <article>
-          <h3>📥 Open other maps</h3>
+          <h3><MenuIcon name="code" /> Open other maps</h3>
           <p>Use Map Code accepts the raw code or an older complete game link and loads the exact room encoded by another player. Trending contains published community maps; invite codes themselves do not affect Trending.</p>
         </article>
         <article>
-          <h3>🏆 Room records</h3>
+          <h3><MenuIcon name="records" /> Room records</h3>
           <p>Each room has its own fastest-times board. Test mode and apartment exploration use the same runner controls, physics, and held-camera turning as a finished room.</p>
         </article>
         <article>
-          <h3>🧍 Build your runner</h3>
+          <h3><MenuIcon name="runner" /> Build your runner</h3>
           <p>Choose any color and dress the live runner in ten slots. Drag the preview, press its turn buttons, or use the arrow keys to inspect every side. If a new item would completely hide an old one, the newest choice wins and the picker tells you what it removed.</p>
         </article>
       </div>

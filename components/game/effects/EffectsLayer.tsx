@@ -22,6 +22,7 @@ import {
   Vector3,
 } from "three";
 import type { RapierRigidBody } from "@react-three/rapier";
+import { AudioManager } from "@/lib/audio/AudioManager";
 import { PALETTE, PLAYER } from "@/lib/game/constants";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type { TrapInstance } from "@/lib/game/types";
@@ -37,6 +38,7 @@ import {
   emitImpact,
   emitLandingDust,
   emitRing,
+  emitGrazeSpark,
   emitSpeedTrail,
   emitSprinklerMist,
   emitSuctionLint,
@@ -79,6 +81,14 @@ const SPEED_TRAIL_INTERVAL = 0.032;
 const LANDING_CONTACT_RISE = 2;
 const LANDING_MIN_FALL_SPEED = 3;
 const LANDING_COOLDOWN_MS = 150;
+// The near-miss band: how far past a trap's own reach still counts as a
+// skim, how much height difference still counts as "at the trap", how long a
+// dwell can last before it is loitering rather than skimming, and how often
+// the reward may fire at all.
+const GRAZE_BAND = 0.5;
+const GRAZE_HEIGHT = 1.7;
+const GRAZE_MAX_DWELL_MS = 1600;
+const GRAZE_COOLDOWN_MS = 900;
 /** Impacts below this are a nudge; a ring would overstate them. */
 const RING_SEVERITY_THRESHOLD = 0.45;
 const AMBIENT_INTERVAL = 0.045;
@@ -286,6 +296,12 @@ export const EffectsLayer = forwardRef<EffectsHandle, Props>(function EffectsLay
   const ambientClock = useRef(0);
   const celebrationWaveAt = useRef(0);
   const celebrationOrigin = useRef<Vec3>([0, 0, 0]);
+  // The graze detector: when the runner entered each trap's reach, and when
+  // anything last actually hit, so skimming past unharmed can be told apart
+  // from the half-second before a hit lands.
+  const grazeEntryAt = useRef(new Map<string, number>());
+  const lastGrazeAt = useRef(0);
+  const lastImpactAt = useRef(0);
 
   // A finished or abandoned attempt must not leak its confetti into the next
   // one, and the landing detector must not read a stale velocity across the
@@ -296,6 +312,9 @@ export const EffectsLayer = forwardRef<EffectsHandle, Props>(function EffectsLay
     previousVerticalVelocity.current = 0;
     lastLandingAt.current = 0;
     celebrationWaveAt.current = 0;
+    grazeEntryAt.current.clear();
+    lastGrazeAt.current = 0;
+    lastImpactAt.current = 0;
   }, [attemptSerial, particles, rings]);
 
   const ambientTraps = useMemo(
@@ -312,6 +331,7 @@ export const EffectsLayer = forwardRef<EffectsHandle, Props>(function EffectsLay
       impact(impulseMagnitude: number) {
         const origin = livePosition(player.current);
         if (!origin) return;
+        lastImpactAt.current = performance.now();
         // Math.random on purpose: the seeded generators drive trap behaviour,
         // and decoration must not draw from a stream a run depends on.
         emitImpact(particles, budget, Math.random, origin, impulseMagnitude);
@@ -392,6 +412,48 @@ export const EffectsLayer = forwardRef<EffectsHandle, Props>(function EffectsLay
         }
       } else {
         speedTrailClock.current = 0;
+      }
+
+      // Skimming a hazard and coming out the other side unharmed gets a
+      // spark and a zip. The reward fires on EXIT of a trap's reach, never on
+      // entry, so it can check that nothing actually connected in between -
+      // a spark half a second before a hit would read as the game lying.
+      if (active) {
+        for (const trap of traps) {
+          const live = livePosition(trapBodies.current.get(trap.id));
+          const origin: Vec3 = live ?? [
+            trap.position[0],
+            trap.position[1],
+            trap.position[2],
+          ];
+          const horizontal = Math.hypot(
+            origin[0] - position[0],
+            origin[2] - position[2],
+          );
+          const inside =
+            horizontal < TRAP_CATALOG[trap.type].placementRadius + GRAZE_BAND &&
+            Math.abs(origin[1] - position[1]) < GRAZE_HEIGHT;
+          const enteredAt = grazeEntryAt.current.get(trap.id);
+          if (inside && enteredAt === undefined) {
+            grazeEntryAt.current.set(trap.id, now);
+          } else if (!inside && enteredAt !== undefined) {
+            grazeEntryAt.current.delete(trap.id);
+            if (
+              lastImpactAt.current < enteredAt &&
+              now - enteredAt < GRAZE_MAX_DWELL_MS &&
+              now - lastGrazeAt.current > GRAZE_COOLDOWN_MS &&
+              motion.groundSpeed > PLAYER.moveSpeed * 0.35
+            ) {
+              lastGrazeAt.current = now;
+              emitGrazeSpark(particles, budget, Math.random, [
+                position[0],
+                position[1] + 0.2,
+                position[2],
+              ]);
+              AudioManager.graze();
+            }
+          }
+        }
       }
 
       ambientClock.current += step;

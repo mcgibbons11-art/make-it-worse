@@ -74,6 +74,11 @@ function notesFor(summary: RunSummary): readonly string[] {
     notes.push(`${formatSeconds(improvement)} off your own record.`);
   if (summary.record && summary.record.previousMs === null)
     notes.push("That is the time to beat now.");
+  // An ordinary clear used to go quiet the moment it missed the near-record
+  // window; the gap to the best is the number that makes the next attempt
+  // worth taking. The near case keeps its own headline above.
+  if (summary.behindRecordMs !== null && summary.nearRecordMs === null)
+    notes.push(`${formatSeconds(summary.behindRecordMs)} off your best.`);
   if (summary.streak >= 2) notes.push(`${summary.streak} clears in a row.`);
   // Stated once, flatly, and only for a streak long enough to have been worth
   // something. No second chances to sell and no reason to hurry back.
@@ -92,10 +97,18 @@ function notesFor(summary: RunSummary): readonly string[] {
  * nothing true to report, which is most of them.
  */
 export function ProgressionRibbon() {
-  const { lastSummary } = useLedger();
+  const { lastSummary, stats } = useLedger();
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
   const headline = lastSummary ? headlineFor(lastSummary) : null;
-  const notes = lastSummary ? notesFor(lastSummary) : [];
+  const notes = lastSummary ? [...notesFor(lastSummary)] : [];
+  // The tally that gives a repeat killer a reputation. Second and later kills
+  // only: "has taken you down 1 time" is a fact, not a grudge.
+  const cause = lastSummary?.cause ?? null;
+  if (cause !== null) {
+    const tally = stats.deathsByCause[cause] ?? 0;
+    if (tally >= 2)
+      notes.push(`${causeLabel(cause)} has now taken you down ${tally} times.`);
+  }
   return (
     <div className="prog-ribbon" role="status">
       {headline && (

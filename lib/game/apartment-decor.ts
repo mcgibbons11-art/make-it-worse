@@ -32,6 +32,13 @@ export const APARTMENT_DECOR_TYPES = [
   "robot-mop",
   "wall-section",
   "door-frame",
+  // Gameplay-earned trophies: gold-dressed variants of existing furnishings,
+  // unlocked by ledger milestones rather than offered outright. Append-only,
+  // like every persisted id list.
+  "trophy-shelf",
+  "trophy-flame",
+  "trophy-plaque",
+  "trophy-throne",
 ] as const;
 
 export type ApartmentDecorType = (typeof APARTMENT_DECOR_TYPES)[number];
@@ -101,8 +108,14 @@ const WALL_TYPES = new Set<ApartmentDecorType>([
   "curtains",
   "radiator",
   "wall-shelf",
+  "trophy-shelf",
+  "trophy-plaque",
 ]);
-const SURFACE_TYPES = new Set<ApartmentDecorType>(["toaster", "bedside-lamp"]);
+const SURFACE_TYPES = new Set<ApartmentDecorType>([
+  "toaster",
+  "bedside-lamp",
+  "trophy-flame",
+]);
 
 export function apartmentAnchorKind(type: ApartmentDecorType): ApartmentAnchorKind {
   if (WALL_TYPES.has(type)) return "wall";

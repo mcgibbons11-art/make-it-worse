@@ -5,6 +5,7 @@ import type {
   ChallengeDTO,
   DecodedGhostSample,
   GamePhase,
+  GhostTrace,
   HazardContact,
   TrapPlacementInput,
 } from "@/lib/game/types";
@@ -33,6 +34,7 @@ import { CameraRig } from "./CameraRig";
 import { TrapRenderer, type TrapMechanicEvent } from "./TrapRenderer";
 import { GhostRunner } from "./GhostRunner";
 import { LiveGhostRunner, type LiveGhostFeed } from "./LiveGhostRunner";
+import { TrapReveal, type TrapRevealSpec } from "./TrapReveal";
 import { PlacementZones } from "./placement/PlacementZones";
 import { TrapPreview } from "./placement/TrapPreview";
 import { EffectsLayer, type EffectsHandle } from "./effects/EffectsLayer";
@@ -57,6 +59,9 @@ interface Props {
   onMovePlacement(zoneId: string, worldX: number, worldZ: number): void;
   trackOverride?: BuiltTrack;
   liveGhost?: LiveGhostFeed | null;
+  bestGhostTrace?: GhostTrace | null;
+  trapReveal?: TrapRevealSpec | null;
+  onTrapRevealDone?(): void;
 }
 
 export function GameScene({
@@ -79,6 +84,9 @@ export function GameScene({
   onMovePlacement,
   trackOverride,
   liveGhost,
+  bestGhostTrace,
+  trapReveal,
+  onTrapRevealDone,
 }: Props) {
   const internalPlayer = useRef<RapierRigidBody>(null);
   const player = qaPlayerRef ?? internalPlayer;
@@ -308,19 +316,26 @@ export function GameScene({
             attemptSerial={attemptSerial}
             active={phase === "playing"}
           />
-          {phase === "playing" && ghostEnabled && challenge.ghostTrace && (
+          {/* Your own fastest run outranks the sender's replay as the rabbit:
+              racing yourself is the loop that brings a player back to a room. */}
+          {phase === "playing" && ghostEnabled && (bestGhostTrace || challenge.ghostTrace) && (
             <GhostRunner
-              trace={challenge.ghostTrace}
+              trace={bestGhostTrace || challenge.ghostTrace!}
               avatarSeed={challenge.createdByAvatarSeed}
-              name={challenge.createdByName}
+              name={bestGhostTrace ? "Your best" : challenge.createdByName}
               startedAt={startedAt}
             />
           )}
         </>
       ) : (
-        <group position={track.spawn} rotation={[0, spawnYaw, 0]}>
-          <PlayerVisual avatarSeed={challenge.createdByAvatarSeed} avatar={avatar} />
-        </group>
+        <>
+          <group position={track.spawn} rotation={[0, spawnYaw, 0]}>
+            <PlayerVisual avatarSeed={challenge.createdByAvatarSeed} avatar={avatar} />
+          </group>
+          {trapReveal && onTrapRevealDone && (
+            <TrapReveal spec={trapReveal} exit={track.exit} onDone={onTrapRevealDone} />
+          )}
+        </>
       )}
       {phase === "placing_trap" && placement && (
         <>

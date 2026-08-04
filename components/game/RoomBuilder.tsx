@@ -228,8 +228,12 @@ export function ensureRequiredEndpoints(source: readonly RoomItem[]): RoomItem[]
   let nextUid = Math.max(0, ...items.map((item) => item.uid)) + 1;
   let platforms = items.filter((item) => platformSpec(item.asset));
   if (platforms.length === 0) {
+    // z -5, not the old -6: an 8-unit spacing left a 5-unit gap, which the
+    // conservative reach rule refuses even though the real jump clears it, so
+    // the builder opened on its own red warning and the judgment strip read
+    // "gate unreachable" on an empty draft.
     const startBlock: RoomItem = { uid: nextUid++, asset: "platform", x: 0, y: 0, z: 2, rotation: 0, color: defaultColor("platform"), ...transformDefaults };
-    const finishBlock: RoomItem = { uid: nextUid++, asset: "platform", x: 0, y: 0, z: -6, rotation: 0, color: defaultColor("platform"), ...transformDefaults };
+    const finishBlock: RoomItem = { uid: nextUid++, asset: "platform", x: 0, y: 0, z: -5, rotation: 0, color: defaultColor("platform"), ...transformDefaults };
     items.push(startBlock, finishBlock);
     platforms = [startBlock, finishBlock];
   }
@@ -277,6 +281,92 @@ export function unreachablePlatformIds(items: readonly RoomItem[]): Set<number> 
     }
   }
   return new Set(surfaces.filter(({ item }) => !reached.has(item.uid)).map(({ item }) => item.uid));
+}
+
+export interface CourseReadout {
+  /** Estimated clear seconds along the cheapest feasible route, or null when the gate is unreachable. */
+  clearSeconds: number | null;
+  /** The hardest hop on that route as a share of the allowed jump, 0 through 1. */
+  tightestJump: number | null;
+  trapCount: number;
+}
+
+/**
+ * The builder's judgment strip, from the same hop rule the red-platform
+ * warning uses: Dijkstra over the platform graph from the spawn's platform to
+ * the gate's, costed on centre distance plus a climb premium. The tightest
+ * hop is tracked along the winning route, so the meter describes the course a
+ * player would actually take rather than the worst pair of platforms anywhere.
+ */
+export function courseReadout(items: readonly RoomItem[]): CourseReadout {
+  const trapCount = items.filter((item) => isTrapAsset(item.asset)).length;
+  const surfaces = items.flatMap((item) => {
+    const spec = orientedPlatformSpec(item);
+    return spec ? [{ item, spec }] : [];
+  });
+  const spawn = items.find((item) => item.asset === "spawn");
+  const finish = items.find((item) => item.asset === "finish");
+  if (!spawn || !finish || surfaces.length === 0)
+    return { clearSeconds: null, tightestJump: null, trapCount };
+  const nearest = (x: number, z: number) =>
+    surfaces.reduce(
+      (best, candidate) => {
+        const distance = Math.hypot(candidate.item.x - x, candidate.item.z - z);
+        return distance < best.distance ? { uid: candidate.item.uid, distance } : best;
+      },
+      { uid: surfaces[0]!.item.uid, distance: Number.POSITIVE_INFINITY },
+    ).uid;
+  const start = nearest(spawn.x, spawn.z);
+  const goal = nearest(finish.x, finish.z);
+  const cost = new Map<number, number>([[start, 0]]);
+  const hardest = new Map<number, number>([[start, 0]]);
+  const settled = new Set<number>();
+  while (true) {
+    let currentUid: number | null = null;
+    let currentCost = Number.POSITIVE_INFINITY;
+    for (const [uid, value] of cost) {
+      if (!settled.has(uid) && value < currentCost) {
+        currentUid = uid;
+        currentCost = value;
+      }
+    }
+    if (currentUid === null) break;
+    if (currentUid === goal) break;
+    settled.add(currentUid);
+    const from = surfaces.find(({ item }) => item.uid === currentUid)!;
+    for (const to of surfaces) {
+      if (settled.has(to.item.uid)) continue;
+      const rise = to.item.y - from.item.y;
+      if (rise > JUMP_RISE) continue;
+      const dx = Math.max(0, Math.abs(to.item.x - from.item.x) - (from.spec.width + to.spec.width) / 2);
+      const dz = Math.max(0, Math.abs(to.item.z - from.item.z) - (from.spec.depth + to.spec.depth) / 2);
+      const gap = Math.hypot(dx, dz);
+      const allowed = rise < -1 ? JUMP_DISTANCE * 1.4 : JUMP_DISTANCE;
+      if (gap > allowed) continue;
+      const centreDistance = Math.hypot(to.item.x - from.item.x, to.item.z - from.item.z);
+      const next = currentCost + centreDistance + Math.max(0, rise) * 1.6;
+      if (next < (cost.get(to.item.uid) ?? Number.POSITIVE_INFINITY)) {
+        cost.set(to.item.uid, next);
+        const severity = Math.max(gap / allowed, rise > 0 ? rise / JUMP_RISE : 0);
+        hardest.set(
+          to.item.uid,
+          Math.max(hardest.get(currentUid) ?? 0, severity),
+        );
+      }
+    }
+  }
+  const routeCost = cost.get(goal);
+  if (routeCost === undefined)
+    return { clearSeconds: null, tightestJump: null, trapCount };
+  return {
+    // Route metres at run speed, a jump-arc premium, and a beat per trap.
+    clearSeconds: Math.max(
+      3,
+      Math.round(routeCost / PLAYER.moveSpeed + 2 + trapCount * 0.6),
+    ),
+    tightestJump: Math.min(1, hardest.get(goal) ?? 0),
+    trapCount,
+  };
 }
 
 function GamePlatform({ item, warning, selected }: { item: RoomItem; warning: boolean; selected: boolean }) {
@@ -755,6 +845,43 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     setSelectedUids(copies.map((item) => item.uid));
     setNotice(`Duplicated ${copies.length} ${copies.length === 1 ? "asset" : "assets"}.`);
   };
+  const mirrorSelection = () => {
+    const chosen = new Set(selectedUids.filter((uid) => {
+      const item = items.find((candidate) => candidate.uid === uid);
+      return item && !isRequiredEndpoint(item.asset);
+    }));
+    if (chosen.size === 0) return;
+    const source = items.filter((item) => chosen.has(item.uid));
+    const centerX = source.reduce((sum, item) => sum + item.x, 0) / source.length;
+    // Flip about the selection's own centre, so a mirrored wing lands where
+    // the original stood; yaw negates because the flip is across x.
+    save(items.map((item) => chosen.has(item.uid)
+      ? { ...item, x: snap(2 * centerX - item.x), rotation: -(item.rotation ?? 0) }
+      : item));
+    setNotice(`Mirrored ${source.length} ${source.length === 1 ? "asset" : "assets"} left-right.`);
+  };
+  const repeatSelection = () => {
+    const source = items.filter((item) => selectedUids.includes(item.uid) && !isRequiredEndpoint(item.asset));
+    if (source.length === 0) return;
+    // One more tile of the same run: offset by the selection's span along its
+    // longer horizontal axis plus a jumpable gap, so stairs and corridors
+    // continue instead of stacking on themselves.
+    const spanX = Math.max(...source.map((item) => item.x)) - Math.min(...source.map((item) => item.x));
+    const spanZ = Math.max(...source.map((item) => item.z)) - Math.min(...source.map((item) => item.z));
+    const alongX = spanX >= spanZ;
+    const step = snap((alongX ? spanX : spanZ) + 2);
+    let uid = nextUid();
+    const copies = source.map((item) => ({
+      ...item,
+      uid: uid++,
+      x: item.x + (alongX ? step : 0),
+      z: item.z + (alongX ? 0 : step),
+    }));
+    save([...items, ...copies]);
+    setSelectedUids(copies.map((item) => item.uid));
+    setNotice(`Repeated the run: ${copies.length} new ${copies.length === 1 ? "asset" : "assets"}.`);
+  };
+  const readout = useMemo(() => courseReadout(items), [items]);
   useEffect(() => {
     const onBuilderShortcut = (event: KeyboardEvent) => {
       if (mode !== "build") return;
@@ -932,7 +1059,7 @@ export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, 
     </aside>}
     {!cleanPlay && mode === "build" && <aside className="room-builder-tray"><strong>Assets</strong><div>{BUILDABLE_PIECES.map((entry) => <button key={entry.asset} onClick={() => add(entry.asset)}><span>{entry.emoji}</span>{entry.label}</button>)}</div><label className="room-builder-search">All {TRAP_TYPES.length} traps<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search traps" /></label><small className="room-builder-scroll-cue">↕ Scroll for all {TRAP_TYPES.length} traps</small><div>{trapMatches.map((type) => <button key={type} onClick={() => add(`trap:${type}`)}><TrapIcon type={type} />{TRAP_CATALOG[type].displayName}</button>)}</div></aside>}
     {!cleanPlay && mode === "build" && selected && <TransformInspector item={selected} onChange={changeSelected} />}
-    {!cleanPlay && <section className="room-builder-tools"><b>{selectedUids.length > 1 ? `${selectedUids.length} assets selected` : selected ? assetLabel(selected.asset) : `${items.length} assets`}</b>{selected && selectedUids.length === 1 && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={history.undo === 0 || mode !== "build"} onClick={undo}>↶ Undo</button><button disabled={history.redo === 0 || mode !== "build"} onClick={redo}>↷ Redo</button><button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={duplicate}>⧉ Copy</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>📁 My maps</button>{onShare && roomBuilderShareFormats(shareMode).map((format) => <button key={format} disabled={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug} aria-label={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug ? "Copy published map code; publish this version first" : undefined} onClick={() => void share(format)}>{format === "code" ? (shareMode === "codes-only" ? "📋 Copy published map code" : "📋 Copy map code") : "🔗 Copy map link"}</button>)}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } else { setControlsHintEpoch((value) => value + 1); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
+    {!cleanPlay && <section className="room-builder-tools"><b>{selectedUids.length > 1 ? `${selectedUids.length} assets selected` : selected ? assetLabel(selected.asset) : `${items.length} assets`}</b><span className="room-builder-readout" title="Estimated clear time, the hardest jump on the best route as a share of maximum reach, and the trap count">{readout.clearSeconds === null ? "🚧 Gate unreachable" : `⏱ ≈${readout.clearSeconds}s · 🦘 ${Math.round((readout.tightestJump ?? 0) * 100)}% · 🪤 ${readout.trapCount}`}</span>{selected && selectedUids.length === 1 && !isTrapAsset(selected.asset) && <label className="room-builder-color">Color <input type="color" value={selected.color} onChange={(event) => changeSelected({ color: event.target.value })} /></label>}<button disabled={history.undo === 0 || mode !== "build"} onClick={undo}>↶ Undo</button><button disabled={history.redo === 0 || mode !== "build"} onClick={redo}>↷ Redo</button><button disabled={!selected} onClick={() => changeSelected({ rotation: (selected?.rotation ?? 0) + Math.PI / 2 })}>↻ Rotate</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) + 0.25) })}>↑ Lift</button><button disabled={!selected || mode !== "build"} onClick={() => changeSelected({ y: snap((selected?.y ?? 0) - 0.25) })}>↓ Lower</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={duplicate}>⧉ Copy</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={mirrorSelection}>⇋ Mirror</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={repeatSelection}>▦ Repeat</button><button disabled={removableSelection.length === 0 || mode !== "build"} onClick={remove}>🗑 Remove</button><button onClick={() => setBrowseOpen(true)}>📁 My maps</button>{onShare && roomBuilderShareFormats(shareMode).map((format) => <button key={format} disabled={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug} aria-label={shareMode === "codes-only" && publishedVersionId !== runtime.challenge.slug ? "Copy published map code; publish this version first" : undefined} onClick={() => void share(format)}>{format === "code" ? (shareMode === "codes-only" ? "📋 Copy published map code" : "📋 Copy map code") : "🔗 Copy map link"}</button>)}<button onClick={() => setPublishOpen(true)}>📤 Publish</button><button className="primary" onClick={() => { const next = mode === "build" ? "test" : "build"; setMode(next); setSelectedUid(null); if (next === "test") { setTestSerial((value) => value + 1); setTestStartedAt(performance.now()); } else { setControlsHintEpoch((value) => value + 1); } setNotice(next === "test" ? "Real game Test mode: spawn marker hidden. Reach the end gate." : "Builder camera restored. Red platforms are outside jump reach."); }}>{mode === "build" ? "▶ Test map" : "🧱 Keep building"}</button></section>}
     {!cleanPlay && <p className="room-builder-notice" role="status">{notice}</p>}
     {!cleanPlay && guideOpen && <div className="room-builder-browser"><section><div className="eyebrow">FREE BUILD GUIDE</div><h2>Build directly in the room</h2><div className="room-builder-guide"><p><b>🏁 Required markers:</b> Every map always has one spawn marker and one end gate. Drag or lift them wherever you want; they are visible only while building and cannot be copied or deleted.</p><p><b>🧱 Add assets:</b> Choose a main-game block or any trap from the left tray. Blocks can use custom colors. Traps always keep their authored base colors.</p><p><b>🖱️ Select and move:</b> Left-click an object to select it, then left-drag it through the room. Shift-click adds or removes objects from a group selection; dragging any selected object moves the whole group without selecting objects underneath it.</p><p><b>🎥 Camera:</b> Right-drag to turn the build camera and use the mouse wheel to zoom. WASD pans across the room; Q/E move the camera vertically.</p><p><b>🧭 Transform inspector:</b> Select one item to type its exact X/Y/Z position and Y rotation. Blocks also expose independent X/Y/Z rotation and scale, so every platform can become a custom-sized wall, floor, ramp, or vertical structure.</p><p><b>↕️ Build vertically:</b> Lift and Lower move the primary selected object in 0.25-unit steps. Rotate turns it 90°. You can stack routes and build above or below the starting floor.</p><p><b>📋 Edit history:</b> Ctrl/Cmd+C and V copy/paste one object or a whole selected group. Delete removes the selection. Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y redoes up to 100 edits.</p><p><b>⚠️ Jump check:</b> A block turns red when the conservative reach check says it is too far or too high from the connected route. The warning is intentionally about 20% stricter than the theoretical maximum jump.</p><p><b>▶ Test map:</b> Test mode hides the spawn marker and runs the map with the finished game&apos;s movement, camera, physics, traps, falls, and end gate. Choose Keep building to return without losing the draft.</p><p><b>📁 My maps:</b> Open a map you published on this device. Edit loads it into your draft, Play tests it, Copy Code shares it again without republishing, and Delete removes your local saved copy after confirmation.</p><p><b>📤 Publish and share:</b> Publish saves and validates an exact named version. After that, Copy published map code remains available for the unchanged version without publishing it again. In Portals, another player pastes the code into Use Map Code.</p></div><button className="button secondary" onClick={() => setGuideOpen(false)}>✅ Got it</button></section></div>}
     {!cleanPlay && browseOpen && <div className="room-builder-browser"><section><div className="eyebrow">YOUR CUSTOM MAPS</div><h2>My maps</h2><p>Maps you published on this device. Copy Code shares an unchanged version immediately; deleting a saved copy never erases the draft currently in the editor.</p>{published.length === 0 ? <p>No saved maps yet. Publish your current draft to add it here.</p> : published.map((map) => <article key={map.id}><div><strong>{map.name}</strong><small>{map.items.length} assets · {new Date(map.createdAt).toLocaleDateString()}{activeSavedMapId === map.id ? " · open now" : ""}</small></div><div className="room-builder-map-actions"><button onClick={() => openSavedMap(map, "build")}>✏️ Edit</button><button onClick={() => openSavedMap(map, "test", performance.now())}>▶ Play</button>{onShare && <button onClick={() => void copySavedMapCode(map)}>📋 Copy Code</button>}<button className="danger" onClick={() => setDeleteCandidate(map)}>🗑 Delete</button></div></article>)}<button className="button secondary" onClick={() => setBrowseOpen(false)}>Close</button></section></div>}

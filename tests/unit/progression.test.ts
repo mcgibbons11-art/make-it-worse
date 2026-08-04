@@ -515,6 +515,31 @@ describe("progression store", () => {
   });
 });
 
+describe("the result card's new lines", () => {
+  it("reports the gap behind the record for any non-record clear", () => {
+    const first = applyRunEnd(defaultStats(), run({ durationMs: 10_000 }));
+    const slower = applyRunEnd(first.stats, run({ durationMs: 11_800, atMs: 2_000 }));
+    expect(slower.summary.behindRecordMs).toBe(1_800);
+    expect(slower.summary.nearRecordMs).toBeNull();
+    const near = applyRunEnd(first.stats, run({ durationMs: 10_300, atMs: 2_000 }));
+    expect(near.summary.behindRecordMs).toBe(300);
+    expect(near.summary.nearRecordMs).toBe(300);
+    expect(first.summary.behindRecordMs).toBeNull();
+  });
+
+  it("names what ended a failed run so the card can keep a tally", () => {
+    const fell = applyRunEnd(
+      defaultStats(),
+      run({ outcome: "fell", hazardTrapType: "angry_vacuum", progress: 0.4 }),
+    );
+    expect(fell.summary.cause).toBe("angry_vacuum");
+    expect(fell.stats.deathsByCause.angry_vacuum).toBe(1);
+    const timedOut = applyRunEnd(defaultStats(), run({ outcome: "timeout", progress: 0.4 }));
+    expect(timedOut.summary.cause).toBe("timeout");
+    expect(applyRunEnd(defaultStats(), run()).summary.cause).toBeNull();
+  });
+});
+
 describe("merging two ledgers that may share history", () => {
   const ledger = (overrides: Partial<ProgressionStats>): ProgressionStats => ({
     ...defaultStats(),

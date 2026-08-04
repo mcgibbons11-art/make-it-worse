@@ -97,6 +97,14 @@ export interface RunSummary {
   } | null;
   /** How far off the record a clear landed, when it landed close and missed. */
   nearRecordMs: number | null;
+  /**
+   * How far behind the standing record ANY non-record clear landed, near or
+   * not, so a result card can always say "+1.8s off your best" instead of
+   * going quiet the moment a clear misses the near window.
+   */
+  behindRecordMs: number | null;
+  /** What ended a failed run, for tallies like "the vacuum's 11th kill". */
+  cause: DeathCause | null;
   /** How far a failed run got, when it got far enough to be worth saying. */
   closeCallProgress: number | null;
   /** Consecutive clears after this run. */
@@ -246,6 +254,8 @@ export function applyRunEnd(
     outcome: run.outcome,
     record: null,
     nearRecordMs: null,
+    behindRecordMs: null,
+    cause: null,
     closeCallProgress: null,
     streak: stats.currentStreak,
     streakLost: null,
@@ -285,6 +295,7 @@ export function applyRunEnd(
         });
       } else {
         const behind = run.durationMs - previous.timeMs;
+        summary.behindRecordMs = behind;
         if (behind < NEAR_RECORD_MS) summary.nearRecordMs = behind;
         next.bests = prune({
           ...stats.bests,
@@ -302,6 +313,7 @@ export function applyRunEnd(
     summary.streak = 0;
     const cause: DeathCause =
       run.outcome === "timeout" ? "timeout" : (run.hazardTrapType ?? "void");
+    summary.cause = cause;
     next.deathsByCause = bump(stats.deathsByCause, cause);
     const reached = Math.min(1, Math.max(0, run.progress));
     if (Number.isFinite(run.progress) && reached >= CLOSE_CALL_PROGRESS) {

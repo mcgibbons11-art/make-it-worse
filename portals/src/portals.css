@@ -809,7 +809,9 @@ summary:focus-visible {
 }
 .portals-map {
   display: grid;
-  gap: 2px;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 12px;
   padding: 10px 14px;
   border: 3px solid var(--ink);
   border-radius: 12px;
@@ -818,6 +820,28 @@ summary:focus-visible {
   font-family: inherit;
   cursor: pointer;
   text-align: left;
+}
+.portals-map-thumb {
+  width: 96px;
+  height: 58px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #bfeaff;
+}
+.portals-map-copy {
+  display: grid;
+  gap: 2px;
+}
+/* The added-trap fly-through: the name tag rides the drei Html ghost-label
+   styling; only the skip control needs a home of its own. */
+.reveal-skip {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
+}
+.reveal-label {
+  white-space: nowrap;
 }
 .portals-map:hover,
 .portals-map:focus-visible {

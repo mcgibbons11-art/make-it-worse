@@ -16,6 +16,8 @@ import { AssetModel, type ModelName } from "@/components/game/AssetModel";
 import { createMAKEITWORSEApartmentRoomModel } from "@/components/game/models/createApartmentModel";
 import { TONE_EXPOSURE } from "@/components/game/render/tone";
 import { AudioManager } from "@/lib/audio/AudioManager";
+import type { ProgressionStats } from "@/lib/game/progression";
+import { useProgressionStore } from "@/stores/progression-store";
 import {
   DEFAULT_APARTMENT_DECOR,
   DEFAULT_APARTMENT_STYLE,
@@ -119,6 +121,22 @@ interface DecorDefinition {
   elevation?: number;
   scale?: readonly [number, number, number];
   tintable?: boolean;
+  /** Colour a fresh placement wears; the trophies use it for their gold. */
+  defaultColor?: string;
+  /**
+   * A milestone gate. The item stays visible in the catalogue as a goal, and
+   * becomes placeable only once the ledger clears the bar - the same shape
+   * the trap unlocks use.
+   */
+  earn?: {
+    label: string;
+    target: number;
+    measure(stats: ProgressionStats): number;
+  };
+}
+
+function totalDeaths(stats: ProgressionStats): number {
+  return Object.values(stats.deathsByCause).reduce((sum, value) => sum + value, 0);
 }
 
 /**
@@ -278,6 +296,38 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     label: "Robot mop", emoji: "🧼", model: "mop", nodeIds: [],
     size: [0.8, 0.25, 0.8], solid: true, tintable: false,
   },
+  // The trophy room: gold-dressed variants of existing furnishings, earned
+  // from the same ledger the trap unlocks read. No new geometry is authored
+  // here - each reuses harvested pieces the apartment already ships - so the
+  // img2threejs intake rule is not in play.
+  "trophy-shelf": {
+    label: "Survivor Shelf", emoji: "🏆", variant: "living",
+    nodeIds: ["wall-shelf"], prefixes: ["shelf-book-", "shelf-mug"],
+    size: [1.6, 0.6, 0.35], elevation: 1.35, solid: false,
+    defaultColor: "#e8b93b",
+    earn: { label: "Survive 10 runs", target: 10, measure: (stats) => stats.clears },
+  },
+  "trophy-flame": {
+    label: "Streak Flame", emoji: "🔥", variant: "bedroom",
+    nodeIds: [], prefixes: ["bedside-lamp-"],
+    size: [0.45, 0.55, 0.45], solid: false,
+    defaultColor: "#ff8c42",
+    earn: { label: "Clear 5 in a row", target: 5, measure: (stats) => stats.bestStreak },
+  },
+  "trophy-plaque": {
+    label: "Memorial Plaque", emoji: "🪦", variant: "living",
+    nodeIds: ["art-frame", "art-field", "art-motif-sun", "art-motif-ridge"],
+    size: [1.4, 0.9, 0.12], elevation: 1.35, solid: false,
+    defaultColor: "#8f95a6",
+    earn: { label: "Go down 100 times", target: 100, measure: totalDeaths },
+  },
+  "trophy-throne": {
+    label: "Golden Throne", emoji: "👑", variant: "study",
+    nodeIds: [], prefixes: ["desk-chair-", "chair-leg-"],
+    size: [1, 1.2, 1], scale: [1.2, 1.15, 1.2], solid: true,
+    defaultColor: "#e8b93b",
+    earn: { label: "Add 25 traps", target: 25, measure: (stats) => stats.trapsPlaced },
+  },
   "wall-section": {
     label: "Interior wall", emoji: "🧱", nodeIds: [],
     size: [2.5, WALL_HEIGHT, WALL_THICKNESS], solid: true,
@@ -296,6 +346,7 @@ const DECOR_GROUPS = [
   { id: "bedroom", label: "🛏️ Bedroom", types: ["bed", "bedside-table", "bedside-lamp", "wardrobe"] },
   { id: "study", label: "📚 Study", types: ["writing-desk", "desk-chair", "bookcase"] },
   { id: "wall", label: "🖼️ Wall", types: ["wall-art", "curtains", "radiator", "wall-shelf"] },
+  { id: "trophies", label: "🏆 Trophies", types: ["trophy-shelf", "trophy-flame", "trophy-plaque", "trophy-throne"] },
   { id: "structure", label: "🧱 Structure", types: ["wall-section", "door-frame"] },
   { id: "utility", label: "🧹 Utility", types: ["toilet", "vacuum", "floor-fan", "robot-mop"] },
 ] as const satisfies readonly { id: string; label: string; types: readonly ApartmentDecorType[] }[];
@@ -1169,6 +1220,11 @@ export function AvatarApartment({
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [catalogGroup, setCatalogGroup] = useState<(typeof DECOR_GROUPS)[number]["id"]>("all");
+  // The trophy gates read the same ledger the trap unlocks do. Hydrated here
+  // because the apartment can be the first mounted surface after a reload.
+  const hydrateLedger = useProgressionStore((state) => state.hydrate);
+  useEffect(() => hydrateLedger(), [hydrateLedger]);
+  const ledgerStats = useProgressionStore((state) => state.stats);
   const undoDecor = useRef<ApartmentDecorItem[][]>([]);
   const redoDecor = useRef<ApartmentDecorItem[][]>([]);
   const [history, setHistory] = useState({ undo: 0, redo: 0 });
@@ -1268,6 +1324,10 @@ export function AvatarApartment({
   }, []);
 
   const addItem = (type: ApartmentDecorType) => {
+    // The catalogue disables locked tiles, but the gate holds here too so no
+    // other entry point can place an unearned trophy.
+    const earn = DECOR[type].earn;
+    if (earn && earn.measure(ledgerStats) < earn.target) return;
     let uid: string;
     do {
       idSerial.current += 1;
@@ -1281,7 +1341,9 @@ export function AvatarApartment({
       x: clampX(runnerPosition.x + 2.6),
       z: clampZ(runnerPosition.z + offset),
       rotation: 0,
-      color: type === "wall-section" || type === "door-frame" ? style.wallColor : "#68b78a",
+      color:
+        DECOR[type].defaultColor ??
+        (type === "wall-section" || type === "door-frame" ? style.wallColor : "#68b78a"),
       anchorKind,
       ...(type === "wall-section" ? { length: 2.5 } : {}),
     };
@@ -1499,9 +1561,25 @@ export function AvatarApartment({
           <div className="avatar-apartment-decor-grid">
             {activeGroup.types.map((type) => {
               const definition = DECOR[type];
+              const earn = definition.earn;
+              const current = earn ? Math.min(earn.target, earn.measure(ledgerStats)) : 0;
+              const locked = earn ? current < earn.target : false;
               return (
-              <button key={type} onClick={() => addItem(type)}>
-                <span>{definition.emoji}</span>{definition.label}
+              <button
+                key={type}
+                disabled={locked}
+                className={locked ? "is-locked" : undefined}
+                aria-label={
+                  locked
+                    ? `${definition.label}, locked: ${earn!.label} (${current} of ${earn!.target})`
+                    : definition.label
+                }
+                onClick={() => addItem(type)}
+              >
+                <span>{locked ? "🔒" : definition.emoji}</span>{definition.label}
+                {earn && (
+                  <small>{locked ? `${earn.label} · ${current}/${earn.target}` : "Earned"}</small>
+                )}
               </button>
               );
             })}

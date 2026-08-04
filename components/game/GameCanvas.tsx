@@ -6,6 +6,7 @@ import type {
   ChallengeDTO,
   DecodedGhostSample,
   GamePhase,
+  GhostTrace,
   HazardContact,
   TrapPlacementInput,
 } from "@/lib/game/types";
@@ -17,6 +18,7 @@ import { TONE_EXPOSURE } from "./render/tone";
 import type { TrapMechanicEvent } from "./TrapRenderer";
 import type { BuiltTrack } from "@/lib/game/track";
 import type { LiveGhostFeed } from "./LiveGhostRunner";
+import type { TrapRevealSpec } from "./TrapReveal";
 interface Props {
   challenge: ChallengeDTO;
   phase: GamePhase;
@@ -40,6 +42,14 @@ interface Props {
   trackOverride?: BuiltTrack;
   /** A duel opponent streamed live over Portals.net, rendered as a ghost. */
   liveGhost?: LiveGhostFeed | null;
+  /**
+   * The player's own fastest recorded run of this room. When present it is
+   * the ghost that races - your best beats a stranger's replay as the rabbit.
+   */
+  bestGhostTrace?: GhostTrace | null;
+  /** The added-trap fly-through, mounted only before the first attempt. */
+  trapReveal?: TrapRevealSpec | null;
+  onTrapRevealDone?(): void;
 }
 export default function GameCanvas(props: Props) {
   return (

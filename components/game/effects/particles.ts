@@ -544,6 +544,41 @@ export function emitImpact(
   );
 }
 
+/**
+ * The flick of sparks for skimming past a hazard without touching it. Small,
+ * bright, and upward: a reward glint, deliberately nothing like the coloured
+ * debris of an actual hit.
+ */
+export function emitGrazeSpark(
+  pool: ParticlePool,
+  budget: EffectBudget,
+  random: () => number,
+  origin: Vec3,
+): number {
+  return emit(
+    pool,
+    {
+      origin,
+      count: 7 * budget.countScale,
+      jitter: 0.14,
+      drift: [0, 2.1, 0],
+      speed: [1.6, 3.2 * budget.speedScale],
+      flatten: 0.35,
+      size: [0.05, 0.085],
+      life: [0.22, 0.4],
+      alpha: 0.95,
+      gravity: 4,
+      drag: 1.2,
+      grow: 0.1,
+      spinRate: 0,
+      shape: 0,
+      colors: [EFFECT_COLORS.impactLow],
+    },
+    random,
+    budget.particles,
+  );
+}
+
 /** Dust off the deck, scaled by the speed the runner arrived at. */
 export function emitLandingDust(
   pool: ParticlePool,

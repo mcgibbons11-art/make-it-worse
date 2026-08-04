@@ -60,6 +60,7 @@ import type {
   ChallengeDTO,
   DecodedGhostSample,
   GamePhase,
+  GhostTrace,
   GuestProfile,
   HazardContact,
   PublishChildResult,
@@ -67,6 +68,9 @@ import type {
   TrapType,
 } from "@/lib/game/types";
 import { isInterfaceTarget, resetInput } from "@/lib/game/input";
+import { hashString } from "@/lib/game/seed";
+import { loadBestGhost, saveBestGhost } from "@/lib/game/best-ghost";
+import type { TrapRevealSpec } from "@/components/game/TrapReveal";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useProgressionStore } from "@/stores/progression-store";
 import { AudioManager } from "@/lib/audio/AudioManager";
@@ -252,6 +256,47 @@ interface TrendingMapItem {
   popularityAvailable: boolean;
 }
 
+/**
+ * A top-down minimap of a published course, drawn straight from the same
+ * track geometry the game builds, so the card shows the actual level rather
+ * than a title. Axis-aligned footprints are thumbnail-grade on purpose: a
+ * rotated ramp reads fine as its bounding patch at this size.
+ */
+function TrackThumbnail({ track }: { track: BuiltTrack }) {
+  const pieces = track.pieces;
+  if (pieces.length === 0) return null;
+  const minZ = Math.min(...pieces.map((piece) => piece.center[2] - piece.size[2] / 2)) - 1;
+  const maxZ = Math.max(...pieces.map((piece) => piece.center[2] + piece.size[2] / 2)) + 1;
+  const minX = Math.min(...pieces.map((piece) => piece.center[0] - piece.size[0] / 2)) - 1;
+  const maxX = Math.max(...pieces.map((piece) => piece.center[0] + piece.size[0] / 2)) + 1;
+  // Low decks draw first so a bridge over a pit reads as being on top.
+  const ordered = [...pieces].sort((a, b) => a.center[1] - b.center[1]);
+  return (
+    <svg
+      className="portals-map-thumb"
+      viewBox={`${minZ} ${minX} ${maxZ - minZ} ${maxX - minX}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      {ordered.map((piece, index) => (
+        <rect
+          key={index}
+          x={piece.center[2] - piece.size[2] / 2}
+          y={piece.center[0] - piece.size[0] / 2}
+          width={piece.size[2]}
+          height={piece.size[0]}
+          rx={0.35}
+          fill={piece.color}
+          stroke="#171a2b"
+          strokeWidth={0.14}
+        />
+      ))}
+      <circle cx={track.spawn[2]} cy={track.spawn[0]} r={0.8} fill="#ffd84d" stroke="#171a2b" strokeWidth={0.2} />
+      <circle cx={track.exit[2]} cy={track.exit[0]} r={0.8} fill="#74e6af" stroke="#171a2b" strokeWidth={0.2} />
+    </svg>
+  );
+}
+
 function StartSplash({ onStart }: { onStart(): void }) {
   return (
     <main className="start-splash">
@@ -320,6 +365,12 @@ export function PortalsApp() {
   const [runtimeTrack, setRuntimeTrack] = useState<BuiltTrack | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [apartmentOpen, setApartmentOpen] = useState(false);
+  // Your fastest recorded run of the mounted room, re-read per attempt so a
+  // record set on one try is the rabbit on the very next.
+  const [bestGhostTrace, setBestGhostTrace] = useState<GhostTrace | null>(null);
+  // The added-trap fly-through, armed by the intro card's start button on a
+  // friend's worsened map and cleared the moment it hands over to the run.
+  const [trapReveal, setTrapReveal] = useState<TrapRevealSpec | null>(null);
   const [showStartSplash, setShowStartSplash] = useState(true);
   // The name the game hands you rides on every trap you add and into every
   // message you send, and the first time a reviewer saw theirs was inside the
@@ -736,6 +787,29 @@ export function PortalsApp() {
     setRandomRoomSeed(Date.now() ^ Math.floor(Math.random() * 0x7fffffff));
     setEditorOpen(true);
   };
+  // The Daily Disaster: one course per UTC day, the same for every player,
+  // because the whole clean-play pipeline is already seed-deterministic - the
+  // composed track AND the room slug fall out of this one number, so the
+  // day's leaderboard assembles itself from the room-scoped board.
+  // Adjusted during render rather than in effects (the React-sanctioned shape
+  // for prop-derived state): the rabbit re-reads per attempt so a record set
+  // on one try races the very next, and a mounted reveal never survives onto
+  // a different challenge.
+  const [syncedRunKey, setSyncedRunKey] = useState("");
+  const runKey = `${challenge?.slug ?? ""}#${attemptSerial}`;
+  if (syncedRunKey !== runKey) {
+    const slugChanged = syncedRunKey.split("#")[0] !== (challenge?.slug ?? "");
+    setSyncedRunKey(runKey);
+    setBestGhostTrace(challenge ? (loadBestGhost(challenge.slug)?.trace ?? null) : null);
+    if (slugChanged) setTrapReveal(null);
+  }
+  const daily = () => {
+    applyRun(EMPTY_RUN);
+    setRuntimeTrack(null);
+    setViews([]);
+    setRandomRoomSeed(hashString(`miw-daily-${new Date().toISOString().slice(0, 10)}`));
+    setEditorOpen(true);
+  };
   const browseTrending = async () => {
     setTrendingLoading(true);
     openView("trending");
@@ -1001,7 +1075,7 @@ export function PortalsApp() {
     // No-op outside a duel turn: the note methods check the match record.
     duelRef.current.noteRunCleared();
     recordCoachingRunEnd({ outcome: "completed", progress: 1, cause: null });
-    recordProgressRun({
+    const summary = recordProgressRun({
       challengeSlug: challenge.slug,
       depth: challenge.depth,
       outcome: "completed",
@@ -1010,6 +1084,13 @@ export function PortalsApp() {
       hazardTrapType: null,
     });
     AudioManager.finish();
+    // The "so close" sting trails the fanfare when the clear landed inside
+    // the near-record window - the ending that deserves its own sound.
+    if (summary.nearRecordMs !== null) AudioManager.nearRecord();
+    // A new fastest clear becomes the room's rabbit: the trace is already
+    // encoded for the repository, and the next attempt races it.
+    if (summary.record)
+      saveBestGhost(challenge.slug, Math.round(duration), trace);
     navigator.vibrate?.([45, 40, 70]);
     setSubmitStatus(await submitClearTime(challenge.slug, duration));
     if (activePublishedVersionId)
@@ -1200,7 +1281,7 @@ export function PortalsApp() {
   const ticksLeft = phase === "playing" ? secondsLeft : null;
   useEffect(() => {
     if (ticksLeft === null || ticksLeft > COUNTDOWN_FROM || ticksLeft === 0) return;
-    AudioManager.countdown(ticksLeft <= COUNTDOWN_URGENT_FROM);
+    AudioManager.countdown(ticksLeft <= COUNTDOWN_URGENT_FROM, ticksLeft);
   }, [ticksLeft]);
   // The score. Computed in render so the effect fires on the handful of scene
   // changes rather than on all twelve hundred clock ticks in a run.
@@ -1408,6 +1489,18 @@ export function PortalsApp() {
         </button>
         <button
           className="button secondary"
+          onClick={() =>
+            guard(daily, {
+              title: "Leave this run?",
+              body: "The Daily Disaster replaces the run you are on. This run does not come back.",
+              confirmLabel: "Run today's course",
+            })
+          }
+        >
+          📅 Daily Disaster
+        </button>
+        <button
+          className="button secondary"
           onClick={() => void browseTrending()}
         >
           <MenuIcon name="trending" /> Trending games
@@ -1562,9 +1655,12 @@ export function PortalsApp() {
                   })
                 }
               >
-                <strong>{index === 0 ? "🔥 " : ""}{item.map.title}</strong>
-                <span>
-                  by {item.map.author} · {item.map.challenge.traps.length} trap{item.map.challenge.traps.length === 1 ? "" : "s"} · {item.popularityAvailable ? `${item.uniquePlayers}${item.capped ? "+" : ""} player${item.uniquePlayers === 1 ? "" : "s"} · ${item.clears} clear${item.clears === 1 ? "" : "s"}` : "ranking available on Portals"}
+                <TrackThumbnail track={item.map.track} />
+                <span className="portals-map-copy">
+                  <strong>{index === 0 ? "🔥 " : ""}{item.map.title}</strong>
+                  <span>
+                    by {item.map.author} · {item.map.challenge.traps.length} trap{item.map.challenge.traps.length === 1 ? "" : "s"} · {item.popularityAvailable ? `${item.uniquePlayers}${item.capped ? "+" : ""} player${item.uniquePlayers === 1 ? "" : "s"} · ${item.clears} clear${item.clears === 1 ? "" : "s"}` : "ranking available on Portals"}
+                  </span>
                 </span>
               </button>
             ))}
@@ -1772,6 +1868,12 @@ export function PortalsApp() {
           startedAt={startedAt}
           placement={placement}
           ghostEnabled={settings.ghostEnabled}
+          bestGhostTrace={bestGhostTrace}
+          trapReveal={trapReveal}
+          onTrapRevealDone={() => {
+            setTrapReveal(null);
+            void start();
+          }}
           liveGhost={
             duelActive && !duel.myTurn
               ? {
@@ -1818,7 +1920,18 @@ export function PortalsApp() {
           onAssetsReady={() => setAssetsReady(true)}
         />
       </Suspense>
-      {runPanel === "intro" && (
+      {trapReveal && (
+        <button
+          className="button secondary reveal-skip"
+          onClick={() => {
+            setTrapReveal(null);
+            void start();
+          }}
+        >
+          ⏩ Skip
+        </button>
+      )}
+      {runPanel === "intro" && !trapReveal && (
         <Overlay labelledBy="portals-intro-title">
           {/* Was "CHAIN DEPTH 3", the internal term, on the first screen a
               player reads. This says what the number counts, in the same words
@@ -1843,7 +1956,19 @@ export function PortalsApp() {
           )}
           <button
             className="button danger huge"
-            onClick={() => void start()}
+            onClick={() => {
+              // A friend's worsened map earns its dread: the first start on
+              // it flies the camera to the trap they added before the clock
+              // runs. Retries and duels skip straight to the run.
+              if (challenge.addedTrap && attemptSerial === 0 && !duelActive) {
+                setTrapReveal({
+                  trap: challenge.addedTrap,
+                  ownerName: challenge.addedTrap.ownerName,
+                });
+                return;
+              }
+              void start();
+            }}
             disabled={!assetsReady}
           >
             {!assetsReady

@@ -16,6 +16,8 @@ import {
   DEFAULT_AVATAR,
   WARDROBE_SLOTS,
   avatarColor,
+  avatarFromCode,
+  avatarToCode,
   colorRejection,
   deckContrast,
   isCustomColor,
@@ -318,7 +320,43 @@ export function WardrobePanel({
   const [openSlot, setOpenSlot] = useState<WardrobeSlotId>("headwear");
   const [selectionNotice, setSelectionNotice] = useState("");
   const [previewReady, setPreviewReady] = useState(false);
+  const [outfitCodeDraft, setOutfitCodeDraft] = useState("");
+  const [outfitNotice, setOutfitNotice] = useState("");
   const firstControl = useRef<HTMLInputElement>(null);
+
+  const applyOutfitCode = useCallback(() => {
+    const parsed = avatarFromCode(outfitCodeDraft.trim());
+    if (!parsed) {
+      setOutfitNotice("That is not a complete outfit code.");
+      return;
+    }
+    setDraft(parsed);
+    setOutfitCodeDraft("");
+    setOutfitNotice("Outfit on. Save it if it is a keeper.");
+  }, [outfitCodeDraft]);
+
+  const copyOutfitCode = useCallback(async () => {
+    const code = avatarToCode(draft);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(code);
+      setOutfitNotice("Outfit code copied. Send it to a friend.");
+    } catch {
+      // The processed Portals iframe denies the async clipboard; the
+      // selection command rides the click gesture instead of a permission.
+      const scratch = document.createElement("textarea");
+      scratch.value = code;
+      scratch.style.position = "fixed";
+      scratch.style.opacity = "0";
+      document.body.appendChild(scratch);
+      scratch.select();
+      const copied = document.execCommand("copy");
+      scratch.remove();
+      setOutfitNotice(
+        copied ? "Outfit code copied. Send it to a friend." : `Copy this code: ${code}`,
+      );
+    }
+  }, [draft]);
 
   useEffect(() => {
     // Portals may have just unmounted the gameplay canvas. Give its WebGL
@@ -551,6 +589,37 @@ export function WardrobePanel({
             >
               🎲 Randomize
             </button>
+            {/* Outfits travel the same way maps do: a paste-safe code, because
+                the processed Portals iframe blocks both native prompts and the
+                async clipboard read. Copy uses the same select-and-execCommand
+                fallback the map code path relies on. */}
+            <div className="avatar-outfit-code-row">
+              <input
+                value={outfitCodeDraft}
+                placeholder="Paste an outfit code"
+                aria-label="Outfit code"
+                maxLength={140}
+                spellCheck={false}
+                onChange={(event) => setOutfitCodeDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") applyOutfitCode();
+                }}
+              />
+              <button type="button" className="button secondary" onClick={applyOutfitCode}>
+                📥 Wear it
+              </button>
+            </div>
+            <button
+              type="button"
+              className="button secondary"
+              style={{ width: "100%", marginTop: 8 }}
+              onClick={() => void copyOutfitCode()}
+            >
+              📋 Copy outfit code
+            </button>
+            <p className="portals-notice" role="status" aria-live="polite">
+              {outfitNotice}
+            </p>
             <button className="text-button" onClick={onClose}>✖ Cancel</button>
           </div>
         </div>

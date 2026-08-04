@@ -1023,15 +1023,47 @@ class AudioManagerClass {
     );
   }
 
-  countdown(urgent: boolean): void {
+  countdown(urgent: boolean, secondsLeft = urgent ? 3 : 10): void {
     // One recording covers both ticks, played a fifth up when urgent, which is
-    // the interval the synthesised pair used at 880 and 1320 Hz.
-    if (this.sample("countdown", urgent ? 0.045 : 0.03, urgent ? 1.5 : 1) !== "missing")
+    // the interval the synthesised pair used at 880 and 1320 Hz. On top of
+    // that the tick now climbs through the final ten seconds - every ending
+    // used to sound identical from ten down to four, so the clock never felt
+    // like it was closing in until the urgent jump.
+    const progress = Math.max(0, Math.min(1, (10 - secondsLeft) / 10));
+    const climb = 1 + progress * 0.3;
+    if (
+      this.sample(
+        "countdown",
+        (urgent ? 0.045 : 0.03) + progress * 0.01,
+        (urgent ? 1.5 : 1) * climb,
+      ) !== "missing"
+    )
       return;
-    this.tone(urgent ? 1320 : 880, urgent ? 0.06 : 0.05, {
+    this.tone((urgent ? 1320 : 880) * climb, urgent ? 0.06 : 0.05, {
       wave: "sine",
-      gain: urgent ? 0.045 : 0.03,
+      gain: (urgent ? 0.045 : 0.03) + progress * 0.01,
     });
+  }
+
+  /**
+   * The zip for skimming a hazard without touching it: two quick bright
+   * chirps, quiet enough to register as texture rather than as an event.
+   */
+  graze(): void {
+    this.tone(1560, 0.05, { wave: "sine", gain: 0.018 });
+    this.tone(2090, 0.07, { wave: "sine", gain: 0.014, delayMs: 35 });
+  }
+
+  /**
+   * The "so close" sting for a clear inside the near-record window: a rise
+   * that lands a semitone under where it was heading. Deliberately synthesis
+   * only and delayed past the finish fanfare, so the two read as one phrase:
+   * triumph, then the wince.
+   */
+  nearRecord(): void {
+    this.tone(659, 0.14, { wave: "triangle", gain: 0.06, delayMs: 520 });
+    this.tone(880, 0.16, { wave: "triangle", gain: 0.065, delayMs: 660 });
+    this.tone(831, 0.36, { wave: "triangle", gain: 0.055, delayMs: 840 });
   }
 
   placement(valid: boolean): void {

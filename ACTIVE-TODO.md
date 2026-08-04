@@ -2,6 +2,14 @@
 
 Updated continuously from playtest feedback. New requests are added here before being closed.
 
+## Replayability and visual rounds — 2026-08-04
+
+- [x] Ship the ten replayability features in one pass: Daily Disaster (date-seeded shared course and board), race-your-best ghost per room, the fuller post-run stats card, the added-trap fly-through reveal, near-miss sparks and zip, gameplay-earned apartment trophies, the builder judgment strip with Mirror/Repeat, Trending minimap thumbnails, wardrobe outfit codes, and the audio finale (escalating countdown, near-record sting).
+- [x] Redo the weak face options with retained evidence: grin regenerated through its pipeline as a tooth-band smirk, face mask reseated, goatee fullness, freckle clusters (`artifacts/face-shoe-review-2026-08-04*`).
+- [x] Rework the footwear catalogue's failures: sandals thickened into visibility, boots given a multi-value read, sock toe panels tucked inside the knit.
+- [x] Make trap hits explosive roster-wide: impulse-scaled hitstop, red edge flash, and a throttled low sub-thump under every hard discrete strike (sustained beds excluded by design; audio-fallback voice arithmetic updated with it).
+- [x] AAA design elevation: one rise-and-settle beat on every dialog, toy-light sheen on primary/danger buttons, glassy HUD pills, Trending card hover lift, all collapsed under prefers-reduced-motion.
+
 ## Polish round — 2026-08-03
 
 - [x] Persist times through the Portals SDK per-player save (saveState/loadState), reconciling the local ledger with the host copy at sign-in and mirroring every later run. Root cause of the user-reported "times aren't being stored": the ledger lived only in localStorage and the SDK save was declared but never called.

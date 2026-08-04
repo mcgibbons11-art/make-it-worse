@@ -20,9 +20,11 @@ import {
 import { sanitizeDisplayName } from "@/lib/auth/profanity";
 import {
   AVATAR_TUPLE_BOUNDS,
+  CUSTOM_COLOR_PATTERN,
   avatarFromTuple,
   avatarToTuple,
   colorRejection,
+  customLinkColors,
   isReadableAvatar,
 } from "./avatar";
 import { zoneCenter } from "./level-definition";
@@ -39,7 +41,7 @@ import {
   isPlayableTrack,
 } from "./track";
 import { TRAP_CATALOG, TRAP_TYPES } from "./trap-catalog";
-import type { AvatarConfig } from "./avatar";
+import type { AvatarConfig, CustomAvatarColor } from "./avatar";
 import type { BuiltTrack } from "./track";
 import type { ChallengeDTO, PlacementZone, TrapInstance } from "./types";
 
@@ -175,6 +177,16 @@ const runtimeTrackSchema = z.tuple([
   z.number().finite().min(1).max(200_000),
 ]);
 
+// [bodyHex | null, packHex | null]: the exact mixed colours a runner uses
+// where the tuple above could only carry its nearest roster swatch. Only the
+// newer payload versions have this field, and the encoder only emits those
+// versions when a mixed colour is actually present, so every roster-only
+// runner keeps producing a code an older build still opens.
+const customColorsTuple = z.tuple([
+  z.string().regex(CUSTOM_COLOR_PATTERN).nullable(),
+  z.string().regex(CUSTOM_COLOR_PATTERN).nullable(),
+]);
+
 const payloadSchema = z.union([
   z.tuple([z.literal(1), ...ordinaryBasePayload]),
   z.tuple([z.literal(2), ...ordinaryBasePayload, trackSchema]),
@@ -192,6 +204,22 @@ const payloadSchema = z.union([
     runtimeTrackSchema,
     statsTuple,
     avatarTuple.nullable(),
+  ]),
+  z.tuple([
+    z.literal(6),
+    ...ordinaryBasePayload,
+    trackSchema,
+    statsTuple,
+    avatarTuple,
+    customColorsTuple,
+  ]),
+  z.tuple([
+    z.literal(7),
+    ...authoredBasePayload,
+    runtimeTrackSchema,
+    statsTuple,
+    avatarTuple.nullable(),
+    customColorsTuple,
   ]),
 ]);
 
@@ -402,15 +430,30 @@ export function encodeChallengeLink(
         `CHALLENGE_LINK_UNENCODABLE: this runner ${unreadable.reason} at ${unreadable.ratio.toFixed(2)}:1`,
       );
   }
+  // Mixed colours need the newer payload versions; a roster-only runner keeps
+  // emitting the oldest version that can carry it, so its codes stay openable
+  // by builds that predate mixing.
+  const custom = avatar ? customLinkColors(avatar) : null;
   if (runtimeTrack) {
     const encoded = packPayload(
-      JSON.stringify([
-        5,
-        ...body,
-        runtimeTuple(runtimeTrack),
-        tail[1],
-        avatar ? avatarToTuple(avatar) : null,
-      ]),
+      JSON.stringify(
+        custom
+          ? [
+              7,
+              ...body,
+              runtimeTuple(runtimeTrack),
+              tail[1],
+              avatar ? avatarToTuple(avatar) : null,
+              custom,
+            ]
+          : [
+              5,
+              ...body,
+              runtimeTuple(runtimeTrack),
+              tail[1],
+              avatar ? avatarToTuple(avatar) : null,
+            ],
+      ),
     );
     if (encoded.length > CHALLENGE_CODE_MAX_LENGTH)
       throw new Error("CHALLENGE_LINK_UNENCODABLE: this room is too large for a challenge code");
@@ -430,9 +473,14 @@ export function encodeChallengeLink(
   // see against the floor, and they would have no idea why. Fail where the
   // sender is, the way an unplaceable trap already does.
   // Version 4 appends the sender's runner. Four integers, and the recipient
-  // finally beats a person rather than an anonymous shape.
+  // finally beats a person rather than an anonymous shape. Version 6 is the
+  // same payload plus the exact mixed body and pack colours.
   return packPayload(
-    JSON.stringify([4, ...body, ...tail, avatarToTuple(avatar)]),
+    JSON.stringify(
+      custom
+        ? [6, ...body, ...tail, avatarToTuple(avatar), custom]
+        : [4, ...body, ...tail, avatarToTuple(avatar)],
+    ),
   );
 }
 
@@ -452,7 +500,10 @@ function parsePayload(payload: string): Payload {
   // the deck, and they play as that runner, so the whole level becomes
   // unplayable for them. Refuse it here with everything else hand-editable.
   if (
-    (result.data[0] === 4 || result.data[0] === 5) &&
+    (result.data[0] === 4 ||
+      result.data[0] === 5 ||
+      result.data[0] === 6 ||
+      result.data[0] === 7) &&
     result.data[9] &&
     !isReadableAvatar(avatarFromTuple(result.data[9]))
   )
@@ -463,27 +514,36 @@ function parsePayload(payload: string): Payload {
 /** The sender's runner, or null for a link made before runners were choosable. */
 export function decodeChallengeAvatar(payload: string): AvatarConfig | null {
   const data = parsePayload(payload);
-  return (data[0] === 4 || data[0] === 5) && data[9]
-    ? avatarFromTuple(data[9])
-    : null;
+  const version = data[0];
+  if ((version !== 4 && version !== 5 && version !== 6 && version !== 7) || !data[9])
+    return null;
+  const config = avatarFromTuple(data[9]);
+  if (version === 6 || version === 7) {
+    // The tuple carried the nearest roster swatches; the exact mixed colours
+    // arrive beside it and win.
+    const [bodyHex, packHex] = data[10];
+    if (bodyHex) config.body = bodyHex as CustomAvatarColor;
+    if (packHex) config.pack = packHex as CustomAvatarColor;
+  }
+  return config;
 }
 
-/** Authored room geometry carried by version 5 challenge codes. */
+/** Authored room geometry carried by authored (version 5 and 7) codes. */
 export function decodeChallengeRuntimeTrack(payload: string): BuiltTrack | null {
   const data = parsePayload(payload);
-  return data[0] === 5 ? trackFromRuntimeTuple(data[7]) : null;
+  return data[0] === 5 || data[0] === 7 ? trackFromRuntimeTuple(data[7]) : null;
 }
 
 export function decodeChallengeLink(payload: string): ChallengeDTO {
   const data = parsePayload(payload);
   const segments = data[0] === 1
     ? CLASSIC_TRACK
-    : data[0] === 5
+    : data[0] === 5 || data[0] === 7
       ? null
       : data[7];
-  const carried = data[0] === 3 || data[0] === 4 || data[0] === 5
-    ? data[8]
-    : null;
+  const carried = data[0] === 1 || data[0] === 2
+    ? null
+    : data[8];
   const [, slug, baseSeed, creatorIndex, creatorAvatarSeed, names, tuples] =
     data;
   // SAFE_NAME only gates the character class, so a link could carry a slur or a
@@ -502,7 +562,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
   // a player who would then be stuck on it.
   if (segments && !isPlayableTrack(segments))
     throw new Error("CHALLENGE_LINK_INVALID");
-  const track: BuiltTrack = data[0] === 5
+  const track: BuiltTrack = data[0] === 5 || data[0] === 7
     ? trackFromRuntimeTuple(data[7])
     : buildTrack(segments!);
   const pieceSurfaces = placementSurfaces(track);
@@ -538,7 +598,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
       ((zone?.minX ?? piece!.minX) + (zone?.maxX ?? piece!.maxX)) / 2 + offsetX;
     const encodedZ =
       ((zone?.minZ ?? piece!.minZ) + (zone?.maxZ ?? piece!.maxZ)) / 2 + offsetZ;
-    const placement = data[0] === 5
+    const placement = data[0] === 5 || data[0] === 7
       ? {
           valid: true as const,
           canonicalPosition: [
@@ -613,7 +673,7 @@ export function decodeChallengeLink(payload: string): ChallengeDTO {
     isDemo: true,
     // Version 1 predates composed tracks, so it has no segments to carry and
     // leaving track undefined is what marks it as the original course.
-    ...(data[0] === 1 || data[0] === 5 ? {} : { track: segments! }),
+    ...(data[0] === 1 || data[0] === 5 || data[0] === 7 ? {} : { track: segments! }),
   };
 }
 

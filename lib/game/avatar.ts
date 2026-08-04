@@ -96,27 +96,49 @@ export type AvatarColorId =
   | "charcoal"
   | "blush";
 
+/**
+ * A colour the player mixed themselves rather than picked from the roster.
+ * Always lowercase #rrggbb; isCustomColor is the only gate that admits one.
+ */
+export type CustomAvatarColor = `#${string}`;
+
+/** What any colour slot actually holds: a named swatch or a mixed colour. */
+export type AvatarColorValue = AvatarColorId | CustomAvatarColor;
+
+export const CUSTOM_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
+
+export function isCustomColor(value: unknown): value is CustomAvatarColor {
+  return typeof value === "string" && CUSTOM_COLOR_PATTERN.test(value);
+}
+
+/** Admit user input in any case or reject it; never store mixed case. */
+export function normalizeCustomColor(value: unknown): CustomAvatarColor | null {
+  if (typeof value !== "string") return null;
+  const lower = value.trim().toLowerCase();
+  return CUSTOM_COLOR_PATTERN.test(lower) ? (lower as CustomAvatarColor) : null;
+}
+
 /** What a garment slot is coloured with, plus the two body colours. */
 export type ColorSlot = "body" | "pack" | WardrobeColorKey;
 
 export interface AvatarGarmentColors {
-  headwear: AvatarColorId;
-  hair: AvatarColorId;
-  face: AvatarColorId;
-  eyewear: AvatarColorId;
-  top: AvatarColorId;
-  outerwear: AvatarColorId;
-  legwear: AvatarColorId;
-  footwear: AvatarColorId;
-  backpack: AvatarColorId;
-  held: AvatarColorId;
+  headwear: AvatarColorValue;
+  hair: AvatarColorValue;
+  face: AvatarColorValue;
+  eyewear: AvatarColorValue;
+  top: AvatarColorValue;
+  outerwear: AvatarColorValue;
+  legwear: AvatarColorValue;
+  footwear: AvatarColorValue;
+  backpack: AvatarColorValue;
+  held: AvatarColorValue;
 }
 
 export interface AvatarConfig {
   /** Torso, arms, and the whole silhouette the player tracks. */
-  body: AvatarColorId;
+  body: AvatarColorValue;
   /** The shoulder straps. Read against the torso, which encloses them. */
-  pack: AvatarColorId;
+  pack: AvatarColorValue;
   headwear: AvatarHeadwearId;
   hair: AvatarHairId;
   face: AvatarFaceId;
@@ -348,10 +370,12 @@ function known<Id extends string>(
   return options.some((entry) => entry.id === value) ? (value as Id) : fallback;
 }
 
-function knownColor(value: unknown, fallback: AvatarColorId): AvatarColorId {
-  return COLOR_MAP.has(value as AvatarColorId)
-    ? (value as AvatarColorId)
-    : fallback;
+function knownColor(
+  value: unknown,
+  fallback: AvatarColorValue,
+): AvatarColorValue {
+  if (COLOR_MAP.has(value as AvatarColorId)) return value as AvatarColorId;
+  return normalizeCustomColor(value) ?? fallback;
 }
 
 /**
@@ -442,8 +466,8 @@ export function resolveAvatar(
     };
   }
   const full = normalizeAvatar(config);
-  const bodyColor = COLOR_MAP.get(full.body)!.hex;
-  const packColor = COLOR_MAP.get(full.pack)!.hex;
+  const bodyColor = avatarColor(full.body);
+  const packColor = avatarColor(full.pack);
   const garmentColors = garmentHexes(full.colors);
   const sculptTints: Record<string, string> = {
     "torso-purple": bodyColor,
@@ -481,21 +505,22 @@ function garmentHexes(
   colors: AvatarGarmentColors,
 ): Readonly<Record<WardrobeColorKey, string>> {
   return {
-    headwear: COLOR_MAP.get(colors.headwear)!.hex,
-    hair: COLOR_MAP.get(colors.hair)!.hex,
-    face: COLOR_MAP.get(colors.face)!.hex,
-    eyewear: COLOR_MAP.get(colors.eyewear)!.hex,
-    top: COLOR_MAP.get(colors.top)!.hex,
-    outerwear: COLOR_MAP.get(colors.outerwear)!.hex,
-    legwear: COLOR_MAP.get(colors.legwear)!.hex,
-    footwear: COLOR_MAP.get(colors.footwear)!.hex,
-    backpack: COLOR_MAP.get(colors.backpack)!.hex,
-    held: COLOR_MAP.get(colors.held)!.hex,
+    headwear: avatarColor(colors.headwear),
+    hair: avatarColor(colors.hair),
+    face: avatarColor(colors.face),
+    eyewear: avatarColor(colors.eyewear),
+    top: avatarColor(colors.top),
+    outerwear: avatarColor(colors.outerwear),
+    legwear: avatarColor(colors.legwear),
+    footwear: avatarColor(colors.footwear),
+    backpack: avatarColor(colors.backpack),
+    held: avatarColor(colors.held),
   };
 }
 
-export function avatarColor(id: AvatarColorId): string {
-  return COLOR_MAP.get(id)!.hex;
+/** The rendered hex for any colour a slot can hold, named or mixed. */
+export function avatarColor(value: AvatarColorValue): string {
+  return isCustomColor(value) ? value : COLOR_MAP.get(value)!.hex;
 }
 
 // --- Legibility -------------------------------------------------------------
@@ -623,8 +648,8 @@ export interface AvatarRejection {
  */
 export function colorRejection(
   _slot: ColorSlot,
-  _id: AvatarColorId,
-  _body: AvatarColorId,
+  _id: AvatarColorValue,
+  _body: AvatarColorValue,
 ): AvatarRejection | null;
 export function colorRejection(): AvatarRejection | null {
   return null;
@@ -674,7 +699,7 @@ export function isReadableAvatar(
 /** Every colour that can fill a slot, given the body already chosen. */
 export function usableColors(
   _slot: ColorSlot,
-  _body: AvatarColorId,
+  _body: AvatarColorValue,
 ): readonly AvatarSwatch[];
 export function usableColors(): readonly AvatarSwatch[] {
   return AVATAR_COLORS;
@@ -752,17 +777,51 @@ export const AVATAR_TUPLE_BOUNDS = [
 export type AvatarTuple = readonly [number, number, number, number];
 
 /**
+ * The roster index whose swatch sits nearest to the value, which for a named
+ * colour is its own index. This is what lets a mixed colour ride every
+ * index-shaped legacy field as its closest authored stand-in.
+ */
+export function nearestNamedIndex(value: AvatarColorValue): number {
+  if (!isCustomColor(value)) {
+    return AVATAR_COLORS.findIndex((entry) => entry.id === value);
+  }
+  let best = 0;
+  let bestDistance = Infinity;
+  AVATAR_COLORS.forEach((entry, index) => {
+    const distance = colorDistance(entry.hex, value);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = index;
+    }
+  });
+  return best;
+}
+
+/**
  * The four integers a version 4 link carries. Kept exactly as it was: the
  * wardrobe rides in a separate field so that widening this one is never what
- * decides whether an old link still opens.
+ * decides whether an old link still opens. A mixed colour is carried as its
+ * nearest roster swatch here; the exact hex rides the newer payload versions.
  */
 export function avatarToTuple(config: AvatarConfig): AvatarTuple {
   return [
-    AVATAR_COLORS.findIndex((entry) => entry.id === config.body),
-    AVATAR_COLORS.findIndex((entry) => entry.id === config.pack),
+    nearestNamedIndex(config.body),
+    nearestNamedIndex(config.pack),
     HEADWEAR_IDS.indexOf(config.headwear),
     FACE_IDS.indexOf(config.face),
   ];
+}
+
+/**
+ * The exact mixed colours a link must carry beside the tuple, or null when
+ * the runner uses only roster swatches and the legacy payload is exact.
+ */
+export function customLinkColors(
+  config: AvatarConfig,
+): readonly [string | null, string | null] | null {
+  const body = isCustomColor(config.body) ? config.body : null;
+  const pack = isCustomColor(config.pack) ? config.pack : null;
+  return body || pack ? [body, pack] : null;
 }
 
 /**
@@ -827,8 +886,45 @@ const CODE_FIELDS: readonly CodeField[] = [
 
 export const WARDROBE_CODE_LENGTH = CODE_FIELDS.length;
 
-/** What a link's wardrobe field has to look like before it is worth parsing. */
-export const WARDROBE_CODE_PATTERN = /^[0-9A-Za-z_-]{1,32}$/;
+/**
+ * What a wardrobe code has to look like before it is worth parsing. The
+ * ceiling covers the base characters plus a five-character extension entry
+ * for every colour slot a player could mix a custom colour into.
+ */
+export const WARDROBE_CODE_PATTERN = /^[0-9A-Za-z_-]{1,140}$/;
+
+// A custom colour cannot ride a single index character, so it is appended
+// after the base characters as [tag, c0, c1, c2, c3]: the tag is the colour
+// field's own position in CODE_FIELDS, and the four symbols are the 24-bit
+// RGB value in base-64, alphabet order. The base character for that field
+// still carries the nearest roster swatch, so a reader that stops at the base
+// characters shows a close colour rather than nothing.
+const CUSTOM_ENTRY_LENGTH = 5;
+
+function encodeCustomEntry(position: number, hex: CustomAvatarColor): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  let symbols = "";
+  for (let shift = 18; shift >= 0; shift -= 6) {
+    symbols += CODE_ALPHABET[(value >> shift) & 63]!;
+  }
+  return CODE_ALPHABET[position]! + symbols;
+}
+
+function decodeCustomEntry(chunk: string): { position: number; hex: CustomAvatarColor } | null {
+  if (chunk.length !== CUSTOM_ENTRY_LENGTH) return null;
+  const position = CODE_ALPHABET.indexOf(chunk[0]!);
+  if (position < 0 || position >= CODE_FIELDS.length) return null;
+  let value = 0;
+  for (const symbol of chunk.slice(1)) {
+    const index = CODE_ALPHABET.indexOf(symbol);
+    if (index < 0) return null;
+    value = value * 64 + index;
+  }
+  return {
+    position,
+    hex: `#${value.toString(16).padStart(6, "0")}` as CustomAvatarColor,
+  };
+}
 
 function fieldOptions(field: CodeField): readonly string[] {
   if (field.kind === "item" && field.slot === "face")
@@ -862,10 +958,17 @@ function fieldValue(config: AvatarConfig, field: CodeField): string {
 /** The whole outfit as one URL-safe string, one character per slot. */
 export function avatarToCode(config: Partial<AvatarConfig>): string {
   const full = normalizeAvatar(config);
-  return CODE_FIELDS.map((field) => {
-    const index = fieldOptions(field).indexOf(fieldValue(full, field));
+  const custom: string[] = [];
+  const base = CODE_FIELDS.map((field, position) => {
+    const value = fieldValue(full, field);
+    if (field.kind !== "item" && isCustomColor(value)) {
+      custom.push(encodeCustomEntry(position, value));
+      return CODE_ALPHABET[nearestNamedIndex(value)]!;
+    }
+    const index = fieldOptions(field).indexOf(value);
     return CODE_ALPHABET[index]!;
   }).join("");
+  return base + custom.join("");
 }
 
 /**
@@ -904,6 +1007,22 @@ export function avatarFromCode(code: string): AvatarConfig | null {
         (draft as unknown as Record<string, string>)[field.slot] = value;
         break;
     }
+  }
+  // Custom-colour entries follow the base characters. A malformed entry
+  // refuses the whole code the way a malformed base character does; a code
+  // short enough to have no extension is exactly the legacy format.
+  for (
+    let cursor = CODE_FIELDS.length;
+    cursor < code.length;
+    cursor += CUSTOM_ENTRY_LENGTH
+  ) {
+    const entry = decodeCustomEntry(code.slice(cursor, cursor + CUSTOM_ENTRY_LENGTH));
+    if (!entry) return null;
+    const field = CODE_FIELDS[entry.position]!;
+    if (field.kind === "body") draft.body = entry.hex;
+    else if (field.kind === "pack") draft.pack = entry.hex;
+    else if (field.kind === "garment") draft.colors[field.key] = entry.hex;
+    else return null;
   }
   return draft;
 }

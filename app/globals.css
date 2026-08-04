@@ -207,6 +207,18 @@
 .avatar-option.chip span{display:block;border:3px solid var(--ink);border-radius:999px;background:white;padding:8px 15px;font-size:.8rem;font-weight:850}
 .avatar-option.chip input:checked+span{background:var(--yellow)}
 .avatar-note{margin:9px 0 0;color:var(--muted);font-size:.72rem;font-weight:750;line-height:1.45}
+/* The mixing desk behind the Mix… swatch. Same ink borders, radii, and cream
+   fill as the rest of the wardrobe so a free colour picker still reads as this
+   game rather than as a system control. */
+.avatar-swatch-custom{background:conic-gradient(#ff5964,#ffd84d,#74e6af,#4d8bff,#8868ef,#ff5964)}
+.avatar-mixer{display:grid;grid-template-columns:56px 1fr;gap:10px 12px;align-items:center;margin-top:12px;border:3px solid var(--ink);border-radius:16px;background:white;padding:14px}
+.avatar-mixer-preview{grid-row:span 4;width:56px;height:100%;min-height:120px;border:3px solid var(--ink);border-radius:13px}
+.avatar-mixer-row{display:grid;gap:4px;font-size:.66rem;font-weight:850;color:var(--muted)}
+.avatar-mixer-slider{appearance:none;-webkit-appearance:none;width:100%;height:18px;border:3px solid var(--ink);border-radius:999px;background:#d9d3c6;cursor:pointer}
+.avatar-mixer-hue{background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+.avatar-mixer-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:24px;height:24px;border:3px solid var(--ink);border-radius:50%;background:var(--cream);box-shadow:0 2px 0 var(--ink)}
+.avatar-mixer-slider::-moz-range-thumb{width:18px;height:18px;border:3px solid var(--ink);border-radius:50%;background:var(--cream);box-shadow:0 2px 0 var(--ink)}
+.avatar-mixer-hex input{width:100%;border:3px solid var(--ink);border-radius:10px;padding:6px 10px;font:inherit;font-weight:850;font-size:.8rem;text-transform:lowercase}
 .avatar-panel>.avatar-controls>.button{width:100%;margin-top:18px}
 @keyframes avatar-idle{50%{transform:translateY(-5px)}}
 :root[data-reduced-motion="true"] .avatar-figure{animation:none!important}

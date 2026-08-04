@@ -15,18 +15,22 @@ import {
   applyWardrobeSelection,
   DEFAULT_AVATAR,
   WARDROBE_SLOTS,
+  avatarColor,
   colorRejection,
   deckContrast,
+  isCustomColor,
   isReadableAvatar,
   isSlotFilled,
   normalizeAvatar,
+  normalizeCustomColor,
   randomAvatar,
 } from "@/lib/game/avatar";
 import type {
-  AvatarColorId,
+  AvatarColorValue,
   AvatarConfig,
   AvatarSwatch,
   ColorSlot,
+  CustomAvatarColor,
   WardrobeSlotId,
 } from "@/lib/game/avatar";
 import { WARDROBE_ITEM_COUNT } from "@/lib/game/wardrobe";
@@ -68,12 +72,143 @@ class RunnerPreviewBoundary extends Component<
   }
 }
 
+// --- Custom colour mixing ---------------------------------------------------
+
+function hexToHsl(hex: string): readonly [number, number, number] {
+  const value = Number.parseInt(hex.slice(1), 16);
+  const r = ((value >> 16) & 255) / 255;
+  const g = ((value >> 8) & 255) / 255;
+  const b = (value & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h =
+    max === r
+      ? ((g - b) / d + (g < b ? 6 : 0)) / 6
+      : max === g
+        ? ((b - r) / d + 2) / 6
+        : ((r - g) / d + 4) / 6;
+  return [h * 360, s * 100, l * 100];
+}
+
+function hslToHex(h: number, s: number, l: number): CustomAvatarColor {
+  const hue = ((h % 360) + 360) % 360;
+  const sat = Math.min(100, Math.max(0, s)) / 100;
+  const light = Math.min(100, Math.max(0, l)) / 100;
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = light - c / 2;
+  const [r, g, b] =
+    hue < 60 ? [c, x, 0]
+    : hue < 120 ? [x, c, 0]
+    : hue < 180 ? [0, c, x]
+    : hue < 240 ? [0, x, c]
+    : hue < 300 ? [x, 0, c]
+    : [c, 0, x];
+  const channel = (v: number) =>
+    Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  return `#${channel(r)}${channel(g)}${channel(b)}` as CustomAvatarColor;
+}
+
+/**
+ * The mixing desk behind the "Mix…" swatch: hue, saturation, and lightness
+ * sliders plus an exact hex field, all pushing straight into the live runner
+ * preview. Sliders rather than a picker canvas so the control matches the
+ * game's chunky panel style and stays fully keyboard-operable.
+ */
+function CustomColorMixer({
+  name,
+  value,
+  onChange,
+}: {
+  name: string;
+  value: CustomAvatarColor;
+  onChange: (next: CustomAvatarColor) => void;
+}) {
+  const [h, s, l] = hexToHsl(value);
+  // The field holds whatever the player is typing, however incomplete, and
+  // re-anchors to the real value whenever a slider changes it. Adjusted
+  // during render rather than in an effect, which is the React-sanctioned
+  // shape for state derived from a prop change.
+  const [hexDraft, setHexDraft] = useState<string>(value);
+  const [anchor, setAnchor] = useState<CustomAvatarColor>(value);
+  if (anchor !== value) {
+    setAnchor(value);
+    setHexDraft(value);
+  }
+  const hueHex = hslToHex(h, 100, 50);
+  return (
+    <div className="avatar-mixer">
+      <span className="avatar-mixer-preview" style={{ background: value }} aria-hidden="true" />
+      <label className="avatar-mixer-row">
+        Hue
+        <input
+          type="range"
+          min={0}
+          max={359}
+          value={Math.round(h)}
+          aria-label="Hue"
+          className="avatar-mixer-slider avatar-mixer-hue"
+          onChange={(event) => onChange(hslToHex(Number(event.target.value), s, l))}
+        />
+      </label>
+      <label className="avatar-mixer-row">
+        Saturation
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(s)}
+          aria-label="Saturation"
+          className="avatar-mixer-slider"
+          style={{ background: `linear-gradient(to right, #808080, ${hueHex})` }}
+          onChange={(event) => onChange(hslToHex(h, Number(event.target.value), l))}
+        />
+      </label>
+      <label className="avatar-mixer-row">
+        Lightness
+        <input
+          type="range"
+          min={4}
+          max={96}
+          value={Math.round(l)}
+          aria-label="Lightness"
+          className="avatar-mixer-slider"
+          style={{ background: `linear-gradient(to right, #14161f, ${hueHex}, #fdfaf2)` }}
+          onChange={(event) => onChange(hslToHex(h, s, Number(event.target.value)))}
+        />
+      </label>
+      <label className="avatar-mixer-row avatar-mixer-hex">
+        Hex
+        <input
+          type="text"
+          name={`${name}-hex`}
+          value={hexDraft}
+          maxLength={7}
+          spellCheck={false}
+          aria-label="Exact hex color"
+          onChange={(event) => {
+            setHexDraft(event.target.value);
+            const parsed = normalizeCustomColor(event.target.value);
+            if (parsed) onChange(parsed);
+          }}
+        />
+      </label>
+    </div>
+  );
+}
+
 /**
  * One row of colour swatches.
  *
  * Three groups of controls need this - the body, the pack, and whichever
  * garment slot is open - and each of them has to say the same thing when a
- * colour is refused, in the same words, with the number that refused it.
+ * colour is refused, in the same words, with the number that refused it. The
+ * last swatch is the mixing desk: any colour at all, PowerPoint style, with
+ * the roster staying one tap away.
  */
 function ColorRow({
   name,
@@ -87,42 +222,66 @@ function ColorRow({
 }: {
   name: string;
   offered: readonly AvatarSwatch[];
-  chosen: AvatarColorId;
+  chosen: AvatarColorValue;
   /** What a refusal is measured against, in words, for the screen reader. */
   against: string;
-  body: AvatarColorId;
+  body: AvatarColorValue;
   slot: ColorSlot;
-  onPick: (id: AvatarColorId) => void;
+  onPick: (id: AvatarColorValue) => void;
   focusFirst?: React.RefObject<HTMLInputElement | null>;
 }) {
+  const custom = isCustomColor(chosen) ? chosen : null;
   return (
-    <div className="avatar-swatches">
-      {offered.map((entry, index) => {
-        const rejection = colorRejection(slot, entry.id, body);
-        return (
-          <label
-            key={entry.id}
-            className={rejection ? "avatar-option refused" : "avatar-option"}
-          >
-            <input
-              {...(index === 0 && focusFirst ? { ref: focusFirst } : {})}
-              type="radio"
-              name={name}
-              checked={chosen === entry.id}
-              disabled={Boolean(rejection)}
-              aria-label={
-                rejection
-                  ? `${entry.label}, unavailable, ${ratioLabel(rejection.ratio)} against ${against}`
-                  : entry.label
-              }
-              onChange={() => onPick(entry.id)}
-            />
-            <span className="avatar-swatch" style={{ background: entry.hex }} />
-            <small>{entry.label}</small>
-          </label>
-        );
-      })}
-    </div>
+    <>
+      <div className="avatar-swatches">
+        {offered.map((entry, index) => {
+          const rejection = colorRejection(slot, entry.id, body);
+          return (
+            <label
+              key={entry.id}
+              className={rejection ? "avatar-option refused" : "avatar-option"}
+            >
+              <input
+                {...(index === 0 && focusFirst ? { ref: focusFirst } : {})}
+                type="radio"
+                name={name}
+                checked={chosen === entry.id}
+                disabled={Boolean(rejection)}
+                aria-label={
+                  rejection
+                    ? `${entry.label}, unavailable, ${ratioLabel(rejection.ratio)} against ${against}`
+                    : entry.label
+                }
+                onChange={() => onPick(entry.id)}
+              />
+              <span className="avatar-swatch" style={{ background: entry.hex }} />
+              <small>{entry.label}</small>
+            </label>
+          );
+        })}
+        <label className="avatar-option">
+          <input
+            type="radio"
+            name={name}
+            checked={custom !== null}
+            aria-label="Mix your own color"
+            onChange={() =>
+              onPick(
+                custom ??
+                  normalizeCustomColor(avatarColor(chosen)) ??
+                  ("#7963df" as CustomAvatarColor),
+              )
+            }
+          />
+          <span
+            className="avatar-swatch avatar-swatch-custom"
+            style={custom ? { background: custom } : undefined}
+          />
+          <small>Mix…</small>
+        </label>
+      </div>
+      {custom && <CustomColorMixer name={name} value={custom} onChange={onPick} />}
+    </>
   );
 }
 
@@ -180,7 +339,7 @@ export function WardrobePanel({
   }, [onClose, previewEnabled]);
 
 
-  const chooseBody = useCallback((body: AvatarColorId) => {
+  const chooseBody = useCallback((body: AvatarColorValue) => {
     setDraft((current) => ({ ...current, body }));
   }, []);
 
@@ -200,9 +359,9 @@ export function WardrobePanel({
   }, [draft]);
 
   const slot = WARDROBE_SLOTS.find((entry) => entry.id === openSlot)!;
-  const bodyReading = deckContrast(AVATAR_COLORS.find((e) => e.id === draft.body)!.hex);
+  const bodyReading = deckContrast(avatarColor(draft.body));
   const colorKey = slot.colorKey;
-  const bodyColor = AVATAR_COLORS.find((entry) => entry.id === draft.body)!.hex;
+  const bodyColor = avatarColor(draft.body);
   const wornItems = WARDROBE_SLOTS.flatMap((entry) => {
     const worn = entry.options.find((option) => option.id === draft[entry.id]);
     return worn && worn.id !== "none" ? [`${entry.label}: ${worn.label}`] : [];

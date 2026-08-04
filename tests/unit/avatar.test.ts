@@ -23,12 +23,18 @@ import {
   MIN_CONTRAST,
   WARDROBE_SLOTS,
   avatarColor,
+  avatarFromCode,
   avatarFromTuple,
+  avatarToCode,
   avatarToTuple,
   colorRejection,
   contrastRatio,
   deckContrast,
+  isCustomColor,
   isReadableAvatar,
+  nearestNamedIndex,
+  normalizeAvatar,
+  normalizeCustomColor,
   resolveAvatar,
   usableColors,
 } from "@/lib/game/avatar";
@@ -364,9 +370,10 @@ describe("the picker", () => {
         continue;
       }
       // Only the colours that clear the bar, which is why this counts against
-      // usableColors rather than against the whole palette.
+      // usableColors rather than against the whole palette. Plus one: the
+      // Mix… swatch that opens the free colour editor.
       expect(swatches, `${slot.id} offered no colour`).toHaveLength(
-        usableColors(slot.colorKey, DEFAULT_AVATAR.body).length,
+        usableColors(slot.colorKey, DEFAULT_AVATAR.body).length + 1,
       );
     }
   });
@@ -391,9 +398,78 @@ describe("the picker", () => {
     // and nothing in the panel is disabled.
     const container = open(DEFAULT_AVATAR);
     expect(container.innerHTML).not.toContain("disabled");
+    // Every authored colour, plus the Mix… swatch for a free colour.
     expect(
       container.querySelectorAll('input[name="avatar-body"]'),
-    ).toHaveLength(AVATAR_COLORS.length);
+    ).toHaveLength(AVATAR_COLORS.length + 1);
+  });
+});
+
+describe("mixed custom colours", () => {
+  it("admits only lowercase #rrggbb and normalises what it can", () => {
+    expect(isCustomColor("#a1b2c3")).toBe(true);
+    expect(isCustomColor("#A1B2C3")).toBe(false);
+    expect(isCustomColor("violet")).toBe(false);
+    expect(isCustomColor("#abc")).toBe(false);
+    expect(normalizeCustomColor(" #A1B2C3 ")).toBe("#a1b2c3");
+    expect(normalizeCustomColor("#zzzzzz")).toBeNull();
+    expect(normalizeCustomColor(12)).toBeNull();
+  });
+
+  it("renders a mixed body exactly, silhouette tints included", () => {
+    const resolved = resolveAvatar({ ...DEFAULT_AVATAR, body: "#12de83" }, 1);
+    expect(resolved.bodyColor).toBe("#12de83");
+    expect(resolved.sculptTints["torso-purple"]).toBe("#12de83");
+    expect(avatarColor("#12de83")).toBe("#12de83");
+  });
+
+  it("survives storage the way named colours do", () => {
+    const stored = normalizeAvatar({
+      ...DEFAULT_AVATAR,
+      body: "#12de83",
+      colors: { ...DEFAULT_AVATAR.colors, top: "#0a0b0c" },
+    });
+    expect(stored.body).toBe("#12de83");
+    expect(stored.colors.top).toBe("#0a0b0c");
+    // Garbage falls back exactly as an unknown named id always has.
+    expect(normalizeAvatar({ ...DEFAULT_AVATAR, body: "#nope" as never }).body)
+      .toBe(DEFAULT_AVATAR.body);
+  });
+
+  it("maps a mixed colour to its nearest roster swatch for legacy fields", () => {
+    for (const [index, entry] of AVATAR_COLORS.entries()) {
+      expect(nearestNamedIndex(entry.id)).toBe(index);
+      expect(nearestNamedIndex(entry.hex as `#${string}`)).toBe(index);
+    }
+  });
+
+  it("round-trips mixed colours through the wardrobe code", () => {
+    const outfit = normalizeAvatar({
+      ...DEFAULT_AVATAR,
+      body: "#12de83",
+      top: "tee",
+      colors: { ...DEFAULT_AVATAR.colors, top: "#804020" },
+    });
+    const code = avatarToCode(outfit);
+    expect(avatarFromCode(code)).toEqual(outfit);
+    // A reader that stops at the base characters still sees the nearest
+    // roster swatches rather than nothing.
+    const base = avatarFromCode(code.slice(0, avatarToCode(DEFAULT_AVATAR).length));
+    expect(base).not.toBeNull();
+    expect(isCustomColor(base!.body)).toBe(false);
+  });
+
+  it("keeps roster-only wardrobe codes byte-identical", () => {
+    const outfit = normalizeAvatar({ ...DEFAULT_AVATAR, body: "forest" });
+    const code = avatarToCode(outfit);
+    expect(code).toHaveLength(avatarToCode(DEFAULT_AVATAR).length);
+    expect(avatarFromCode(code)).toEqual(outfit);
+  });
+
+  it("refuses a truncated custom entry rather than guessing", () => {
+    const outfit = normalizeAvatar({ ...DEFAULT_AVATAR, body: "#12de83" });
+    const code = avatarToCode(outfit);
+    expect(avatarFromCode(code.slice(0, code.length - 2))).toBeNull();
   });
 });
 
@@ -428,6 +504,21 @@ describe("avatars in challenge links", () => {
     const version = (payload: string) => JSON.parse(json(payload))[0];
     expect(version(encodeChallengeLink(challenge()))).toBe(3);
     expect(version(encodeChallengeLink(challenge(), null))).toBe(3);
+    expect(version(encodeChallengeLink(challenge(), mine))).toBe(4);
+  });
+
+  it("moves to version 6 only when a mixed colour is present, and carries it exactly", () => {
+    const version = (payload: string) => JSON.parse(json(payload))[0];
+    const mixed: AvatarConfig = { ...mine, body: "#12de83" };
+    const payload = encodeChallengeLink(challenge(), mixed);
+    expect(version(payload)).toBe(6);
+    const arrived = decodeChallengeAvatar(payload);
+    expect(arrived?.body).toBe("#12de83");
+    expect(arrived?.pack).toBe(mine.pack);
+    // The level itself decodes exactly as a version 4 link's would.
+    expect(decodeChallengeLink(payload).slug).toBe("worse-abc123");
+    // A roster-only runner stays on version 4, so its codes remain openable
+    // by builds that predate mixing.
     expect(version(encodeChallengeLink(challenge(), mine))).toBe(4);
   });
 

@@ -110,9 +110,48 @@ interface DecorDefinition {
   prefixes?: readonly string[];
   size: readonly [number, number, number];
   solid: boolean;
+  /**
+   * Fixed hanging height. Only wall-mounted pieces keep one: everything else
+   * now rests on the floor or on whatever solid piece sits under it, because
+   * a counter-height toaster floating over bare boards reads as a bug the
+   * moment its counter is dragged away.
+   */
   elevation?: number;
   scale?: readonly [number, number, number];
   tintable?: boolean;
+}
+
+/**
+ * The height a free-placed piece rests at: the top of the tallest solid piece
+ * whose footprint is under its centre, or the floor. Wall pieces keep their
+ * authored hanging height instead of resting on anything.
+ */
+function restingHeight(
+  item: ApartmentDecorItem,
+  all: readonly ApartmentDecorItem[],
+): number {
+  const definition = DECOR[item.type];
+  if (definition.elevation !== undefined) return definition.elevation;
+  let top = 0;
+  for (const other of all) {
+    if (other.uid === item.uid) continue;
+    const support = DECOR[other.type];
+    if (!support.solid || support.elevation !== undefined) continue;
+    const size = decorSize(other);
+    // Footprints are compared on the widest half-extent rather than rotated
+    // exactly: a resting decision only needs "is my centre over that piece",
+    // and the generous read errs toward sitting on furniture rather than
+    // clipping through it.
+    const reach = Math.max(size[0], size[2]) / 2;
+    if (
+      Math.abs(item.x - other.x) <= reach &&
+      Math.abs(item.z - other.z) <= reach &&
+      size[1] > top
+    ) {
+      top = size[1];
+    }
+  }
+  return top;
 }
 
 const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
@@ -173,8 +212,9 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     size: [1.4, 1.9, 1], solid: true, tintable: false,
   },
   toaster: {
+    // No fixed counter height any more: it rests on whatever it sits over.
     label: "Toaster", emoji: "🍞", model: "toaster", nodeIds: [],
-    size: [0.65, 0.5, 0.5], elevation: 0.94, solid: true, tintable: false,
+    size: [0.65, 0.5, 0.5], solid: true, tintable: false,
   },
   bed: {
     label: "Bed", emoji: "🛏️", variant: "bedroom", nodeIds: ["bedroom-throw"], prefixes: ["bed-"],
@@ -185,8 +225,9 @@ const DECOR: Readonly<Record<ApartmentDecorType, DecorDefinition>> = {
     size: [0.7, 0.65, 0.7], solid: true,
   },
   "bedside-lamp": {
+    // No fixed table height any more: it rests on whatever it sits over.
     label: "Bedside lamp", emoji: "💡", variant: "bedroom", nodeIds: [], prefixes: ["bedside-lamp-"],
-    size: [0.45, 0.55, 0.45], elevation: 0.58, solid: false,
+    size: [0.45, 0.55, 0.45], solid: false,
   },
   wardrobe: {
     label: "Wardrobe", emoji: "🚪", variant: "bedroom", nodeIds: ["bedroom-wardrobe"], prefixes: ["wardrobe-"],
@@ -497,6 +538,7 @@ function DecorItemView({
   style,
   player,
   mode,
+  baseY,
   selected,
   onSelect,
   onMoveStart,
@@ -506,6 +548,8 @@ function DecorItemView({
   style: ApartmentStyle;
   player: React.RefObject<RapierRigidBody | null>;
   mode: ApartmentMode;
+  /** Resting height from restingHeight(): floor, supporting piece, or wall hang. */
+  baseY: number;
   selected: boolean;
   onSelect(uid: string): void;
   onMoveStart(uid: string): void;
@@ -538,8 +582,32 @@ function DecorItemView({
     });
   }, [visual]);
 
-  const elevation = definition.elevation ?? 0;
+  const elevation = baseY;
   const size = decorSize(item);
+  // Generated prop models own their origins, and not all of them start their
+  // geometry at y = 0 the way harvested furnishing pieces are re-based to.
+  // Measure the mounted visual once and pull it flush, so no model can float
+  // over its own resting height by construction.
+  const groundedVisual = useRef<THREE.Group>(null);
+  useEffect(() => {
+    const group = groundedVisual.current;
+    if (!group) return;
+    let raf = 0;
+    const settle = () => {
+      group.position.y = 0;
+      group.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(group);
+      if (!bounds.isEmpty() && Number.isFinite(bounds.min.y) && Math.abs(bounds.min.y) > 0.005) {
+        group.position.y = -bounds.min.y;
+        group.updateMatrixWorld(true);
+      }
+    };
+    settle();
+    // AssetModel clones its template into the tree after mount; one more
+    // measure on the next frame catches that late attach.
+    raf = requestAnimationFrame(settle);
+    return () => cancelAnimationFrame(raf);
+  }, [item.type, item.color, mode]);
   const visualNode = item.type === "wall-section"
     ? <ModularWallVisual item={item} trimColor={style.trimColor} player={player} />
     : item.type === "door-frame"
@@ -598,7 +666,9 @@ function DecorItemView({
             position={[0, elevation + size[1] / 2, 0]}
           />
         )}
-        <group position={[0, elevation, 0]}>{visualNode}</group>
+        <group position={[0, elevation, 0]}>
+          <group ref={groundedVisual}>{visualNode}</group>
+        </group>
       </RigidBody>
     );
   }
@@ -615,7 +685,9 @@ function DecorItemView({
       onPointerEnter={() => mode === "decorate" && setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      <group position={[0, elevation, 0]}>{visualNode}</group>
+      <group position={[0, elevation, 0]}>
+        <group ref={groundedVisual}>{visualNode}</group>
+      </group>
       <mesh position={[0, elevation + size[1] / 2, 0]}>
         <boxGeometry args={size} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
@@ -873,6 +945,7 @@ function ApartmentWorld({
           style={style}
           player={player}
           mode={mode}
+          baseY={restingHeight(item, decor)}
           selected={selectedUid === item.uid}
           onSelect={onSelect}
           onMoveStart={onMoveStart}

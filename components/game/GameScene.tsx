@@ -219,15 +219,17 @@ export function GameScene({
             // runner. It carries the same impulse the stun and knockback use,
             // so what the player sees and what they feel come from one number.
             effects.current?.impact(hazard.impulseMagnitude);
-            shakeUntilRef.current = performance.now() + 220;
+            shakeUntilRef.current = performance.now() + 300;
             // One global feel pass turns every authored hit up without
             // rewriting fifty-five individual traps. Still capped so the
             // interaction is a recoverable setback rather than an automatic
-            // death, but the old 250ms floor was easy to shrug off.
-            const disruption = 1.18;
+            // death. Raised from 1.18 after live play read the roster as not
+            // threatening: a hit should cost real time and real control, and
+            // the caps below are what keep "punishing" short of "lethal".
+            const disruption = 1.45;
             stunUntilRef.current =
               performance.now() +
-              Math.min(620, Math.max(300, hazard.impulseMagnitude * 24 * disruption));
+              Math.min(900, Math.max(380, hazard.impulseMagnitude * 24 * disruption));
             // Only the narrow ledges could ever kill: on the wide platforms a
             // hit was half a second of mushy steering and nothing else, so
             // most placements cost the runner nothing. Knocking them back
@@ -236,8 +238,8 @@ export function GameScene({
             // than a run ender, and only while actually playing.
             if (phase === "playing") {
               const push = Math.min(
-                6,
-                (2.1 + hazard.impulseMagnitude * 0.25) * disruption,
+                7.5,
+                (2.4 + hazard.impulseMagnitude * 0.25) * disruption,
               );
               // Deferred one microtask, NOT applied inline: collision-driven
               // hazards arrive from inside @react-three/rapier's event drain,
@@ -254,7 +256,7 @@ export function GameScene({
                   // isValid first: a wasm call on a freed body panics and
                   // borrow-poisons the world; the catch cannot undo that.
                   if (!body.isValid()) return;
-                  body.applyImpulse({ x: 0, y: 1.45, z: -push }, true);
+                  body.applyImpulse({ x: 0, y: 1.9, z: -push }, true);
                 } catch {
                   // The body can be remounting between attempts.
                 }

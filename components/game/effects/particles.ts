@@ -517,16 +517,19 @@ export function emitImpact(
 ): number {
   const severity = impactSeverity(impulseMagnitude);
   const color = severityColor(severity);
+  // Sized up with the 2026-08-03 punish pass: the hit now costs more, so the
+  // burst has to sell more. The severity curve is untouched - a soft trap and
+  // a hard trap keep their relative read - only the whole scale grew.
   return emit(
     pool,
     {
       origin,
-      count: (10 + 22 * severity) * budget.countScale,
+      count: (14 + 30 * severity) * budget.countScale,
       jitter: 0.18,
       drift: [0, 1.1 + severity, 0],
-      speed: [1.2, (2.4 + 5.2 * severity) * budget.speedScale],
+      speed: [1.4, (2.8 + 6.4 * severity) * budget.speedScale],
       flatten: 0.15,
-      size: [0.07 + 0.03 * severity, 0.12 + 0.06 * severity],
+      size: [0.08 + 0.04 * severity, 0.13 + 0.07 * severity],
       life: [0.34, 0.72],
       alpha: 0.95,
       gravity: 7,

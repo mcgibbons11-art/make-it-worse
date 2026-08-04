@@ -396,7 +396,10 @@ export const PlayerController = forwardRef<
       PLAYER.acceleration *
       control *
       (slippery ? 0.18 : 1) *
-      (stunned ? 0.2 : 1);
+      // 0.2 -> 0.15 with the 2026-08-03 roster-wide punish pass, on the
+      // user's word: a stunned runner should genuinely lose the fight for
+      // control. Uniform across all traps, so relative pricing is unmoved.
+      (stunned ? 0.15 : 1);
     // The chase camera sits behind the runner and looks along +Z, which makes
     // its right-hand direction world -X. Driving +X on "right" therefore sent
     // the runner to screen-left: every horizontal input was mirrored.

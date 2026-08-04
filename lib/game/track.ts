@@ -714,7 +714,7 @@ export function isPlayableTrack(segmentIds: readonly string[]): boolean {
  * Every candidate is checked with isPlayableTrack - the real one, not a copy -
  * and a segment that would break the course is skipped rather than shipped.
  */
-export function composeFreshTrack(seed: number, length = 7): readonly string[] {
+export function composeFreshTrack(seed: number, length = 10): readonly string[] {
   const random = createSeededRandom(seed);
   const pool = EDITABLE_SEGMENTS.filter((segment) => segment.id !== "classic");
   if (pool.length === 0) return DEFAULT_CUSTOM_TRACK;
@@ -722,6 +722,32 @@ export function composeFreshTrack(seed: number, length = 7): readonly string[] {
   const shuffle = (segments: readonly TrackSegment[]): TrackSegment[] =>
     segments
       .map((segment) => ({ segment, roll: random() }))
+      .sort((a, b) => a.roll - b.roll)
+      .map((entry) => entry.segment);
+  // Roughly half of all courses lean toward the catalogue's vertical rooms:
+  // flat compositions read as corridors, but with exactly two climbing rooms
+  // authored, a bias in every course put upper_deck in 97-160% of
+  // compositions and failed the spread gate. Deciding per course keeps the
+  // catalogue spread honest while making elevation a regular feature rather
+  // than a fluke, and the handicap still only helps a vertical room the
+  // course has not used yet. The envelope and the homing run bound how high a
+  // course wanders; every candidate still passes the playability gate.
+  const wantsClimb = random() < 0.55;
+  const shuffleClimbing = (
+    segments: readonly TrackSegment[],
+    used: ReadonlySet<string>,
+  ): TrackSegment[] =>
+    segments
+      .map((segment) => ({
+        segment,
+        roll:
+          random() -
+          (wantsClimb &&
+          Math.abs(segmentExit(segment)[1]) > LANE_EPSILON &&
+          !used.has(segment.id)
+            ? 0.22
+            : 0),
+      }))
       .sort((a, b) => a.roll - b.roll)
       .map((entry) => entry.segment);
   const track: string[] = ["start"];
@@ -735,13 +761,23 @@ export function composeFreshTrack(seed: number, length = 7): readonly string[] {
     // opened every course. Holding a floor one step below the ceiling keeps the
     // opening gentle and then leaves the gentle end behind, which is what makes
     // two fresh courses feel like different courses.
+    // The ramp reaches the hard end of the catalogue by 60% of the course
+    // rather than at the finish line, so a longer composition spends its back
+    // half at full difficulty instead of still warming up.
     const ceiling =
-      slot === 0 ? 0 : Math.min(3, Math.ceil((slot / Math.max(1, slots - 1)) * 3));
+      slot === 0
+        ? 0
+        : Math.min(
+            3,
+            Math.ceil(
+              Math.min(1, slot / Math.max(1, (slots - 1) * 0.6)) * 3,
+            ),
+          );
     const floor = Math.max(0, ceiling - 1);
     const eligible = pool.filter(
       (segment) => segment.difficulty <= ceiling && segment.difficulty >= floor,
     );
-    const ordered = shuffle(eligible.length ? eligible : pool);
+    const ordered = shuffleClimbing(eligible.length ? eligible : pool, new Set(track));
     // The same room twice in a row reads as a mistake rather than as a course,
     // and an unfiltered draw produced one in 487 of every 1000 compositions.
     // Demoted rather than banned, so a slot is still filled when the segment

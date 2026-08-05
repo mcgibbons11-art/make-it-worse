@@ -39,6 +39,7 @@ import {
   mayClaimForfeit,
   mintDuelCode,
   normalizeDuelCode,
+  refereeSeatOf,
   seatedSeats,
   mayStartMatch,
   startMatch,
@@ -47,10 +48,12 @@ import {
   refreshConnection,
   seatOf,
   setCourse,
+  vacateSeat,
   type DuelMatch,
   type DuelSeat,
   type DuelWireMessage,
   type LobbyPost,
+  type RefereeLobby,
 } from "./duel-protocol";
 import {
   connectDuelChannel,
@@ -71,6 +74,13 @@ const CHAT_LIMIT = 60;
 const FEED_LIMIT = 24;
 /** How long a lobby claim waits for the poster before it lapses, both sides. */
 const CLAIM_TIMEOUT_MS = 5 * 60_000;
+/**
+ * How long a seatless client waits for the referee to assign it a seat before
+ * seating itself. A referee that has gone quiet - dropped for its CPU budget,
+ * restarted, or never there at all - must not be able to lock anyone out of a
+ * duel, so the wait always expires into the original behaviour.
+ */
+const REFEREE_SEAT_GRACE_MS = 2_500;
 
 export type DuelStage =
   | { kind: "closed" }
@@ -189,9 +199,10 @@ export interface DuelApi {
   /** Seats still open in the gathering lobby. */
   openSeats: number;
   /**
-   * Whether Portals ran this game's server script for the session. Reported
-   * so a real match can answer whether a GitHub-synced bundle gets one at
-   * all; no rule depends on it.
+   * Whether Portals ran this game's server script for the session. When true
+   * the referee assigns seats; when false the clients seat themselves exactly
+   * as they did before it existed. Surfaced so a real match can answer
+   * whether a GitHub-synced bundle gets a server script at all.
    */
   refereeOnline: boolean;
 
@@ -248,8 +259,17 @@ export function useDuel(input: {
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
-  /** Whether this session's Portals server script announced itself. */
-  const [refereeOnline, setRefereeOnline] = useState(false);
+  /**
+   * The session's referee lobby, or null when no server script is present.
+   * When it exists the clients defer their SEATING to it - one writer cannot
+   * hand the same seat to two people - and everything after the start runs on
+   * the client protocol exactly as it does without one.
+   */
+  const [refereeLobby, setRefereeLobby] = useState<RefereeLobby | null>(null);
+  // Written by the handler rather than mirrored from the state during render:
+  // the lobby arrives inside connectDuelChannel, and the code that decides how
+  // to seat runs the moment that resolves, well before React re-renders.
+  const refereeLobbyRef = useRef<RefereeLobby | null>(null);
   /** When the opponent was last presumed gone, for the abandonment clock. */
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   /** Last proof of life off the wire: join, any message, or initial peers. */
@@ -274,8 +294,13 @@ export function useDuel(input: {
   const spectateSampleRef = useRef<DecodedGhostSample | null>(null);
   const sampleCounter = useRef(0);
   const serial = useRef(0);
+  /** When we joined the current channel, for the referee's grace window. */
+  const channelJoinedAt = useRef(0);
+  /** Bumped when that window expires, to re-run the seating effect below. */
+  const [seatAttempt, setSeatAttempt] = useState(0);
   const rejoinableCode = useMemo(() => activeCodeRead(), []);
 
+  const refereeOnline = refereeLobby !== null;
   const mySeat = match ? seatOf(match, token) : null;
   const myTurn = match !== null && mySeat !== null && match.turn.runner === mySeat && !match.result;
   // Everyone in the lobby, and the one player whose run is streamed to the
@@ -474,9 +499,10 @@ export function useDuel(input: {
         onStatus: (status) => {
           if (status === "disconnected") pushFeed("Connection to Portals lost. Waiting for it to return…");
         },
-        // Diagnostic only. Nothing branches on this: the rules are the
-        // clients' either way, so a session without a referee plays the same.
-        onReferee: setRefereeOnline,
+        onReferee: (lobby) => {
+          refereeLobbyRef.current = lobby;
+          setRefereeLobby(lobby);
+        },
       });
       if (result.status !== "ok") {
         setStage({
@@ -489,6 +515,7 @@ export function useDuel(input: {
         return;
       }
       channel.current = result.connection;
+      channelJoinedAt.current = Date.now();
       setPeerConnected(result.peers.length > 0);
       // A peer present at connect counts as a fresh signal; an absent one
       // leaves the signal clock at zero, so the silence watcher starts their
@@ -496,6 +523,17 @@ export function useDuel(input: {
       if (result.peers.length > 0) peerSignalAt.current = Date.now();
       activeCodeWrite(code);
       const player = me(result.connection.selfConnId);
+      // Introduce ourselves to the referee, if one is listening. It answers by
+      // publishing a lobby that names our seat. Nothing waits on that answer:
+      // a session without a server script never sends one, and this message
+      // simply reaches nobody who cares.
+      result.connection.sendClaim({
+        k: "seat",
+        v: DUEL_PROTOCOL,
+        token,
+        name: player.name,
+        avatarCode: player.avatarCode,
+      });
       const existing = matchRef.current;
       if (existing) {
         const known = seatOf(existing, token);
@@ -507,9 +545,18 @@ export function useDuel(input: {
           return;
         }
         if (!existing.started && !existing.result) {
+          // With a referee listening, which seat we take is its call, and the
+          // effect below is where every refereed seating happens. Waiting for
+          // the answer we just asked for beats picking a seat a second joiner
+          // may be picking at this very moment.
+          if (refereeLobbyRef.current !== null) {
+            setStage({ kind: "waiting", code });
+            return;
+          }
           const seated = joinMatch(existing, player);
           if (seated) {
             publish(seated);
+            setStage({ kind: "waiting", code });
             return;
           }
         }
@@ -542,31 +589,74 @@ export function useDuel(input: {
     [acquireNet, dropChannel, dropLobby, me, publish, pushChat, pushFeed, token],
   );
 
-  // When the host's record arrives while we sit in "waiting", claim seat B.
-  // Deferred so the claim reacts to the settled record rather than cascading
-  // inside the render that delivered it. The delay is JITTERED because with
-  // four seats two joiners can arrive together, both claim the same lowest
-  // free seat, and last-write-wins drops one of them. The loser re-runs this
-  // effect (its token is absent from the newer record) and takes the next
-  // seat - but only if the retries do not collide again in lockstep, which
-  // is what the random spread buys.
+  // When the host's record arrives while we sit in "waiting", take a seat in
+  // it. Deferred so the write reacts to the settled record rather than
+  // cascading inside the render that delivered it.
+  //
+  // Which seat depends on whether a referee is running. With one, it has
+  // already assigned us a seat and we merely write that seat into the record.
+  // Without one, we take the lowest free seat after a JITTERED delay: two
+  // joiners arriving together would otherwise pick the same seat, and
+  // last-write-wins drops one of them. The loser re-runs this effect - its
+  // token is absent from the newer record - and the random spread is what
+  // stops the retries colliding again in lockstep.
   useEffect(() => {
     if (stage.kind !== "waiting" || !match || !channel.current) return;
     if (seatOf(match, token)) return;
-    const timer = globalThis.setTimeout(() => {
-      const connection = channel.current;
-      if (!connection) return;
-      if (match.started || seatedSeats(match).length >= MAX_DUEL_PLAYERS) {
-        if (!match.result)
-          setStage({ kind: "error", message: "That duel is full or already under way." });
-        return;
-      }
-      if (match.result) return;
-      const seated = joinMatch(match, me(connection.selfConnId));
-      if (seated) publish(seated);
-    }, Math.floor(Math.random() * 180));
+    const assigned = refereeSeatOf(refereeLobby, token);
+    // A full or started referee lobby we are not in is a duel we cannot join,
+    // and no amount of waiting changes that.
+    const turnedAway =
+      refereeLobby !== null &&
+      assigned === null &&
+      (refereeLobby.started || refereeLobby.seats.length >= MAX_DUEL_PLAYERS);
+    const awaitingReferee =
+      refereeLobby !== null &&
+      assigned === null &&
+      !turnedAway &&
+      Date.now() - channelJoinedAt.current < REFEREE_SEAT_GRACE_MS;
+    if (awaitingReferee) {
+      // Re-run once the grace expires even if no lobby update arrives, so a
+      // referee that has gone quiet costs a short pause and not the duel.
+      const wake = globalThis.setTimeout(
+        () => setSeatAttempt((attempt) => attempt + 1),
+        REFEREE_SEAT_GRACE_MS - (Date.now() - channelJoinedAt.current),
+      );
+      return () => globalThis.clearTimeout(wake);
+    }
+    const timer = globalThis.setTimeout(
+      () => {
+        const connection = channel.current;
+        if (!connection) return;
+        // A record that looks full is only the last word when we are choosing
+        // our own seat. Holding an assignment means the referee has already
+        // counted the house and found room.
+        if (
+          turnedAway ||
+          match.started ||
+          (assigned === null && seatedSeats(match).length >= MAX_DUEL_PLAYERS)
+        ) {
+          if (!match.result)
+            setStage({ kind: "error", message: "That duel is full or already under way." });
+          return;
+        }
+        if (match.result) return;
+        // The referee frees the seat of anyone who leaves before the start,
+        // and the record cannot: nothing in it notices a player going. When
+        // the two disagree the referee is the one that knows who is present,
+        // so the departed token gives up the seat it is no longer sitting in.
+        const holder = assigned === null ? null : match.players[assigned];
+        const departed =
+          holder !== null &&
+          !(refereeLobby?.seats ?? []).some((seat) => seat.token === holder.token);
+        const base = departed ? vacateSeat(match, assigned!) : match;
+        const seated = joinMatch(base, me(connection.selfConnId), assigned);
+        if (seated) publish(seated);
+      },
+      assigned ? 0 : Math.floor(Math.random() * 180),
+    );
     return () => globalThis.clearTimeout(timer);
-  }, [match, me, publish, stage, token]);
+  }, [match, me, publish, refereeLobby, seatAttempt, stage, token]);
 
   // The runner mints the round's course when none exists yet: round 1 right
   // after both seats fill, later rounds right after the reset. A custom base
@@ -715,6 +805,8 @@ export function useDuel(input: {
     await dropLobby();
     matchRef.current = null;
     activeCodeRef.current = null;
+    refereeLobbyRef.current = null;
+    setRefereeLobby(null);
     spectateSampleRef.current = null;
     chosenBaseRef.current = null;
     baseCourseRef.current = null;
@@ -781,12 +873,19 @@ export function useDuel(input: {
     },
     close: () => {
       // Closing the popup mid-match IS leaving the match: concede before the
-      // connection drops so the opponent gets the result immediately instead
-      // of waiting out the abandonment clock.
+      // connection drops so the others get the result immediately instead of
+      // waiting out the abandonment clock. A guest walking out of a lobby
+      // that has not started yet only gives up its seat - ending the host's
+      // gathering because one visitor changed their mind would be absurd.
+      // The host leaving is the exception: a lobby with no host can never be
+      // started, so it closes for everyone.
       const current = matchRef.current;
       const seat = current ? seatOf(current, token) : null;
-      if (current && seat && seatedSeats(current).length >= 2 && !current.result)
-        publish(concede(current, seat, Date.now()));
+      if (current && seat && !current.result) {
+        if (!current.started && seat !== "a") publish(vacateSeat(current, seat));
+        else if (seatedSeats(current).length >= 2)
+          publish(concede(current, seat, Date.now()));
+      }
       void teardown();
       activeCodeWrite(null);
       setStage({ kind: "closed" });
@@ -962,7 +1061,11 @@ export function useDuel(input: {
       const current = matchRef.current;
       if (!current) return;
       const next = startMatch(current, Date.now());
-      if (next) publish(next);
+      if (!next) return;
+      publish(next);
+      // Tell the referee the lobby is closed, so it stops handing seats to
+      // arrivals the started record would only turn away.
+      channel.current?.sendClaim({ k: "start", v: DUEL_PROTOCOL, token });
     },
 
     noteRunStarted: () => {

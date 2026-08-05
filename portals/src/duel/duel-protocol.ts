@@ -65,15 +65,82 @@ export const LOBBY_STALE_AFTER_MS = 90_000;
 export const DUEL_SETUP_KEY = "miw-duel:setup";
 export const DUEL_MATCH_KEY = "miw-duel:match";
 /**
- * Written by public/server.js, which Portals runs as an invisible participant
- * in every session. The `server:` prefix is what makes it unforgeable: the
- * platform rejects writes to that namespace from clients. Nothing in the
- * rulebook reads it - a session whose script is absent or dropped must play
- * identically - but its presence is how we learn whether a GitHub-synced
- * bundle gets a server script at all.
+ * Written by the server script in portals/server/referee.ts, which Portals
+ * runs as an invisible participant in every session. The `server:` prefix is
+ * what makes it unforgeable: the platform rejects writes to that namespace
+ * from clients, so a seating published under it cannot be raced or faked.
+ * A session whose script is absent or dropped still plays identically - the
+ * clients seat themselves, as they always did.
  */
 export const REFEREE_STATE_KEY = "server:referee";
 export const LOBBY_POST_PREFIX = "miw-duel-post:";
+
+// --- The referee's lobby ------------------------------------------------------
+//
+// portals/server/referee.ts publishes this and clients read it. Both sides
+// import these types from here so the wire shape has one definition, which is
+// the whole reason the referee is compiled from TypeScript rather than
+// hand-written as a second rulebook that drifts.
+
+/** One seated player, as the referee assigned them. */
+export interface RefereeSeatRecord {
+  seat: DuelSeat;
+  token: string;
+  connId: string;
+  name: string;
+  avatarCode: string | null;
+}
+
+export interface RefereeLobby {
+  build: number;
+  v: typeof DUEL_PROTOCOL;
+  seats: RefereeSeatRecord[];
+  started: boolean;
+  startedAt: number | null;
+}
+
+/** What a client sends the referee: claim a seat, or start the match. */
+export type RefereeClaim =
+  | { k: "seat"; v: typeof DUEL_PROTOCOL; token: string; name: string; avatarCode: string | null }
+  | { k: "start"; v: typeof DUEL_PROTOCOL; token: string };
+
+/**
+ * Believe a referee lobby only if it is entirely well formed. The value is
+ * unforgeable - the platform rejects client writes to `server:` keys - but a
+ * server running an older or newer build of this game is ordinary, and a
+ * half-understood lobby would seat people wrongly rather than visibly fail.
+ */
+export function parseRefereeLobby(value: unknown): RefereeLobby | null {
+  if (!value || typeof value !== "object" || wireBytes(value) > DUEL_WIRE_MAX_BYTES) return null;
+  const lobby = value as Record<string, unknown>;
+  if (lobby.v !== DUEL_PROTOCOL) return null;
+  if (!finiteNumber(lobby.build)) return null;
+  if (typeof lobby.started !== "boolean") return null;
+  if (lobby.startedAt !== null && !finiteNumber(lobby.startedAt)) return null;
+  const seats = lobby.seats;
+  if (!Array.isArray(seats) || seats.length > DUEL_SEATS.length) return null;
+  const parsed: RefereeSeatRecord[] = [];
+  for (const entry of seats) {
+    if (!entry || typeof entry !== "object") return null;
+    const seat = entry as Record<string, unknown>;
+    if (!DUEL_SEATS.includes(seat.seat as DuelSeat)) return null;
+    if (!shortText(seat.token, 80) || (seat.token as string).length === 0) return null;
+    if (!shortText(seat.connId, 80)) return null;
+    if (!shortText(seat.name, 40)) return null;
+    if (seat.avatarCode !== null && !shortText(seat.avatarCode, 64)) return null;
+    parsed.push(entry as RefereeSeatRecord);
+  }
+  // Two players in one seat is the exact failure a referee exists to prevent,
+  // so a lobby claiming it is not one to trust.
+  if (new Set(parsed.map((seat) => seat.seat)).size !== parsed.length) return null;
+  return {
+    build: lobby.build as number,
+    v: DUEL_PROTOCOL,
+    seats: parsed,
+    started: lobby.started as boolean,
+    startedAt: (lobby.startedAt as number | null) ?? null,
+  };
+}
 
 // Invite codes avoid 0/O and 1/I, read aloud cleanly, and map to a channel
 // name that satisfies the documented channel grammar.
@@ -399,15 +466,47 @@ export function createMatch(
 }
 
 /**
- * A joiner takes the lowest free seat. Legal only while the host is still
- * gathering: once the match starts the lobby is closed, which is what stops
- * a late arrival from appearing mid-round with no turn and no hearts.
+ * A joiner takes a seat. Legal only while the host is still gathering: once
+ * the match starts the lobby is closed, which is what stops a late arrival
+ * from appearing mid-round with no turn and no hearts.
+ *
+ * Pass `assigned` to take a seat the referee handed out, which is the point
+ * of having one - two joiners can no longer pick the same lowest free seat.
+ * Omit it and the joiner picks for itself, exactly as it did before any
+ * server script existed, because a session without a referee has to play the
+ * same.
  */
-export function joinMatch(match: DuelMatch, joiner: DuelPlayer): DuelMatch | null {
+export function joinMatch(
+  match: DuelMatch,
+  joiner: DuelPlayer,
+  assigned: DuelSeat | null = null,
+): DuelMatch | null {
   if (match.started || match.result) return null;
-  const free = DUEL_SEATS.find((seat) => match.players[seat] === null);
-  if (!free) return null;
-  return { ...match, seq: match.seq + 1, players: { ...match.players, [free]: joiner } };
+  const seat = assigned ?? DUEL_SEATS.find((free) => match.players[free] === null) ?? null;
+  if (!seat) return null;
+  // An assigned seat someone else already holds means the record and the
+  // referee disagree. Refuse rather than evict a seated player.
+  const sitting = match.players[seat];
+  if (sitting && sitting.token !== joiner.token) return null;
+  return { ...match, seq: match.seq + 1, players: { ...match.players, [seat]: joiner } };
+}
+
+/**
+ * Empty a seat while the lobby is still gathering, for a guest who walked
+ * away. Leaving a match under way is a concession, which costs the leaver the
+ * match; leaving a lobby that has not started is just leaving, and the others
+ * keep gathering. The seat also has to be recoverable when its holder simply
+ * closed the tab and published nothing, which is what a referee reports and
+ * a match record can never notice on its own.
+ */
+export function vacateSeat(match: DuelMatch, seat: DuelSeat): DuelMatch {
+  if (match.started || match.result || match.players[seat] === null) return match;
+  return { ...match, seq: match.seq + 1, players: { ...match.players, [seat]: null } };
+}
+
+/** The seat a referee has assigned this token, if it has assigned one. */
+export function refereeSeatOf(lobby: RefereeLobby | null, token: string): DuelSeat | null {
+  return lobby?.seats.find((seat) => seat.token === token)?.seat ?? null;
 }
 
 /** Two seats is a duel; four is the ceiling the lobby fills to. */

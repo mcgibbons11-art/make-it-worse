@@ -14,6 +14,9 @@
 import {
   DUEL_MATCH_KEY,
   REFEREE_STATE_KEY,
+  parseRefereeLobby,
+  type RefereeClaim,
+  type RefereeLobby,
   DUEL_STATE_POLL_MS,
   DUEL_WIRE_MAX_BYTES,
   LOBBY_HEARTBEAT_MS,
@@ -293,11 +296,13 @@ export interface DuelChannelHandlers {
   onPeerLeave(player: PortalsNetPlayer): void;
   onStatus(status: "connected" | "disconnected"): void;
   /**
-   * The session's server script announced itself. Reported for diagnostics
-   * only: no rule reads it, because a session whose script is absent, still
-   * starting, or dropped for exceeding its budget has to play identically.
+   * The session's server script published its lobby, or null when no
+   * referee is present. When it IS present the clients defer their seating
+   * to it, because a single writer cannot hand the same seat to two people.
+   * A session without one has to play identically, which is both the
+   * documented requirement and what keeps this safe to ship unproven.
    */
-  onReferee(present: boolean): void;
+  onReferee(lobby: RefereeLobby | null): void;
 }
 
 export interface DuelChannelConnection {
@@ -309,6 +314,13 @@ export interface DuelChannelConnection {
    */
   publishMatch(match: DuelMatch): "sent" | "too_large";
   send(message: DuelWireMessage): void;
+  /**
+   * A seat or start claim addressed to the session's server script. Other
+   * clients receive it too and drop it: parseDuelMessage does not recognise
+   * these kinds, which is what keeps the referee's vocabulary private
+   * without a second transport.
+   */
+  sendClaim(claim: RefereeClaim): void;
   close(): Promise<void>;
 }
 
@@ -329,6 +341,17 @@ export async function connectDuelChannel(
     const selfConnId = joined.self.id;
     let latest: DuelMatch | null = null;
 
+    // The lobby is re-read on every poll, so it is forwarded only when it
+    // actually changes: an unchanged lobby handed up as a fresh object would
+    // re-render the duel panels twice a second for nothing.
+    let refereeSeen: string | null = null;
+    const acceptReferee = (value: unknown) => {
+      const lobby = parseRefereeLobby(value);
+      const shape = lobby ? JSON.stringify(lobby) : null;
+      if (shape === refereeSeen) return;
+      refereeSeen = shape;
+      handlers.onReferee(lobby);
+    };
     const acceptMatch = (value: unknown) => {
       const match = parseDuelMatch(value);
       if (!match || !supersedes(match, latest)) return;
@@ -344,7 +367,7 @@ export async function connectDuelChannel(
       if (key === DUEL_MATCH_KEY) acceptMatch(value);
       // Written only by the server script; `server:`-prefixed keys are
       // rejected from clients, so its presence is proof the script ran.
-      else if (key === REFEREE_STATE_KEY) handlers.onReferee(value !== null && value !== undefined);
+      else if (key === REFEREE_STATE_KEY) acceptReferee(value);
     };
     const joinHandler = (player: PortalsNetPlayer) => {
       if (player.id !== selfConnId) handlers.onPeerJoin(player);
@@ -361,13 +384,17 @@ export async function connectDuelChannel(
     acceptMatch(joined.state[DUEL_MATCH_KEY]);
     // Late joiners receive the whole state snapshot, so the referee may
     // already be in it rather than arriving as an event.
-    handlers.onReferee(joined.state[REFEREE_STATE_KEY] != null);
+    acceptReferee(joined.state[REFEREE_STATE_KEY]);
     // Same lost-event safety net map-session needed in the processed host:
     // the confirmed setState write can outrun the live state event for a
     // player who joined after the writer. seq makes unchanged samples no-ops.
     const poll = globalThis.setInterval(() => {
       try {
         acceptMatch(host.net.getState(DUEL_MATCH_KEY));
+        // The referee's seating needs the same net: a lost state event would
+        // otherwise strand a client waiting for a seat it had already been
+        // given.
+        acceptReferee(host.net.getState(REFEREE_STATE_KEY));
       } catch {
         // A disconnected host may throw until Portals reports status/rejoin.
       }
@@ -384,6 +411,9 @@ export async function connectDuelChannel(
       },
       send(message) {
         if (parseDuelMessage(message)) host.net.send(message);
+      },
+      sendClaim(claim) {
+        host.net.send(claim);
       },
       async close() {
         globalThis.clearInterval(poll);

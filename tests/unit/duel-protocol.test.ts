@@ -19,6 +19,8 @@ import {
   failAttempt,
   handOff,
   joinMatch,
+  refereeSeatOf,
+  vacateSeat,
   lobbyFreshness,
   lobbyPostKey,
   mayClaimForfeit,
@@ -330,6 +332,56 @@ describe("a four-player party", () => {
     expect(seatedSeats(match)).toHaveLength(MAX_DUEL_PLAYERS);
     const fifth: DuelPlayer = { token: "tok-e", connId: "conn-e", name: "Eve", avatarCode: null };
     expect(joinMatch(match, fifth)).toBeNull();
+  });
+
+  it("takes the seat a referee assigned, and refuses one already held", () => {
+    const gathering = createMatch(host, NOW);
+    // The referee may hand out any free seat, not merely the lowest: seating
+    // is its call, which is the whole reason it exists.
+    const seated = joinMatch(gathering, guest, "c")!;
+    expect(seatOf(seated, guest.token)).toBe("c");
+    expect(seated.players.b).toBeNull();
+    // A seat someone else holds means the record and the referee disagree.
+    // Refusing beats evicting a seated player.
+    expect(joinMatch(seated, third, "c")).toBeNull();
+    expect(joinMatch(seated, third, "a")).toBeNull();
+    // Re-asserting our own seat is the retry after a clobbered write, and it
+    // has to succeed or a joiner whose write lost would never get back in.
+    expect(seatOf(joinMatch(seated, guest, "c")!, guest.token)).toBe("c");
+  });
+
+  it("reads a token's seat out of a referee lobby", () => {
+    const lobby = {
+      build: 2,
+      v: DUEL_PROTOCOL as 2,
+      seats: [
+        { seat: "a" as const, token: "tok-a", connId: "conn-a", name: "Ava", avatarCode: null },
+        { seat: "b" as const, token: "tok-b", connId: "conn-b", name: "Bo", avatarCode: null },
+      ],
+      started: false,
+      startedAt: null,
+    };
+    expect(refereeSeatOf(lobby, "tok-b")).toBe("b");
+    expect(refereeSeatOf(lobby, "tok-z")).toBeNull();
+    // No referee is the ordinary case, and it must read as "no assignment"
+    // rather than throw: that path is every session without a server script.
+    expect(refereeSeatOf(null, "tok-a")).toBeNull();
+  });
+
+  it("gives up a gathering seat, and refuses to touch one mid-match", () => {
+    const gathering = joinMatch(createMatch(host, NOW), guest)!;
+    const left = vacateSeat(gathering, "b");
+    expect(left.players.b).toBeNull();
+    expect(seatedSeats(left)).toEqual(["a"]);
+    expect(left.seq).toBeGreaterThan(gathering.seq);
+    // The seat is immediately available again, which is the point: a host
+    // keeps gathering after somebody changes their mind.
+    expect(seatOf(joinMatch(left, third)!, third.token)).toBe("b");
+    // Once the match is under way a seat is nobody's to empty - leaving is a
+    // concession, with a result, not a quiet disappearance.
+    const started = startMatch(gathering, NOW)!;
+    expect(vacateSeat(started, "b")).toBe(started);
+    expect(vacateSeat(gathering, "c")).toBe(gathering);
   });
 
   it("opens joining only before the host starts", () => {

@@ -279,8 +279,9 @@ export function DuelMatchmakingPanel({
               : "no match record yet"}
             {" · "}
             {/* Whether Portals ran this game's server script for the session.
-                The rules do not consult it; it is here so a real match can
-                settle whether a GitHub-synced bundle gets one. */}
+                With one, it assigns the seats; without one the clients pick
+                their own and play identically. Shown because it is also how a
+                real match settles whether a synced bundle gets a server. */}
             {duel.refereeOnline ? "referee online" : "no referee"}
           </p>
         </>

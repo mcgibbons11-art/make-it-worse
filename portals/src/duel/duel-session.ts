@@ -1,4 +1,4 @@
-// Transport for 1v1 duels over Portals.net, mirroring map-session.ts: shared
+// Transport for Duel Mode over Portals.net, mirroring map-session.ts: shared
 // state is the primary record, live events are the fast path, a bounded poll
 // is the lost-event safety net, and everything off the wire is validated
 // before it is believed.

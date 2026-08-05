@@ -409,7 +409,7 @@ export function PortalsApp() {
     const result = await pending.catch(() => null);
     if (result?.status === "ok") await result.connection.close();
   }, []);
-  // The 1v1 duel brain. It owns the Portals.net matchmaking and match record;
+  // Duel Mode's brain. It owns the Portals.net matchmaking and match record;
   // this component stays the owner of attempts, so the duel taps into the
   // existing start/complete/fail/publish lifecycle rather than duplicating it.
   const duel = useDuel({
@@ -1492,12 +1492,12 @@ export function PortalsApp() {
               {
                 title: "Leave this run?",
                 body: "Starting a duel replaces the run you are on. This run does not come back.",
-                confirmLabel: "Open 1v1 duels",
+                confirmLabel: "Open Duel Mode",
               },
             )
           }
         >
-          <MenuIcon name="duel" /> 1v1 duel
+          <MenuIcon name="duel" /> Duel Mode
         </button>
         <button
           className="button secondary"

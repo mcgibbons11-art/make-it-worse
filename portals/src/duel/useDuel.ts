@@ -39,7 +39,10 @@ import {
   mayClaimForfeit,
   mintDuelCode,
   normalizeDuelCode,
-  otherSeat,
+  seatedSeats,
+  mayStartMatch,
+  startMatch,
+  MAX_DUEL_PLAYERS,
   rematch,
   refreshConnection,
   seatOf,
@@ -93,6 +96,18 @@ export interface DuelChatEntry {
 export interface DuelFeedEntry {
   id: number;
   text: string;
+}
+
+/** One seated player, as the lobby and score strip render them. */
+export interface DuelRosterEntry {
+  seat: DuelSeat;
+  name: string;
+  avatarCode: string | null;
+  isYou: boolean;
+  isRunner: boolean;
+  /** Knocked out of the current round but still in the match. */
+  out: boolean;
+  score: number;
 }
 
 export interface DuelCourse {
@@ -165,6 +180,14 @@ export interface DuelApi {
   claimTimeout(): void;
   concedeMatch(): void;
   requestRematch(): void;
+  /** Everyone seated, in seat order, for the lobby and the score strip. */
+  roster: DuelRosterEntry[];
+  /** True for the host while the lobby can still legally be started. */
+  canStartMatch: boolean;
+  /** Host only: close the lobby and begin the match. */
+  startNow(): void;
+  /** Seats still open in the gathering lobby. */
+  openSeats: number;
 
   /** PortalsApp calls these from its own run lifecycle. */
   noteRunStarted(): void;
@@ -247,7 +270,28 @@ export function useDuel(input: {
 
   const mySeat = match ? seatOf(match, token) : null;
   const myTurn = match !== null && mySeat !== null && match.turn.runner === mySeat && !match.result;
-  const opponent = match && mySeat ? match.players[otherSeat(mySeat)] : null;
+  // Everyone in the lobby, and the one player whose run is streamed to the
+  // rest: the current runner, whoever that is among up to four seats.
+  const roster = useMemo<DuelRosterEntry[]>(
+    () =>
+      match
+        ? seatedSeats(match).map((seat) => ({
+            seat,
+            name: match.players[seat]!.name,
+            avatarCode: match.players[seat]!.avatarCode,
+            isYou: seat === mySeat,
+            isRunner: seat === match.turn.runner,
+            out: match.out.includes(seat),
+            score: match.score[seat],
+          }))
+        : [],
+    [match, mySeat],
+  );
+  // Only the host may start, and only from the gathering lobby.
+  const canStartMatch = match !== null && mySeat === "a" && mayStartMatch(match);
+  const openSeats = match ? MAX_DUEL_PLAYERS - seatedSeats(match).length : 0;
+  const opponent =
+    match && match.turn.runner !== mySeat ? match.players[match.turn.runner] : null;
   const opponentName = opponent?.name ?? "Opponent";
   const opponentAvatarCode = opponent?.avatarCode ?? null;
   const opponentAvatar = useMemo(
@@ -305,7 +349,9 @@ export function useDuel(input: {
     matchRef.current = next;
     setMatch(next);
     channel.current?.publishMatch(next);
-    if (next.players.b && !next.result && activeCodeRef.current) {
+    // The MATCH stage begins when the host starts it, not when a second seat
+    // fills: the gathering lobby is its own screen now.
+    if (next.started && !next.result && activeCodeRef.current) {
       setStage((current) =>
         current.kind === "match" ? current : { kind: "match", code: activeCodeRef.current! },
       );
@@ -364,7 +410,7 @@ export function useDuel(input: {
         onMatch: (record) => {
           matchRef.current = record;
           setMatch(record);
-          if (record.players.b && !record.result) setStage({ kind: "match", code });
+          if (record.started && !record.result) setStage({ kind: "match", code });
         },
         onMessage: (message) => {
           peerSignalAt.current = Date.now();
@@ -380,11 +426,10 @@ export function useDuel(input: {
               if (message.type === "start") setSpectateStartedAt(Date.now());
               if (message.type === "death" || message.type === "clear")
                 setSpectateStartedAt(null);
+              // The feed names whoever is actually running, which with
+              // four seats is rarely "the opponent".
               const current = matchRef.current;
-              const runnerName =
-                current && seatOf(current, token)
-                  ? current.players[otherSeat(seatOf(current, token)!)]?.name ?? "Opponent"
-                  : "Opponent";
+              const runnerName = current?.players[current.turn.runner]?.name ?? "The runner";
               const line = {
                 start: `${runnerName} started a run.`,
                 death: `${runnerName} went down${message.label ? ` to ${message.label}` : ""}.`,
@@ -427,7 +472,7 @@ export function useDuel(input: {
           kind: "error",
           message:
             result.status === "unavailable"
-              ? "Duels need a Portals host. Open the game on portals.to to play 1v1."
+              ? "Duels need a Portals host. Open the game on portals.to to play."
               : result.message,
         });
         return;
@@ -446,11 +491,11 @@ export function useDuel(input: {
         if (known) {
           const refreshed = refreshConnection(existing, token, player.connId);
           if (refreshed) publish(refreshed);
-          if (existing.players.b && !existing.result) setStage({ kind: "match", code });
+          if (existing.started && !existing.result) setStage({ kind: "match", code });
           else setStage({ kind: "waiting", code });
           return;
         }
-        if (existing.players.b === null && !existing.result) {
+        if (!existing.started && !existing.result) {
           const seated = joinMatch(existing, player);
           if (seated) {
             publish(seated);
@@ -458,7 +503,7 @@ export function useDuel(input: {
           }
         }
         if (role !== "host") {
-          setStage({ kind: "error", message: "That duel already has two players." });
+          setStage({ kind: "error", message: "That duel is full or already under way." });
           await dropChannel();
           activeCodeWrite(null);
           return;
@@ -487,22 +532,28 @@ export function useDuel(input: {
   );
 
   // When the host's record arrives while we sit in "waiting", claim seat B.
-  // Deferred one tick so the claim reacts to the settled record rather than
-  // cascading inside the render that delivered it.
+  // Deferred so the claim reacts to the settled record rather than cascading
+  // inside the render that delivered it. The delay is JITTERED because with
+  // four seats two joiners can arrive together, both claim the same lowest
+  // free seat, and last-write-wins drops one of them. The loser re-runs this
+  // effect (its token is absent from the newer record) and takes the next
+  // seat - but only if the retries do not collide again in lockstep, which
+  // is what the random spread buys.
   useEffect(() => {
     if (stage.kind !== "waiting" || !match || !channel.current) return;
     if (seatOf(match, token)) return;
     const timer = globalThis.setTimeout(() => {
       const connection = channel.current;
       if (!connection) return;
-      if (match.players.b !== null) {
-        if (!match.result) setStage({ kind: "error", message: "That duel already has two players." });
+      if (match.started || seatedSeats(match).length >= MAX_DUEL_PLAYERS) {
+        if (!match.result)
+          setStage({ kind: "error", message: "That duel is full or already under way." });
         return;
       }
       if (match.result) return;
       const seated = joinMatch(match, me(connection.selfConnId));
       if (seated) publish(seated);
-    }, 0);
+    }, Math.floor(Math.random() * 180));
     return () => globalThis.clearTimeout(timer);
   }, [match, me, publish, stage, token]);
 
@@ -514,7 +565,7 @@ export function useDuel(input: {
   // delivered it.
   useEffect(() => {
     if (!match || !myTurn || match.courseCode !== null || match.turn.phase !== "handoff") return;
-    if (!match.players.b) return;
+    if (!match.started) return;
     const timer = globalThis.setTimeout(() => {
       if (match.courseBaseVersion !== null) {
         // Rejoined mid-match without witnessing round 1: the chooser's own
@@ -581,7 +632,7 @@ export function useDuel(input: {
     );
     const watch = globalThis.setInterval(() => {
       const record = matchRef.current;
-      if (!record || record.result || !record.players.b) return;
+      if (!record || record.result || seatedSeats(record).length < 2) return;
       const silentFor = Date.now() - peerSignalAt.current;
       if (silentFor > PEER_STALE_MS)
         setPeerLostAt((current) => current ?? Date.now());
@@ -605,10 +656,20 @@ export function useDuel(input: {
     const timer = globalThis.setTimeout(() => {
       const record = matchRef.current;
       const seat = record ? seatOf(record, token) : null;
-      if (!record || record.result || !record.players.b || !seat) return;
-      publish(concede(record, otherSeat(seat)));
-      pushFeed("Opponent never came back. Match over.");
-      activeCodeWrite(null);
+      if (!record || record.result || !seat || seatedSeats(record).length < 2) return;
+      // Retire whoever went quiet - with four seats that is the stalled
+      // runner, and the rest of the lobby plays on without them.
+      const missing = record.turn.runner !== seat ? record.turn.runner : null;
+      if (!missing) return;
+      const name = record.players[missing]?.name ?? "A player";
+      const next = concede(record, missing, Date.now());
+      publish(next);
+      pushFeed(
+        next.result
+          ? `${name} never came back. Match over.`
+          : `${name} never came back and is out.`,
+      );
+      if (next.result) activeCodeWrite(null);
     }, Math.max(0, peerLostAt + ABANDON_TIMEOUT_MS - Date.now()));
     return () => globalThis.clearTimeout(timer);
   }, [peerLostAt, publish, pushFeed, stage.kind, token]);
@@ -630,7 +691,7 @@ export function useDuel(input: {
     stage.kind === "match" &&
     match !== null &&
     !match.result &&
-    match.players.b !== null
+    seatedSeats(match).length >= 2
       ? Math.max(0, Math.ceil((peerLostAt + ABANDON_TIMEOUT_MS - nowTick) / 1000))
       : null;
 
@@ -713,8 +774,8 @@ export function useDuel(input: {
       // of waiting out the abandonment clock.
       const current = matchRef.current;
       const seat = current ? seatOf(current, token) : null;
-      if (current && seat && current.players.b && !current.result)
-        publish(concede(current, seat));
+      if (current && seat && seatedSeats(current).length >= 2 && !current.result)
+        publish(concede(current, seat, Date.now()));
       void teardown();
       activeCodeWrite(null);
       setStage({ kind: "closed" });
@@ -775,7 +836,7 @@ export function useDuel(input: {
             kind: "error",
             message:
               result.status === "unavailable"
-                ? "Duels need a Portals host. Open the game on portals.to to play 1v1."
+                ? "Duels need a Portals host. Open the game on portals.to to play."
                 : result.message,
           });
           return;
@@ -871,7 +932,7 @@ export function useDuel(input: {
     },
     concedeMatch: () => {
       const current = matchRef.current;
-      if (current && mySeat) publish(concede(current, mySeat));
+      if (current && mySeat) publish(concede(current, mySeat, Date.now()));
       void teardown();
       activeCodeWrite(null);
       setStage({ kind: "closed" });
@@ -880,6 +941,15 @@ export function useDuel(input: {
       const current = matchRef.current;
       if (!current) return;
       const next = rematch(current, Date.now());
+      if (next) publish(next);
+    },
+    roster,
+    canStartMatch,
+    openSeats,
+    startNow: () => {
+      const current = matchRef.current;
+      if (!current) return;
+      const next = startMatch(current, Date.now());
       if (next) publish(next);
     },
 

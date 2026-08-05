@@ -1,5 +1,5 @@
-// The 1v1 surfaces: the matchmaking popup the menu opens, and the in-match
-// overlays that drive a duel once two players are seated. All decisions live
+// Duel Mode's surfaces: the matchmaking popup the menu opens, and the
+// in-match overlays that drive a duel once the host starts it. All decisions live
 // in useDuel and the protocol; these components only render the record and
 // forward clicks.
 
@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { AudioManager } from "@/lib/audio/AudioManager";
 import type { GamePhase } from "@/lib/game/types";
 import { MenuIcon, Overlay } from "../menu/ShellPanels";
+import { MAX_DUEL_PLAYERS } from "./duel-protocol";
 import { REACTION_EMOJI } from "./duel-protocol";
 import type { DuelApi } from "./useDuel";
 
@@ -157,13 +158,14 @@ export function DuelMatchmakingPanel({
   const stage = duel.stage;
   return (
     <>
-      <div className="eyebrow">HEAD TO HEAD</div>
-      <h2 id="portals-duel-title">1v1 duel</h2>
+      <div className="eyebrow">UP TO FOUR PLAYERS</div>
+      <h2 id="portals-duel-title">Duel Mode</h2>
       {stage.kind === "menu" && (
         <>
           <p className="portals-lede">
-            Best of three. Take turns beating the course, and every clear adds
-            one awful thing for the other player.
+            Best of three, two to four players. Take turns beating the
+            course; every clear adds one awful thing for whoever runs next,
+            and burning all three hearts puts you out of the round.
           </p>
           <div className="portals-actions">
             {duel.rejoinableCode && (
@@ -173,7 +175,7 @@ export function DuelMatchmakingPanel({
             )}
             <CoursePicker duel={duel} />
             <button className="button danger" onClick={duel.hostPrivate}>
-              🔒 Host a private duel
+              🔒 Host a duel
             </button>
             <div className="duel-code-row">
               <input
@@ -205,7 +207,9 @@ export function DuelMatchmakingPanel({
       )}
       {stage.kind === "waiting" && (
         <>
-          <p className="portals-lede">Send this code to your opponent:</p>
+          <p className="portals-lede">
+            Send this code to everyone you want in. Up to {MAX_DUEL_PLAYERS} play at once.
+          </p>
           <p className="duel-invite-code">{inviteLabel(stage.code)}</p>
           {duel.match && (
             <p className="duel-course-label">{courseLabel(duel.match.courseTitle)}</p>
@@ -226,16 +230,52 @@ export function DuelMatchmakingPanel({
               copy it yourself.
             </p>
           )}
-          <p className="portals-notice" role="status">
-            Waiting for an opponent to join…
-          </p>
+          {/* The gathering lobby: everyone seated so far, and the seats
+              still open. The host keeps accepting until they start. */}
+          <ul className="duel-roster" aria-label="Players in this duel">
+            {duel.roster.map((entry) => (
+              <li key={entry.seat}>
+                <strong>{entry.name}</strong>
+                {entry.seat === "a" && <em>host</em>}
+                {entry.isYou && <em>you</em>}
+              </li>
+            ))}
+            {Array.from({ length: duel.openSeats }, (_, index) => (
+              <li key={`open-${index}`} className="is-open">
+                <strong>Open seat</strong>
+              </li>
+            ))}
+          </ul>
+          {duel.mySeat === "a" ? (
+            <>
+              <button
+                className="button danger"
+                disabled={!duel.canStartMatch}
+                onClick={duel.startNow}
+              >
+                ⚔️ Start with {duel.roster.length}{" "}
+                {duel.roster.length === 1 ? "player" : "players"}
+              </button>
+              <p className="portals-notice" role="status">
+                {duel.canStartMatch
+                  ? duel.openSeats > 0
+                    ? `Keep waiting to fill ${duel.openSeats} more, or start now.`
+                    : "Lobby full. Start when you are ready."
+                  : "Waiting for at least one more player…"}
+              </p>
+            </>
+          ) : (
+            <p className="portals-notice" role="status">
+              You are in. Waiting for the host to start…
+            </p>
+          )}
           {/* Live session facts, so a stuck hand-off is diagnosable at a
               glance instead of reading as a dead screen. */}
           <p className="duel-session-status" role="status">
             {duel.peerConnected ? "another connection is here" : "nobody else here yet"}
             {" · "}
             {duel.match
-              ? `record #${duel.match.seq} · you: ${duel.mySeat ? `seat ${duel.mySeat.toUpperCase()}` : "no seat"} · opponent: ${duel.match.players.b ? "seated" : "open"}`
+              ? `record #${duel.match.seq} · you: ${duel.mySeat ? `seat ${duel.mySeat.toUpperCase()}` : "no seat"} · seated: ${duel.roster.length}/${MAX_DUEL_PLAYERS}`
               : "no match record yet"}
           </p>
         </>
@@ -428,15 +468,27 @@ export function DuelHud({
   if (!match || !duel.mySeat) return null;
   const mySeat = duel.mySeat;
   const turn = match.turn;
-  const myScore = match.score[mySeat];
-  const theirScore = match.score[mySeat === "a" ? "b" : "a"];
   const runnerBusy =
     phase === "playing" || phase === "choosing_trap" ||
     phase === "placing_trap" || phase === "publishing";
   const strip = (
     <div className="duel-strip" role="status">
-      <span className="duel-strip-score">
-        ROUND {match.round} · YOU {myScore}–{theirScore} {duel.opponentName.toUpperCase()}
+      {/* One chip per seated player, so a four-way reads at a glance: who
+          is running, who is knocked out of this round, and every score. */}
+      <span className="duel-strip-score">ROUND {match.round}</span>
+      <span className="duel-strip-players">
+        {duel.roster.map((entry) => (
+          <b
+            key={entry.seat}
+            className={[
+              entry.isRunner ? "is-runner" : "",
+              entry.out ? "is-out" : "",
+              entry.isYou ? "is-you" : "",
+            ].filter(Boolean).join(" ")}
+          >
+            {entry.isYou ? "You" : entry.name} {entry.score}
+          </b>
+        ))}
       </span>
       <span className="duel-strip-course">{courseLabel(match.courseTitle)}</span>
       <Hearts count={turn.heartsLeft} max={match.rules.hearts} />
@@ -461,11 +513,11 @@ export function DuelHud({
         <div className={`impact-stamp duel-over-stamp ${won ? "is-win" : "is-loss"}`}>
           {won ? "VICTORY" : "DEFEAT"}
         </div>
-        <h2 id="duel-over-title">{won ? "You took the match." : `${duel.opponentName} took the match.`}</h2>
+        <h2 id="duel-over-title">{won ? "You took the match." : `${match.players[match.result.winner]?.name ?? "Somebody else"} took the match.`}</h2>
         <p className="portals-lede">
-          Final score {myScore}–{theirScore}
+          {duel.roster.map((entry) => `${entry.isYou ? "You" : entry.name} ${entry.score}`).join(" · ")}
           {match.result.reason === "forfeit" ? " · decided on the clock" : ""}
-          {match.result.reason === "left" ? " · your opponent left" : ""}
+          {match.result.reason === "left" ? " · last one standing" : ""}
         </p>
         {match.history.length > 0 && (
           <div className="duel-rounds" aria-label="Round by round">
@@ -473,7 +525,7 @@ export function DuelHud({
               <p key={index} className={round.winner === mySeat ? "is-you" : undefined}>
                 <strong>Round {index + 1}</strong>
                 {" · "}
-                {round.winner === mySeat ? "you" : duel.opponentName} took it{" "}
+                {round.winner === mySeat ? "you" : match.players[round.winner]?.name ?? "somebody"} took it{" "}
                 {round.reason === "forfeit"
                   ? "on the clock"
                   : `after ${round.turns} ${round.turns === 1 ? "turn" : "turns"}`}
@@ -485,7 +537,7 @@ export function DuelHud({
         <DuelChat duel={duel} />
         <div className="portals-buttons">
           <button className="button danger huge" onClick={duel.requestRematch}>
-            🔁 Rematch (sides swap)
+            🔁 Rematch (order rotates)
           </button>
           <button className="button secondary" onClick={onLeave}>
             🏠 Leave the duel

@@ -1,6 +1,13 @@
-// The 1v1 duel's rulebook, kept pure so every rule is testable without a
+// Duel Mode's rulebook, kept pure so every rule is testable without a
 // Portals host. The transport (duel-session.ts) moves these records; this
 // file decides what they mean and which writes are legitimate.
+//
+// Up to four seats. The host gathers players until the lobby is full or they
+// press Start (legal from two seats), then turns rotate through the active
+// seats: clear the course and worsen it for the next runner, burn all your
+// hearts and you are out of the round. The last survivor takes the round,
+// and rounds take the match. At exactly two players this reduces to the
+// original 1v1 rules move for move.
 //
 // The platform shapes three rules. There is no server, so the match record is
 // a single shared-state key with a sequence number and a named writer per
@@ -12,7 +19,12 @@
 // and size-bounded before it is believed, the same posture map-session.ts
 // takes with map codes.
 
-export const DUEL_PROTOCOL = 1;
+// 2: the four-seat match record. Version 1 records and messages are ignored
+// outright rather than half-understood - every player in a channel is on the
+// same published build in practice.
+export const DUEL_PROTOCOL = 2;
+/** Seats in the lobby, host included. */
+export const MAX_DUEL_PLAYERS = 4;
 export const DUEL_WIRE_MAX_BYTES = 8 * 1024;
 export const DUEL_STATE_POLL_MS = 1_500;
 
@@ -78,7 +90,8 @@ export function duelChannel(code: string): string {
   return `duel:${code.toLowerCase()}`;
 }
 
-export type DuelSeat = "a" | "b";
+export type DuelSeat = "a" | "b" | "c" | "d";
+export const DUEL_SEATS: readonly DuelSeat[] = ["a", "b", "c", "d"];
 
 export interface DuelPlayer {
   /** Stable per-browser token; survives rejoins where connection ids do not. */
@@ -118,9 +131,18 @@ export interface DuelMatch {
   v: typeof DUEL_PROTOCOL;
   /** Monotonic write counter; readers ignore anything not newer. */
   seq: number;
-  players: { a: DuelPlayer; b: DuelPlayer | null };
+  players: Record<DuelSeat, DuelPlayer | null>;
   rules: { roundsToWin: number; hearts: number };
-  score: { a: number; b: number };
+  score: Record<DuelSeat, number>;
+  /**
+   * False while the host is still gathering players. Joining is legal only
+   * before the start; every in-match transition is legal only after it.
+   */
+  started: boolean;
+  /** Seats eliminated from the CURRENT round. Cleared when a round ends. */
+  out: DuelSeat[];
+  /** Seats gone from the match for good: they left or went silent. */
+  retired: DuelSeat[];
   round: number;
   turn: DuelTurn;
   /** Challenge code of the course the current turn runs. */
@@ -249,18 +271,30 @@ export function parseDuelMatch(value: unknown): DuelMatch | null {
   const match = value as Record<string, unknown> & Partial<DuelMatch>;
   if (match.v !== DUEL_PROTOCOL || !finiteNumber(match.seq)) return null;
   const players = match.players as DuelMatch["players"] | undefined;
-  if (!players || !validPlayer(players.a) || (players.b !== null && !validPlayer(players.b))) return null;
+  if (
+    !players ||
+    !validPlayer(players.a) ||
+    !DUEL_SEATS.every(
+      (seat) => seat === "a" || players[seat] === null || validPlayer(players[seat]),
+    )
+  ) return null;
   const turn = match.turn as DuelTurn | undefined;
   if (
     !turn ||
     !finiteNumber(turn.number) ||
-    (turn.runner !== "a" && turn.runner !== "b") ||
+    !DUEL_SEATS.includes(turn.runner) ||
     !finiteNumber(turn.heartsLeft) ||
     !["handoff", "running", "worsening"].includes(turn.phase) ||
     !finiteNumber(turn.deadlineAt)
   ) return null;
   const score = match.score as DuelMatch["score"] | undefined;
-  if (!score || !finiteNumber(score.a) || !finiteNumber(score.b)) return null;
+  if (!score || !DUEL_SEATS.every((seat) => finiteNumber(score[seat]))) return null;
+  if (typeof match.started !== "boolean") return null;
+  const seatList = (value: unknown): value is DuelSeat[] =>
+    Array.isArray(value) &&
+    value.length <= DUEL_SEATS.length &&
+    value.every((seat) => DUEL_SEATS.includes(seat as DuelSeat));
+  if (!seatList(match.out) || !seatList(match.retired)) return null;
   if (!finiteNumber(match.round)) return null;
   if (match.courseCode !== null && !shortText(match.courseCode, 8_000)) return null;
   if (match.courseVersion !== null && !shortText(match.courseVersion, 80)) return null;
@@ -278,27 +312,45 @@ export function parseDuelMatch(value: unknown): DuelMatch | null {
       (round: unknown) =>
         !!round &&
         typeof round === "object" &&
-        ((round as DuelRoundSummary).winner === "a" || (round as DuelRoundSummary).winner === "b") &&
+        DUEL_SEATS.includes((round as DuelRoundSummary).winner) &&
         finiteNumber((round as DuelRoundSummary).turns) &&
         ["hearts", "forfeit"].includes((round as DuelRoundSummary).reason),
     )
   ) return null;
   const result = match.result as DuelResult | null | undefined;
   if (result !== null && result !== undefined) {
-    if ((result.winner !== "a" && result.winner !== "b") ||
+    if (!DUEL_SEATS.includes(result.winner) ||
       !["rounds", "forfeit", "left"].includes(result.reason)) return null;
   }
   return { ...(match as DuelMatch), courseTitle, courseBaseVersion, history };
 }
 
 export function seatOf(match: DuelMatch, token: string): DuelSeat | null {
-  if (match.players.a.token === token) return "a";
-  if (match.players.b?.token === token) return "b";
+  for (const seat of DUEL_SEATS)
+    if (match.players[seat]?.token === token) return seat;
   return null;
 }
 
-export function otherSeat(seat: DuelSeat): DuelSeat {
-  return seat === "a" ? "b" : "a";
+/** Seats holding a player who has not permanently left the match. */
+export function seatedSeats(match: DuelMatch): DuelSeat[] {
+  return DUEL_SEATS.filter(
+    (seat) => match.players[seat] !== null && !match.retired.includes(seat),
+  );
+}
+
+/** Seated seats still alive in the CURRENT round. */
+export function activeSeats(match: DuelMatch): DuelSeat[] {
+  return seatedSeats(match).filter((seat) => !match.out.includes(seat));
+}
+
+/** The next active seat clockwise after `from`, or null when nobody else is. */
+export function nextRunner(match: DuelMatch, from: DuelSeat): DuelSeat | null {
+  const start = DUEL_SEATS.indexOf(from);
+  for (let step = 1; step <= DUEL_SEATS.length; step += 1) {
+    const seat = DUEL_SEATS[(start + step) % DUEL_SEATS.length]!;
+    if (seat !== from && activeSeats(match).includes(seat)) return seat;
+  }
+  return null;
 }
 
 /** A newer record from the wire supersedes ours; equal or older is noise. */
@@ -320,9 +372,12 @@ export function createMatch(
   return {
     v: DUEL_PROTOCOL,
     seq: 1,
-    players: { a: host, b: null },
+    players: { a: host, b: null, c: null, d: null },
     rules: { roundsToWin: ROUNDS_TO_WIN, hearts: HEARTS_PER_TURN },
-    score: { a: 0, b: 0 },
+    score: { a: 0, b: 0, c: 0, d: 0 },
+    started: false,
+    out: [],
+    retired: [],
     round: 1,
     turn: { number: 1, runner: "a", heartsLeft: HEARTS_PER_TURN, phase: "handoff", deadlineAt: now + HANDOFF_DEADLINE_MS },
     courseCode: null,
@@ -334,10 +389,41 @@ export function createMatch(
   };
 }
 
-/** The joiner takes seat B. Only legal while B is empty. */
+/**
+ * A joiner takes the lowest free seat. Legal only while the host is still
+ * gathering: once the match starts the lobby is closed, which is what stops
+ * a late arrival from appearing mid-round with no turn and no hearts.
+ */
 export function joinMatch(match: DuelMatch, joiner: DuelPlayer): DuelMatch | null {
-  if (match.players.b !== null || match.result) return null;
-  return { ...match, seq: match.seq + 1, players: { ...match.players, b: joiner } };
+  if (match.started || match.result) return null;
+  const free = DUEL_SEATS.find((seat) => match.players[seat] === null);
+  if (!free) return null;
+  return { ...match, seq: match.seq + 1, players: { ...match.players, [free]: joiner } };
+}
+
+/** Two seats is a duel; four is the ceiling the lobby fills to. */
+export function mayStartMatch(match: DuelMatch): boolean {
+  return !match.started && !match.result && seatedSeats(match).length >= 2;
+}
+
+/**
+ * The host closes the lobby and the first turn begins. The host always runs
+ * first, which is also what the 1v1 rules did.
+ */
+export function startMatch(match: DuelMatch, now: number): DuelMatch | null {
+  if (!mayStartMatch(match)) return null;
+  return {
+    ...match,
+    seq: match.seq + 1,
+    started: true,
+    turn: {
+      number: 1,
+      runner: "a",
+      heartsLeft: match.rules.hearts,
+      phase: "handoff",
+      deadlineAt: now + HANDOFF_DEADLINE_MS,
+    },
+  };
 }
 
 /** A rejoining player refreshes the connection id behind its stable token. */
@@ -372,10 +458,17 @@ export function beginRun(match: DuelMatch, now: number): DuelMatch {
 
 export type FailOutcome =
   | { kind: "retry"; match: DuelMatch }
+  /** A seat is out of this round, but the round runs on among survivors. */
+  | { kind: "eliminated"; seat: DuelSeat; match: DuelMatch }
   | { kind: "round-lost"; match: DuelMatch }
   | { kind: "match-over"; match: DuelMatch };
 
-/** Runner burned an attempt. Third burn loses the round; rounds decide the match. */
+/**
+ * Runner burned an attempt. The third burn puts them OUT of the round rather
+ * than handing it over: with more than two players the round continues among
+ * the survivors, and only when one is left does the round end. At two
+ * players the last survivor is the opponent, which is exactly the old rule.
+ */
 export function failAttempt(match: DuelMatch, now: number): FailOutcome {
   const heartsLeft = match.turn.heartsLeft - 1;
   if (heartsLeft > 0) {
@@ -388,7 +481,45 @@ export function failAttempt(match: DuelMatch, now: number): FailOutcome {
       },
     };
   }
-  return roundWonBy(match, otherSeat(match.turn.runner), now, "hearts");
+  return eliminate(match, match.turn.runner, now, "hearts");
+}
+
+/**
+ * Knock a seat out of the current round and pass the turn on. The last seat
+ * standing wins the round; a round that somehow empties (a simultaneous
+ * abandonment) is awarded to the seat that went out last, so no record can
+ * strand a match with nobody to advance it.
+ */
+function eliminate(
+  match: DuelMatch,
+  seat: DuelSeat,
+  now: number,
+  how: DuelRoundSummary["reason"],
+): FailOutcome {
+  const out = match.out.includes(seat) ? match.out : [...match.out, seat];
+  const knocked: DuelMatch = { ...match, out };
+  const survivors = activeSeats(knocked);
+  if (survivors.length <= 1) {
+    return roundWonBy(knocked, survivors[0] ?? seat, now, how);
+  }
+  // The turn passes to the next survivor after the eliminated seat, on the
+  // course as it stands: an elimination does not reset the worsening.
+  const next = nextRunner(knocked, seat) ?? survivors[0]!;
+  return {
+    kind: "eliminated",
+    seat,
+    match: {
+      ...knocked,
+      seq: match.seq + 1,
+      turn: {
+        number: match.turn.number + 1,
+        runner: next,
+        heartsLeft: match.rules.hearts,
+        phase: "handoff",
+        deadlineAt: now + HANDOFF_DEADLINE_MS,
+      },
+    },
+  };
 }
 
 /** Runner cleared the course and now owns the worsening phase. */
@@ -400,8 +531,9 @@ export function clearRun(match: DuelMatch, now: number): DuelMatch {
   };
 }
 
-/** Worsening done: the new course code hands the turn to the opponent. */
+/** Worsening done: the new course code hands the turn to the next survivor. */
 export function handOff(match: DuelMatch, code: string, version: string, now: number): DuelMatch {
+  const next = nextRunner(match, match.turn.runner) ?? match.turn.runner;
   return {
     ...match,
     seq: match.seq + 1,
@@ -409,7 +541,7 @@ export function handOff(match: DuelMatch, code: string, version: string, now: nu
     courseVersion: version,
     turn: {
       number: match.turn.number + 1,
-      runner: otherSeat(match.turn.runner),
+      runner: next,
       heartsLeft: match.rules.hearts,
       phase: "handoff",
       deadlineAt: now + HANDOFF_DEADLINE_MS,
@@ -440,22 +572,23 @@ function roundWonBy(
       },
     };
   }
-  // Fresh round: the round LOSER runs first - the early clean course is the
-  // comeback gift - and mints the fresh course when they arrive in handoff.
-  const loser = otherSeat(winner);
+  // Fresh round: everyone knocked out is back in, and the seat eliminated
+  // FIRST runs first - the early clean course is the comeback gift, handed
+  // to whoever has been waiting longest. At two players that is the round
+  // loser, exactly as the 1v1 rules had it.
+  const revived: DuelMatch = { ...match, score, history, out: [] };
+  const first = match.out[0] ?? nextRunner(revived, winner) ?? winner;
   return {
     kind: "round-lost",
     match: {
-      ...match,
+      ...revived,
       seq: match.seq + 1,
-      score,
-      history,
       round: match.round + 1,
       courseCode: null,
       courseVersion: null,
       turn: {
         number: 1,
-        runner: loser,
+        runner: first,
         heartsLeft: match.rules.hearts,
         phase: "handoff",
         deadlineAt: now + HANDOFF_DEADLINE_MS,
@@ -470,37 +603,77 @@ function roundWonBy(
  * clock already bounds "running", so a laggy finish is not stolen.
  */
 export function mayClaimForfeit(match: DuelMatch, claimant: DuelSeat, now: number): boolean {
-  if (match.result || match.players.b === null) return false;
+  if (match.result || !match.started) return false;
   if (match.turn.runner === claimant) return false;
+  // Only a seat still alive in the round may claim, and only against a
+  // runner who is genuinely stalled rather than mid-attempt.
+  if (!activeSeats(match).includes(claimant)) return false;
   if (match.turn.phase === "running") return false;
   return now > match.turn.deadlineAt + FORFEIT_GRACE_MS;
 }
 
+/**
+ * A blown clock eliminates the STALLED RUNNER rather than handing the round
+ * to the claimant outright: with four players the other survivors have not
+ * lost anything by one player going quiet.
+ */
 export function claimForfeit(match: DuelMatch, claimant: DuelSeat, now: number): FailOutcome | null {
   if (!mayClaimForfeit(match, claimant, now)) return null;
-  return roundWonBy(match, claimant, now, "forfeit");
+  return eliminate(match, match.turn.runner, now, "forfeit");
 }
 
-/** A player leaving mid-match concedes it. */
-export function concede(match: DuelMatch, leaver: DuelSeat): DuelMatch {
-  return {
-    ...match,
-    seq: match.seq + 1,
-    result: match.result ?? { winner: otherSeat(leaver), reason: "left" },
-  };
+/**
+ * A player leaving mid-match retires their seat for good. With others still
+ * playing the match simply carries on without them; when only one seat is
+ * left standing, that player takes the match.
+ */
+export function concede(match: DuelMatch, leaver: DuelSeat, now: number): DuelMatch {
+  if (match.result) return match;
+  const retired = match.retired.includes(leaver) ? match.retired : [...match.retired, leaver];
+  const out = match.out.includes(leaver) ? match.out : [...match.out, leaver];
+  const gone: DuelMatch = { ...match, retired, out };
+  const remaining = seatedSeats(gone);
+  if (remaining.length <= 1) {
+    return {
+      ...gone,
+      seq: match.seq + 1,
+      result: { winner: remaining[0] ?? leaver, reason: "left" },
+    };
+  }
+  // The leaver was mid-turn, so the turn has to move on or the match stalls
+  // on an empty seat. Otherwise the record just loses a player.
+  if (match.started && match.turn.runner === leaver) {
+    const outcome = eliminate(gone, leaver, now, "forfeit");
+    return outcome.match;
+  }
+  return { ...gone, seq: match.seq + 1 };
 }
 
-/** Swap seats and reset for a rematch on the same channel, same base course. */
+/**
+ * Reset for a rematch on the same channel with the same lineup and base
+ * course. The seat order rotates by one so a different player opens, which
+ * is the multi-player generalisation of the old two-seat swap.
+ */
 export function rematch(match: DuelMatch, now: number): DuelMatch | null {
-  if (!match.result || !match.players.b) return null;
+  if (!match.result) return null;
+  const lineup = seatedSeats(match).map((seat) => match.players[seat]!);
+  if (lineup.length < 2) return null;
   const base =
     match.courseTitle !== null && match.courseBaseVersion !== null
       ? { title: match.courseTitle, version: match.courseBaseVersion }
       : null;
+  const rotated = [...lineup.slice(1), lineup[0]!];
+  const players: Record<DuelSeat, DuelPlayer | null> = { a: null, b: null, c: null, d: null };
+  rotated.forEach((player, index) => {
+    players[DUEL_SEATS[index]!] = player;
+  });
   return {
-    ...createMatch(match.players.b, now, base),
+    ...createMatch(rotated[0]!, now, base),
     seq: match.seq + 1,
-    players: { a: match.players.b, b: match.players.a },
+    players,
+    // A rematch is a lineup that has already agreed to play: it starts live
+    // rather than dropping everyone back into the gathering lobby.
+    started: true,
   };
 }
 

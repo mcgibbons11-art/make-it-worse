@@ -1260,3 +1260,63 @@ summary:focus-visible {
   white-space: nowrap;
   color: var(--muted);
 }
+
+/* Duel Mode's gathering lobby: every seated player plus the seats still
+   open, so a host filling to four can see the room at a glance. */
+.duel-roster {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+.duel-roster li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: white;
+  padding: 8px 12px;
+  font-weight: 850;
+}
+.duel-roster li.is-open {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.55;
+}
+.duel-roster em {
+  border-radius: 999px;
+  background: var(--yellow);
+  padding: 2px 8px;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+/* The in-match score strip carries one chip per player: the runner is
+   highlighted, an eliminated seat is struck through. */
+.duel-strip-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.duel-strip-players b {
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: rgba(255, 248, 232, 0.9);
+  padding: 2px 9px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+.duel-strip-players b.is-runner {
+  background: var(--yellow);
+}
+.duel-strip-players b.is-you {
+  box-shadow: 0 0 0 2px var(--blue);
+}
+.duel-strip-players b.is-out {
+  opacity: 0.5;
+  text-decoration: line-through;
+}

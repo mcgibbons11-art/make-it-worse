@@ -24,7 +24,12 @@ import {
   mayClaimForfeit,
   mintDuelCode,
   normalizeDuelCode,
-  otherSeat,
+  startMatch,
+  mayStartMatch,
+  activeSeats,
+  seatedSeats,
+  nextRunner,
+  MAX_DUEL_PLAYERS,
   parseDuelMatch,
   parseDuelMessage,
   parseLobbyPost,
@@ -42,8 +47,19 @@ const NOW = 1_700_000_000_000;
 const host: DuelPlayer = { token: "tok-a", connId: "conn-a", name: "Ava", avatarCode: "0A0A" };
 const guest: DuelPlayer = { token: "tok-b", connId: "conn-b", name: "Bo", avatarCode: null };
 
+const third: DuelPlayer = { token: "tok-c", connId: "conn-c", name: "Cyd", avatarCode: null };
+const fourth: DuelPlayer = { token: "tok-d", connId: "conn-d", name: "Dez", avatarCode: null };
+
+/** Two seats, started - the classic duel every original rule was written for. */
 function fullMatch(): DuelMatch {
-  return joinMatch(createMatch(host, NOW), guest)!;
+  return startMatch(joinMatch(createMatch(host, NOW), guest)!, NOW)!;
+}
+
+/** Four seats, started. */
+function partyMatch(): DuelMatch {
+  let match = createMatch(host, NOW);
+  for (const player of [guest, third, fourth]) match = joinMatch(match, player)!;
+  return startMatch(match, NOW)!;
 }
 
 describe("invite codes", () => {
@@ -108,7 +124,7 @@ describe("the turn loop", () => {
     const third = failAttempt(match, NOW);
     expect(third.kind).toBe("round-lost");
     match = third.match;
-    expect(match.score).toEqual({ a: 0, b: 1 });
+    expect(match.score).toEqual({ a: 0, b: 1, c: 0, d: 0 });
     expect(match.round).toBe(2);
     // Fresh round: course cleared, loser (A) runs first with fresh hearts.
     expect(match.courseCode).toBeNull();
@@ -161,19 +177,21 @@ describe("forfeits, concession, rematch", () => {
   });
 
   it("concede awards the match to the other seat exactly once", () => {
-    const match = concede(fullMatch(), "a");
+    const match = concede(fullMatch(), "a", NOW);
     expect(match.result).toEqual({ winner: "b", reason: "left" });
-    expect(concede(match, "b").result).toEqual({ winner: "b", reason: "left" });
+    expect(concede(match, "b", NOW).result).toEqual({ winner: "b", reason: "left" });
   });
 
-  it("rematch swaps seats and resets everything but the channel", () => {
+  it("rematch rotates the lineup and resets everything but the channel", () => {
     let match = fullMatch();
-    match = { ...match, result: { winner: "a", reason: "rounds" }, score: { a: 2, b: 1 } };
+    match = { ...match, result: { winner: "a", reason: "rounds" }, score: { a: 2, b: 1, c: 0, d: 0 } };
     const next = rematch(match, NOW)!;
-    expect(next.players.a.token).toBe(guest.token);
+    expect(next.players.a!.token).toBe(guest.token);
     expect(next.players.b!.token).toBe(host.token);
-    expect(next.score).toEqual({ a: 0, b: 0 });
+    expect(next.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
     expect(next.result).toBeNull();
+    // A lineup that already agreed to play does not re-gather in the lobby.
+    expect(next.started).toBe(true);
     expect(next.seq).toBeGreaterThan(match.seq);
   });
 });
@@ -239,7 +257,9 @@ describe("wire hygiene", () => {
       courseBaseVersion: "map-42",
     });
     // A rematch swaps seats but keeps playing the same map.
-    const over = concede(custom, "b");
+    // Ended by the scoreline rather than by a walkout: a rematch needs two
+    // players who are still seated.
+    const over = { ...custom, result: { winner: "a" as const, reason: "rounds" as const } };
     expect(rematch(over, NOW)).toMatchObject({
       courseTitle: "Lava Loft",
       courseBaseVersion: "map-42",
@@ -286,11 +306,117 @@ describe("wire hygiene", () => {
     const match = fullMatch() as unknown as Record<string, unknown>;
     expect(parseDuelMatch({ ...match, players: { a: null, b: null } })).toBeNull();
     expect(parseDuelMatch({ ...match, turn: { number: 1 } })).toBeNull();
-    expect(parseDuelMatch({ ...match, v: 2 })).toBeNull();
+    expect(parseDuelMatch({ ...match, v: 1 })).toBeNull();
   });
 
   it("keeps seat helpers coherent", () => {
-    expect(otherSeat("a")).toBe("b");
-    expect(otherSeat("b")).toBe("a");
+    const party = partyMatch();
+    expect(seatedSeats(party)).toEqual(["a", "b", "c", "d"]);
+    expect(activeSeats(party)).toEqual(["a", "b", "c", "d"]);
+    // The turn order is clockwise and wraps.
+    expect(nextRunner(party, "a")).toBe("b");
+    expect(nextRunner(party, "d")).toBe("a");
+    // An eliminated seat is skipped; a lone survivor has nobody to pass to.
+    const withOut = { ...party, out: ["b" as const, "c" as const] };
+    expect(nextRunner(withOut, "a")).toBe("d");
+    expect(nextRunner({ ...party, out: ["b", "c", "d"] }, "a")).toBeNull();
+  });
+});
+
+describe("a four-player party", () => {
+  it("seats up to four and refuses the fifth", () => {
+    let match = createMatch(host, NOW);
+    for (const player of [guest, third, fourth]) match = joinMatch(match, player)!;
+    expect(seatedSeats(match)).toHaveLength(MAX_DUEL_PLAYERS);
+    const fifth: DuelPlayer = { token: "tok-e", connId: "conn-e", name: "Eve", avatarCode: null };
+    expect(joinMatch(match, fifth)).toBeNull();
+  });
+
+  it("opens joining only before the host starts", () => {
+    const gathering = joinMatch(createMatch(host, NOW), guest)!;
+    expect(mayStartMatch(gathering)).toBe(true);
+    // One player alone cannot start a duel.
+    expect(mayStartMatch(createMatch(host, NOW))).toBe(false);
+    const started = startMatch(gathering, NOW)!;
+    expect(started.started).toBe(true);
+    expect(joinMatch(started, third)).toBeNull();
+    expect(mayStartMatch(started)).toBe(false);
+  });
+
+  it("burning three hearts is an elimination, not a lost round, while others live", () => {
+    let match = beginRun(partyMatch(), NOW);
+    let outcome = failAttempt(match, NOW);
+    outcome = failAttempt(outcome.match, NOW);
+    outcome = failAttempt(outcome.match, NOW);
+    // Seat A is out; the round runs on and the turn moves to B.
+    expect(outcome.kind).toBe("eliminated");
+    expect(outcome.match.out).toEqual(["a"]);
+    expect(outcome.match.turn.runner).toBe("b");
+    expect(outcome.match.turn.heartsLeft).toBe(outcome.match.rules.hearts);
+    expect(outcome.match.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
+    match = outcome.match;
+    // Knock out B and C: the last survivor D takes the round.
+    for (let knockout = 0; knockout < 2; knockout += 1) {
+      let burn = failAttempt(beginRun(match, NOW), NOW);
+      burn = failAttempt(burn.match, NOW);
+      burn = failAttempt(burn.match, NOW);
+      match = burn.match;
+    }
+    expect(match.score.d).toBe(1);
+    expect(match.round).toBe(2);
+    // A new round revives everyone, and the seat knocked out FIRST opens it.
+    expect(match.out).toEqual([]);
+    expect(activeSeats(match)).toHaveLength(4);
+    expect(match.turn.runner).toBe("a");
+  });
+
+  it("hands the turn to the next survivor when a runner clears and worsens", () => {
+    const match = handOff(clearRun(beginRun(partyMatch(), NOW), NOW), "CODE", "v2", NOW);
+    expect(match.turn.runner).toBe("b");
+    expect(match.turn.number).toBe(2);
+    // With B out, the hand-off skips them.
+    const skipped = handOff(
+      clearRun(beginRun({ ...partyMatch(), out: ["b"] }, NOW), NOW),
+      "CODE",
+      "v2",
+      NOW,
+    );
+    expect(skipped.turn.runner).toBe("c");
+  });
+
+  it("a stalled runner is eliminated by the clock, not handed the round away", () => {
+    const match = setCourse(partyMatch(), "CODE", "v1", NOW);
+    const late = NOW + HANDOFF_DEADLINE_MS + FORFEIT_GRACE_MS + 1;
+    // Any live seat that is not the runner may claim.
+    expect(mayClaimForfeit(match, "c", late)).toBe(true);
+    expect(mayClaimForfeit(match, "a", late)).toBe(false);
+    const claimed = claimForfeit(match, "c", late)!;
+    expect(claimed.kind).toBe("eliminated");
+    expect(claimed.match.out).toEqual(["a"]);
+    // Nobody scored: three players are still in the round.
+    expect(claimed.match.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
+    // An eliminated seat cannot claim.
+    expect(mayClaimForfeit(claimed.match, "a", late)).toBe(false);
+  });
+
+  it("a player who leaves is retired and the rest play on", () => {
+    const match = concede(partyMatch(), "b", NOW);
+    expect(match.retired).toEqual(["b"]);
+    expect(seatedSeats(match)).toEqual(["a", "c", "d"]);
+    expect(match.result).toBeNull();
+    // Down to one seat, the last player standing takes the match.
+    const alone = concede(concede(match, "c", NOW), "d", NOW);
+    expect(alone.result).toEqual({ winner: "a", reason: "left" });
+  });
+
+  it("still plays exactly like 1v1 at two seats", () => {
+    let outcome = failAttempt(beginRun(fullMatch(), NOW), NOW);
+    outcome = failAttempt(outcome.match, NOW);
+    outcome = failAttempt(outcome.match, NOW);
+    // The opponent takes the round outright: no elimination limbo.
+    expect(outcome.kind).toBe("round-lost");
+    expect(outcome.match.score).toEqual({ a: 0, b: 1, c: 0, d: 0 });
+    // And the round loser opens the next round, as before.
+    expect(outcome.match.turn.runner).toBe("a");
   });
 });

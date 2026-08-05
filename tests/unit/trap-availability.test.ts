@@ -92,18 +92,35 @@ describe("trap availability", () => {
     expect(getAvailableTrapTypes(classic, [])).toEqual([...TRAP_TYPES]);
   });
 
-  // The old filter counted occupants of the module-level classic zone list, so
-  // it matched nothing at all on a composed course and reported all sixteen
-  // types however full the course was. Both halves matter: the honest answer
-  // must be zero, and the wrong-course answer must be visibly different, or
-  // this test would pass against the bug it exists to catch.
-  it("computes availability against the challenge's own course", () => {
+  // Rewritten when traps became stackable. The original test saturated a
+  // course and demanded availability fall to zero - the honest signal while
+  // placement reserved 75% of both footprints between neighbours. Traps now
+  // only have to avoid the same spot (TRAP_STACK_MIN_GAP), so crowding can
+  // never use a course up: occupancy has stopped being the limit and
+  // geometry is all that remains. Saturating now means filling every grid
+  // cell, which is quadratic in the trap count and was timing this file out.
+  //
+  // The course-specificity the old test also guarded - the retired bug
+  // counted occupants of a module-level classic zone list, so it answered
+  // identically for every course - is covered by its sibling above, which
+  // checks that every suggested placement belongs to the given course.
+  it("never runs out of room, however crowded the course gets", () => {
     const custom = buildTrack(DEFAULT_CUSTOM_TRACK);
     const classic = buildTrack(CLASSIC_TRACK);
-    const saturated = fill(custom);
-    expect(saturated.length).toBeGreaterThan(0);
-    expect(getAvailableTrapTypes(custom, saturated)).toEqual([]);
-    expect(getAvailableTrapTypes(classic, saturated).length).toBeGreaterThan(2);
+    // A bounded crowd, far past the old saturation point.
+    const crowded = fill(custom, 40);
+    expect(crowded.length).toBe(40);
+    // Traps really are stacked: at least one pair sits closer than the old
+    // footprint-proportional rule would ever have allowed.
+    const tight = crowded.some((a, index) =>
+      crowded.slice(index + 1).some(
+        (b) => Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]) < 1,
+      ),
+    );
+    expect(tight, "stacking did not actually place traps close together").toBe(true);
+    // And the crowd never closes the course to anything.
+    expect(getAvailableTrapTypes(custom, crowded)).toEqual([...TRAP_TYPES]);
+    expect(getAvailableTrapTypes(classic, [])).toEqual([...TRAP_TYPES]);
 
     // Authored pad allow-lists are legacy compatibility data. New placements
     // use real blocks and geometric validation, so a wide start block remains

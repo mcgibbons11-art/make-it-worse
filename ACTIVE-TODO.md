@@ -2,6 +2,15 @@
 
 Updated continuously from playtest feedback. New requests are added here before being closed.
 
+## Duel Mode and the SDK v1.5.0 surface — 2026-08-05
+
+- [x] Rebuild 1v1 as **Duel Mode**: seats a-d, host accepts joiners and presses Start (legal from two), turn rotation through living seats, hearts-burnout eliminates from the round, last survivor takes it, retiring seats let the rest play on. Two-seat play still reduces to the original 1v1 rules, pinned by test.
+- [x] Let traps stack: placement keeps only a one-grid-step anti-duplicate guard, with migration 0023 keeping the optional backend in parity.
+- [ ] **Decide whether Duel Mode adopts a `server.js` script.** Portals now documents Server Scripts: an invisible authoritative participant per session, with `server:`-prefixed state keys writable only by it, plus `server.kick()`. Our whole protocol is built on "there is no server, so the match record is last-write-wins with a seq guard" - a server script would referee the lobby, own turn order and countdowns, and remove the concurrent-join race outright instead of jittering around it. Not adopted: the current design is proven in live play and this is an architecture decision, not a fix.
+- [ ] Consider `Portals.voice` for Duel Mode (documented in Multiplayer & Voice). Game page only - absent in room play and the editor preview - so it cannot be the only channel for anything.
+- [ ] Use the documented **dev token** (`POST /api/v2/arcade/dev-token`, `window.__PORTALS_DEV__`) to run real multi-player sessions locally, which would let a four-player duel be played end to end off-platform. Needs the user's access key; the four-seat rules are currently covered by protocol tests only.
+- Documented limits worth holding to, now that they are published rather than inferred: ~20 broadcasts and ~10 state writes per second per player, sampling advised at 100-150ms (our position stream runs 7.5/s at 133ms), 8 KB per message and per state value, 64 state keys, and a 50-player session cap.
+
 ## Replayability and visual rounds — 2026-08-04
 
 - [x] Ship the ten replayability features in one pass: Daily Disaster (date-seeded shared course and board), race-your-best ghost per room, the fuller post-run stats card, the added-trap fly-through reveal, near-miss sparks and zip, gameplay-earned apartment trophies, the builder judgment strip with Mirror/Repeat, Trending minimap thumbnails, wardrobe outfit codes, and the audio finale (escalating countdown, near-record sting).

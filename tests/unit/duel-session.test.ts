@@ -78,6 +78,7 @@ function lobbyHandlers() {
     onAccept: vi.fn(),
     onDeny: vi.fn(),
     onStatus: vi.fn(),
+    onReferee: vi.fn(),
   };
 }
 
@@ -88,6 +89,7 @@ function channelHandlers() {
     onPeerJoin: vi.fn(),
     onPeerLeave: vi.fn(),
     onStatus: vi.fn(),
+    onReferee: vi.fn(),
   };
 }
 

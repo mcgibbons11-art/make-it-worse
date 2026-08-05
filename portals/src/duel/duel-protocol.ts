@@ -64,6 +64,15 @@ export const LOBBY_STALE_AFTER_MS = 90_000;
 
 export const DUEL_SETUP_KEY = "miw-duel:setup";
 export const DUEL_MATCH_KEY = "miw-duel:match";
+/**
+ * Written by public/server.js, which Portals runs as an invisible participant
+ * in every session. The `server:` prefix is what makes it unforgeable: the
+ * platform rejects writes to that namespace from clients. Nothing in the
+ * rulebook reads it - a session whose script is absent or dropped must play
+ * identically - but its presence is how we learn whether a GitHub-synced
+ * bundle gets a server script at all.
+ */
+export const REFEREE_STATE_KEY = "server:referee";
 export const LOBBY_POST_PREFIX = "miw-duel-post:";
 
 // Invite codes avoid 0/O and 1/I, read aloud cleanly, and map to a channel

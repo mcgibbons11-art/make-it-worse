@@ -13,6 +13,7 @@
 
 import {
   DUEL_MATCH_KEY,
+  REFEREE_STATE_KEY,
   DUEL_STATE_POLL_MS,
   DUEL_WIRE_MAX_BYTES,
   LOBBY_HEARTBEAT_MS,
@@ -291,6 +292,12 @@ export interface DuelChannelHandlers {
   onPeerJoin(player: PortalsNetPlayer): void;
   onPeerLeave(player: PortalsNetPlayer): void;
   onStatus(status: "connected" | "disconnected"): void;
+  /**
+   * The session's server script announced itself. Reported for diagnostics
+   * only: no rule reads it, because a session whose script is absent, still
+   * starting, or dropped for exceeding its budget has to play identically.
+   */
+  onReferee(present: boolean): void;
 }
 
 export interface DuelChannelConnection {
@@ -335,6 +342,9 @@ export async function connectDuelChannel(
     };
     const stateHandler = (key: string, value: unknown) => {
       if (key === DUEL_MATCH_KEY) acceptMatch(value);
+      // Written only by the server script; `server:`-prefixed keys are
+      // rejected from clients, so its presence is proof the script ran.
+      else if (key === REFEREE_STATE_KEY) handlers.onReferee(value !== null && value !== undefined);
     };
     const joinHandler = (player: PortalsNetPlayer) => {
       if (player.id !== selfConnId) handlers.onPeerJoin(player);
@@ -349,6 +359,9 @@ export async function connectDuelChannel(
     host.net.on("playerleave", leaveHandler);
     host.net.on("status", statusHandler);
     acceptMatch(joined.state[DUEL_MATCH_KEY]);
+    // Late joiners receive the whole state snapshot, so the referee may
+    // already be in it rather than arriving as an event.
+    handlers.onReferee(joined.state[REFEREE_STATE_KEY] != null);
     // Same lost-event safety net map-session needed in the processed host:
     // the confirmed setState write can outrun the live state event for a
     // player who joined after the writer. seq makes unchanged samples no-ops.

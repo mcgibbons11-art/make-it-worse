@@ -277,6 +277,11 @@ export function DuelMatchmakingPanel({
             {duel.match
               ? `record #${duel.match.seq} · you: ${duel.mySeat ? `seat ${duel.mySeat.toUpperCase()}` : "no seat"} · seated: ${duel.roster.length}/${MAX_DUEL_PLAYERS}`
               : "no match record yet"}
+            {" · "}
+            {/* Whether Portals ran this game's server script for the session.
+                The rules do not consult it; it is here so a real match can
+                settle whether a GitHub-synced bundle gets one. */}
+            {duel.refereeOnline ? "referee online" : "no referee"}
           </p>
         </>
       )}

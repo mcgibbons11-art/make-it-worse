@@ -188,6 +188,12 @@ export interface DuelApi {
   startNow(): void;
   /** Seats still open in the gathering lobby. */
   openSeats: number;
+  /**
+   * Whether Portals ran this game's server script for the session. Reported
+   * so a real match can answer whether a GitHub-synced bundle gets one at
+   * all; no rule depends on it.
+   */
+  refereeOnline: boolean;
 
   /** PortalsApp calls these from its own run lifecycle. */
   noteRunStarted(): void;
@@ -242,6 +248,8 @@ export function useDuel(input: {
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
+  /** Whether this session's Portals server script announced itself. */
+  const [refereeOnline, setRefereeOnline] = useState(false);
   /** When the opponent was last presumed gone, for the abandonment clock. */
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   /** Last proof of life off the wire: join, any message, or initial peers. */
@@ -466,6 +474,9 @@ export function useDuel(input: {
         onStatus: (status) => {
           if (status === "disconnected") pushFeed("Connection to Portals lost. Waiting for it to return…");
         },
+        // Diagnostic only. Nothing branches on this: the rules are the
+        // clients' either way, so a session without a referee plays the same.
+        onReferee: setRefereeOnline,
       });
       if (result.status !== "ok") {
         setStage({
@@ -946,6 +957,7 @@ export function useDuel(input: {
     roster,
     canStartMatch,
     openSeats,
+    refereeOnline,
     startNow: () => {
       const current = matchRef.current;
       if (!current) return;

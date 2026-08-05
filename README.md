@@ -11,6 +11,8 @@ The repository contains two deployment targets:
   API dependency, so challenge chains stay in that browser unless a complete
   code is shared. Portals supplies the global leaderboard and a bounded
   same-session map relay through its SDK; neither is a global UGC database.
+  `portals/server/` is the one piece that does not run in the browser: a
+  server script Portals executes per multiplayer session, described below.
 
 ```mermaid
 flowchart LR
@@ -155,6 +157,37 @@ The Portals edition must remain self-contained: no external `fetch`, Supabase,
 font, analytics, or CDN dependency can be required at runtime. Clipboard access
 may also be denied by the embedding iframe, so copying must always have a
 visible fallback.
+
+The first sync after a push sometimes fetches the previous archive. The
+settings page prints the commit it took, so check it against the commit you
+pushed and simply sync again if it lags. There is no error when this happens.
+
+## The server script
+
+`portals/server/` is the game's Portals [server
+script](https://portals.to/documentation/advanced-tooling/server-scripts):
+authored in TypeScript, bundled by an esbuild step in `portals/vite.config.ts`
+into the single self-contained `portals/dist/server.js` that Portals runs as
+an invisible participant in every multiplayer session. Confirmed 2026-08-05
+that a GitHub-synced bundle does get one, which the documentation does not
+say either way: the duel lobby prints `referee online` when it sees a
+`server:`-prefixed state key, and clients cannot write that namespace.
+
+It owns one thing, seating in Duel Mode, because a single writer cannot hand
+the same seat to two people. Everything else stays on the client protocol in
+`portals/src/duel/duel-protocol.ts`. Three rules hold it in place:
+
+- A session with no server plays identically. It may be absent, still
+  starting, or dropped for exceeding its budget, and none of that may cost
+  anyone a duel.
+- Servers restart. Publishing swaps one within seconds and an empty session
+  ends its server after about five minutes, so a replacement rebuilds its
+  seating from the match record and clients re-claim seats they already hold.
+- It ships publicly in the bundle, so no secret ever goes in it.
+
+The sandbox has no imports, DOM, or network at runtime, which
+`tests/unit/duel-referee.test.ts` enforces by executing the built
+`dist/server.js` inside an emulated global.
 
 ## Global leaderboard
 

@@ -15,7 +15,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { MAX_DUEL_PLAYERS, REFEREE_STATE_KEY } from "@/portals/src/duel/duel-protocol";
+import {
+  MAX_DUEL_PLAYERS,
+  REFEREE_STATE_KEY,
+  type RefereeLobby,
+} from "@/portals/src/duel/duel-protocol";
 import { resetDuelTokenForTests } from "@/portals/src/duel/duel-session";
 import { useDuel } from "@/portals/src/duel/useDuel";
 
@@ -35,7 +39,9 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 function makeSession() {
   const state: Record<string, unknown> = {};
   const members: { id: string; on: Record<string, Handler[]> }[] = [];
-  const refereeOn: Record<string, Handler[]> = { message: [], playerjoin: [], playerleave: [] };
+  const refereeOn: Record<string, Handler[]> = {
+    message: [], playerjoin: [], playerleave: [], state: [],
+  };
   let attached = false;
 
   const fire = (bag: Record<string, Handler[]>, event: string, args: unknown[]) => {
@@ -44,6 +50,9 @@ function makeSession() {
   const broadcastState = (key: string, value: unknown, from: string | null) => {
     for (const member of members)
       if (member.id !== from) fire(member.on, "state", [key, clone(value)]);
+    // The server is a participant too: it sees client writes as `state`
+    // events, which is how it learns the match record exists.
+    if (attached && from !== null) fire(refereeOn, "state", [key, clone(value)]);
   };
 
   const attachReferee = () => {
@@ -52,6 +61,7 @@ function makeSession() {
         state[key] = clone(value);
         broadcastState(key, value, null);
       },
+      getState: (key?: string) => (key === undefined ? clone(state) : clone(state[key])),
       players: () => members.map((member) => ({ id: member.id })),
       on(event: string, handler: Handler) {
         (refereeOn[event] ??= []).push(handler);
@@ -140,7 +150,18 @@ function makeSession() {
     if (attached) fire(refereeOn, "playerleave", [{ id }, []]);
   };
 
-  return { state, attachReferee, client, drop };
+  /**
+   * A replacement server: publishing swaps one within seconds, and a crashed
+   * script is replaced the same way. The new one starts with no memory of
+   * who was sitting where, which is the whole point of the exercise.
+   */
+  const restartReferee = () => {
+    for (const key of Object.keys(refereeOn)) refereeOn[key] = [];
+    attached = false;
+    attachReferee();
+  };
+
+  return { state, attachReferee, restartReferee, client, drop };
 }
 
 /**
@@ -252,6 +273,35 @@ describe("four players taking seats in one session", () => {
     // And the lobby the host sees is two players, not a ghost plus one.
     await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
     expect(host.result.current.roster.map((entry) => entry.name)).toEqual(["Ava", "Cyd"]);
+  }, 30_000);
+
+  it("keeps everyone in their seats when the server is swapped out mid-lobby", async () => {
+    const session = makeSession();
+    session.attachReferee();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    const code = await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    await joinDuel(bo, code);
+    expect(host.result.current.mySeat).toBe("a");
+    expect(bo.result.current.mySeat).toBe("b");
+
+    session.restartReferee();
+
+    // The new server rebuilt the seating from the record before it said a
+    // word, so nobody's seat moved and nobody was told the lobby was empty.
+    const lobby = () => session.state[REFEREE_STATE_KEY] as RefereeLobby;
+    await waitFor(() => expect(lobby().seats).toHaveLength(2));
+    expect(lobby().seats.map((seat) => seat.token)).toEqual(["conn-alpha", "conn-bravo"]);
+    expect(host.result.current.mySeat).toBe("a");
+    expect(bo.result.current.mySeat).toBe("b");
+
+    // And the next arrival gets the seat that is actually free rather than
+    // evicting somebody the fresh server had not heard of yet.
+    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
+    await joinDuel(cyd, code);
+    expect(cyd.result.current.mySeat).toBe("c");
+    await waitFor(() => expect(host.result.current.roster).toHaveLength(3));
+    expect(host.result.current.roster.map((entry) => entry.name)).toEqual(["Ava", "Bo", "Cyd"]);
   }, 30_000);
 
   it("seats everyone with no referee at all, which is the fallback that must hold", async () => {

@@ -533,6 +533,9 @@ export function useDuel(input: {
         token,
         name: player.name,
         avatarCode: player.avatarCode,
+        // A rejoin already holds a seat in the record, and says so: a server
+        // that restarted while we were away should put us back where we were.
+        seat: matchRef.current ? seatOf(matchRef.current, token) : null,
       });
       const existing = matchRef.current;
       if (existing) {
@@ -645,10 +648,17 @@ export function useDuel(input: {
         // and the record cannot: nothing in it notices a player going. When
         // the two disagree the referee is the one that knows who is present,
         // so the departed token gives up the seat it is no longer sitting in.
+        // Only when the referee has accounted for at least as many players
+        // as the record has, though. A server that restarted publishes a
+        // lobby it has not finished rebuilding, and a half-built one lists
+        // everybody else as absent - evicting on that would throw out the
+        // whole table instead of one ghost.
         const holder = assigned === null ? null : match.players[assigned];
+        const lobbySeats = refereeLobby?.seats ?? [];
         const departed =
           holder !== null &&
-          !(refereeLobby?.seats ?? []).some((seat) => seat.token === holder.token);
+          lobbySeats.length >= seatedSeats(match).length &&
+          !lobbySeats.some((seat) => seat.token === holder.token);
         const base = departed ? vacateSeat(match, assigned!) : match;
         const seated = joinMatch(base, me(connection.selfConnId), assigned);
         if (seated) publish(seated);
@@ -657,6 +667,26 @@ export function useDuel(input: {
     );
     return () => globalThis.clearTimeout(timer);
   }, [match, me, publish, refereeLobby, seatAttempt, stage, token]);
+
+  // A referee that does not list us has forgotten the session: a replacement
+  // server starts with no memory of who was sitting where. Tell it the seat
+  // we already hold, before it offers that seat to somebody else. It rebuilds
+  // from the match record too, so this is the second of two paths back to the
+  // same place rather than the only one.
+  useEffect(() => {
+    const connection = channel.current;
+    if (!connection || !refereeLobby || !mySeat) return;
+    if (refereeLobby.seats.some((seat) => seat.token === token)) return;
+    const player = me(connection.selfConnId);
+    connection.sendClaim({
+      k: "seat",
+      v: DUEL_PROTOCOL,
+      token,
+      name: player.name,
+      avatarCode: player.avatarCode,
+      seat: mySeat,
+    });
+  }, [me, mySeat, refereeLobby, token]);
 
   // The runner mints the round's course when none exists yet: round 1 right
   // after both seats fill, later rounds right after the reset. A custom base

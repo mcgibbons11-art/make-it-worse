@@ -18,9 +18,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { createReferee, parseClaim, REFEREE_BUILD } from "@/portals/server/referee";
 import {
+  DUEL_MATCH_KEY,
   DUEL_PROTOCOL,
   MAX_DUEL_PLAYERS,
   REFEREE_STATE_KEY,
+  createMatch,
+  joinMatch,
+  startMatch,
+  type DuelPlayer,
   type RefereeLobby,
 } from "@/portals/src/duel/duel-protocol";
 
@@ -64,13 +69,34 @@ function fakeHost() {
   };
 }
 
-const seatClaim = (token: string, name: string, avatarCode: string | null = null) => ({
+const seatClaim = (
+  token: string,
+  name: string,
+  avatarCode: string | null = null,
+  seat: string | null = null,
+) => ({
   k: "seat",
   v: DUEL_PROTOCOL,
   token,
   name,
   avatarCode,
+  seat,
 });
+
+const player = (token: string, name: string): DuelPlayer => ({
+  token,
+  connId: `conn-${token}`,
+  name,
+  avatarCode: null,
+});
+
+/** A match record as the clients would have published it. */
+function record(tokens: string[], started = false) {
+  let match = createMatch(player(tokens[0]!, tokens[0]!.toUpperCase()), 1_700_000_000_000);
+  for (const token of tokens.slice(1))
+    match = joinMatch(match, player(token, token.toUpperCase()))!;
+  return started ? startMatch(match, 1_700_000_000_000)! : match;
+}
 
 describe("the lobby referee's rules", () => {
   it("announces an empty lobby immediately, so absent and silent are different", () => {
@@ -201,6 +227,76 @@ describe("the lobby referee's rules", () => {
     const before = world.writes.length;
     world.emit("message", seatClaim("tok-a", "Ava"), "conn-a");
     expect(world.writes.length).toBe(before);
+  });
+});
+
+describe("a replacement server picking up a session in progress", () => {
+  // The documented lifecycle makes this ordinary rather than exotic:
+  // publishing swaps a running server within seconds, an empty session ends
+  // its server after about five minutes, and a crashed script leaves the
+  // session running without one. Whatever starts next has no memory, so it
+  // has to rebuild from what outlived it.
+
+  it("rebuilds its seating from the match record it finds waiting", () => {
+    const world = fakeHost();
+    world.host.setState(DUEL_MATCH_KEY, record(["tok-a", "tok-b", "tok-c"]));
+    createReferee(world.host);
+    const lobby = world.lobby()!;
+    expect(lobby.seats.map((seat) => seat.seat)).toEqual(["a", "b", "c"]);
+    expect(lobby.seats.map((seat) => seat.token)).toEqual(["tok-a", "tok-b", "tok-c"]);
+    // And the seat it hands the next arrival is the one actually free.
+    world.emit("message", seatClaim("tok-d", "Dez"), "conn-d");
+    expect(world.lobby()!.seats.find((seat) => seat.token === "tok-d")!.seat).toBe("d");
+  });
+
+  it("closes its lobby for a match the record says already started", () => {
+    const world = fakeHost();
+    world.host.setState(DUEL_MATCH_KEY, record(["tok-a", "tok-b"], true));
+    createReferee(world.host);
+    expect(world.lobby()!.started).toBe(true);
+    // Nobody joins a match in progress, however new this server is to it.
+    world.emit("message", seatClaim("tok-c", "Cyd"), "conn-c");
+    expect(world.lobby()!.seats).toHaveLength(2);
+  });
+
+  it("takes the record's word for a seat it does not know, and never for one it does", () => {
+    const world = fakeHost();
+    createReferee(world.host);
+    world.emit("message", seatClaim("tok-a", "Ava"), "conn-a");
+    // A record that disagrees about a seated token changes nothing: this
+    // server assigned that seat, and a record can lag its own writers.
+    world.emit("state", DUEL_MATCH_KEY, record(["tok-x", "tok-a"]));
+    const lobby = world.lobby()!;
+    expect(lobby.seats.find((seat) => seat.token === "tok-a")!.seat).toBe("a");
+    // The token it had never heard of is adopted into the seat the record
+    // gives it - except seat A is taken, so it is simply not seated here.
+    expect(lobby.seats.some((seat) => seat.token === "tok-x")).toBe(false);
+  });
+
+  it("gives a player back the seat they say they already hold", () => {
+    // What a client sends when it finds itself missing from the lobby. The
+    // alternative - handing out the lowest free seat - would reshuffle a
+    // lobby whose record already names who sits where.
+    const world = fakeHost();
+    createReferee(world.host);
+    world.emit("message", seatClaim("tok-c", "Cyd", null, "c"), "conn-c");
+    expect(world.lobby()!.seats[0]!.seat).toBe("c");
+    // A seat somebody else holds is not available to claim, hint or no hint.
+    world.emit("message", seatClaim("tok-d", "Dez", null, "c"), "conn-d");
+    expect(world.lobby()!.seats.find((seat) => seat.token === "tok-d")!.seat).toBe("a");
+    // And a nonsense seat is refused outright rather than half-understood.
+    expect(parseClaim({ ...seatClaim("tok-e", "Eve", null, "z") })).toBeNull();
+  });
+
+  it("ignores a match record it cannot fully validate", () => {
+    const world = fakeHost();
+    createReferee(world.host);
+    for (const junk of [null, 42, {}, { v: 1 }, { ...record(["tok-a"]), seq: -1 }])
+      expect(() => world.emit("state", DUEL_MATCH_KEY, junk)).not.toThrow();
+    expect(world.lobby()!.seats).toHaveLength(0);
+    // Nor does it care about other keys moving.
+    world.emit("state", "miw-duel:setup", record(["tok-a", "tok-b"]));
+    expect(world.lobby()!.seats).toHaveLength(0);
   });
 });
 

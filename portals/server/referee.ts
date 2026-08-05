@@ -14,14 +14,15 @@
 // State keys prefixed `server:` are rejected from clients, so a seating it
 // publishes cannot be forged or raced at all.
 //
-// What this deliberately does NOT assume, because the documentation does not
-// say:
-//   - that the server receives a `state` event for its own writes, or any
-//     documented signature for a server-side `state` event at all. Everything
-//     here is driven by `message`, `playerjoin`, and `playerleave`.
-//   - that `server:` keys survive a server restart. A fresh server republishes
-//     from an empty lobby, and clients treat a lobby that loses their seat as
-//     a reason to re-claim rather than an error.
+// Servers restart, and that is the case this file works hardest at. The
+// documentation is explicit: publishing swaps a running server within
+// seconds, an empty session ends its server after about five minutes, and a
+// crashed script leaves the session running without it. A replacement starts
+// with no memory of who was sitting where, so it rebuilds its seating from
+// the match record the clients publish - the record is the one thing that
+// outlives it - and the clients re-claim the seats they already hold when
+// they find themselves missing from a lobby. Between the two, a restart
+// mid-lobby is invisible.
 //
 // And what the clients must keep true regardless: a session with no referee -
 // absent, still starting, or dropped for exceeding its budget - has to play
@@ -36,7 +37,10 @@ import {
   DUEL_PROTOCOL,
   MAX_DUEL_PLAYERS,
   DUEL_SEATS,
+  DUEL_MATCH_KEY,
   REFEREE_STATE_KEY,
+  parseDuelMatch,
+  seatedSeats,
   type DuelSeat,
   type RefereeLobby,
   type RefereeSeatRecord,
@@ -52,6 +56,7 @@ type RefereeSeat = RefereeSeatRecord;
 /** The subset of the `server` global this module uses. */
 export interface RefereeHost {
   setState(key: string, value: unknown): void;
+  getState(key?: string): unknown;
   players(): { id: string }[];
   // One permissive signature rather than overloads: the sandbox hands every
   // event to the same registrar, and each handler below narrows its own args.
@@ -65,6 +70,14 @@ interface SeatClaim {
   token: string;
   name: string;
   avatarCode: string | null;
+  /**
+   * The seat this player already holds in the match record, if any. Sent when
+   * a client finds itself missing from the lobby, which is what a restarted
+   * server looks like from the outside. Honoured when the seat is free, so
+   * recovery puts everyone back where they were rather than reshuffling a
+   * lobby whose record already names the seats.
+   */
+  seat: DuelSeat | null;
 }
 
 /** The host closing the lobby. Honoured only from the seat-A token. */
@@ -92,12 +105,15 @@ export function parseClaim(value: unknown): SeatClaim | StartClaim | null {
   if (claim.k !== "seat") return null;
   if (!text(claim.name, 40)) return null;
   if (claim.avatarCode !== null && !text(claim.avatarCode, 64)) return null;
+  const seat = claim.seat;
+  if (seat !== undefined && seat !== null && !DUEL_SEATS.includes(seat as DuelSeat)) return null;
   return {
     k: "seat",
     v: DUEL_PROTOCOL,
     token: claim.token,
     name: claim.name,
     avatarCode: (claim.avatarCode as string | null) ?? null,
+    seat: (seat as DuelSeat | undefined) ?? null,
   };
 }
 
@@ -122,9 +138,49 @@ export function createReferee(host: RefereeHost) {
     host.setState(REFEREE_STATE_KEY, lobby);
   };
 
+  const taken = (seat: DuelSeat): boolean => seats.some((held) => held.seat === seat);
   /** The lowest seat letter nobody holds. */
-  const freeSeat = (): DuelSeat | null =>
-    DUEL_SEATS.find((seat) => !seats.some((held) => held.seat === seat)) ?? null;
+  const freeSeat = (): DuelSeat | null => DUEL_SEATS.find((seat) => !taken(seat)) ?? null;
+
+  /**
+   * Rebuild seating from the clients' match record. This is how a replacement
+   * server recovers: the record names who sits where and whether play began,
+   * and it survives the restart that emptied this server's memory.
+   *
+   * It only ever FILLS GAPS. A token this server already seated keeps the
+   * seat this server gave it, and a seat already held is never reassigned -
+   * the record can lag its own writers, and a stale one must not be able to
+   * move a player who is sitting down right now.
+   */
+  const adoptRecord = (value: unknown): void => {
+    const match = parseDuelMatch(value);
+    if (!match) return;
+    let changed = false;
+    for (const seat of seatedSeats(match)) {
+      const player = match.players[seat]!;
+      if (taken(seat) || seats.some((held) => held.token === player.token)) continue;
+      seats = [
+        ...seats,
+        {
+          seat,
+          token: player.token,
+          connId: player.connId,
+          name: player.name,
+          avatarCode: player.avatarCode,
+        },
+      ];
+      changed = true;
+    }
+    // A record that says play began closes the lobby even if the host's start
+    // claim never arrived - a lost message must not leave the door open
+    // behind a match already under way. It never reopens one.
+    if (match.started && !started) {
+      started = true;
+      startedAt = Date.now();
+      changed = true;
+    }
+    if (changed) publish();
+  };
 
   const claimSeat = (claim: SeatClaim, fromId: string): void => {
     const existing = seats.find((seat) => seat.token === claim.token);
@@ -149,7 +205,9 @@ export function createReferee(host: RefereeHost) {
     // with no turn and no hearts, which is the same rule the client protocol
     // enforces in joinMatch.
     if (started) return;
-    const seat = freeSeat();
+    // A seat the player already holds in the record is theirs to reclaim
+    // while it stands empty here; otherwise they take the lowest free one.
+    const seat = claim.seat !== null && !taken(claim.seat) ? claim.seat : freeSeat();
     if (!seat) return;
     seats = [
       ...seats,
@@ -193,9 +251,21 @@ export function createReferee(host: RefereeHost) {
   // said who it is yet - but publishing makes the lobby visible to it
   // immediately rather than only after the first claim.
   host.on("playerjoin", (() => publish()) as (...args: never[]) => void);
+  host.on("state", ((key: string, value: unknown) => {
+    if (key === DUEL_MATCH_KEY) adoptRecord(value);
+  }) as (...args: never[]) => void);
 
   // Announce an empty lobby at once, so a client can tell "no referee" from
-  // "a referee that has not heard from anyone".
+  // "a referee that has not heard from anyone". A replacement server seeds
+  // itself from whatever the session already holds before it does, so its
+  // first word is the seating that was already true rather than a blank
+  // lobby every seated client would then have to correct.
+  try {
+    adoptRecord(host.getState(DUEL_MATCH_KEY));
+  } catch {
+    // A mirror that is not ready yet is ordinary on a cold session; the
+    // state event and the clients' claims both still lead here.
+  }
   publish();
 
   return {

@@ -99,9 +99,20 @@ export interface RefereeLobby {
   startedAt: number | null;
 }
 
-/** What a client sends the referee: claim a seat, or start the match. */
+/**
+ * What a client sends the referee: claim a seat, or start the match. `seat`
+ * names the seat the sender already holds in the match record, which a
+ * replacement server honours so a restart puts everyone back where they were.
+ */
 export type RefereeClaim =
-  | { k: "seat"; v: typeof DUEL_PROTOCOL; token: string; name: string; avatarCode: string | null }
+  | {
+      k: "seat";
+      v: typeof DUEL_PROTOCOL;
+      token: string;
+      name: string;
+      avatarCode: string | null;
+      seat: DuelSeat | null;
+    }
   | { k: "start"; v: typeof DUEL_PROTOCOL; token: string };
 
 /**
@@ -345,7 +356,11 @@ function validPlayer(value: unknown): value is DuelPlayer {
 export function parseDuelMatch(value: unknown): DuelMatch | null {
   if (!value || typeof value !== "object" || wireBytes(value) > DUEL_WIRE_MAX_BYTES) return null;
   const match = value as Record<string, unknown> & Partial<DuelMatch>;
+  // seq counts up from 1 and orders every write. A negative or fractional
+  // one is not a record that lost a race, it is a record nobody legitimate
+  // wrote, and one that would lose every supersedes() comparison forever.
   if (match.v !== DUEL_PROTOCOL || !finiteNumber(match.seq)) return null;
+  if (!Number.isInteger(match.seq) || match.seq < 1) return null;
   const players = match.players as DuelMatch["players"] | undefined;
   if (
     !players ||

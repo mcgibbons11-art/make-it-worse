@@ -360,6 +360,7 @@ describe("a four-player party", () => {
       ],
       started: false,
       startedAt: null,
+      n: 3,
     };
     expect(refereeSeatOf(lobby, "tok-b")).toBe("b");
     expect(refereeSeatOf(lobby, "tok-z")).toBeNull();

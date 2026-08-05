@@ -126,14 +126,17 @@ export function createReferee(host: RefereeHost) {
   let seats: RefereeSeat[] = [];
   let started = false;
   let startedAt: number | null = null;
+  let publishes = 0;
 
   const publish = (): void => {
+    publishes += 1;
     const lobby: RefereeLobby = {
       build: REFEREE_BUILD,
       v: DUEL_PROTOCOL,
       seats,
       started,
       startedAt,
+      n: publishes,
     };
     host.setState(REFEREE_STATE_KEY, lobby);
   };
@@ -276,6 +279,7 @@ export function createReferee(host: RefereeHost) {
       seats,
       started,
       startedAt,
+      n: publishes,
     }),
     seatCount: (): number => seats.length,
     maxSeats: MAX_DUEL_PLAYERS,

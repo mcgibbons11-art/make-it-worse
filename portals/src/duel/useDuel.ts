@@ -270,6 +270,16 @@ export function useDuel(input: {
   // the lobby arrives inside connectDuelChannel, and the code that decides how
   // to seat runs the moment that resolves, well before React re-renders.
   const refereeLobbyRef = useRef<RefereeLobby | null>(null);
+  /**
+   * Whether a lobby has ARRIVED since we connected, rather than merely being
+   * read out of the session's state. A crashed server is not cleaned up - the
+   * documented behaviour is that the session keeps running and nobody is
+   * disconnected - so its final lobby sits in shared state indefinitely.
+   * Reading one proves a server existed; only a lobby that turns up while we
+   * are watching proves one is still there. Every judgement that could COST
+   * somebody a seat waits for that proof.
+   */
+  const [refereeLive, setRefereeLive] = useState(false);
   /** When the opponent was last presumed gone, for the abandonment clock. */
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   /** Last proof of life off the wire: join, any message, or initial peers. */
@@ -300,7 +310,7 @@ export function useDuel(input: {
   const [seatAttempt, setSeatAttempt] = useState(0);
   const rejoinableCode = useMemo(() => activeCodeRead(), []);
 
-  const refereeOnline = refereeLobby !== null;
+  const refereeOnline = refereeLive && refereeLobby !== null;
   const mySeat = match ? seatOf(match, token) : null;
   const myTurn = match !== null && mySeat !== null && match.turn.runner === mySeat && !match.result;
   // Everyone in the lobby, and the one player whose run is streamed to the
@@ -499,9 +509,10 @@ export function useDuel(input: {
         onStatus: (status) => {
           if (status === "disconnected") pushFeed("Connection to Portals lost. Waiting for it to return…");
         },
-        onReferee: (lobby) => {
+        onReferee: (lobby, live) => {
           refereeLobbyRef.current = lobby;
           setRefereeLobby(lobby);
+          if (live && lobby) setRefereeLive(true);
         },
       });
       if (result.status !== "ok") {
@@ -606,17 +617,17 @@ export function useDuel(input: {
   useEffect(() => {
     if (stage.kind !== "waiting" || !match || !channel.current) return;
     if (seatOf(match, token)) return;
+    // An assignment is safe to act on wherever it came from: joinMatch checks
+    // it against the live record and refuses a seat somebody else holds. What
+    // is NOT safe is turning a player away on the referee's word, because a
+    // lobby left behind by a crashed server would say "full" or "under way"
+    // for as long as the session lasts and lock out everyone who tried to
+    // join afterwards. Only the match record, which live clients keep
+    // writing, may end someone's attempt to sit down.
     const assigned = refereeSeatOf(refereeLobby, token);
-    // A full or started referee lobby we are not in is a duel we cannot join,
-    // and no amount of waiting changes that.
-    const turnedAway =
-      refereeLobby !== null &&
-      assigned === null &&
-      (refereeLobby.started || refereeLobby.seats.length >= MAX_DUEL_PLAYERS);
     const awaitingReferee =
       refereeLobby !== null &&
       assigned === null &&
-      !turnedAway &&
       Date.now() - channelJoinedAt.current < REFEREE_SEAT_GRACE_MS;
     if (awaitingReferee) {
       // Re-run once the grace expires even if no lobby update arrives, so a
@@ -635,7 +646,6 @@ export function useDuel(input: {
         // our own seat. Holding an assignment means the referee has already
         // counted the house and found room.
         if (
-          turnedAway ||
           match.started ||
           (assigned === null && seatedSeats(match).length >= MAX_DUEL_PLAYERS)
         ) {
@@ -648,15 +658,18 @@ export function useDuel(input: {
         // and the record cannot: nothing in it notices a player going. When
         // the two disagree the referee is the one that knows who is present,
         // so the departed token gives up the seat it is no longer sitting in.
-        // Only when the referee has accounted for at least as many players
-        // as the record has, though. A server that restarted publishes a
-        // lobby it has not finished rebuilding, and a half-built one lists
-        // everybody else as absent - evicting on that would throw out the
-        // whole table instead of one ghost.
+        // Two conditions on that, because eviction is the one move here that
+        // takes something from another player. The lobby must be LIVE, since
+        // one abandoned by a crashed server names whoever was sitting there
+        // whenever it died. And it must account for at least as many players
+        // as the record does: a server still rebuilding lists everybody else
+        // as absent, and evicting on that would clear the table rather than
+        // remove one ghost.
         const holder = assigned === null ? null : match.players[assigned];
         const lobbySeats = refereeLobby?.seats ?? [];
         const departed =
           holder !== null &&
+          refereeLive &&
           lobbySeats.length >= seatedSeats(match).length &&
           !lobbySeats.some((seat) => seat.token === holder.token);
         const base = departed ? vacateSeat(match, assigned!) : match;
@@ -666,7 +679,7 @@ export function useDuel(input: {
       assigned ? 0 : Math.floor(Math.random() * 180),
     );
     return () => globalThis.clearTimeout(timer);
-  }, [match, me, publish, refereeLobby, seatAttempt, stage, token]);
+  }, [match, me, publish, refereeLive, refereeLobby, seatAttempt, stage, token]);
 
   // A referee that does not list us has forgotten the session: a replacement
   // server starts with no memory of who was sitting where. Tell it the seat
@@ -837,6 +850,7 @@ export function useDuel(input: {
     activeCodeRef.current = null;
     refereeLobbyRef.current = null;
     setRefereeLobby(null);
+    setRefereeLive(false);
     spectateSampleRef.current = null;
     chosenBaseRef.current = null;
     baseCourseRef.current = null;

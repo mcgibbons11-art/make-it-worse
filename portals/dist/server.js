@@ -94,13 +94,16 @@
     let seats = [];
     let started = false;
     let startedAt = null;
+    let publishes = 0;
     const publish = () => {
+      publishes += 1;
       const lobby = {
         build: REFEREE_BUILD,
         v: DUEL_PROTOCOL,
         seats,
         started,
-        startedAt
+        startedAt,
+        n: publishes
       };
       host.setState(REFEREE_STATE_KEY, lobby);
     };
@@ -191,7 +194,8 @@
         v: DUEL_PROTOCOL,
         seats,
         started,
-        startedAt
+        startedAt,
+        n: publishes
       }),
       seatCount: () => seats.length,
       maxSeats: MAX_DUEL_PLAYERS

@@ -302,7 +302,7 @@ export interface DuelChannelHandlers {
    * A session without one has to play identically, which is both the
    * documented requirement and what keeps this safe to ship unproven.
    */
-  onReferee(lobby: RefereeLobby | null): void;
+  onReferee(lobby: RefereeLobby | null, live: boolean): void;
 }
 
 export interface DuelChannelConnection {
@@ -345,12 +345,17 @@ export async function connectDuelChannel(
     // actually changes: an unchanged lobby handed up as a fresh object would
     // re-render the duel panels twice a second for nothing.
     let refereeSeen: string | null = null;
-    const acceptReferee = (value: unknown) => {
+    const acceptReferee = (value: unknown, live: boolean) => {
       const lobby = parseRefereeLobby(value);
       const shape = lobby ? JSON.stringify(lobby) : null;
       if (shape === refereeSeen) return;
       refereeSeen = shape;
-      handlers.onReferee(lobby);
+      // `live` marks a lobby that ARRIVED while we were connected, which is
+      // the only proof that the server is still running. A crashed script
+      // leaves its last lobby in shared state and the session carries on
+      // without it, so a value merely READ - from the join snapshot or the
+      // poll - proves only that a server existed at some point.
+      handlers.onReferee(lobby, live);
     };
     const acceptMatch = (value: unknown) => {
       const match = parseDuelMatch(value);
@@ -367,7 +372,7 @@ export async function connectDuelChannel(
       if (key === DUEL_MATCH_KEY) acceptMatch(value);
       // Written only by the server script; `server:`-prefixed keys are
       // rejected from clients, so its presence is proof the script ran.
-      else if (key === REFEREE_STATE_KEY) acceptReferee(value);
+      else if (key === REFEREE_STATE_KEY) acceptReferee(value, true);
     };
     const joinHandler = (player: PortalsNetPlayer) => {
       if (player.id !== selfConnId) handlers.onPeerJoin(player);
@@ -384,7 +389,7 @@ export async function connectDuelChannel(
     acceptMatch(joined.state[DUEL_MATCH_KEY]);
     // Late joiners receive the whole state snapshot, so the referee may
     // already be in it rather than arriving as an event.
-    acceptReferee(joined.state[REFEREE_STATE_KEY]);
+    acceptReferee(joined.state[REFEREE_STATE_KEY], false);
     // Same lost-event safety net map-session needed in the processed host:
     // the confirmed setState write can outrun the live state event for a
     // player who joined after the writer. seq makes unchanged samples no-ops.
@@ -394,7 +399,7 @@ export async function connectDuelChannel(
         // The referee's seating needs the same net: a lost state event would
         // otherwise strand a client waiting for a seat it had already been
         // given.
-        acceptReferee(host.net.getState(REFEREE_STATE_KEY));
+        acceptReferee(host.net.getState(REFEREE_STATE_KEY), false);
       } catch {
         // A disconnected host may throw until Portals reports status/rejoin.
       }

@@ -97,6 +97,15 @@ export interface RefereeLobby {
   seats: RefereeSeatRecord[];
   started: boolean;
   startedAt: number | null;
+  /**
+   * Counts this server's publishes. Its only job is to make every publish a
+   * DIFFERENT value, so a republish of identical seating still reaches the
+   * clients as a change - which is how they tell a server that is running
+   * from one that crashed and left its last lobby sitting in shared state
+   * forever. A crashed script is not cleaned up: the session simply carries
+   * on without it, and nobody rewrites the key.
+   */
+  n: number;
 }
 
 /**
@@ -125,7 +134,7 @@ export function parseRefereeLobby(value: unknown): RefereeLobby | null {
   if (!value || typeof value !== "object" || wireBytes(value) > DUEL_WIRE_MAX_BYTES) return null;
   const lobby = value as Record<string, unknown>;
   if (lobby.v !== DUEL_PROTOCOL) return null;
-  if (!finiteNumber(lobby.build)) return null;
+  if (!finiteNumber(lobby.build) || !finiteNumber(lobby.n)) return null;
   if (typeof lobby.started !== "boolean") return null;
   if (lobby.startedAt !== null && !finiteNumber(lobby.startedAt)) return null;
   const seats = lobby.seats;
@@ -150,6 +159,7 @@ export function parseRefereeLobby(value: unknown): RefereeLobby | null {
     seats: parsed,
     started: lobby.started as boolean,
     startedAt: (lobby.startedAt as number | null) ?? null,
+    n: lobby.n as number,
   };
 }
 

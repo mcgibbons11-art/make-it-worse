@@ -161,7 +161,18 @@ function makeSession() {
     attachReferee();
   };
 
-  return { state, attachReferee, restartReferee, client, drop };
+  /**
+   * A script that crashed or ran out of budget. The documented behaviour is
+   * that the session keeps running and nobody is disconnected - so the server
+   * simply stops responding, and the last lobby it published stays in shared
+   * state forever with nothing to rewrite it.
+   */
+  const crashReferee = () => {
+    for (const key of Object.keys(refereeOn)) refereeOn[key] = [];
+    attached = false;
+  };
+
+  return { state, attachReferee, restartReferee, crashReferee, client, drop };
 }
 
 /**
@@ -302,6 +313,42 @@ describe("four players taking seats in one session", () => {
     expect(cyd.result.current.mySeat).toBe("c");
     await waitFor(() => expect(host.result.current.roster).toHaveLength(3));
     expect(host.result.current.roster.map((entry) => entry.name)).toEqual(["Ava", "Bo", "Cyd"]);
+  }, 30_000);
+
+  it("still lets people in after the server dies holding a full lobby", async () => {
+    // The lockout this guards against: a crashed script leaves a lobby saying
+    // "started" and "full" sitting in shared state, nothing ever rewrites it,
+    // and every later arrival reads it. Turning them away on that word would
+    // make a dead server the last thing that ever happened in the channel.
+    const session = makeSession();
+    session.attachReferee();
+    const first = mountPlayer(session, "conn-alpha", "Ava");
+    const code = await hostDuel(first);
+    for (const [id, name] of [
+      ["conn-bravo", "Bo"], ["conn-charlie", "Cyd"], ["conn-delta", "Dez"],
+    ] as const) {
+      const guest = mountPlayer(session, id, name);
+      await joinDuel(guest, code);
+    }
+    act(() => first.result.current.startNow());
+    const abandoned = session.state[REFEREE_STATE_KEY] as RefereeLobby;
+    expect(abandoned.seats).toHaveLength(MAX_DUEL_PLAYERS);
+    expect(abandoned.started).toBe(true);
+
+    session.crashReferee();
+    cleanup();
+
+    // A fresh duel in the same session, with that dead lobby still sitting in
+    // state. Everything has to work exactly as if no server had ever run.
+    const host = mountPlayer(session, "conn-echo", "Eve");
+    const second = await hostDuel(host);
+    expect(host.result.current.refereeOnline).toBe(false);
+    const guest = mountPlayer(session, "conn-foxtrot", "Fin");
+    await joinDuel(guest, second);
+    expect(guest.result.current.mySeat).toBe("b");
+    expect(session.state[REFEREE_STATE_KEY]).toBe(abandoned);
+    await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
+    expect(host.result.current.canStartMatch).toBe(true);
   }, 30_000);
 
   it("seats everyone with no referee at all, which is the fallback that must hold", async () => {

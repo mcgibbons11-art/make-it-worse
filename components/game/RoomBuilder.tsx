@@ -167,8 +167,22 @@ function roomIdentity(items: readonly RoomItem[]): number {
   ])));
 }
 
-/** A clean level now uses the same primitives and traps exposed to builders. */
-export function generateRandomRoom(seed: number): RoomItem[] {
+export type RandomRoomProfile = "standard" | "daily";
+
+/**
+ * A clean level now uses the same primitives and traps exposed to builders.
+ *
+ * The daily profile is deliberately cruel where the standard one is kind:
+ * more than twice the hops, spacing pushed toward the edge of real jump
+ * reach instead of comfortably inside it, narrow beams for footing far more
+ * often, relentless climbing, a trap on every platform and frequently two.
+ * One brutal shared gauntlet per day is the point of a daily.
+ */
+export function generateRandomRoom(
+  seed: number,
+  profile: RandomRoomProfile = "standard",
+): RoomItem[] {
+  const daily = profile === "daily";
   const random = createSeededRandom(seed);
   const courseColors = [PALETTE.yellow, PALETTE.blue, PALETTE.purple, PALETTE.orange, PALETTE.green, PALETTE.cream] as const;
   const randomCourseColor = () => courseColors[Math.floor(random() * courseColors.length)]!;
@@ -177,16 +191,49 @@ export function generateRandomRoom(seed: number): RoomItem[] {
     uid: uid++, asset, x: snap(x), y: snap(y), z: snap(z), rotation, color, ...transformDefaults,
   });
   const items: RoomItem[] = [add("spawn", 0, 0, 2), add("platform", 0, 0, 2, 0, randomCourseColor())];
-  let z = -1;
+  // z starts on the start platform's own centre. The old baseline of -1 put
+  // three extra units into the FIRST spacing only, so every room opened on
+  // its single hardest jump - and under the daily profile that first hop
+  // would have been beyond real reach entirely.
+  let z = 2;
   let y = 0;
-  for (let index = 0; index < 7; index += 1) {
-    z -= 3 + random() * 2;
-    y = Math.max(0, y + (random() > 0.58 ? (random() > 0.5 ? 0.5 : -0.5) : 0));
-    const asset: BuilderPieceKind = random() > 0.82 ? "beam" : random() > 0.64 ? "wide-platform" : "platform";
-    items.push(add(asset, (random() - 0.5) * 5, y, z, random() > 0.75 ? Math.PI / 2 : 0, randomCourseColor()));
-    if (random() > 0.38) {
+  let x = 0;
+  const hops = daily ? 16 : 7;
+  for (let index = 0; index < hops; index += 1) {
+    const climb = daily
+      ? (random() > 0.45 ? (random() > 0.3 ? 0.5 : random() > 0.5 ? 0.75 : -0.5) : 0)
+      : (random() > 0.58 ? (random() > 0.5 ? 0.5 : -0.5) : 0);
+    y = Math.max(0, y + climb);
+    // Daily spacing lands gaps in roughly the 2.6-4.2 range between ordinary
+    // platforms - demanding committed jumps - while staying inside the real
+    // reach the movement constants allow. A climbing hop gives back 1.2 of
+    // spacing, because a rise and a long gap on the same jump compound.
+    z -= daily
+      ? 5.6 + random() * 1.6 - (climb > 0 ? 1.2 : 0)
+      : 3 + random() * 2;
+    // The daily wanders by a BOUNDED step from the previous platform rather
+    // than anywhere in the corridor: the sideways offset is part of the same
+    // jump, so an unbounded delta could compound a maximum gap into an
+    // impossible diagonal.
+    x = daily
+      ? Math.max(-2.8, Math.min(2.8, x + (random() - 0.5) * 2.4))
+      : (random() - 0.5) * 5;
+    const asset: BuilderPieceKind = daily
+      ? (random() > 0.55 ? "beam" : random() > 0.5 ? "platform" : "wide-platform")
+      : (random() > 0.82 ? "beam" : random() > 0.64 ? "wide-platform" : "platform");
+    // Daily beams never rotate: long-axis-forward they are precision
+    // bridges, rotated they become thin crossbars that would push the next
+    // gap past real reach.
+    const rotation = (daily && asset === "beam") ? 0 : random() > 0.75 ? Math.PI / 2 : 0;
+    items.push(add(asset, x, y, z, rotation, randomCourseColor()));
+    const anchor = items.at(-1)!;
+    if (daily || random() > 0.38) {
       const type = TRAP_TYPES[Math.floor(random() * TRAP_TYPES.length)]!;
-      items.push(add(`trap:${type}`, items.at(-1)!.x, y + 0.08, z));
+      items.push(add(`trap:${type}`, anchor.x, y + 0.08, z));
+    }
+    if (daily && random() > 0.55) {
+      const second = TRAP_TYPES[Math.floor(random() * TRAP_TYPES.length)]!;
+      items.push(add(`trap:${second}`, anchor.x + (random() > 0.5 ? 0.9 : -0.9), y + 0.08, z + 0.6));
     }
   }
   items.push(add("finish", items.at(-1)!.x, y, z - 1));
@@ -693,6 +740,8 @@ interface RoomBuilderProps {
   creatorName?: string;
   onClose(): void;
   randomSeed?: number;
+  /** How a seeded room is generated; the Daily Disaster uses the cruel one. */
+  randomProfile?: RandomRoomProfile;
   initialMode?: "build" | "test";
   cleanPlay?: boolean;
   onCleanReady?(runtime: RoomBuilderRuntime): Promise<void> | void;
@@ -707,8 +756,8 @@ interface RoomBuilderProps {
   shareMode?: RoomBuilderShareMode;
 }
 
-export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, randomSeed, initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare, onDeletePublished, shareMode = "links-and-codes" }: RoomBuilderProps) {
-  const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed), [randomSeed]);
+export function RoomBuilder({ avatarSeed, creatorName = "Map builder", onClose, randomSeed, randomProfile = "standard", initialMode = "build", cleanPlay = false, onCleanReady, onCleanFinish, onCleanFail, onCleanSample, onCleanProgress, onCleanHazard, onPublish, onShare, onDeletePublished, shareMode = "links-and-codes" }: RoomBuilderProps) {
+  const generated = useMemo(() => randomSeed === undefined ? null : generateRandomRoom(randomSeed, randomProfile), [randomProfile, randomSeed]);
   const [items, setItems] = useState<RoomItem[]>(() => ensureRequiredEndpoints(generated ?? loadItems()));
   const [mode, setMode] = useState<"build" | "test">(initialMode);
   const [selectedUids, setSelectedUids] = useState<number[]>([]);

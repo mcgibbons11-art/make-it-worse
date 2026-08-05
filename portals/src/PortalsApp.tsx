@@ -68,7 +68,8 @@ import type {
   TrapType,
 } from "@/lib/game/types";
 import { isInterfaceTarget, resetInput } from "@/lib/game/input";
-import { hashString } from "@/lib/game/seed";
+import { dailyRoomSeed } from "@/lib/game/seed";
+import type { RandomRoomProfile } from "@/components/game/RoomBuilder";
 import { loadBestGhost, saveBestGhost } from "@/lib/game/best-ghost";
 import type { TrapRevealSpec } from "@/components/game/TrapReveal";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -362,6 +363,7 @@ export function PortalsApp() {
   const [submitStatus, setSubmitStatus] = useState<SubmitResult | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [randomRoomSeed, setRandomRoomSeed] = useState<number | null>(null);
+  const [randomRoomProfile, setRandomRoomProfile] = useState<RandomRoomProfile>("standard");
   const [runtimeTrack, setRuntimeTrack] = useState<BuiltTrack | null>(null);
   const [wardrobeOpen, setWardrobeOpen] = useState(false);
   const [apartmentOpen, setApartmentOpen] = useState(false);
@@ -787,6 +789,7 @@ export function PortalsApp() {
     applyRun(EMPTY_RUN);
     setRuntimeTrack(null);
     setViews([]);
+    setRandomRoomProfile("standard");
     setRandomRoomSeed(Date.now() ^ Math.floor(Math.random() * 0x7fffffff));
     setEditorOpen(true);
   };
@@ -806,11 +809,17 @@ export function PortalsApp() {
     setBestGhostTrace(challenge ? (loadBestGhost(challenge.slug)?.trace ?? null) : null);
     if (slugChanged) setTrapReveal(null);
   }
+  // One brutal course per LOCAL calendar day (the Wordle model): keyed to UTC
+  // it rolled over at 8pm US Eastern, so an evening session and the next
+  // morning shared a course and "daily" read as broken. Everyone whose
+  // calendar shows the same date still lands on the same course and board,
+  // and the cruel generation profile is what makes it a gauntlet.
   const daily = () => {
     applyRun(EMPTY_RUN);
     setRuntimeTrack(null);
     setViews([]);
-    setRandomRoomSeed(hashString(`miw-daily-${new Date().toISOString().slice(0, 10)}`));
+    setRandomRoomProfile("daily");
+    setRandomRoomSeed(dailyRoomSeed());
     setEditorOpen(true);
   };
   const browseTrending = async () => {
@@ -1757,6 +1766,7 @@ export function PortalsApp() {
           avatarSeed={challenge?.createdByAvatarSeed ?? guest?.avatarSeed ?? 1}
           creatorName={guest?.displayName ?? "Map builder"}
           {...(randomRoomSeed === null ? {} : { randomSeed: randomRoomSeed })}
+          randomProfile={randomRoomProfile}
           initialMode={randomRoomSeed === null ? "build" : "test"}
           cleanPlay={randomRoomSeed !== null}
           onCleanReady={prepareCleanRun}

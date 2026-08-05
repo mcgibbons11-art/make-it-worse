@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { totalRisk } from "@/lib/game/difficulty";
-import { PLAYER } from "@/lib/game/constants";
+import { GRID_SIZE, PLAYER } from "@/lib/game/constants";
 import { TRAP_CATALOG } from "@/lib/game/trap-catalog";
 import type { TrapInstance } from "@/lib/game/types";
 
@@ -155,14 +155,19 @@ describe("SQL/TS static parity (textual pinning, not a behavioral test)", () => 
     expect(normalize(sqlPairs)).toEqual(normalize(tsPairs));
   });
 
-  it("pins the single overlap multiplier against publish_child_challenge", () => {
-    // Was a 0.95-on-bridge / 0.75-elsewhere split keyed on the zone id prefix.
-    // 0014 unified it: once every level piece is a placement surface, a name
-    // prefix cannot pick out a class of geometry.
-    const tsMatch = /<\s*\.?([\d.]+)\s*\*\s*\(radius\s*\+\s*other\)/.exec(placementTs);
-    expect(tsMatch, "lib/game/placement.ts: could not find the overlap multiplier").not.toBeNull();
-    const multiplier = `.${tsMatch![1]!.replace(/^0?\./, "")}`;
-    expect(placementSql).toContain(`${multiplier} * (v_catalog.placement_radius + tc.placement_radius)`);
+  it("pins the trap stacking gap against publish_child_challenge", () => {
+    // History: a 0.95-on-bridge / 0.75-elsewhere split keyed on the zone id
+    // prefix, unified by 0014, then dropped entirely by 0023 - traps stack
+    // now, and what survives is an anti-duplicate guard of one grid step.
+    // Both sides must refuse the same "same spot" and allow the same crowd.
+    const tsMatch = /TRAP_STACK_MIN_GAP\s*=\s*([A-Z_]+)/.exec(placementTs);
+    expect(tsMatch, "lib/game/placement.ts: could not find TRAP_STACK_MIN_GAP").not.toBeNull();
+    expect(tsMatch![1]).toBe("GRID_SIZE");
+    // Postgres cannot import a TS constant, so the SQL carries the resolved
+    // number; this assertion is what keeps the two equal.
+    expect(placementSql).toContain(`< ${GRID_SIZE}`);
+    // The footprint-proportional rule is gone from executable SQL.
+    expect(placementCode).not.toContain("* (v_catalog.placement_radius + tc.placement_radius)");
     expect(placementCode).not.toContain("v_zone_id like 'bridge%'");
   });
 

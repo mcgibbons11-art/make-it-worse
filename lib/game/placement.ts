@@ -9,6 +9,13 @@ import type { PlacementZone, TrapInstance, TrapPlacementInput, PlacementValidati
 export const snapToGrid = (value:number):number => Math.round(value / GRID_SIZE) * GRID_SIZE;
 
 /**
+ * How far apart two traps must be. One grid step: enough that two traps are
+ * never authored at the identical point, small enough that traps can be
+ * piled into the same doorway - which is the point of stacking them.
+ */
+export const TRAP_STACK_MIN_GAP = GRID_SIZE;
+
+/**
  * Offset retained when the player grabs the preview close to its centre.
  *
  * Using the trap's full gameplay radius as a pickup radius made large traps
@@ -266,7 +273,12 @@ export function validatePlacement(input: TrapPlacementInput, existing: readonly 
   const x=cx+ox; const z=cz+oz; const radius=TRAP_CATALOG[input.type].placementRadius;
   const edgeClearance=radius*.5;
   if(x-edgeClearance<surface.minX||x+edgeClearance>surface.maxX||z-edgeClearance<surface.minZ||z+edgeClearance>surface.maxZ) return {valid:false,reason:"outside_zone",message:"Keep the trap base on the floor."};
-  for(const trap of existing){ const other=TRAP_CATALOG[trap.type].placementRadius; if(Math.hypot(x-trap.position[0],z-trap.position[2])<.75*(radius+other)) return {valid:false,reason:"overlaps_trap",message:"Give the other disaster some room."}; }
+  // Traps may crowd and stack: the old rule reserved 75% of both footprints,
+  // which made a genuinely dense corner impossible to author. What remains is
+  // an anti-duplicate guard - two traps on the SAME spot are a bug, not a
+  // design - so the gate is now a small absolute distance rather than a
+  // share of the footprints. Piling three traps into one doorway is allowed.
+  for(const trap of existing){ if(Math.hypot(x-trap.position[0],z-trap.position[2])<TRAP_STACK_MIN_GAP) return {valid:false,reason:"overlaps_trap",message:"That is the same spot - nudge it a little."}; }
   if(Math.hypot(x-spawn[0],z-spawn[2])<2.2+radius) return {valid:false,reason:"blocks_spawn",message:"The runner needs somewhere to start."};
   if(Math.hypot(x-exit[0],z-exit[2])<1.5+radius) return {valid:false,reason:"blocks_exit",message:"Leave the exit barely survivable."};
   // Was a name test - `zone.id.startsWith("stones")` - which refused a sweep on

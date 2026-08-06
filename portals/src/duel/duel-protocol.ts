@@ -802,7 +802,18 @@ export function claimForfeit(
   runnerGone = false,
 ): FailOutcome | null {
   if (!mayClaimForfeit(match, claimant, now, runnerGone)) return null;
-  return eliminate(match, match.turn.runner, now, "forfeit");
+  const stalled = match.turn.runner;
+  // A runner who has GONE is retired, not merely knocked out of the round.
+  // Taking the round off them leaves them seated and opening the next one,
+  // so the survivors would have to claim against the same empty chair every
+  // round until the match ran out. Somebody who has left has left.
+  if (runnerGone) {
+    const next = concede(match, stalled, now);
+    return next.result
+      ? { kind: "match-over", match: next }
+      : { kind: "eliminated", seat: stalled, match: next };
+  }
+  return eliminate(match, stalled, now, "forfeit");
 }
 
 /**

@@ -195,8 +195,16 @@ describe("forfeits, concession, rematch", () => {
     // Gone is not.
     expect(mayClaimForfeit(live, "b", NOW, true)).toBe(true);
     const outcome = claimForfeit(live, "b", NOW, true)!;
-    expect(outcome.match.out).toContain("a");
+    // Retired, not merely out for the round: a player who has gone must not
+    // come back as next round's opener, or the survivors claim against the
+    // same empty chair for the rest of the match.
+    expect(outcome.match.retired).toContain("a");
+    expect(seatedSeats(outcome.match)).not.toContain("a");
     expect(outcome.match.turn.runner).toBe("b");
+    // With four seats the rest carry on; the match only ends when too few
+    // are left to play one.
+    expect(outcome.match.result).toBeNull();
+    expect(activeSeats(outcome.match)).toEqual(["b", "c", "d"]);
     // And the runner cannot claim against themselves, however quiet it gets.
     expect(mayClaimForfeit(live, "a", NOW, true)).toBe(false);
   });

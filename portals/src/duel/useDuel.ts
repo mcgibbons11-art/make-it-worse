@@ -342,6 +342,14 @@ export function useDuel(input: {
    * the turn never advances and the match sits there for everyone.
    */
   const heardFrom = useRef(new Map<string, number>());
+  /**
+   * Connections the platform has told us dropped. Kept because the liveness
+   * watcher re-decides from silence every second, and somebody who left a
+   * moment ago has not been silent long enough yet - so without this the
+   * explicit word that they are gone is overwritten a second later by the
+   * inference that they might still be here.
+   */
+  const departed = useRef(new Set<string>());
   /** Set by the liveness watcher when the runner stops answering. */
   const [runnerGone, setRunnerGone] = useState(false);
   /** When the opponent's current run began, for the spectator clock. */
@@ -523,6 +531,9 @@ export function useDuel(input: {
         onMessage: (message, fromId) => {
           peerSignalAt.current = Date.now();
           heardFrom.current.set(fromId, Date.now());
+          // Anything from this connection means it is back, whatever the
+          // platform said about it earlier.
+          departed.current.delete(fromId);
           switch (message.k) {
             case "pos":
               spectateSampleRef.current = {
@@ -567,10 +578,28 @@ export function useDuel(input: {
           peerSignalAt.current = Date.now();
           setPeerConnected(true);
         },
-        onPeerLeave: () => {
+        onPeerLeave: (player) => {
           setPeerConnected(false);
           spectateSampleRef.current = null;
-          pushFeed("Opponent disconnected. They can rejoin with the same code.");
+          // The platform names who dropped, which is a far better signal than
+          // waiting for their heartbeats to stop arriving. Waiting for silence
+          // meant a disconnect announced itself and then nothing happened for
+          // half a minute, with the match sitting on somebody already gone.
+          const record = matchRef.current;
+          const seat = record
+            ? seatedSeats(record).find((held) => record.players[held]?.connId === player.id) ?? null
+            : null;
+          const name = seat && record ? record.players[seat]!.name : "A player";
+          pushFeed(`${name} disconnected. They can rejoin with the same code.`);
+          if (!record || !seat || record.result || !record.started) return;
+          if (record.turn.runner !== seat) return;
+          // It was the runner: the turn cannot advance on its own, so the
+          // others can claim the round immediately rather than watching a
+          // clock that will never run out. The retirement window still runs
+          // in parallel, so a reload-and-rejoin inside it costs nothing.
+          departed.current.add(player.id);
+          setRunnerGone(true);
+          setPeerLostAt((current) => current ?? Date.now());
         },
         onStatus: (status) => {
           if (status === "disconnected") pushFeed("Connection to Portals lost. Waiting for it to return…");
@@ -863,7 +892,9 @@ export function useDuel(input: {
         runner && record.turn.runner !== seat
           ? heardFrom.current.get(runner.connId) ?? channelJoinedAt.current
           : 0;
-      const gone = heard > 0 && Date.now() - heard > PEER_STALE_MS;
+      const gone =
+        (runner !== null && record.turn.runner !== seat && departed.current.has(runner.connId)) ||
+        (heard > 0 && Date.now() - heard > PEER_STALE_MS);
       setRunnerGone(gone);
       // Start the retirement clock on the RUNNER's silence too. The pooled
       // signal below cannot see one player leave a table of four - everybody
@@ -1116,6 +1147,7 @@ export function useDuel(input: {
     setPeerLostAt(null);
     setRunnerGone(false);
     heardFrom.current.clear();
+    departed.current.clear();
     setSpectateStartedAt(null);
   }, [clearParty, dropChannel, dropLobby]);
 

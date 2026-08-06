@@ -61,16 +61,7 @@ export const PEER_STALE_MS = 35_000;
 export const LOBBY_HEARTBEAT_MS = 20_000;
 export const LOBBY_DIM_AFTER_MS = 45_000;
 export const LOBBY_STALE_AFTER_MS = 90_000;
-/**
- * How long a PARTY listing stands. A party post is written once and then
- * abandoned: its host is off in the duel channel gathering players, and one
- * player holds one multiplayer connection, so nobody is left in the lobby to
- * heartbeat it. Freshness therefore counts from when it was written rather
- * than from a beat that will never come. Long enough to fill a party at a
- * civilised pace, short enough that a listing nobody took up expires while
- * the host is still plausibly waiting.
- */
-export const PARTY_POST_TTL_MS = 5 * 60_000;
+
 
 export const DUEL_SETUP_KEY = "miw-duel:setup";
 export const DUEL_MATCH_KEY = "miw-duel:match";
@@ -293,13 +284,12 @@ export interface LobbyPost {
   createdAt: number;
   heartbeatAt: number;
   /**
-   * A party's invite code, or null for the older one-to-one posts that ask
-   * the poster for a duel and wait to be answered. Its presence is what makes
-   * a listing a party: anyone may walk up to the duel and knock, and the host
-   * decides. The code alone does not admit them - it only gets them to the
-   * door - so publishing it costs nothing that approval does not cover.
+   * Everyone in the party so far, host first. The host never leaves the lobby
+   * while gathering, so it keeps this honest with every heartbeat - which is
+   * the whole reason the party gathers here rather than in a duel channel the
+   * lobby cannot see into.
    */
-  code: string | null;
+  members: string[];
 }
 
 export type DuelWireMessage =
@@ -310,12 +300,12 @@ export type DuelWireMessage =
   | { k: "react"; v: typeof DUEL_PROTOCOL; emoji: string }
   | { k: "duel-claim"; v: typeof DUEL_PROTOCOL; to: string; name?: string }
   | { k: "duel-accept"; v: typeof DUEL_PROTOCOL; to: string; code: string }
+  // The host closing the party and taking everyone to the duel channel. The
+  // seat is assigned here, in the one place that knows who joined in what
+  // order, so nobody has to race for one on arrival.
+  | { k: "party-go"; v: typeof DUEL_PROTOCOL; to: string; code: string; seat: DuelSeat }
   | { k: "duel-deny"; v: typeof DUEL_PROTOCOL; to: string; reason: "taken" | "closed" }
-  // Knocking at a party: sent in the DUEL channel by someone who has arrived
-  // but taken no seat, and answered by the host alone.
-  | { k: "knock"; v: typeof DUEL_PROTOCOL; name: string; avatarCode: string | null }
-  | { k: "admit"; v: typeof DUEL_PROTOCOL; to: string }
-  | { k: "refuse"; v: typeof DUEL_PROTOCOL; to: string; reason: "full" | "no" };
+  ;
 
 const REACTIONS = ["😂", "😱", "🔥", "💀", "👏", "😈"] as const;
 export const REACTION_EMOJI: readonly string[] = REACTIONS;
@@ -379,22 +369,15 @@ export function parseDuelMessage(value: unknown): DuelWireMessage | null {
       return shortText(message.to, 80) && normalizeDuelCode((message.code as string) ?? "") !== null
         ? { k: "duel-accept", v: DUEL_PROTOCOL, to: message.to as string, code: normalizeDuelCode(message.code as string)! }
         : null;
-    case "knock":
-      return shortText(message.name, 40) && (message.name as string).trim()
+    case "party-go":
+      return shortText(message.to, 80) &&
+        (message.to as string).length > 0 &&
+        normalizeDuelCode((message.code as string) ?? "") !== null &&
+        DUEL_SEATS.includes(message.seat as DuelSeat)
         ? {
-            k: "knock", v: DUEL_PROTOCOL, name: (message.name as string).trim(),
-            avatarCode: shortText(message.avatarCode, 64) ? (message.avatarCode as string) : null,
-          }
-        : null;
-    case "admit":
-      return shortText(message.to, 80) && (message.to as string).length > 0
-        ? { k: "admit", v: DUEL_PROTOCOL, to: message.to as string }
-        : null;
-    case "refuse":
-      return shortText(message.to, 80) && ["full", "no"].includes(message.reason as string)
-        ? {
-            k: "refuse", v: DUEL_PROTOCOL, to: message.to as string,
-            reason: message.reason as "full" | "no",
+            k: "party-go", v: DUEL_PROTOCOL, to: message.to as string,
+            code: normalizeDuelCode(message.code as string)!,
+            seat: message.seat as DuelSeat,
           }
         : null;
     case "duel-deny":
@@ -880,15 +863,19 @@ export function parseLobbyPost(value: unknown): LobbyPost | null {
   const courseTitle = post.courseTitle ?? null;
   if (courseTitle !== null && !shortText(courseTitle, 80)) return null;
   if (!finiteNumber(post.createdAt) || !finiteNumber(post.heartbeatAt)) return null;
-  // Absent on posts written before parties existed, and refused outright if
-  // present but malformed - a listing whose code cannot be dialled would send
-  // everyone who clicked it to a channel that does not exist.
-  const code = post.code === undefined || post.code === null ? null : normalizeDuelCode(String(post.code));
-  if (post.code !== undefined && post.code !== null && code === null) return null;
+  // Absent on posts written before parties existed: those read as a party of
+  // one, which is exactly what they were.
+  const raw = Array.isArray(post.members) ? post.members : [post.name];
+  if (raw.length > DUEL_SEATS.length) return null;
+  const members: string[] = [];
+  for (const member of raw) {
+    if (!shortText(member, 40) || (member as string).length === 0) return null;
+    members.push(member as string);
+  }
   return {
     ...(post as unknown as LobbyPost),
     courseTitle: courseTitle as string | null,
-    code,
+    members,
   };
 }
 
@@ -896,24 +883,14 @@ export type LobbyFreshness = "fresh" | "dim" | "stale";
 
 /**
  * Whether a listing is old enough that its key should be cleared, not merely
- * hidden. Twice the window it is judged by, so the two kinds of post age out
- * on their own clocks: a party stands on its age, an open challenge on its
- * last heartbeat. Sharing one threshold would bury live parties, which stop
- * beating the moment their host leaves to gather players.
+ * hidden. A host that closed its tab never got to clear its own, and 64 keys
+ * is the documented ceiling for a session.
  */
 export function lobbyPostAbandoned(post: LobbyPost, now: number): boolean {
-  return post.code !== null
-    ? now - post.createdAt > PARTY_POST_TTL_MS * 2
-    : now - post.heartbeatAt > LOBBY_STALE_AFTER_MS * 2;
+  return now - post.heartbeatAt > LOBBY_STALE_AFTER_MS * 2;
 }
 
 export function lobbyFreshness(post: LobbyPost, now: number): LobbyFreshness {
-  // A party is judged on its age, never on a heartbeat: nobody remains in the
-  // lobby to send one once the host has gone to gather players.
-  if (post.code !== null) {
-    const standing = now - post.createdAt;
-    return standing > PARTY_POST_TTL_MS ? "stale" : "fresh";
-  }
   const age = now - post.heartbeatAt;
   if (age > LOBBY_STALE_AFTER_MS) return "stale";
   if (age > LOBBY_DIM_AFTER_MS) return "dim";

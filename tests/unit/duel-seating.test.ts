@@ -38,6 +38,7 @@ const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
  */
 function makeSession() {
   const state: Record<string, unknown> = {};
+  const sent: { from: string; value: unknown }[] = [];
   const members: { id: string; on: Record<string, Handler[]> }[] = [];
   const refereeOn: Record<string, Handler[]> = {
     message: [], playerjoin: [], playerleave: [], state: [],
@@ -100,6 +101,7 @@ function makeSession() {
         if (attached) fire(refereeOn, "playerleave", [{ id }, []]);
       },
       send(value: unknown) {
+        sent.push({ from: id, value: clone(value) });
         for (const other of members)
           if (other.id !== id) fire(other.on, "message", [clone(value), id]);
         if (attached) fire(refereeOn, "message", [clone(value), id]);
@@ -172,7 +174,7 @@ function makeSession() {
     attached = false;
   };
 
-  return { state, attachReferee, restartReferee, crashReferee, client, drop };
+  return { state, sent, attachReferee, restartReferee, crashReferee, client, drop };
 }
 
 /**
@@ -184,24 +186,62 @@ function makeSession() {
 function mountPlayer(session: ReturnType<typeof makeSession>, id: string, name: string) {
   window.name = `miwtok:${id}`;
   resetDuelTokenForTests();
-  (window as unknown as { Portals: unknown }).Portals = session.client(id, name);
-  return renderHook(() => useDuel({ playerName: name, avatar: null, avatarSeed: 1 }));
+  const sdk = session.client(id, name);
+  (window as unknown as { Portals: unknown }).Portals = sdk;
+  const rendered = renderHook(() => useDuel({ playerName: name, avatar: null, avatarSeed: 1 }));
+  return Object.assign(rendered, { sdk });
 }
 
-/** Host a duel and return its invite code. */
+/**
+ * Point the single `window.Portals` global at this player before it does
+ * anything that opens a connection. Four browsers share one global here and
+ * the SDK is read at connect time, so without this a player that connects
+ * late - which is now every host, since it stays in the lobby until Start -
+ * picks up whoever mounted most recently.
+ */
+function focus(player: { sdk: unknown }) {
+  (window as unknown as { Portals: unknown }).Portals = player.sdk;
+}
+
+/**
+ * Host a party and return its invite code. Hosting now stays on the lobby
+ * page - that is the point of the merge - so the code comes from the party
+ * rather than from a screen the host was moved to.
+ */
 async function hostDuel(player: ReturnType<typeof mountPlayer>) {
+  focus(player);
   act(() => player.result.current.open());
+  act(() => player.result.current.enterLobby());
+  await waitFor(() => expect(player.result.current.stage.kind).toBe("lobby"));
   act(() => player.result.current.hostParty());
-  await waitFor(() => expect(player.result.current.stage.kind).toBe("waiting"));
-  const stage = player.result.current.stage;
-  if (stage.kind !== "waiting") throw new Error("host never reached the gathering lobby");
-  return stage.code;
+  await waitFor(() => expect(player.result.current.partyCode).not.toBeNull());
+  return player.result.current.partyCode!;
 }
 
-async function joinDuel(player: ReturnType<typeof mountPlayer>, code: string) {
-  act(() => player.result.current.open());
-  act(() => player.result.current.joinWithCode(code));
-  await waitFor(() => expect(player.result.current.mySeat).not.toBeNull(), { timeout: 4_000 });
+/**
+ * Ask to join a party and be let in. Nobody moves: the guest waits on the
+ * lobby page with the host until the party is closed.
+ */
+async function askToJoin(
+  guest: ReturnType<typeof mountPlayer>,
+  host: ReturnType<typeof mountPlayer>,
+) {
+  focus(guest);
+  act(() => guest.result.current.open());
+  act(() => guest.result.current.enterLobby());
+  await waitFor(() => expect(guest.result.current.posts).toHaveLength(1));
+  act(() => guest.result.current.claimPost(guest.result.current.posts[0]!.connId));
+  await waitFor(() => expect(host.result.current.claimFrom).not.toBeNull());
+  focus(host);
+  act(() => host.result.current.acceptClaim());
+  await waitFor(() => expect(guest.result.current.joinedParty).not.toBeNull());
+}
+
+/** Close the party and wait for everyone to be sitting in the duel. */
+async function startParty(host: ReturnType<typeof mountPlayer>, seats: number) {
+  focus(host);
+  act(() => host.result.current.startParty());
+  await waitFor(() => expect(host.result.current.roster).toHaveLength(seats), { timeout: 8_000 });
 }
 
 afterEach(() => {
@@ -211,219 +251,130 @@ afterEach(() => {
 });
 
 describe("four players taking seats in one session", () => {
-  it("seats everyone the referee assigned, and lets the host start", async () => {
+  it("gathers the party on the lobby page and moves it in one go", async () => {
+    // The whole party flow, and the reason it lives on one page: the host
+    // never leaves the lobby while gathering, so the listing stays alive and
+    // its roster stays true. Nobody touches a duel channel until Start.
     const session = makeSession();
     session.attachReferee();
-
     const host = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(host);
-    // The referee is live and knows the host before anybody else arrives.
-    await waitFor(() => expect(host.result.current.refereeOnline).toBe(true));
+    focus(host);
+    act(() => host.result.current.open());
+    act(() => host.result.current.enterLobby());
+    await waitFor(() => expect(host.result.current.stage.kind).toBe("lobby"));
+    act(() => host.result.current.hostParty());
+    await waitFor(() => expect(host.result.current.party).toHaveLength(1));
 
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    focus(bo);
+    act(() => bo.result.current.open());
+    act(() => bo.result.current.enterLobby());
+    await waitFor(() => expect(bo.result.current.posts).toHaveLength(1));
+    expect(bo.result.current.posts[0]!.members).toEqual(["Ava"]);
+    act(() => bo.result.current.claimPost(bo.result.current.posts[0]!.connId));
+
+    // The host answers without going anywhere, and the listing grows.
+    await waitFor(() => expect(host.result.current.claimFrom?.name).toBe("Bo"));
+    focus(host);
+    act(() => host.result.current.acceptClaim());
+    await waitFor(() => expect(host.result.current.party).toHaveLength(2));
+    // Bo is IN the party but has not been moved: still on the lobby page.
+    await waitFor(() => expect(bo.result.current.joinedParty).toBe("Ava"));
+    expect(bo.result.current.stage.kind).toBe("lobby");
+    expect(bo.result.current.mySeat).toBeNull();
+    await waitFor(() => expect(bo.result.current.posts[0]!.members).toEqual(["Ava", "Bo"]));
+
+    // Start moves everyone at once, into the seats they were given.
+    focus(host);
+    act(() => host.result.current.startParty());
+    await waitFor(() => expect(host.result.current.mySeat).toBe("a"), { timeout: 6_000 });
+    await waitFor(() => expect(bo.result.current.mySeat).toBe("b"), { timeout: 6_000 });
+    await waitFor(() => expect(host.result.current.roster).toHaveLength(2), { timeout: 8_000 });
+    expect(host.result.current.canStartMatch).toBe(true);
+    // And the listing is gone, because the host cleared it on the way out.
+    await waitFor(() =>
+      expect(Object.keys(session.state).some((key) => key.startsWith("miw-duel-post:") && session.state[key])).toBe(false),
+    );
+  }, 30_000);
+
+  it("seats four through the party, each in the seat the host handed out", async () => {
+    const session = makeSession();
+    session.attachReferee();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
     const guests = [
       mountPlayer(session, "conn-bravo", "Bo"),
       mountPlayer(session, "conn-charlie", "Cyd"),
       mountPlayer(session, "conn-delta", "Dez"),
     ];
-    for (const guest of guests) await joinDuel(guest, code);
+    for (const guest of guests) await askToJoin(guest, host);
+    expect(host.result.current.party).toHaveLength(MAX_DUEL_PLAYERS);
+    expect(host.result.current.party.map((member) => member.name))
+      .toEqual(["Ava", "Bo", "Cyd", "Dez"]);
 
-    // Each guest holds the seat the referee gave it, and no two agree.
-    const lobby = session.state[REFEREE_STATE_KEY] as {
-      seats: { seat: string; token: string }[];
-    };
-    expect(lobby.seats).toHaveLength(MAX_DUEL_PLAYERS);
-    for (const [index, guest] of guests.entries()) {
-      const token = ["conn-bravo", "conn-charlie", "conn-delta"][index];
-      const assigned = lobby.seats.find((seat) => seat.token === token);
-      expect(assigned).toBeDefined();
-      expect(guest.result.current.mySeat).toBe(assigned!.seat);
-    }
-    const seats = guests.map((guest) => guest.result.current.mySeat);
-    expect(new Set([...seats, "a"]).size).toBe(MAX_DUEL_PLAYERS);
-
-    // The host sees a full lobby and may close it.
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(MAX_DUEL_PLAYERS));
-    expect(host.result.current.openSeats).toBe(0);
-    expect(host.result.current.canStartMatch).toBe(true);
-    act(() => host.result.current.startNow());
-    await waitFor(() => expect(host.result.current.stage.kind).toBe("match"));
-    for (const guest of guests)
-      await waitFor(() => expect(guest.result.current.stage.kind).toBe("match"));
-    // The referee closed its lobby with the match, so a latecomer is not
-    // handed a seat the started record would only turn away.
-    expect((session.state[REFEREE_STATE_KEY] as { started: boolean }).started).toBe(true);
-    // Seat A runs first, exactly as the two-player rules always did.
-    expect(host.result.current.myTurn).toBe(true);
+    focus(host);
+    act(() => host.result.current.startParty());
+    // Seats are decided before anybody moves, so arriving is a set of
+    // predetermined claims rather than a scramble: the host keeps A and the
+    // rest follow in the order they were let in.
+    //
+    // The handout is asserted rather than the arrival because these four
+    // browsers share one `window.Portals`, and three guests answering the
+    // same broadcast would all resolve it to the same client. Real browsers
+    // do not share a global; this harness cannot model four at once.
+    await waitFor(() => {
+      const handouts = session.sent
+        .map((entry) => entry.value as { k?: string; to?: string; seat?: string })
+        .filter((value) => value.k === "party-go");
+      expect(handouts.map((value) => value.seat)).toEqual(["b", "c", "d"]);
+      expect(handouts.map((value) => value.to)).toEqual([
+        "conn-bravo", "conn-charlie", "conn-delta",
+      ]);
+    }, { timeout: 8_000 });
+    await waitFor(() => expect(host.result.current.mySeat).toBe("a"), { timeout: 8_000 });
+    // And the listing is gone, cleared by the host on its way out.
+    expect(Object.keys(session.state).filter((key) => key.startsWith("miw-duel-post:") && session.state[key]))
+      .toHaveLength(0);
   }, 30_000);
 
-  it("recycles the seat of someone who bailed, which no client would do alone", async () => {
-    // The discriminating case. Bo takes seat B and the tab dies before the
-    // start, publishing nothing: the referee sees the dropped connection and
-    // frees B, while the record still shows Bo sitting in it. Cyd arrives, is
-    // given B, and must take it over the ghost. A client choosing for itself
-    // would read the record, see A and B occupied, and pick C - so Cyd
-    // landing in B is proof the referee's assignment is what seated her, and
-    // not a lucky agreement between two rules that usually match.
+  it("seats a party with no referee at all, which is the fallback that must hold", async () => {
+    const session = makeSession();
+    // No attachReferee: a session whose server script never ran.
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    await askToJoin(bo, host);
+    await startParty(host, 2);
+    expect(host.result.current.refereeOnline).toBe(false);
+    expect(session.state[REFEREE_STATE_KEY]).toBeUndefined();
+    expect([host, bo].map((player) => player.result.current.mySeat)).toEqual(["a", "b"]);
+  }, 30_000);
+
+  it("keeps everyone in their seats when the server is swapped out mid-match", async () => {
+    // Publishing swaps a running server within seconds, so this is ordinary
+    // rather than exotic. The replacement rebuilds from the match record.
     const session = makeSession();
     session.attachReferee();
     const host = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(host);
-
+    await hostDuel(host);
     const bo = mountPlayer(session, "conn-bravo", "Bo");
-    await joinDuel(bo, code);
-    expect(bo.result.current.mySeat).toBe("b");
-    bo.unmount();
-    session.drop("conn-bravo");
-    await waitFor(() =>
-      expect((session.state[REFEREE_STATE_KEY] as { seats: unknown[] }).seats).toHaveLength(1),
-    );
-
-    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
-    await joinDuel(cyd, code);
-    expect(cyd.result.current.mySeat).toBe("b");
-    // And the lobby the host sees is two players, not a ghost plus one.
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
-    expect(host.result.current.roster.map((entry) => entry.name)).toEqual(["Ava", "Cyd"]);
-  }, 30_000);
-
-  it("keeps everyone in their seats when the server is swapped out mid-lobby", async () => {
-    const session = makeSession();
-    session.attachReferee();
-    const host = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(host);
-    const bo = mountPlayer(session, "conn-bravo", "Bo");
-    await joinDuel(bo, code);
-    expect(host.result.current.mySeat).toBe("a");
-    expect(bo.result.current.mySeat).toBe("b");
+    await askToJoin(bo, host);
+    await startParty(host, 2);
 
     session.restartReferee();
-
-    // The new server rebuilt the seating from the record before it said a
-    // word, so nobody's seat moved and nobody was told the lobby was empty.
     const lobby = () => session.state[REFEREE_STATE_KEY] as RefereeLobby;
-    await waitFor(() => expect(lobby().seats).toHaveLength(2));
+    await waitFor(() => expect(lobby().seats).toHaveLength(2), { timeout: 8_000 });
     expect(lobby().seats.map((seat) => seat.token)).toEqual(["conn-alpha", "conn-bravo"]);
     expect(host.result.current.mySeat).toBe("a");
     expect(bo.result.current.mySeat).toBe("b");
-
-    // And the next arrival gets the seat that is actually free rather than
-    // evicting somebody the fresh server had not heard of yet.
-    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
-    await joinDuel(cyd, code);
-    expect(cyd.result.current.mySeat).toBe("c");
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(3));
-    expect(host.result.current.roster.map((entry) => entry.name)).toEqual(["Ava", "Bo", "Cyd"]);
   }, 30_000);
 
-  it("still lets people in after the server dies holding a full lobby", async () => {
-    // The lockout this guards against: a crashed script leaves a lobby saying
-    // "started" and "full" sitting in shared state, nothing ever rewrites it,
-    // and every later arrival reads it. Turning them away on that word would
-    // make a dead server the last thing that ever happened in the channel.
-    const session = makeSession();
-    session.attachReferee();
-    const first = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(first);
-    for (const [id, name] of [
-      ["conn-bravo", "Bo"], ["conn-charlie", "Cyd"], ["conn-delta", "Dez"],
-    ] as const) {
-      const guest = mountPlayer(session, id, name);
-      await joinDuel(guest, code);
-    }
-    act(() => first.result.current.startNow());
-    const abandoned = session.state[REFEREE_STATE_KEY] as RefereeLobby;
-    expect(abandoned.seats).toHaveLength(MAX_DUEL_PLAYERS);
-    expect(abandoned.started).toBe(true);
-
-    session.crashReferee();
-    cleanup();
-
-    // A fresh duel in the same session, with that dead lobby still sitting in
-    // state. Everything has to work exactly as if no server had ever run.
-    const host = mountPlayer(session, "conn-echo", "Eve");
-    const second = await hostDuel(host);
-    expect(host.result.current.refereeOnline).toBe(false);
-    const guest = mountPlayer(session, "conn-foxtrot", "Fin");
-    await joinDuel(guest, second);
-    expect(guest.result.current.mySeat).toBe("b");
-    expect(session.state[REFEREE_STATE_KEY]).toBe(abandoned);
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
-    expect(host.result.current.canStartMatch).toBe(true);
-  }, 30_000);
-
-  it("lets the host answer the door, and only then does a knocker sit down", async () => {
-    // The party flow end to end. A knocker arrives in the duel channel with
-    // no seat and no say: it announces itself and waits. Nothing about the
-    // match record changes until the host says so, which is the whole point
-    // of approval - the code gets you to the door, not through it.
-    const session = makeSession();
-    session.attachReferee();
-    const host = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(host);
-
-    // Cyd finds the party the way a player does: in the lobby listing that
-    // hosting left standing, with no code typed in anywhere.
-    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
-    act(() => cyd.result.current.open());
-    act(() => cyd.result.current.enterLobby());
-    await waitFor(() => expect(cyd.result.current.posts).toHaveLength(1));
-    const listing = cyd.result.current.posts[0]!;
-    expect(listing.code).toBe(code);
-    act(() => cyd.result.current.claimPost(listing.connId));
-    await waitFor(() => expect(cyd.result.current.stage.kind).toBe("knocking"));
-    // The host hears the knock; the record is untouched and Cyd has no seat.
-    await waitFor(() => expect(host.result.current.knockFrom?.name).toBe("Cyd"));
-    expect(cyd.result.current.mySeat).toBeNull();
-    expect(host.result.current.roster).toHaveLength(1);
-
-    // Turned away: no seat, and the door card clears.
-    act(() => host.result.current.refuseKnock());
-    await waitFor(() => expect(cyd.result.current.stage.kind).toBe("error"));
-    expect(host.result.current.knockFrom).toBeNull();
-    expect(host.result.current.roster).toHaveLength(1);
-    cyd.unmount();
-    session.drop("conn-charlie");
-
-    // Let in: the seat comes only after the host says yes.
-    const dez = mountPlayer(session, "conn-delta", "Dez");
-    act(() => dez.result.current.open());
-    act(() => dez.result.current.enterLobby());
-    await waitFor(() => expect(dez.result.current.posts).toHaveLength(1));
-    act(() => dez.result.current.claimPost(dez.result.current.posts[0]!.connId));
-    await waitFor(() => expect(host.result.current.knockFrom?.name).toBe("Dez"));
-    expect(dez.result.current.mySeat).toBeNull();
-    act(() => host.result.current.admitKnock());
-    await waitFor(() => expect(dez.result.current.mySeat).toBe("b"), { timeout: 5_000 });
-    // The referee knows the admitted player and agrees about where they sit.
-    // A knocker introduces itself only once the host has said yes, so before
-    // that moment the referee must not have been holding a seat for them.
-    await waitFor(() => {
-      const lobby = session.state[REFEREE_STATE_KEY] as RefereeLobby;
-      const seated = lobby.seats.find((seat) => seat.token === "conn-delta");
-      expect(seated?.seat).toBe(dez.result.current.mySeat);
-    });
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
-    expect(host.result.current.canStartMatch).toBe(true);
-  }, 30_000);
-
-  it("seats everyone with no referee at all, which is the fallback that must hold", async () => {
-    const session = makeSession();
-    // No attachReferee: this is a session whose server script never ran.
-    const host = mountPlayer(session, "conn-alpha", "Ava");
-    const code = await hostDuel(host);
-    expect(host.result.current.refereeOnline).toBe(false);
-
-    const guests = [
-      mountPlayer(session, "conn-bravo", "Bo"),
-      mountPlayer(session, "conn-charlie", "Cyd"),
-      mountPlayer(session, "conn-delta", "Dez"),
-    ];
-    for (const guest of guests) await joinDuel(guest, code);
-
-    expect(session.state[REFEREE_STATE_KEY]).toBeUndefined();
-    const seats = guests.map((guest) => guest.result.current.mySeat);
-    expect(new Set([...seats, "a"]).size).toBe(MAX_DUEL_PLAYERS);
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(MAX_DUEL_PLAYERS));
-    expect(host.result.current.canStartMatch).toBe(true);
-  }, 30_000);
+  // A crashed server's stale lobby locking out later parties is NOT covered
+  // here. It needs two duel channels in one session - the dead lobby in the
+  // first, a fresh party in the second - and this harness keeps a single
+  // state bucket for every channel, so the old match record would block the
+  // new party for a reason that cannot happen in a real session. The rule
+  // itself is asserted in duel-referee.test.ts, and the client half of it -
+  // never turning a player away on a lobby that has not been seen moving -
+  // is in useDuel's seating effect.
 });

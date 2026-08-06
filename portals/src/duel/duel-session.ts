@@ -11,6 +11,7 @@
 // time, so PortalsApp closes whichever session it holds before opening the
 // next; both connections here expose close() for that hand-off.
 
+import type { DuelSeat } from "./duel-protocol";
 import {
   DUEL_LOBBY_CHANNEL,
   DUEL_MATCH_KEY,
@@ -124,8 +125,10 @@ export interface DuelLobbyHandlers {
   onPosts(posts: LobbyPost[]): void;
   /** Someone claimed OUR post. The poster arbitrates: accept or deny. */
   onClaim(fromConnId: string, name: string | null): void;
-  /** Our claim on someone's post was accepted; join this code's channel. */
+  /** We were let into a party. Stay put: the host is still gathering. */
   onAccept(code: string): void;
+  /** The host closed the party. Go to this channel and take this seat. */
+  onGo(code: string, seat: DuelSeat): void;
   onDeny(reason: "taken" | "closed"): void;
   onStatus(status: "connected" | "disconnected"): void;
 }
@@ -133,20 +136,22 @@ export interface DuelLobbyHandlers {
 export interface DuelLobbyConnection {
   selfConnId: string;
   selfName: string | null;
-  /** Advertise an open challenge; heartbeats renew it until unpost/close. */
+  /**
+   * Advertise the party. Called again whenever the roster changes, which the
+   * host can do because it never leaves; heartbeats renew it until close.
+   */
   post(input: {
     name: string;
     avatarCode: string | null;
     note: string;
     courseTitle?: string | null;
-    /** Set to advertise a party others may knock at; null asks for a duel. */
-    code?: string | null;
+    members?: string[];
   }): void;
   unpost(): void;
-  /** Leave the channel but leave the listing standing, as a party host does. */
-  leavePosted(): Promise<void>;
   claim(toConnId: string, name: string): void;
   accept(toConnId: string, code: string): void;
+  /** Send one member to the duel channel, with the seat they are to take. */
+  go(toConnId: string, code: string, seat: DuelSeat): void;
   deny(toConnId: string, denyReason: "taken" | "closed"): void;
   close(): Promise<void>;
 }
@@ -215,6 +220,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         handlers.onClaim(fromId, message.name ?? null);
       if (message.k === "duel-accept" && message.to === selfConnId) handlers.onAccept(message.code);
       if (message.k === "duel-deny" && message.to === selfConnId) handlers.onDeny(message.reason);
+      if (message.k === "party-go" && message.to === selfConnId) handlers.onGo(message.code, message.seat);
     };
     const stateHandler = (key: string, value: unknown) => acceptPost(key, value);
     const statusHandler = (status: "connected" | "disconnected") => handlers.onStatus(status);
@@ -246,8 +252,11 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
     const connection: DuelLobbyConnection = {
       selfConnId,
       selfName: joined.self.displayName,
-      post({ name, avatarCode, note, courseTitle, code = null }) {
-        clearPost();
+      post({ name, avatarCode, note, courseTitle, members }) {
+        // Re-posting is how the roster is published, so the listing keeps its
+        // original createdAt and only the beat and the members move.
+        if (heartbeat !== null) globalThis.clearInterval(heartbeat);
+        heartbeat = null;
         const now = Date.now();
         myPost = {
           v: DUEL_PROTOCOL,
@@ -256,14 +265,11 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
           avatarCode,
           note: note.trim().slice(0, 120),
           courseTitle: courseTitle?.slice(0, 80) ?? null,
-          createdAt: now,
+          createdAt: myPost?.createdAt ?? now,
           heartbeatAt: now,
-          code,
+          members: members ?? [name.trim().slice(0, 40) || "Runner"],
         };
         host.net.setState(lobbyPostKey(selfConnId), myPost);
-        // A party listing is written once and left standing: its author is
-        // about to leave for the duel channel, so no beat is coming.
-        if (code !== null) return;
         heartbeat = globalThis.setInterval(() => {
           if (!myPost) return;
           myPost = { ...myPost, heartbeatAt: Date.now() };
@@ -275,19 +281,6 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         }, LOBBY_HEARTBEAT_MS);
       },
       unpost: clearPost,
-      async leavePosted() {
-        // Leave the channel with the listing still up, which is how a party
-        // host advertises: post, go, gather. Nothing clears it here, so it
-        // expires on its own age.
-        if (heartbeat !== null) globalThis.clearInterval(heartbeat);
-        heartbeat = null;
-        myPost = null;
-        globalThis.clearInterval(poll);
-        host.net.off("message", messageHandler);
-        host.net.off("state", stateHandler);
-        host.net.off("status", statusHandler);
-        await host.net.leave();
-      },
       claim(toConnId, name) {
         const message: DuelWireMessage = {
           k: "duel-claim",
@@ -295,6 +288,10 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
           to: toConnId,
           name: name.trim().slice(0, 40),
         };
+        if (parseDuelMessage(message)) host.net.send(message);
+      },
+      go(toConnId, code, seat) {
+        const message: DuelWireMessage = { k: "party-go", v: DUEL_PROTOCOL, to: toConnId, code, seat };
         if (parseDuelMessage(message)) host.net.send(message);
       },
       accept(toConnId, code) {

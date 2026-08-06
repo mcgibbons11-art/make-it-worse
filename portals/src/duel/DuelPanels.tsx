@@ -153,7 +153,6 @@ export function DuelMatchmakingPanel({
   onBack(): void;
 }) {
   const [codeDraft, setCodeDraft] = useState("");
-  const [noteDraft, setNoteDraft] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "manual">("idle");
   const stage = duel.stage;
   return (
@@ -209,14 +208,6 @@ export function DuelMatchmakingPanel({
       {(stage.kind === "joining" || stage.kind === "connecting") && (
         <p className="portals-lede">Connecting to Portals…</p>
       )}
-      {stage.kind === "knocking" && (
-        <>
-          <p className="portals-lede">Asking to join {inviteLabel(stage.code)}…</p>
-          <p className="portals-notice" role="status">
-            The host decides who comes in. This closes itself if nobody answers.
-          </p>
-        </>
-      )}
       {stage.kind === "waiting" && (
         <>
           <p className="portals-lede">
@@ -241,23 +232,6 @@ export function DuelMatchmakingPanel({
               Copying is blocked here. Tap the code above to select it, then
               copy it yourself.
             </p>
-          )}
-          {/* Somebody who found the party in the lobby and walked up to it.
-              Only the host ever sees this, and only while a seat is free. */}
-          {duel.knockFrom && (
-            <div className="duel-claim-card">
-              <p>
-                <strong>{duel.knockFrom.name}</strong> wants in.
-              </p>
-              <div className="portals-buttons">
-                <button className="button danger" onClick={duel.admitKnock}>
-                  ✅ Let them in
-                </button>
-                <button className="button secondary" onClick={duel.refuseKnock}>
-                  🙅 No
-                </button>
-              </div>
-            </div>
           )}
           {/* The gathering lobby: everyone seated so far, and the seats
               still open. The host keeps accepting until they start. */}
@@ -318,12 +292,16 @@ export function DuelMatchmakingPanel({
       {stage.kind === "lobby" && (
         <>
           <p className="portals-lede">
-            Post an open challenge, or jump on someone else&rsquo;s.
+            {stage.posted
+              ? "Your party is up. Let people in as they ask."
+              : duel.joinedParty
+                ? `You are in ${duel.joinedParty}'s party.`
+                : "Start a party, or ask to join one."}
           </p>
           {duel.claimFrom && (
             <div className="duel-claim-card">
               <p>
-                <strong>{duel.claimFrom.name}</strong> wants to duel you.
+                <strong>{duel.claimFrom.name}</strong> wants in.
               </p>
               <div className="portals-buttons">
                 <button className="button danger" onClick={duel.acceptClaim}>
@@ -352,36 +330,57 @@ export function DuelMatchmakingPanel({
           {duel.lobbyNotice && (
             <p className="portals-notice" role="status">{duel.lobbyNotice}</p>
           )}
-          {stage.posted ? (
-            <div className="duel-claim-card">
-              <p>Your challenge is posted. Anyone here can claim it.</p>
-              <button className="button secondary" onClick={duel.unpost}>
-                Take it down
+          {/* The party, gathered right here. The host never leaves this page
+              while it fills, which is what keeps the listing alive. */}
+          {stage.posted && (
+            <>
+              <ul className="duel-roster" aria-label="Your party">
+                {duel.party.map((member, index) => (
+                  <li key={member.connId}>
+                    <strong>{member.name}</strong>
+                    {index === 0 && <em>host</em>}
+                  </li>
+                ))}
+                {Array.from(
+                  { length: Math.max(0, MAX_DUEL_PLAYERS - duel.party.length) },
+                  (_, index) => (
+                    <li key={`open-${index}`} className="is-open">
+                      <strong>Open seat</strong>
+                    </li>
+                  ),
+                )}
+              </ul>
+              <button
+                className="button danger"
+                disabled={duel.party.length < 2}
+                onClick={duel.startParty}
+              >
+                ⚔️ Start with {duel.party.length}{" "}
+                {duel.party.length === 1 ? "player" : "players"}
               </button>
-            </div>
-          ) : (
+              <p className="portals-notice" role="status">
+                {duel.party.length < 2
+                  ? "Waiting for someone to ask to join…"
+                  : `Keep letting people in, or start now.`}
+              </p>
+              <button className="button secondary" onClick={duel.unpost}>
+                Take the party down
+              </button>
+            </>
+          )}
+          {!stage.posted && !duel.joinedParty && (
             <>
               <CoursePicker duel={duel} />
-              <div className="duel-code-row">
-                <input
-                  value={noteDraft}
-                  placeholder="Anyone want to lose? (optional note)"
-                  aria-label="Lobby post note"
-                  maxLength={120}
-                  onChange={(event) => setNoteDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") duel.postToLobby(noteDraft);
-                  }}
-                />
-                <button
-                  className="button danger"
-                  type="button"
-                  onClick={() => duel.postToLobby(noteDraft)}
-                >
-                  Post it
-                </button>
-              </div>
+              <button className="button danger" type="button" onClick={duel.hostParty}>
+                🎉 Start a party
+              </button>
             </>
+          )}
+          {duel.joinedParty && (
+            <p className="portals-notice" role="status">
+              Waiting for {duel.joinedParty} to start. You will be taken in
+              automatically.
+            </p>
           )}
           <div className="duel-posts">
             {duel.posts.length === 0 && (
@@ -400,9 +399,7 @@ export function DuelMatchmakingPanel({
               >
                 <strong>{post.name}</strong>
                 <span>
-                  {post.code !== null
-                    ? "party open · ask to join"
-                    : post.note || "wants to duel"}
+                  {post.members.length}/{MAX_DUEL_PLAYERS} · ask to join
                 </span>
                 <span className="duel-post-course">{courseLabel(post.courseTitle)}</span>
               </button>

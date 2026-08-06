@@ -770,12 +770,22 @@ function roundWonBy(
  * deadline plus grace, and never while a run is live: the in-game attempt
  * clock already bounds "running", so a laggy finish is not stolen.
  */
-export function mayClaimForfeit(match: DuelMatch, claimant: DuelSeat, now: number): boolean {
+export function mayClaimForfeit(
+  match: DuelMatch,
+  claimant: DuelSeat,
+  now: number,
+  runnerGone = false,
+): boolean {
   if (match.result || !match.started) return false;
   if (match.turn.runner === claimant) return false;
-  // Only a seat still alive in the round may claim, and only against a
-  // runner who is genuinely stalled rather than mid-attempt.
+  // Only a seat still alive in the round may claim.
   if (!activeSeats(match).includes(claimant)) return false;
+  // A runner who has gone silent can be claimed whatever they were doing.
+  // The mid-run exemption below protects somebody who is PLAYING and simply
+  // slow; it must not protect somebody who has left, or a player who quits
+  // mid-attempt freezes the match for everyone still in it, with no clock
+  // that ever runs out because the turn never advances.
+  if (runnerGone) return true;
   if (match.turn.phase === "running") return false;
   return now > match.turn.deadlineAt + FORFEIT_GRACE_MS;
 }
@@ -785,8 +795,13 @@ export function mayClaimForfeit(match: DuelMatch, claimant: DuelSeat, now: numbe
  * to the claimant outright: with four players the other survivors have not
  * lost anything by one player going quiet.
  */
-export function claimForfeit(match: DuelMatch, claimant: DuelSeat, now: number): FailOutcome | null {
-  if (!mayClaimForfeit(match, claimant, now)) return null;
+export function claimForfeit(
+  match: DuelMatch,
+  claimant: DuelSeat,
+  now: number,
+  runnerGone = false,
+): FailOutcome | null {
+  if (!mayClaimForfeit(match, claimant, now, runnerGone)) return null;
   return eliminate(match, match.turn.runner, now, "forfeit");
 }
 

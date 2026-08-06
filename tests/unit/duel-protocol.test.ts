@@ -181,6 +181,26 @@ describe("forfeits, concession, rematch", () => {
     expect(claimed.match.score.b).toBe(1);
   });
 
+  it("lets the others move on when the runner walks out mid-attempt", () => {
+    // The stall that froze a match: a runner who quits during their own run
+    // leaves a turn that never advances, so no clock ever runs out and the
+    // mid-run exemption means nobody can claim. Silence is the difference
+    // between a player who is slow and a player who has gone.
+    const live = beginRun(setCourse(partyMatch(), "CODE", "v1", NOW), NOW);
+    expect(live.turn.phase).toBe("running");
+    const later = NOW + HANDOFF_DEADLINE_MS + FORFEIT_GRACE_MS + 1;
+    // Slow is protected: mid-attempt, the clock alone claims nothing.
+    expect(mayClaimForfeit(live, "b", later)).toBe(false);
+    expect(claimForfeit(live, "b", later)).toBeNull();
+    // Gone is not.
+    expect(mayClaimForfeit(live, "b", NOW, true)).toBe(true);
+    const outcome = claimForfeit(live, "b", NOW, true)!;
+    expect(outcome.match.out).toContain("a");
+    expect(outcome.match.turn.runner).toBe("b");
+    // And the runner cannot claim against themselves, however quiet it gets.
+    expect(mayClaimForfeit(live, "a", NOW, true)).toBe(false);
+  });
+
   it("concede awards the match to the other seat exactly once", () => {
     const match = concede(fullMatch(), "a", NOW);
     expect(match.result).toEqual({ winner: "b", reason: "left" });

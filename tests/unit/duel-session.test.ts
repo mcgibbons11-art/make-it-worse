@@ -79,6 +79,7 @@ function lobbyHandlers() {
     onClaim: vi.fn(),
     onAccept: vi.fn(),
     onGo: vi.fn(),
+    onLeave: vi.fn(),
     onDeny: vi.fn(),
     onStatus: vi.fn(),
     onReferee: vi.fn(),

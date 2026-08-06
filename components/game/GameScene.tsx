@@ -281,7 +281,9 @@ export function GameScene({
             active={phase === "playing"}
             attemptSerial={attemptSerial}
             track={track}
-            visualVisible={phase !== "placing_trap" && phase !== "publishing"}
+            visualVisible={
+              phase !== "placing_trap" && phase !== "publishing" && !liveGhost
+            }
             pose={phase === "finished" ? "victory" : phase === "failed" ? "failure" : phase === "playing" ? "playing" : "idle"}
             avatarSeed={challenge.createdByAvatarSeed}
             avatar={avatar}
@@ -329,9 +331,15 @@ export function GameScene({
         </>
       ) : (
         <>
-          <group position={track.spawn} rotation={[0, spawnYaw, 0]}>
-            <PlayerVisual avatarSeed={challenge.createdByAvatarSeed} avatar={avatar} />
-          </group>
+          {/* The waiting-room figure on the start line. Hidden while a live
+              ghost is being followed: a duel spectator should see the runner
+              and nobody else, not their own avatar and every other player's
+              stacked on the same spot. */}
+          {!liveGhost && (
+            <group position={track.spawn} rotation={[0, spawnYaw, 0]}>
+              <PlayerVisual avatarSeed={challenge.createdByAvatarSeed} avatar={avatar} />
+            </group>
+          )}
           {trapReveal && onTrapRevealDone && (
             <TrapReveal spec={trapReveal} exit={track.exit} onDone={onTrapRevealDone} />
           )}

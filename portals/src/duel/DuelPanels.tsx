@@ -295,7 +295,7 @@ export function DuelMatchmakingPanel({
             {stage.posted
               ? "Your party is up. Let people in as they ask."
               : duel.joinedParty
-                ? `You are in ${duel.joinedParty}'s party.`
+                ? `You are in ${duel.joinedParty.name}'s party.`
                 : "Start a party, or ask to join one."}
           </p>
           {/* Every request, not just the newest: several people can ask at
@@ -541,7 +541,9 @@ export function DuelHud({
         <span className="duel-strip-warn">
           ⚠ {duel.opponentName} {duel.peerConnected ? "is not responding" : "disconnected"}
           {duel.abandonSecondsLeft !== null
-            ? ` · match ends in ${duel.abandonSecondsLeft}s unless they return`
+            ? duel.abandonEndsMatch
+              ? ` · match ends in ${duel.abandonSecondsLeft}s unless they return`
+              : ` · they are out in ${duel.abandonSecondsLeft}s unless they return, and the rest play on`
             : ""}
         </span>
       )}
@@ -739,9 +741,11 @@ export function DuelHud({
           <div className="eyebrow">ROUND {match.round} · TURN {turn.number}</div>
           <h2 id="duel-wait-title">{waitingCopy}</h2>
           <p className="portals-lede">
-            {duel.forfeitClaimable
-              ? "Their clock ran out."
-              : `They have ${duel.deadlineSeconds}s before the round is yours to claim.`}
+            {duel.runnerGone
+              ? "They have stopped answering."
+              : duel.forfeitClaimable
+                ? "Their clock ran out."
+                : `They have ${duel.deadlineSeconds}s before the round is yours to claim.`}
           </p>
           {duel.forfeitClaimable && (
             <button className="button danger huge" onClick={duel.claimTimeout}>

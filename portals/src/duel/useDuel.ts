@@ -42,6 +42,7 @@ import {
   DUEL_SEATS,
   refereeSeatOf,
   seatedSeats,
+  activeSeats,
   mayStartMatch,
   startMatch,
   MAX_DUEL_PLAYERS,
@@ -175,8 +176,12 @@ export interface DuelApi {
   forfeitClaimable: boolean;
   /** Whole seconds until the current turn's deadline, clamped at zero. */
   deadlineSeconds: number;
-  /** Seconds until a vanished opponent forfeits the match, or null. */
+  /** True once the runner has stopped answering, whatever their clock says. */
+  runnerGone: boolean;
+  /** Seconds until a vanished player is retired from the match, or null. */
   abandonSecondsLeft: number | null;
+  /** True when retiring them would leave too few players to carry on. */
+  abandonEndsMatch: boolean;
   rejoinableCode: string | null;
 
   open(): void;
@@ -330,6 +335,15 @@ export function useDuel(input: {
   const [peerLostAt, setPeerLostAt] = useState<number | null>(null);
   /** Last proof of life off the wire: join, any message, or initial peers. */
   const peerSignalAt = useRef(0);
+  /**
+   * Last word from each connection, kept per player rather than pooled. With
+   * four seats a single shared signal is refreshed by whoever is still here,
+   * so one player leaving is invisible - and if that player was the runner,
+   * the turn never advances and the match sits there for everyone.
+   */
+  const heardFrom = useRef(new Map<string, number>());
+  /** Set by the liveness watcher when the runner stops answering. */
+  const [runnerGone, setRunnerGone] = useState(false);
   /** When the opponent's current run began, for the spectator clock. */
   const [spectateStartedAt, setSpectateStartedAt] = useState<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
@@ -506,8 +520,9 @@ export function useDuel(input: {
           if (record.started && !record.result && seatOf(record, token))
             setStage({ kind: "match", code });
         },
-        onMessage: (message) => {
+        onMessage: (message, fromId) => {
           peerSignalAt.current = Date.now();
+          heardFrom.current.set(fromId, Date.now());
           switch (message.k) {
             case "pos":
               spectateSampleRef.current = {
@@ -839,6 +854,22 @@ export function useDuel(input: {
     const watch = globalThis.setInterval(() => {
       const record = matchRef.current;
       if (!record || record.result || seatedSeats(record).length < 2) return;
+      // Is the RUNNER specifically still here? Everyone else answering keeps
+      // the pooled signal below fresh, so this is the only thing that notices
+      // the one player whose absence actually stops the match.
+      const seat = seatOf(record, token);
+      const runner = record.players[record.turn.runner];
+      const heard =
+        runner && record.turn.runner !== seat
+          ? heardFrom.current.get(runner.connId) ?? channelJoinedAt.current
+          : 0;
+      const gone = heard > 0 && Date.now() - heard > PEER_STALE_MS;
+      setRunnerGone(gone);
+      // Start the retirement clock on the RUNNER's silence too. The pooled
+      // signal below cannot see one player leave a table of four - everybody
+      // else keeps it fresh - so without this the match waits on somebody who
+      // is not coming back, and the people still here can only sit there.
+      if (gone) setPeerLostAt((current) => current ?? Date.now());
       const silentFor = Date.now() - peerSignalAt.current;
       if (silentFor > PEER_STALE_MS)
         setPeerLostAt((current) => current ?? Date.now());
@@ -848,7 +879,7 @@ export function useDuel(input: {
       globalThis.clearInterval(beat);
       globalThis.clearInterval(watch);
     };
-  }, [stage.kind]);
+  }, [stage.kind, token]);
 
   // A vanished opponent forfeits the whole match once their clock runs out:
   // a reload-and-rejoin reconnects well inside the window, and anything
@@ -880,8 +911,10 @@ export function useDuel(input: {
     return () => globalThis.clearTimeout(timer);
   }, [peerLostAt, publish, pushFeed, stage.kind, token]);
 
+  // Retiring one of four leaves three still playing; one of two ends it.
+  const abandonEndsMatch = match !== null && activeSeats(match).length <= 2;
   const forfeitClaimable =
-    match !== null && mySeat !== null && mayClaimForfeit(match, mySeat, nowTick);
+    match !== null && mySeat !== null && mayClaimForfeit(match, mySeat, nowTick, runnerGone);
   const deadlineSeconds = match
     ? Math.max(0, Math.ceil((match.turn.deadlineAt + FORFEIT_GRACE_MS - nowTick) / 1000))
     : 0;
@@ -1081,6 +1114,8 @@ export function useDuel(input: {
     setFeed([]);
     setPeerConnected(false);
     setPeerLostAt(null);
+    setRunnerGone(false);
+    heardFrom.current.clear();
     setSpectateStartedAt(null);
   }, [clearParty, dropChannel, dropLobby]);
 
@@ -1123,6 +1158,8 @@ export function useDuel(input: {
     courseChoice,
     chooseCourse: (versionId) => setCourseChoice(versionId),
     forfeitClaimable,
+    runnerGone,
+    abandonEndsMatch,
     deadlineSeconds,
     abandonSecondsLeft,
     rejoinableCode,
@@ -1275,7 +1312,7 @@ export function useDuel(input: {
     claimTimeout: () => {
       const current = matchRef.current;
       if (!current || !mySeat) return;
-      const outcome = claimForfeit(current, mySeat, Date.now());
+      const outcome = claimForfeit(current, mySeat, Date.now(), runnerGone);
       if (!outcome) return;
       publish(outcome.match);
       pushFeed(

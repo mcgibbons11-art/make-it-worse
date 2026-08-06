@@ -5,6 +5,7 @@
   var DUEL_PROTOCOL = 2;
   var MAX_DUEL_PLAYERS = 4;
   var DUEL_WIRE_MAX_BYTES = 8 * 1024;
+  var PARTY_POST_TTL_MS = 5 * 6e4;
   var DUEL_MATCH_KEY = "miw-duel:match";
   var REFEREE_STATE_KEY = "server:referee";
   var DUEL_SEATS = ["a", "b", "c", "d"];

@@ -61,6 +61,16 @@ export const PEER_STALE_MS = 35_000;
 export const LOBBY_HEARTBEAT_MS = 20_000;
 export const LOBBY_DIM_AFTER_MS = 45_000;
 export const LOBBY_STALE_AFTER_MS = 90_000;
+/**
+ * How long a PARTY listing stands. A party post is written once and then
+ * abandoned: its host is off in the duel channel gathering players, and one
+ * player holds one multiplayer connection, so nobody is left in the lobby to
+ * heartbeat it. Freshness therefore counts from when it was written rather
+ * than from a beat that will never come. Long enough to fill a party at a
+ * civilised pace, short enough that a listing nobody took up expires while
+ * the host is still plausibly waiting.
+ */
+export const PARTY_POST_TTL_MS = 5 * 60_000;
 
 export const DUEL_SETUP_KEY = "miw-duel:setup";
 export const DUEL_MATCH_KEY = "miw-duel:match";
@@ -282,6 +292,14 @@ export interface LobbyPost {
   courseTitle: string | null;
   createdAt: number;
   heartbeatAt: number;
+  /**
+   * A party's invite code, or null for the older one-to-one posts that ask
+   * the poster for a duel and wait to be answered. Its presence is what makes
+   * a listing a party: anyone may walk up to the duel and knock, and the host
+   * decides. The code alone does not admit them - it only gets them to the
+   * door - so publishing it costs nothing that approval does not cover.
+   */
+  code: string | null;
 }
 
 export type DuelWireMessage =
@@ -292,7 +310,12 @@ export type DuelWireMessage =
   | { k: "react"; v: typeof DUEL_PROTOCOL; emoji: string }
   | { k: "duel-claim"; v: typeof DUEL_PROTOCOL; to: string; name?: string }
   | { k: "duel-accept"; v: typeof DUEL_PROTOCOL; to: string; code: string }
-  | { k: "duel-deny"; v: typeof DUEL_PROTOCOL; to: string; reason: "taken" | "closed" };
+  | { k: "duel-deny"; v: typeof DUEL_PROTOCOL; to: string; reason: "taken" | "closed" }
+  // Knocking at a party: sent in the DUEL channel by someone who has arrived
+  // but taken no seat, and answered by the host alone.
+  | { k: "knock"; v: typeof DUEL_PROTOCOL; name: string; avatarCode: string | null }
+  | { k: "admit"; v: typeof DUEL_PROTOCOL; to: string }
+  | { k: "refuse"; v: typeof DUEL_PROTOCOL; to: string; reason: "full" | "no" };
 
 const REACTIONS = ["😂", "😱", "🔥", "💀", "👏", "😈"] as const;
 export const REACTION_EMOJI: readonly string[] = REACTIONS;
@@ -355,6 +378,24 @@ export function parseDuelMessage(value: unknown): DuelWireMessage | null {
     case "duel-accept":
       return shortText(message.to, 80) && normalizeDuelCode((message.code as string) ?? "") !== null
         ? { k: "duel-accept", v: DUEL_PROTOCOL, to: message.to as string, code: normalizeDuelCode(message.code as string)! }
+        : null;
+    case "knock":
+      return shortText(message.name, 40) && (message.name as string).trim()
+        ? {
+            k: "knock", v: DUEL_PROTOCOL, name: (message.name as string).trim(),
+            avatarCode: shortText(message.avatarCode, 64) ? (message.avatarCode as string) : null,
+          }
+        : null;
+    case "admit":
+      return shortText(message.to, 80) && (message.to as string).length > 0
+        ? { k: "admit", v: DUEL_PROTOCOL, to: message.to as string }
+        : null;
+    case "refuse":
+      return shortText(message.to, 80) && ["full", "no"].includes(message.reason as string)
+        ? {
+            k: "refuse", v: DUEL_PROTOCOL, to: message.to as string,
+            reason: message.reason as "full" | "no",
+          }
         : null;
     case "duel-deny":
       return shortText(message.to, 80) && ["taken", "closed"].includes(message.reason as string)
@@ -839,12 +880,40 @@ export function parseLobbyPost(value: unknown): LobbyPost | null {
   const courseTitle = post.courseTitle ?? null;
   if (courseTitle !== null && !shortText(courseTitle, 80)) return null;
   if (!finiteNumber(post.createdAt) || !finiteNumber(post.heartbeatAt)) return null;
-  return { ...(post as unknown as LobbyPost), courseTitle: courseTitle as string | null };
+  // Absent on posts written before parties existed, and refused outright if
+  // present but malformed - a listing whose code cannot be dialled would send
+  // everyone who clicked it to a channel that does not exist.
+  const code = post.code === undefined || post.code === null ? null : normalizeDuelCode(String(post.code));
+  if (post.code !== undefined && post.code !== null && code === null) return null;
+  return {
+    ...(post as unknown as LobbyPost),
+    courseTitle: courseTitle as string | null,
+    code,
+  };
 }
 
 export type LobbyFreshness = "fresh" | "dim" | "stale";
 
+/**
+ * Whether a listing is old enough that its key should be cleared, not merely
+ * hidden. Twice the window it is judged by, so the two kinds of post age out
+ * on their own clocks: a party stands on its age, an open challenge on its
+ * last heartbeat. Sharing one threshold would bury live parties, which stop
+ * beating the moment their host leaves to gather players.
+ */
+export function lobbyPostAbandoned(post: LobbyPost, now: number): boolean {
+  return post.code !== null
+    ? now - post.createdAt > PARTY_POST_TTL_MS * 2
+    : now - post.heartbeatAt > LOBBY_STALE_AFTER_MS * 2;
+}
+
 export function lobbyFreshness(post: LobbyPost, now: number): LobbyFreshness {
+  // A party is judged on its age, never on a heartbeat: nobody remains in the
+  // lobby to send one once the host has gone to gather players.
+  if (post.code !== null) {
+    const standing = now - post.createdAt;
+    return standing > PARTY_POST_TTL_MS ? "stale" : "fresh";
+  }
   const age = now - post.heartbeatAt;
   if (age > LOBBY_STALE_AFTER_MS) return "stale";
   if (age > LOBBY_DIM_AFTER_MS) return "dim";

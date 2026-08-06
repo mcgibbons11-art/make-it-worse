@@ -191,7 +191,7 @@ function mountPlayer(session: ReturnType<typeof makeSession>, id: string, name: 
 /** Host a duel and return its invite code. */
 async function hostDuel(player: ReturnType<typeof mountPlayer>) {
   act(() => player.result.current.open());
-  act(() => player.result.current.hostPrivate());
+  act(() => player.result.current.hostParty());
   await waitFor(() => expect(player.result.current.stage.kind).toBe("waiting"));
   const stage = player.result.current.stage;
   if (stage.kind !== "waiting") throw new Error("host never reached the gathering lobby");
@@ -347,6 +347,53 @@ describe("four players taking seats in one session", () => {
     await joinDuel(guest, second);
     expect(guest.result.current.mySeat).toBe("b");
     expect(session.state[REFEREE_STATE_KEY]).toBe(abandoned);
+    await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
+    expect(host.result.current.canStartMatch).toBe(true);
+  }, 30_000);
+
+  it("lets the host answer the door, and only then does a knocker sit down", async () => {
+    // The party flow end to end. A knocker arrives in the duel channel with
+    // no seat and no say: it announces itself and waits. Nothing about the
+    // match record changes until the host says so, which is the whole point
+    // of approval - the code gets you to the door, not through it.
+    const session = makeSession();
+    session.attachReferee();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    const code = await hostDuel(host);
+
+    // Cyd finds the party the way a player does: in the lobby listing that
+    // hosting left standing, with no code typed in anywhere.
+    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
+    act(() => cyd.result.current.open());
+    act(() => cyd.result.current.enterLobby());
+    await waitFor(() => expect(cyd.result.current.posts).toHaveLength(1));
+    const listing = cyd.result.current.posts[0]!;
+    expect(listing.code).toBe(code);
+    act(() => cyd.result.current.claimPost(listing.connId));
+    await waitFor(() => expect(cyd.result.current.stage.kind).toBe("knocking"));
+    // The host hears the knock; the record is untouched and Cyd has no seat.
+    await waitFor(() => expect(host.result.current.knockFrom?.name).toBe("Cyd"));
+    expect(cyd.result.current.mySeat).toBeNull();
+    expect(host.result.current.roster).toHaveLength(1);
+
+    // Turned away: no seat, and the door card clears.
+    act(() => host.result.current.refuseKnock());
+    await waitFor(() => expect(cyd.result.current.stage.kind).toBe("error"));
+    expect(host.result.current.knockFrom).toBeNull();
+    expect(host.result.current.roster).toHaveLength(1);
+    cyd.unmount();
+    session.drop("conn-charlie");
+
+    // Let in: the seat comes only after the host says yes.
+    const dez = mountPlayer(session, "conn-delta", "Dez");
+    act(() => dez.result.current.open());
+    act(() => dez.result.current.enterLobby());
+    await waitFor(() => expect(dez.result.current.posts).toHaveLength(1));
+    act(() => dez.result.current.claimPost(dez.result.current.posts[0]!.connId));
+    await waitFor(() => expect(host.result.current.knockFrom?.name).toBe("Dez"));
+    expect(dez.result.current.mySeat).toBeNull();
+    act(() => host.result.current.admitKnock());
+    await waitFor(() => expect(dez.result.current.mySeat).toBe("b"), { timeout: 5_000 });
     await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
     expect(host.result.current.canStartMatch).toBe(true);
   }, 30_000);

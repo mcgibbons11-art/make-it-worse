@@ -61,6 +61,7 @@ import {
   duelToken,
   type DuelChannelConnection,
   type DuelLobbyConnection,
+  type DuelLobbyHandlers,
 } from "./duel-session";
 import {
   listRememberedPublishedMaps,
@@ -74,6 +75,12 @@ const CHAT_LIMIT = 60;
 const FEED_LIMIT = 24;
 /** How long a lobby claim waits for the poster before it lapses, both sides. */
 const CLAIM_TIMEOUT_MS = 5 * 60_000;
+/**
+ * How long a knock stands before the knocker gives up. A host busy running a
+ * course may not look at the door immediately, so this is patient; what it
+ * rules out is waiting on somebody who is never going to answer.
+ */
+const KNOCK_TIMEOUT_MS = 45_000;
 /**
  * How long a seatless client waits for the referee to assign it a seat before
  * seating itself. A referee that has gone quiet - dropped for its CPU budget,
@@ -89,6 +96,8 @@ export type DuelStage =
   | { kind: "lobby"; posted: boolean }
   | { kind: "connecting" }
   | { kind: "waiting"; code: string }
+  /** Arrived at a party but not seated: waiting for the host to answer. */
+  | { kind: "knocking"; code: string }
   | { kind: "match"; code: string }
   | { kind: "error"; message: string };
 
@@ -174,7 +183,8 @@ export interface DuelApi {
 
   open(): void;
   close(): void;
-  hostPrivate(): void;
+  /** Open a party: listed in the lobby, and the host admits each arrival. */
+  hostParty(): void;
   joinWithCode(raw: string): void;
   rejoin(): void;
   enterLobby(): void;
@@ -182,6 +192,10 @@ export interface DuelApi {
   postToLobby(note: string): void;
   unpost(): void;
   claimPost(connId: string): void;
+  /** Someone at the door of the party we host, or null. */
+  knockFrom: { connId: string; name: string } | null;
+  admitKnock(): void;
+  refuseKnock(): void;
   cancelClaim(): void;
   acceptClaim(): void;
   denyClaim(): void;
@@ -259,6 +273,10 @@ export function useDuel(input: {
   const [chat, setChat] = useState<DuelChatEntry[]>([]);
   const [feed, setFeed] = useState<DuelFeedEntry[]>([]);
   const [peerConnected, setPeerConnected] = useState(false);
+  /** Somebody standing at the door of the party we are hosting. */
+  const [knockFrom, setKnockFrom] = useState<{ connId: string; name: string } | null>(null);
+  /** Set while WE are the one knocking and waiting to be let in. */
+  const knockingRef = useRef(false);
   /**
    * The session's referee lobby, or null when no server script is present.
    * When it exists the clients defer their SEATING to it - one writer cannot
@@ -444,7 +462,7 @@ export function useDuel(input: {
    * B), and rejoining (refreshes the connection behind a known token).
    */
   const enterChannel = useCallback(
-    async (code: string, role: "host" | "join") => {
+    async (code: string, role: "host" | "join" | "knock") => {
       setStage({ kind: "connecting" });
       activeCodeRef.current = code;
       await dropLobby();
@@ -453,9 +471,13 @@ export function useDuel(input: {
         onMatch: (record) => {
           matchRef.current = record;
           setMatch(record);
-          if (record.started && !record.result) setStage({ kind: "match", code });
+          // Only a seated player follows the record into the match. Somebody
+          // still knocking holds no seat, and a party starting without them
+          // is a door closing, not an invitation.
+          if (record.started && !record.result && seatOf(record, token))
+            setStage({ kind: "match", code });
         },
-        onMessage: (message) => {
+        onMessage: (message, fromId) => {
           peerSignalAt.current = Date.now();
           switch (message.k) {
             case "pos":
@@ -489,6 +511,40 @@ export function useDuel(input: {
             case "react":
               pushFeed(message.emoji);
               break;
+            case "knock": {
+              // Only the host answers the door, and only while there is a
+              // seat to offer. Everyone else in the channel ignores it.
+              const record = matchRef.current;
+              if (!record || seatOf(record, token) !== "a") break;
+              if (record.started || seatedSeats(record).length >= MAX_DUEL_PLAYERS) {
+                channel.current?.send({ k: "refuse", v: DUEL_PROTOCOL, to: fromId, reason: "full" });
+                break;
+              }
+              setKnockFrom({ connId: fromId, name: message.name });
+              break;
+            }
+            case "admit":
+              // Our knock was answered. Taking the seat is the normal path
+              // from here: the effect below claims one as any joiner would.
+              if (!knockingRef.current || message.to !== channel.current?.selfConnId) break;
+              knockingRef.current = false;
+              pushFeed("You were let in.");
+              setStage((current) =>
+                current.kind === "knocking" ? { kind: "waiting", code: current.code } : current,
+              );
+              break;
+            case "refuse": {
+              if (!knockingRef.current || message.to !== channel.current?.selfConnId) break;
+              knockingRef.current = false;
+              const why =
+                message.reason === "full"
+                  ? "That party filled up before you got in."
+                  : "The host did not let you in.";
+              activeCodeWrite(null);
+              void dropChannel();
+              setStage({ kind: "error", message: why });
+              break;
+            }
             default:
               break;
           }
@@ -534,6 +590,20 @@ export function useDuel(input: {
       if (result.peers.length > 0) peerSignalAt.current = Date.now();
       activeCodeWrite(code);
       const player = me(result.connection.selfConnId);
+      // A knocker has arrived but taken nothing. It announces itself to the
+      // host and waits: no seat claim, no referee claim, no record write.
+      // Everything below this line is for people who are actually joining.
+      if (role === "knock") {
+        knockingRef.current = true;
+        setStage({ kind: "knocking", code });
+        result.connection.send({
+          k: "knock",
+          v: DUEL_PROTOCOL,
+          name: player.name,
+          avatarCode: player.avatarCode,
+        });
+        return;
+      }
       // Introduce ourselves to the referee, if one is listening. It answers by
       // publishing a lobby that names our seat. Nothing waits on that answer:
       // a session without a server script never sends one, and this message
@@ -680,6 +750,18 @@ export function useDuel(input: {
     );
     return () => globalThis.clearTimeout(timer);
   }, [match, me, publish, refereeLive, refereeLobby, seatAttempt, stage, token]);
+
+  // Nobody waits at a door forever.
+  useEffect(() => {
+    if (stage.kind !== "knocking") return;
+    const timer = globalThis.setTimeout(() => {
+      knockingRef.current = false;
+      activeCodeWrite(null);
+      void dropChannel();
+      setStage({ kind: "error", message: "Nobody answered. The host may have stepped away." });
+    }, KNOCK_TIMEOUT_MS);
+    return () => globalThis.clearTimeout(timer);
+  }, [dropChannel, stage.kind]);
 
   // A referee that does not list us has forgotten the session: a replacement
   // server starts with no memory of who was sitting where. Tell it the seat
@@ -843,6 +925,79 @@ export function useDuel(input: {
     channel.current?.send(message);
   }, []);
 
+  /** The lobby's callbacks, shared by browsing it and by posting a party. */
+  const lobbyHandlers = useCallback(
+    (): DuelLobbyHandlers => ({
+      onPosts: (list) => {
+        const now = Date.now();
+        setPosts(list.map((post) => ({ ...post, dim: lobbyFreshness(post, now) === "dim" })));
+      },
+      onClaim: (fromConnId, name) => {
+        // The host gets the same window the claimant watches: an ignored
+        // request card clears itself rather than going stale forever.
+        if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
+        setClaimFrom({ connId: fromConnId, name: name ?? "A challenger" });
+        hostClaimLapseTimer.current = globalThis.setTimeout(() => {
+          hostClaimLapseTimer.current = null;
+          setClaimFrom(null);
+        }, CLAIM_TIMEOUT_MS);
+      },
+      onAccept: (code) => {
+        // Only honour an accept for a request that still stands - a
+        // cancelled or lapsed claim must not yank the player into a match.
+        if (!pendingClaimRef.current) return;
+        clearPendingClaim();
+        void enterChannel(code, "join");
+      },
+      onDeny: (deny) => {
+        clearPendingClaim();
+        setStage({
+          kind: "error",
+          message: deny === "taken" ? "Someone else got there first." : "That post just closed.",
+        });
+      },
+      onStatus: () => undefined,
+    }),
+    [clearPendingClaim, enterChannel],
+  );
+
+  /**
+   * Host a party: write the listing, then go and gather. The order matters
+   * and the detour is unavoidable - one player holds ONE multiplayer
+   * connection, so the listing has to be written while we are still in the
+   * lobby channel and left standing when we leave for the duel. A lobby that
+   * refuses to take the listing is not a reason to refuse the duel; the code
+   * still works, so hosting continues unadvertised.
+   */
+  const hostParty = useCallback(async () => {
+    const code = mintDuelCode();
+    setStage({ kind: "connecting" });
+    try {
+      const existing = lobby.current;
+      const lobbyConnection =
+        existing ??
+        (await (async () => {
+          const result = await connectDuelLobby(lobbyHandlers());
+          return result.status === "ok" ? result.connection : null;
+        })());
+      if (lobbyConnection) {
+        lobbyConnection.post({
+          name: playerName.trim().slice(0, 40) || "Runner",
+          avatarCode: avatar ? avatarToCode(avatar) : null,
+          note: "",
+          courseTitle: chosenBaseRef.current?.title ?? null,
+          code,
+        });
+        lobby.current = null;
+        setPosts([]);
+        await lobbyConnection.leavePosted().catch(() => undefined);
+      }
+    } catch {
+      // Unadvertised is a worse party, not a broken one.
+    }
+    await enterChannel(code, "host");
+  }, [avatar, enterChannel, lobbyHandlers, playerName]);
+
   const teardown = useCallback(async () => {
     await dropChannel();
     await dropLobby();
@@ -934,9 +1089,9 @@ export function useDuel(input: {
       activeCodeWrite(null);
       setStage({ kind: "closed" });
     },
-    hostPrivate: () => {
+    hostParty: () => {
       armChosenCourse();
-      void enterChannel(mintDuelCode(), "host");
+      void hostParty();
     },
     joinWithCode: (raw) => {
       const code = normalizeDuelCode(raw);
@@ -954,37 +1109,7 @@ export function useDuel(input: {
       setStage({ kind: "joining" });
       void (async () => {
         await acquireNet?.().catch(() => undefined);
-        const result = await connectDuelLobby({
-          onPosts: (list) => {
-            const now = Date.now();
-            setPosts(list.map((post) => ({ ...post, dim: lobbyFreshness(post, now) === "dim" })));
-          },
-          onClaim: (fromConnId, name) => {
-            // The host gets the same window the claimant watches: an ignored
-            // request card clears itself rather than going stale forever.
-            if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
-            setClaimFrom({ connId: fromConnId, name: name ?? "A challenger" });
-            hostClaimLapseTimer.current = globalThis.setTimeout(() => {
-              hostClaimLapseTimer.current = null;
-              setClaimFrom(null);
-            }, CLAIM_TIMEOUT_MS);
-          },
-          onAccept: (code) => {
-            // Only honour an accept for a request that still stands - a
-            // cancelled or lapsed claim must not yank the player into a match.
-            if (!pendingClaimRef.current) return;
-            clearPendingClaim();
-            void enterChannel(code, "join");
-          },
-          onDeny: (deny) => {
-            clearPendingClaim();
-            setStage({
-              kind: "error",
-              message: deny === "taken" ? "Someone else got there first." : "That post just closed.",
-            });
-          },
-          onStatus: () => undefined,
-        });
+        const result = await connectDuelLobby(lobbyHandlers());
         if (result.status !== "ok") {
           setStage({
             kind: "error",
@@ -1022,6 +1147,13 @@ export function useDuel(input: {
     claimPost: (connId) => {
       const connection = lobby.current;
       if (!connection) return;
+      // A party is not asked for, it is walked up to: the listing carries the
+      // code, which gets you as far as the door and no further.
+      const party = posts.find((post) => post.connId === connId && post.code !== null);
+      if (party?.code) {
+        void enterChannel(party.code, "knock");
+        return;
+      }
       connection.claim(connId, playerName);
       clearPendingClaim();
       setLobbyNotice(null);
@@ -1083,6 +1215,27 @@ export function useDuel(input: {
           ? "Round claimed on the clock. Match over."
           : "Round claimed on the clock.",
       );
+    },
+    knockFrom,
+    admitKnock: () => {
+      const waiting = knockFrom;
+      const record = matchRef.current;
+      if (!waiting || !record) return;
+      setKnockFrom(null);
+      // Full is refused rather than admitted: the seat may have gone while
+      // the card sat on screen.
+      if (record.started || seatedSeats(record).length >= MAX_DUEL_PLAYERS) {
+        sendWire({ k: "refuse", v: DUEL_PROTOCOL, to: waiting.connId, reason: "full" });
+        return;
+      }
+      sendWire({ k: "admit", v: DUEL_PROTOCOL, to: waiting.connId });
+      pushFeed(`${waiting.name} was let in.`);
+    },
+    refuseKnock: () => {
+      const waiting = knockFrom;
+      if (!waiting) return;
+      setKnockFrom(null);
+      sendWire({ k: "refuse", v: DUEL_PROTOCOL, to: waiting.connId, reason: "no" });
     },
     concedeMatch: () => {
       const current = matchRef.current;

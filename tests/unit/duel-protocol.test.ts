@@ -22,7 +22,11 @@ import {
   refereeSeatOf,
   vacateSeat,
   lobbyFreshness,
+  lobbyPostAbandoned,
   lobbyPostKey,
+  LOBBY_DIM_AFTER_MS,
+  LOBBY_STALE_AFTER_MS,
+  PARTY_POST_TTL_MS,
   mayClaimForfeit,
   mintDuelCode,
   normalizeDuelCode,
@@ -195,6 +199,59 @@ describe("forfeits, concession, rematch", () => {
     // A lineup that already agreed to play does not re-gather in the lobby.
     expect(next.started).toBe(true);
     expect(next.seq).toBeGreaterThan(match.seq);
+  });
+});
+
+describe("party listings", () => {
+  const listing = (extra: Record<string, unknown> = {}) => ({
+    v: DUEL_PROTOCOL, connId: "conn-a", name: "Ava", avatarCode: null,
+    note: "", courseTitle: null, createdAt: NOW, heartbeatAt: NOW, ...extra,
+  });
+
+  it("carries a code, normalizes it, and refuses one it could not dial", () => {
+    expect(parseLobbyPost(listing({ code: "miw-4f7k" }))!.code).toBe("4F7K");
+    // Absent on every post written before parties existed.
+    expect(parseLobbyPost(listing())!.code).toBeNull();
+    // Present but unusable is worse than absent: it would send everyone who
+    // clicked it to a channel that does not exist.
+    expect(parseLobbyPost(listing({ code: "nope" }))).toBeNull();
+  });
+
+  it("judges a party on its age and a challenge on its heartbeat", () => {
+    // A party host is off gathering players and holds the only connection
+    // they have, so no beat is ever coming; the listing stands on its age.
+    const party = parseLobbyPost(listing({ code: "4F7K" }))!;
+    expect(lobbyFreshness(party, NOW + PARTY_POST_TTL_MS - 1)).toBe("fresh");
+    expect(lobbyFreshness(party, NOW + PARTY_POST_TTL_MS + 1)).toBe("stale");
+    // A standing party is never "dim": dimming reports a missed heartbeat,
+    // and there is no heartbeat here to miss.
+    expect(lobbyFreshness(party, NOW + LOBBY_DIM_AFTER_MS + 1)).toBe("fresh");
+
+    const challenge = parseLobbyPost(listing())!;
+    expect(lobbyFreshness(challenge, NOW + LOBBY_DIM_AFTER_MS + 1)).toBe("dim");
+    expect(lobbyFreshness(challenge, NOW + LOBBY_STALE_AFTER_MS + 1)).toBe("stale");
+  });
+
+  it("collects the two kinds of corpse on their own clocks", () => {
+    const party = parseLobbyPost(listing({ code: "4F7K" }))!;
+    const challenge = parseLobbyPost(listing())!;
+    // The threshold that buries a silent challenge would bury a live party.
+    const dead = NOW + LOBBY_STALE_AFTER_MS * 2 + 1;
+    expect(lobbyPostAbandoned(challenge, dead)).toBe(true);
+    expect(lobbyPostAbandoned(party, dead)).toBe(false);
+    expect(lobbyPostAbandoned(party, NOW + PARTY_POST_TTL_MS * 2 + 1)).toBe(true);
+  });
+
+  it("validates the knock and the two answers to it", () => {
+    expect(parseDuelMessage({ k: "knock", v: DUEL_PROTOCOL, name: "Cyd", avatarCode: null }))
+      .toEqual({ k: "knock", v: DUEL_PROTOCOL, name: "Cyd", avatarCode: null });
+    expect(parseDuelMessage({ k: "knock", v: DUEL_PROTOCOL, name: "  ", avatarCode: null })).toBeNull();
+    expect(parseDuelMessage({ k: "admit", v: DUEL_PROTOCOL, to: "conn-c" }))
+      .toEqual({ k: "admit", v: DUEL_PROTOCOL, to: "conn-c" });
+    expect(parseDuelMessage({ k: "admit", v: DUEL_PROTOCOL, to: "" })).toBeNull();
+    expect(parseDuelMessage({ k: "refuse", v: DUEL_PROTOCOL, to: "conn-c", reason: "full" }))
+      .toEqual({ k: "refuse", v: DUEL_PROTOCOL, to: "conn-c", reason: "full" });
+    expect(parseDuelMessage({ k: "refuse", v: DUEL_PROTOCOL, to: "conn-c", reason: "why" })).toBeNull();
   });
 });
 

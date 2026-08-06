@@ -22,10 +22,10 @@ import {
   DUEL_WIRE_MAX_BYTES,
   LOBBY_HEARTBEAT_MS,
   LOBBY_POST_PREFIX,
-  LOBBY_STALE_AFTER_MS,
   duelChannel,
   duelWireBytes,
   lobbyFreshness,
+  lobbyPostAbandoned,
   lobbyPostKey,
   parseDuelMatch,
   parseDuelMessage,
@@ -139,8 +139,12 @@ export interface DuelLobbyConnection {
     avatarCode: string | null;
     note: string;
     courseTitle?: string | null;
+    /** Set to advertise a party others may knock at; null asks for a duel. */
+    code?: string | null;
   }): void;
   unpost(): void;
+  /** Leave the channel but leave the listing standing, as a party host does. */
+  leavePosted(): Promise<void>;
   claim(toConnId: string, name: string): void;
   accept(toConnId: string, code: string): void;
   deny(toConnId: string, denyReason: "taken" | "closed"): void;
@@ -193,7 +197,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
       // idempotent, and at twice the stale window no live poster is at risk.
       const now = Date.now();
       for (const [key, post] of posts) {
-        if (now - post.heartbeatAt <= LOBBY_STALE_AFTER_MS * 2) continue;
+        if (!lobbyPostAbandoned(post, now)) continue;
         posts.delete(key);
         try {
           host.net.setState(key, null);
@@ -242,7 +246,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
     const connection: DuelLobbyConnection = {
       selfConnId,
       selfName: joined.self.displayName,
-      post({ name, avatarCode, note, courseTitle }) {
+      post({ name, avatarCode, note, courseTitle, code = null }) {
         clearPost();
         const now = Date.now();
         myPost = {
@@ -254,8 +258,12 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
           courseTitle: courseTitle?.slice(0, 80) ?? null,
           createdAt: now,
           heartbeatAt: now,
+          code,
         };
         host.net.setState(lobbyPostKey(selfConnId), myPost);
+        // A party listing is written once and left standing: its author is
+        // about to leave for the duel channel, so no beat is coming.
+        if (code !== null) return;
         heartbeat = globalThis.setInterval(() => {
           if (!myPost) return;
           myPost = { ...myPost, heartbeatAt: Date.now() };
@@ -267,6 +275,19 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         }, LOBBY_HEARTBEAT_MS);
       },
       unpost: clearPost,
+      async leavePosted() {
+        // Leave the channel with the listing still up, which is how a party
+        // host advertises: post, go, gather. Nothing clears it here, so it
+        // expires on its own age.
+        if (heartbeat !== null) globalThis.clearInterval(heartbeat);
+        heartbeat = null;
+        myPost = null;
+        globalThis.clearInterval(poll);
+        host.net.off("message", messageHandler);
+        host.net.off("state", stateHandler);
+        host.net.off("status", statusHandler);
+        await host.net.leave();
+      },
       claim(toConnId, name) {
         const message: DuelWireMessage = {
           k: "duel-claim",

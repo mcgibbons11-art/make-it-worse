@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DUEL_LOBBY_CHANNEL,
   DUEL_MATCH_KEY,
+  LOBBY_HEARTBEAT_MS,
   DUEL_PROTOCOL,
   DUEL_STATE_POLL_MS,
   createMatch,
@@ -179,6 +180,30 @@ describe("duel lobby", () => {
     expect(result.status).toBe("ok");
     expect(host.sharedState[lobbyPostKey("ghost")]).toBeNull();
     if (result.status === "ok") await result.connection.close();
+  });
+
+  it("leaves a party listing standing when its host goes to gather players", async () => {
+    // The whole reason a party listing exists: one player holds ONE
+    // connection, so the host must write the listing, leave the lobby, and
+    // let it stand while they gather in the duel channel.
+    vi.useFakeTimers();
+    vi.setSystemTime(100_000);
+    const host = installSdk();
+    const result = await connectDuelLobby(lobbyHandlers());
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+
+    result.connection.post({ name: "Ava", avatarCode: null, note: "", code: "4F7K" });
+    expect(host.sharedState[lobbyPostKey("self")]).toMatchObject({ code: "4F7K" });
+    // No heartbeat is scheduled - there will be nobody here to send one.
+    const written = host.net.setState.mock.calls.length;
+    vi.advanceTimersByTime(LOBBY_HEARTBEAT_MS * 3);
+    expect(host.net.setState.mock.calls.length).toBe(written);
+
+    await result.connection.leavePosted();
+    expect(host.net.leave).toHaveBeenCalled();
+    // Still standing: close() would have cleared it, which is the difference.
+    expect(host.sharedState[lobbyPostKey("self")]).toMatchObject({ code: "4F7K" });
   });
 
   it("surfaces live posts from the join snapshot, hiding its own and stale ones", async () => {

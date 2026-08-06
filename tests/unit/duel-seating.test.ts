@@ -394,6 +394,14 @@ describe("four players taking seats in one session", () => {
     expect(dez.result.current.mySeat).toBeNull();
     act(() => host.result.current.admitKnock());
     await waitFor(() => expect(dez.result.current.mySeat).toBe("b"), { timeout: 5_000 });
+    // The referee knows the admitted player and agrees about where they sit.
+    // A knocker introduces itself only once the host has said yes, so before
+    // that moment the referee must not have been holding a seat for them.
+    await waitFor(() => {
+      const lobby = session.state[REFEREE_STATE_KEY] as RefereeLobby;
+      const seated = lobby.seats.find((seat) => seat.token === "conn-delta");
+      expect(seated?.seat).toBe(dez.result.current.mySeat);
+    });
     await waitFor(() => expect(host.result.current.roster).toHaveLength(2));
     expect(host.result.current.canStartMatch).toBe(true);
   }, 30_000);

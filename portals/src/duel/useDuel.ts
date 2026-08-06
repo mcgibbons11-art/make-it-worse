@@ -529,6 +529,23 @@ export function useDuel(input: {
               if (!knockingRef.current || message.to !== channel.current?.selfConnId) break;
               knockingRef.current = false;
               pushFeed("You were let in.");
+              // Only NOW do we introduce ourselves to the referee: a knocker
+              // holds no seat and must not be assigned one before the host
+              // agrees. Without this an admitted player seats itself with no
+              // assignment, which is the very race a referee exists to end.
+              // The clock restarts here too, or the grace would already have
+              // expired while we stood at the door and we would not wait for
+              // the answer we just asked for.
+              channelJoinedAt.current = Date.now();
+              const admitted = me(channel.current?.selfConnId ?? "");
+              channel.current?.sendClaim({
+                k: "seat",
+                v: DUEL_PROTOCOL,
+                token,
+                name: admitted.name,
+                avatarCode: admitted.avatarCode,
+                seat: null,
+              });
               setStage((current) =>
                 current.kind === "knocking" ? { kind: "waiting", code: current.code } : current,
               );

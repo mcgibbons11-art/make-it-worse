@@ -147,7 +147,12 @@ export interface DuelApi {
   peerConnected: boolean;
   posts: DuelLobbyPostView[];
   /** The player currently claiming this poster's challenge, or null. */
-  claimFrom: { connId: string; name: string } | null;
+  /**
+   * Everyone waiting to be let in, oldest first. A party can be asked by
+   * several people at once, and a single slot silently dropped all but the
+   * last of them.
+   */
+  requests: { connId: string; name: string }[];
   /** The claim this player sent and is still waiting on. */
   pendingClaim: DuelPendingClaim | null;
   /** Whole seconds until the pending claim lapses, clamped at zero. */
@@ -194,8 +199,8 @@ export interface DuelApi {
   /** The party's invite code, for friends who would rather be sent one. */
   partyCode: string | null;
   cancelClaim(): void;
-  acceptClaim(): void;
-  denyClaim(): void;
+  acceptRequest(connId: string): void;
+  denyRequest(connId: string): void;
   sendChat(text: string): void;
   sendReaction(emoji: string): void;
   claimTimeout(): void;
@@ -261,7 +266,17 @@ export function useDuel(input: {
   const [stage, setStage] = useState<DuelStage>({ kind: "closed" });
   const [match, setMatch] = useState<DuelMatch | null>(null);
   const [posts, setPosts] = useState<DuelLobbyPostView[]>([]);
-  const [claimFrom, setClaimFrom] = useState<{ connId: string; name: string } | null>(null);
+  const [requests, setRequests] = useState<{ connId: string; name: string }[]>([]);
+  // Mirrored into a ref rather than read during render, so the callbacks that
+  // answer requests can see the current queue without re-subscribing.
+  const requestsRef = useRef<{ connId: string; name: string }[]>([]);
+  const updateRequests = useCallback(
+    (next: (current: { connId: string; name: string }[]) => { connId: string; name: string }[]) => {
+      requestsRef.current = next(requestsRef.current);
+      setRequests(requestsRef.current);
+    },
+    [],
+  );
   const [pendingClaim, setPendingClaim] = useState<DuelPendingClaim | null>(null);
   const [lobbyNotice, setLobbyNotice] = useState<string | null>(null);
   const pendingClaimRef = useRef<DuelPendingClaim | null>(null);
@@ -434,7 +449,8 @@ export function useDuel(input: {
   const clearHostClaim = useCallback(() => {
     if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
     hostClaimLapseTimer.current = null;
-    setClaimFrom(null);
+    requestsRef.current = [];
+    setRequests([]);
   }, []);
 
   const dropLobby = useCallback(async () => {
@@ -890,13 +906,17 @@ export function useDuel(input: {
         setPosts(list.map((post) => ({ ...post, dim: lobbyFreshness(post, now) === "dim" })));
       },
       onClaim: (fromConnId, name) => {
-        // The host gets the same window the claimant watches: an ignored
-        // request card clears itself rather than going stale forever.
-        if (hostClaimLapseTimer.current !== null) globalThis.clearTimeout(hostClaimLapseTimer.current);
-        setClaimFrom({ connId: fromConnId, name: name ?? "A challenger" });
-        hostClaimLapseTimer.current = globalThis.setTimeout(() => {
-          hostClaimLapseTimer.current = null;
-          setClaimFrom(null);
+        // Queue it. Two people asking at the same moment is ordinary, and the
+        // second must not quietly replace the first - they would sit waiting
+        // on an answer the host was never shown the chance to give.
+        updateRequests((current) =>
+          current.some((request) => request.connId === fromConnId)
+            ? current
+            : [...current, { connId: fromConnId, name: name ?? "A challenger" }],
+        );
+        // Each request still ages out, on the same window the asker watches.
+        globalThis.setTimeout(() => {
+          updateRequests((current) => current.filter((request) => request.connId !== fromConnId));
         }, CLAIM_TIMEOUT_MS);
       },
       onAccept: () => {
@@ -918,14 +938,20 @@ export function useDuel(input: {
       },
       onDeny: (deny) => {
         clearPendingClaim();
-        setStage({
-          kind: "error",
-          message: deny === "taken" ? "Someone else got there first." : "That post just closed.",
-        });
+        // Being turned away, or being in a party the host has just closed.
+        // Either way this is a lobby event, not a dead end: stay on the page
+        // and keep browsing.
+        setJoinedParty(null);
+        assignedSeatRef.current = null;
+        setLobbyNotice(
+          deny === "taken"
+            ? "Someone else got there first."
+            : "The host closed that party.",
+        );
       },
       onStatus: () => undefined,
     }),
-    [clearPendingClaim, enterChannel],
+    [clearPendingClaim, enterChannel, updateRequests],
   );
 
   /**
@@ -984,6 +1010,19 @@ export function useDuel(input: {
     });
   }, [avatar]);
 
+  /**
+   * Close the party and say so. Everyone let in is waiting on this host and
+   * nothing else - taking the listing down without telling them would leave
+   * them sitting on "waiting for Ava to start" for a host who has gone.
+   */
+  const disbandParty = useCallback(() => {
+    const connection = lobby.current;
+    if (connection)
+      for (const member of partyRef.current.slice(1)) connection.deny(member.connId, "closed");
+    connection?.unpost();
+    for (const request of requestsRef.current) connection?.deny(request.connId, "closed");
+  }, []);
+
   const clearParty = useCallback(() => {
     partyRef.current = [];
     partyCodeRef.current = null;
@@ -1039,7 +1078,7 @@ export function useDuel(input: {
     opponentAvatar,
     peerConnected,
     posts,
-    claimFrom,
+    requests,
     pendingClaim,
     claimSecondsLeft,
     lobbyNotice,
@@ -1121,6 +1160,9 @@ export function useDuel(input: {
       })();
     },
     leaveLobby: () => {
+      // Walking out of the lobby ends any party gathered in it.
+      disbandParty();
+      clearParty();
       void dropLobby();
       setStage({ kind: "menu" });
     },
@@ -1137,7 +1179,8 @@ export function useDuel(input: {
       setStage({ kind: "lobby", posted: true });
     },
     unpost: () => {
-      lobby.current?.unpost();
+      disbandParty();
+      clearParty();
       setStage({ kind: "lobby", posted: false });
     },
     claimPost: (connId) => {
@@ -1165,12 +1208,12 @@ export function useDuel(input: {
       clearPendingClaim();
       setLobbyNotice(null);
     },
-    acceptClaim: () => {
-      const target = claimFrom;
+    acceptRequest: (connId) => {
+      const target = requests.find((request) => request.connId === connId);
       const connection = lobby.current;
       const code = partyCodeRef.current;
       if (!target || !connection || !code) return;
-      clearHostClaim();
+      updateRequests((current) => current.filter((request) => request.connId !== connId));
       if (partyRef.current.length >= MAX_DUEL_PLAYERS) return;
       if (partyRef.current.some((member) => member.connId === target.connId)) return;
       // Letting somebody in moves NOBODY. They stay in the lobby with us,
@@ -1181,9 +1224,9 @@ export function useDuel(input: {
       connection.accept(target.connId, code);
       republishParty();
     },
-    denyClaim: () => {
-      if (claimFrom) lobby.current?.deny(claimFrom.connId, "taken");
-      clearHostClaim();
+    denyRequest: (connId) => {
+      lobby.current?.deny(connId, "taken");
+      updateRequests((current) => current.filter((request) => request.connId !== connId));
     },
     sendChat: (text) => {
       const trimmed = text.trim().slice(0, 300);

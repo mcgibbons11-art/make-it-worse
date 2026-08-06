@@ -231,9 +231,10 @@ async function askToJoin(
   act(() => guest.result.current.enterLobby());
   await waitFor(() => expect(guest.result.current.posts).toHaveLength(1));
   act(() => guest.result.current.claimPost(guest.result.current.posts[0]!.connId));
-  await waitFor(() => expect(host.result.current.claimFrom).not.toBeNull());
+  await waitFor(() => expect(host.result.current.requests.length).toBeGreaterThan(0));
   focus(host);
-  act(() => host.result.current.acceptClaim());
+  const asked = host.result.current.requests.at(-1)!.connId;
+  act(() => host.result.current.acceptRequest(asked));
   await waitFor(() => expect(guest.result.current.joinedParty).not.toBeNull());
 }
 
@@ -274,9 +275,9 @@ describe("four players taking seats in one session", () => {
     act(() => bo.result.current.claimPost(bo.result.current.posts[0]!.connId));
 
     // The host answers without going anywhere, and the listing grows.
-    await waitFor(() => expect(host.result.current.claimFrom?.name).toBe("Bo"));
+    await waitFor(() => expect(host.result.current.requests[0]?.name).toBe("Bo"));
     focus(host);
-    act(() => host.result.current.acceptClaim());
+    act(() => host.result.current.acceptRequest(host.result.current.requests[0]!.connId));
     await waitFor(() => expect(host.result.current.party).toHaveLength(2));
     // Bo is IN the party but has not been moved: still on the lobby page.
     await waitFor(() => expect(bo.result.current.joinedParty).toBe("Ava"));
@@ -367,6 +368,57 @@ describe("four players taking seats in one session", () => {
     expect(lobby().seats.map((seat) => seat.token)).toEqual(["conn-alpha", "conn-bravo"]);
     expect(host.result.current.mySeat).toBe("a");
     expect(bo.result.current.mySeat).toBe("b");
+  }, 30_000);
+
+  it("shows every request when two people ask at once", async () => {
+    // A single request slot silently dropped all but the last asker, who then
+    // sat waiting on an answer the host was never given the chance to make.
+    const session = makeSession();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    const cyd = mountPlayer(session, "conn-charlie", "Cyd");
+    for (const guest of [bo, cyd]) {
+      focus(guest);
+      act(() => guest.result.current.open());
+      act(() => guest.result.current.enterLobby());
+      await waitFor(() => expect(guest.result.current.posts).toHaveLength(1));
+    }
+    // Both ask before the host has answered either.
+    act(() => bo.result.current.claimPost(bo.result.current.posts[0]!.connId));
+    act(() => cyd.result.current.claimPost(cyd.result.current.posts[0]!.connId));
+    await waitFor(() => expect(host.result.current.requests).toHaveLength(2));
+    expect(host.result.current.requests.map((request) => request.name)).toEqual(["Bo", "Cyd"]);
+
+    // Answering one leaves the other still standing, still answerable.
+    focus(host);
+    act(() => host.result.current.acceptRequest(host.result.current.requests[0]!.connId));
+    await waitFor(() => expect(host.result.current.party).toHaveLength(2));
+    expect(host.result.current.requests.map((request) => request.name)).toEqual(["Cyd"]);
+    act(() => host.result.current.acceptRequest(host.result.current.requests[0]!.connId));
+    await waitFor(() => expect(host.result.current.party).toHaveLength(3));
+    expect(host.result.current.requests).toHaveLength(0);
+  }, 30_000);
+
+  it("turns everyone out when the host takes the party down", async () => {
+    // Taking the listing down used to tell nobody, leaving the people who had
+    // been let in waiting on a host who was no longer hosting anything.
+    const session = makeSession();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    await askToJoin(bo, host);
+    expect(bo.result.current.joinedParty).toBe("Ava");
+
+    focus(host);
+    act(() => host.result.current.unpost());
+    await waitFor(() => expect(bo.result.current.joinedParty).toBeNull());
+    // Back to browsing with an explanation, not stuck and not thrown out of
+    // the lobby altogether.
+    expect(bo.result.current.stage.kind).toBe("lobby");
+    expect(bo.result.current.lobbyNotice).toMatch(/closed that party/);
+    expect(host.result.current.party).toHaveLength(0);
+    await waitFor(() => expect(bo.result.current.posts).toHaveLength(0));
   }, 30_000);
 
   // A crashed server's stale lobby locking out later parties is NOT covered

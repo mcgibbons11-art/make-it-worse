@@ -298,21 +298,29 @@ export function DuelMatchmakingPanel({
                 ? `You are in ${duel.joinedParty}'s party.`
                 : "Start a party, or ask to join one."}
           </p>
-          {duel.claimFrom && (
-            <div className="duel-claim-card">
+          {/* Every request, not just the newest: several people can ask at
+              once, and each of them is owed an answer. */}
+          {duel.requests.map((request) => (
+            <div className="duel-claim-card" key={request.connId}>
               <p>
-                <strong>{duel.claimFrom.name}</strong> wants in.
+                <strong>{request.name}</strong> wants in.
               </p>
               <div className="portals-buttons">
-                <button className="button danger" onClick={duel.acceptClaim}>
-                  <MenuIcon name="duel" /> Accept
+                <button
+                  className="button danger"
+                  onClick={() => duel.acceptRequest(request.connId)}
+                >
+                  <MenuIcon name="duel" /> Let them in
                 </button>
-                <button className="button secondary" onClick={duel.denyClaim}>
+                <button
+                  className="button secondary"
+                  onClick={() => duel.denyRequest(request.connId)}
+                >
                   🙅 Not now
                 </button>
               </div>
             </div>
-          )}
+          ))}
           {duel.pendingClaim && (
             <div className="duel-claim-card" role="status">
               <p>

@@ -211,7 +211,9 @@ export function DuelMatchmakingPanel({
       {stage.kind === "waiting" && (
         <>
           <p className="portals-lede">
-            Send this code to everyone you want in. Up to {MAX_DUEL_PLAYERS} play at once.
+            {duel.party.length > 1
+              ? "Everyone from your party is here. Last look before the match."
+              : `Send this code to everyone you want in. Up to ${MAX_DUEL_PLAYERS} play at once.`}
           </p>
           <p className="duel-invite-code">{inviteLabel(stage.code)}</p>
           {duel.match && (
@@ -260,11 +262,15 @@ export function DuelMatchmakingPanel({
                 {duel.roster.length === 1 ? "player" : "players"}
               </button>
               <p className="portals-notice" role="status">
-                {duel.canStartMatch
-                  ? duel.openSeats > 0
-                    ? `Keep waiting to fill ${duel.openSeats} more, or start now.`
-                    : "Lobby full. Start when you are ready."
-                  : "Waiting for at least one more player…"}
+                {!duel.canStartMatch
+                  ? "Waiting for at least one more player…"
+                  : duel.party.length > 1
+                    ? duel.openSeats > 0
+                      ? "Start when you are ready, or share the code to fill the rest."
+                      : "Start when you are ready."
+                    : duel.openSeats > 0
+                      ? `Keep waiting to fill ${duel.openSeats} more, or start now.`
+                      : "Lobby full. Start when you are ready."}
               </p>
             </>
           ) : (

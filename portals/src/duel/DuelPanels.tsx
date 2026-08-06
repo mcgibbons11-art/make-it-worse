@@ -386,8 +386,8 @@ export function DuelMatchmakingPanel({
           )}
           {duel.joinedParty && (
             <p className="portals-notice" role="status">
-              Waiting for {duel.joinedParty} to start. You will be taken in
-              automatically.
+              Waiting for {duel.joinedParty.name} to start. You will be taken
+              in automatically.
             </p>
           )}
           <div className="duel-posts">

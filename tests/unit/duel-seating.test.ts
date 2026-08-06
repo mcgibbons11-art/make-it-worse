@@ -280,7 +280,7 @@ describe("four players taking seats in one session", () => {
     act(() => host.result.current.acceptRequest(host.result.current.requests[0]!.connId));
     await waitFor(() => expect(host.result.current.party).toHaveLength(2));
     // Bo is IN the party but has not been moved: still on the lobby page.
-    await waitFor(() => expect(bo.result.current.joinedParty).toBe("Ava"));
+    await waitFor(() => expect(bo.result.current.joinedParty?.name).toBe("Ava"));
     expect(bo.result.current.stage.kind).toBe("lobby");
     expect(bo.result.current.mySeat).toBeNull();
     await waitFor(() => expect(bo.result.current.posts[0]!.members).toEqual(["Ava", "Bo"]));
@@ -400,6 +400,44 @@ describe("four players taking seats in one session", () => {
     expect(host.result.current.requests).toHaveLength(0);
   }, 30_000);
 
+  it("ends the party when the host's tab dies, rather than leaving it waiting", async () => {
+    // A closed tab disbands nothing on its way out, so the members would sit
+    // on "waiting for Ava to start" for a host that is never coming back. The
+    // dropped connection is the only announcement anybody gets.
+    const session = makeSession();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    await askToJoin(bo, host);
+    expect(bo.result.current.joinedParty?.name).toBe("Ava");
+
+    host.unmount();
+    session.drop("conn-alpha");
+
+    await waitFor(() => expect(bo.result.current.joinedParty).toBeNull());
+    expect(bo.result.current.lobbyNotice).toMatch(/host left/i);
+    expect(bo.result.current.stage.kind).toBe("lobby");
+  }, 30_000);
+
+  it("drops a member whose tab dies, so no seat is handed to nobody", async () => {
+    const session = makeSession();
+    const host = mountPlayer(session, "conn-alpha", "Ava");
+    await hostDuel(host);
+    const bo = mountPlayer(session, "conn-bravo", "Bo");
+    await askToJoin(bo, host);
+    expect(host.result.current.party).toHaveLength(2);
+
+    bo.unmount();
+    session.drop("conn-bravo");
+
+    await waitFor(() => expect(host.result.current.party).toHaveLength(1));
+    // And the listing says so, so nobody joins a party of ghosts.
+    const listing = Object.values(session.state).find(
+      (value) => (value as { members?: string[] })?.members,
+    ) as { members: string[] };
+    expect(listing.members).toEqual(["Ava"]);
+  }, 30_000);
+
   it("turns everyone out when the host takes the party down", async () => {
     // Taking the listing down used to tell nobody, leaving the people who had
     // been let in waiting on a host who was no longer hosting anything.
@@ -408,7 +446,7 @@ describe("four players taking seats in one session", () => {
     await hostDuel(host);
     const bo = mountPlayer(session, "conn-bravo", "Bo");
     await askToJoin(bo, host);
-    expect(bo.result.current.joinedParty).toBe("Ava");
+    expect(bo.result.current.joinedParty?.name).toBe("Ava");
 
     focus(host);
     act(() => host.result.current.unpost());

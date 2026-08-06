@@ -193,7 +193,7 @@ export interface DuelApi {
   /** The party gathering on the lobby page, host first. Empty if not hosting. */
   party: { connId: string; name: string }[];
   /** The host whose party we were let into, while we wait for them to start. */
-  joinedParty: string | null;
+  joinedParty: { connId: string; name: string } | null;
   /** Host only: close the party and take everyone to the duel. */
   startParty(): void;
   /** The party's invite code, for friends who would rather be sent one. */
@@ -270,6 +270,8 @@ export function useDuel(input: {
   // Mirrored into a ref rather than read during render, so the callbacks that
   // answer requests can see the current queue without re-subscribing.
   const requestsRef = useRef<{ connId: string; name: string }[]>([]);
+  /** Set below, so the lobby callbacks can re-advertise a changed roster. */
+  const republishRef = useRef<() => void>(() => undefined);
   const updateRequests = useCallback(
     (next: (current: { connId: string; name: string }[]) => { connId: string; name: string }[]) => {
       requestsRef.current = next(requestsRef.current);
@@ -291,8 +293,13 @@ export function useDuel(input: {
    * so this is authoritative until the moment the party moves to a duel.
    */
   const [party, setParty] = useState<{ connId: string; name: string }[]>([]);
-  /** Set on a guest once a host has let them in, until the party starts. */
-  const [joinedParty, setJoinedParty] = useState<string | null>(null);
+  /**
+   * The party a guest has been let into, held until it starts or ends. The
+   * host's CONNECTION is kept alongside the name because that is what a
+   * departure is reported by, and a host that closed its tab says nothing
+   * else on its way out.
+   */
+  const [joinedParty, setJoinedParty] = useState<{ connId: string; name: string } | null>(null);
   const partyRef = useRef<{ connId: string; name: string }[]>([]);
   /** The seat the host handed us when it closed the party. */
   const assignedSeatRef = useRef<DuelSeat | null>(null);
@@ -926,7 +933,10 @@ export function useDuel(input: {
         // request that still stands - a cancelled or lapsed one must not drag
         // the player anywhere.
         if (!pendingClaimRef.current) return;
-        setJoinedParty(pendingClaimRef.current.posterName);
+        setJoinedParty({
+          connId: pendingClaimRef.current.connId,
+          name: pendingClaimRef.current.posterName,
+        });
         clearPendingClaim();
         setLobbyNotice(null);
       },
@@ -948,6 +958,25 @@ export function useDuel(input: {
             ? "Someone else got there first."
             : "The host closed that party.",
         );
+      },
+      onLeave: (connId) => {
+        // A host that closed its tab never got to disband its own party, and
+        // its members would otherwise wait on somebody who is not coming
+        // back. This is the only announcement a dropped connection makes.
+        setJoinedParty((current) => {
+          if (current?.connId !== connId) return current;
+          assignedSeatRef.current = null;
+          setLobbyNotice("The host left. That party is over.");
+          return null;
+        });
+        // And a member whose tab died leaves a seat that would be handed to
+        // nobody, so the host drops them from the party it is still holding.
+        if (partyRef.current.some((member) => member.connId === connId)) {
+          partyRef.current = partyRef.current.filter((member) => member.connId !== connId);
+          setParty(partyRef.current);
+          republishRef.current();
+        }
+        updateRequests((current) => current.filter((request) => request.connId !== connId));
       },
       onStatus: () => undefined,
     }),
@@ -1009,6 +1038,9 @@ export function useDuel(input: {
       members: members.map((member) => member.name),
     });
   }, [avatar]);
+  useEffect(() => {
+    republishRef.current = republishParty;
+  }, [republishParty]);
 
   /**
    * Close the party and say so. Everyone let in is waiting on this host and

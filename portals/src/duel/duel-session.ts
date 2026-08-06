@@ -130,6 +130,12 @@ export interface DuelLobbyHandlers {
   /** The host closed the party. Go to this channel and take this seat. */
   onGo(code: string, seat: DuelSeat): void;
   onDeny(reason: "taken" | "closed"): void;
+  /**
+   * Somebody's connection dropped out of the lobby. A closed tab announces
+   * nothing itself, so this is the only word anyone gets that a host has
+   * gone - and a party whose host has gone is over.
+   */
+  onLeave(connId: string): void;
   onStatus(status: "connected" | "disconnected"): void;
 }
 
@@ -224,8 +230,12 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
     };
     const stateHandler = (key: string, value: unknown) => acceptPost(key, value);
     const statusHandler = (status: "connected" | "disconnected") => handlers.onStatus(status);
+    const lobbyLeaveHandler = (player: PortalsNetPlayer) => {
+      if (player.id !== selfConnId) handlers.onLeave(player.id);
+    };
     host.net.on("message", messageHandler);
     host.net.on("state", stateHandler);
+    host.net.on("playerleave", lobbyLeaveHandler);
     host.net.on("status", statusHandler);
     scanState(joined.state);
     const poll = globalThis.setInterval(() => {
@@ -307,6 +317,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         globalThis.clearInterval(poll);
         host.net.off("message", messageHandler);
         host.net.off("state", stateHandler);
+        host.net.off("playerleave", lobbyLeaveHandler);
         host.net.off("status", statusHandler);
         await host.net.leave();
       },

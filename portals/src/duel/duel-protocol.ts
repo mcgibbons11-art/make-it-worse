@@ -74,6 +74,17 @@ export const DUEL_MATCH_KEY = "miw-duel:match";
  */
 export const REFEREE_STATE_KEY = "server:referee";
 export const LOBBY_POST_PREFIX = "miw-duel-post:";
+/**
+ * The open lobby's channel. It has to be NAMED: joining without a channel
+ * lands in the default one, which only reaches players already in the same
+ * session, so an open challenge was visible to somebody sitting in the same
+ * preview and to nobody else. A named channel spans them, which is what
+ * invite codes were already relying on - `duel:<code>` has always been one.
+ *
+ * Everyone posting shares this one channel, so it inherits the documented
+ * session limits: about 50 players and 64 state keys, one key per post.
+ */
+export const DUEL_LOBBY_CHANNEL = "miw-duel-lobby";
 
 // --- The referee's lobby ------------------------------------------------------
 //

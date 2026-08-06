@@ -4,6 +4,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  DUEL_LOBBY_CHANNEL,
   DUEL_MATCH_KEY,
   DUEL_PROTOCOL,
   DUEL_STATE_POLL_MS,
@@ -148,6 +149,38 @@ describe("duel identity", () => {
 });
 
 describe("duel lobby", () => {
+  it("joins a NAMED channel, so an open challenge reaches players elsewhere", async () => {
+    // Joining without a channel lands in the default one, which only reaches
+    // players already in the same session: an open challenge was visible to
+    // somebody in the same preview and to nobody else, while invite codes
+    // worked everywhere because `duel:<code>` was always a named channel.
+    const host = installSdk();
+    const result = await connectDuelLobby(lobbyHandlers());
+    expect(result.status).toBe("ok");
+    expect(host.net.join).toHaveBeenCalledWith({ channel: DUEL_LOBBY_CHANNEL });
+    if (result.status === "ok") await result.connection.close();
+  });
+
+  it("buries a post whose author never came back, freeing the key", async () => {
+    // The channel outlives any one session now, and a session holds 64 keys.
+    // Leaving clears your own post, but a closed tab cannot, so abandoned
+    // posts have to be collectable by whoever sees them or the lobby would
+    // eventually fill with corpses and refuse live posts.
+    vi.useFakeTimers();
+    // Past twice the stale window, which is where a post stops being merely
+    // hidden and becomes collectable.
+    vi.setSystemTime(400_000);
+    const dead = {
+      v: DUEL_PROTOCOL, connId: "ghost", name: "P", avatarCode: null,
+      note: "", createdAt: 1_000, heartbeatAt: 1_000,
+    };
+    const host = installSdk({ [lobbyPostKey("ghost")]: dead });
+    const result = await connectDuelLobby(lobbyHandlers());
+    expect(result.status).toBe("ok");
+    expect(host.sharedState[lobbyPostKey("ghost")]).toBeNull();
+    if (result.status === "ok") await result.connection.close();
+  });
+
   it("surfaces live posts from the join snapshot, hiding its own and stale ones", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(100_000);

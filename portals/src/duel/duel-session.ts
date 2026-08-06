@@ -12,6 +12,7 @@
 // next; both connections here expose close() for that hand-off.
 
 import {
+  DUEL_LOBBY_CHANNEL,
   DUEL_MATCH_KEY,
   REFEREE_STATE_KEY,
   parseRefereeLobby,
@@ -156,7 +157,7 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
   if (!host) return { status: "unavailable" };
   try {
     await host.sdk.ready();
-    const joined = await joinWithTimeout(host.net);
+    const joined = await joinWithTimeout(host.net, { channel: DUEL_LOBBY_CHANNEL });
     const selfConnId = joined.self.id;
     const posts = new Map<string, LobbyPost>();
     let heartbeat: ReturnType<typeof globalThis.setInterval> | null = null;
@@ -183,9 +184,22 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
       }
       // A poster that vanished without clearing its key ages out via
       // freshness; prune the map so it cannot grow without bound.
+      //
+      // On a shared, long-lived channel the KEY has to go too, not just our
+      // copy of it. Leaving the lobby clears your own post, but a closed tab
+      // never gets the chance, and 64 keys is the documented ceiling for a
+      // session - enough abandoned posts would eventually leave no room for a
+      // live one. Anyone who can see a corpse may bury it; the writes are
+      // idempotent, and at twice the stale window no live poster is at risk.
       const now = Date.now();
       for (const [key, post] of posts) {
-        if (now - post.heartbeatAt > LOBBY_STALE_AFTER_MS * 2) posts.delete(key);
+        if (now - post.heartbeatAt <= LOBBY_STALE_AFTER_MS * 2) continue;
+        posts.delete(key);
+        try {
+          host.net.setState(key, null);
+        } catch {
+          // A disconnected host throws until Portals reports it back.
+        }
       }
       publishPosts();
     };

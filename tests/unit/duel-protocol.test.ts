@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DUEL_PROTOCOL,
+  DUEL_SEATS,
+  DUEL_WIRE_MAX_BYTES,
   HEARTS_PER_TURN,
   ROUNDS_TO_WIN,
   HANDOFF_DEADLINE_MS,
@@ -45,9 +47,18 @@ import {
   supersedes,
   type DuelMatch,
   type DuelPlayer,
+  type DuelSeat,
 } from "../../portals/src/duel/duel-protocol";
 
 const NOW = 1_700_000_000_000;
+
+/** Every seat at zero, with the named seats overridden. */
+function scoreboard(wins: Partial<Record<DuelSeat, number>> = {}): Record<DuelSeat, number> {
+  return Object.fromEntries(
+    DUEL_SEATS.map((seat) => [seat, wins[seat] ?? 0]),
+  ) as Record<DuelSeat, number>;
+}
+
 
 const host: DuelPlayer = { token: "tok-a", connId: "conn-a", name: "Ava", avatarCode: "0A0A" };
 const guest: DuelPlayer = { token: "tok-b", connId: "conn-b", name: "Bo", avatarCode: null };
@@ -129,7 +140,7 @@ describe("the turn loop", () => {
     const third = failAttempt(match, NOW);
     expect(third.kind).toBe("round-lost");
     match = third.match;
-    expect(match.score).toEqual({ a: 0, b: 1, c: 0, d: 0 });
+    expect(match.score).toEqual(scoreboard({ b: 1 }));
     expect(match.round).toBe(2);
     // Fresh round: course cleared, loser (A) runs first with fresh hearts.
     expect(match.courseCode).toBeNull();
@@ -217,11 +228,11 @@ describe("forfeits, concession, rematch", () => {
 
   it("rematch rotates the lineup and resets everything but the channel", () => {
     let match = fullMatch();
-    match = { ...match, result: { winner: "a", reason: "rounds" }, score: { a: 2, b: 1, c: 0, d: 0 } };
+    match = { ...match, result: { winner: "a", reason: "rounds" }, score: scoreboard({ a: 2, b: 1 }) };
     const next = rematch(match, NOW)!;
     expect(next.players.a!.token).toBe(guest.token);
     expect(next.players.b!.token).toBe(host.token);
-    expect(next.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
+    expect(next.score).toEqual(scoreboard());
     expect(next.result).toBeNull();
     // A lineup that already agreed to play does not re-gather in the lobby.
     expect(next.started).toBe(true);
@@ -241,7 +252,7 @@ describe("party listings", () => {
     // party of one, which is exactly what it was.
     expect(parseLobbyPost(listing())!.members).toEqual(["Ava"]);
     // More members than there are seats is not a party anyone can believe.
-    expect(parseLobbyPost(listing({ members: ["a", "b", "c", "d", "e"] }))).toBeNull();
+    expect(parseLobbyPost(listing({ members: DUEL_SEATS.map(String).concat("i") }))).toBeNull();
     expect(parseLobbyPost(listing({ members: ["Ava", ""] }))).toBeNull();
   });
 
@@ -391,13 +402,47 @@ describe("wire hygiene", () => {
   });
 });
 
-describe("a four-player party", () => {
-  it("seats up to four and refuses the fifth", () => {
+describe("a full party", () => {
+  it("runs a full table down to one survivor, and keeps the record postable", () => {
+    // Eight seats is the ceiling, and the two things that could quietly break
+    // at the ceiling are the turn order and the wire budget: the match record
+    // is capped at 8 KB and already carries a course code that can run past
+    // 1,700 characters.
     let match = createMatch(host, NOW);
-    for (const player of [guest, third, fourth]) match = joinMatch(match, player)!;
+    for (let index = 1; index < MAX_DUEL_PLAYERS; index += 1)
+      match = joinMatch(match, {
+        token: `tok-${index}`, connId: `conn-${index}`, name: `Player ${index}`, avatarCode: null,
+      })!;
+    match = startMatch(match, NOW)!;
+    match = setCourse(match, "C".repeat(1732), "version-1", NOW);
+    expect(duelWireBytes(match)).toBeLessThan(DUEL_WIRE_MAX_BYTES);
+
+    // Knock out seven of the eight; the round belongs to whoever is left.
+    let outcome: ReturnType<typeof failAttempt> | null = null;
+    for (let knockout = 0; knockout < MAX_DUEL_PLAYERS - 1; knockout += 1) {
+      match = beginRun(match, NOW);
+      for (let heart = 0; heart < HEARTS_PER_TURN; heart += 1) {
+        outcome = failAttempt(match, NOW);
+        match = outcome.match;
+      }
+    }
+    expect(outcome!.kind).toBe("round-lost");
+    expect(match.score.h).toBe(1);
+    expect(match.round).toBe(2);
+    // The round resets the table rather than leaving seven players out.
+    expect(activeSeats(match)).toHaveLength(MAX_DUEL_PLAYERS);
+  });
+
+  it("fills every seat and refuses the one after", () => {
+    let match = createMatch(host, NOW);
+    for (let index = 1; index < MAX_DUEL_PLAYERS; index += 1)
+      match = joinMatch(match, {
+        token: `tok-${index}`, connId: `conn-${index}`, name: `P${index}`, avatarCode: null,
+      })!;
     expect(seatedSeats(match)).toHaveLength(MAX_DUEL_PLAYERS);
-    const fifth: DuelPlayer = { token: "tok-e", connId: "conn-e", name: "Eve", avatarCode: null };
-    expect(joinMatch(match, fifth)).toBeNull();
+    expect(seatedSeats(match)).toEqual([...DUEL_SEATS]);
+    const spare: DuelPlayer = { token: "tok-x", connId: "conn-x", name: "Ex", avatarCode: null };
+    expect(joinMatch(match, spare)).toBeNull();
   });
 
   it("takes the seat a referee assigned, and refuses one already held", () => {
@@ -419,7 +464,7 @@ describe("a four-player party", () => {
   it("reads a token's seat out of a referee lobby", () => {
     const lobby = {
       build: 2,
-      v: DUEL_PROTOCOL as 2,
+      v: DUEL_PROTOCOL as typeof DUEL_PROTOCOL,
       seats: [
         { seat: "a" as const, token: "tok-a", connId: "conn-a", name: "Ava", avatarCode: null },
         { seat: "b" as const, token: "tok-b", connId: "conn-b", name: "Bo", avatarCode: null },
@@ -472,7 +517,7 @@ describe("a four-player party", () => {
     expect(outcome.match.out).toEqual(["a"]);
     expect(outcome.match.turn.runner).toBe("b");
     expect(outcome.match.turn.heartsLeft).toBe(outcome.match.rules.hearts);
-    expect(outcome.match.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
+    expect(outcome.match.score).toEqual(scoreboard());
     match = outcome.match;
     // Knock out B and C: the last survivor D takes the round.
     for (let knockout = 0; knockout < 2; knockout += 1) {
@@ -513,7 +558,7 @@ describe("a four-player party", () => {
     expect(claimed.kind).toBe("eliminated");
     expect(claimed.match.out).toEqual(["a"]);
     // Nobody scored: three players are still in the round.
-    expect(claimed.match.score).toEqual({ a: 0, b: 0, c: 0, d: 0 });
+    expect(claimed.match.score).toEqual(scoreboard());
     // An eliminated seat cannot claim.
     expect(mayClaimForfeit(claimed.match, "a", late)).toBe(false);
   });
@@ -534,7 +579,7 @@ describe("a four-player party", () => {
     outcome = failAttempt(outcome.match, NOW);
     // The opponent takes the round outright: no elimination limbo.
     expect(outcome.kind).toBe("round-lost");
-    expect(outcome.match.score).toEqual({ a: 0, b: 1, c: 0, d: 0 });
+    expect(outcome.match.score).toEqual(scoreboard({ b: 1 }));
     // And the round loser opens the next round, as before.
     expect(outcome.match.turn.runner).toBe("a");
   });

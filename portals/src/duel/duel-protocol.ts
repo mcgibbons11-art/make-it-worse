@@ -2,7 +2,7 @@
 // Portals host. The transport (duel-session.ts) moves these records; this
 // file decides what they mean and which writes are legitimate.
 //
-// Up to four seats. The host gathers players until the lobby is full or they
+// Up to eight seats. The host gathers players until the lobby is full or they
 // press Start (legal from two seats), then turns rotate through the active
 // seats: clear the course and worsen it for the next runner, burn all your
 // hearts and you are out of the round. The last survivor takes the round,
@@ -19,12 +19,14 @@
 // and size-bounded before it is believed, the same posture map-session.ts
 // takes with map codes.
 
-// 2: the four-seat match record. Version 1 records and messages are ignored
+// 3: the eight-seat match record. Older records and messages are ignored
 // outright rather than half-understood - every player in a channel is on the
-// same published build in practice.
-export const DUEL_PROTOCOL = 2;
+// same published build in practice, and a version 2 client reading a record
+// with seats E through H would see a half-empty four-player match and offer
+// chairs that are already taken.
+export const DUEL_PROTOCOL = 3;
 /** Seats in the lobby, host included. */
-export const MAX_DUEL_PLAYERS = 4;
+export const MAX_DUEL_PLAYERS = 8;
 export const DUEL_WIRE_MAX_BYTES = 8 * 1024;
 export const DUEL_STATE_POLL_MS = 1_500;
 
@@ -199,8 +201,17 @@ export function duelChannel(code: string): string {
   return `duel:${code.toLowerCase()}`;
 }
 
-export type DuelSeat = "a" | "b" | "c" | "d";
-export const DUEL_SEATS: readonly DuelSeat[] = ["a", "b", "c", "d"];
+export type DuelSeat = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
+export const DUEL_SEATS: readonly DuelSeat[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+/**
+ * An empty value for every seat. Written from DUEL_SEATS rather than spelled
+ * out, so adding a seat is one edit rather than a hunt for the literals that
+ * would otherwise leave a chair permanently undefined.
+ */
+function perSeat<T>(value: T): Record<DuelSeat, T> {
+  return Object.fromEntries(DUEL_SEATS.map((seat) => [seat, value])) as Record<DuelSeat, T>;
+}
 
 export interface DuelPlayer {
   /** Stable per-browser token; survives rejoins where connection ids do not. */
@@ -508,9 +519,9 @@ export function createMatch(
   return {
     v: DUEL_PROTOCOL,
     seq: 1,
-    players: { a: host, b: null, c: null, d: null },
+    players: { ...perSeat<DuelPlayer | null>(null), a: host },
     rules: { roundsToWin: ROUNDS_TO_WIN, hearts: HEARTS_PER_TURN },
-    score: { a: 0, b: 0, c: 0, d: 0 },
+    score: perSeat(0),
     started: false,
     out: [],
     retired: [],
@@ -792,7 +803,7 @@ export function mayClaimForfeit(
 
 /**
  * A blown clock eliminates the STALLED RUNNER rather than handing the round
- * to the claimant outright: with four players the other survivors have not
+ * to the claimant outright: with a full table the other survivors have not
  * lost anything by one player going quiet.
  */
 export function claimForfeit(
@@ -857,7 +868,7 @@ export function rematch(match: DuelMatch, now: number): DuelMatch | null {
       ? { title: match.courseTitle, version: match.courseBaseVersion }
       : null;
   const rotated = [...lineup.slice(1), lineup[0]!];
-  const players: Record<DuelSeat, DuelPlayer | null> = { a: null, b: null, c: null, d: null };
+  const players = perSeat<DuelPlayer | null>(null);
   rotated.forEach((player, index) => {
     players[DUEL_SEATS[index]!] = player;
   });

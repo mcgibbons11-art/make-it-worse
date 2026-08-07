@@ -47,7 +47,7 @@ import {
 } from "../src/duel/duel-protocol";
 
 /** Bumped by hand so a client can tell a stale server from a fresh one. */
-export const REFEREE_BUILD = 2;
+export const REFEREE_BUILD = 3;
 
 // The lobby shape and its validator live in duel-protocol.ts so this file
 // and the clients cannot drift apart: one definition, both sides.

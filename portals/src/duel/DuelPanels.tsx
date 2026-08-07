@@ -162,7 +162,7 @@ export function DuelMatchmakingPanel({
       {stage.kind === "menu" && (
         <>
           <p className="portals-lede">
-            Best of three, two to four players. Take turns beating the
+            Best of three, two to eight players. Take turns beating the
             course; every clear adds one awful thing for whoever runs next,
             and burning all three hearts puts you out of the round.
           </p>
@@ -524,7 +524,7 @@ export function DuelHud({
     phase === "placing_trap" || phase === "publishing";
   const strip = (
     <div className="duel-strip" role="status">
-      {/* One chip per seated player, so a four-way reads at a glance: who
+      {/* One chip per seated player, so a full table reads at a glance: who
           is running, who is knocked out of this round, and every score. */}
       <span className="duel-strip-score">ROUND {match.round}</span>
       <span className="duel-strip-players">

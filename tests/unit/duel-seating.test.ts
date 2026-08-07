@@ -309,9 +309,14 @@ describe("four players taking seats in one session", () => {
       mountPlayer(session, "conn-delta", "Dez"),
     ];
     for (const guest of guests) await askToJoin(guest, host);
-    expect(host.result.current.party).toHaveLength(MAX_DUEL_PLAYERS);
+    // Four of the eight seats, which is the point: a party starts with
+    // whoever turned up rather than holding out for a full house.
+    expect(host.result.current.party).toHaveLength(4);
     expect(host.result.current.party.map((member) => member.name))
       .toEqual(["Ava", "Bo", "Cyd", "Dez"]);
+    // Still room for more: openSeats counts chairs in a match record, which
+    // does not exist until Start, so the party itself is what has space here.
+    expect(host.result.current.party.length).toBeLessThan(MAX_DUEL_PLAYERS);
 
     focus(host);
     act(() => host.result.current.startParty());

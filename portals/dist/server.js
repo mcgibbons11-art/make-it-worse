@@ -2,12 +2,12 @@
 "use strict";
 (() => {
   // src/duel/duel-protocol.ts
-  var DUEL_PROTOCOL = 2;
-  var MAX_DUEL_PLAYERS = 4;
+  var DUEL_PROTOCOL = 3;
+  var MAX_DUEL_PLAYERS = 8;
   var DUEL_WIRE_MAX_BYTES = 8 * 1024;
   var DUEL_MATCH_KEY = "miw-duel:match";
   var REFEREE_STATE_KEY = "server:referee";
-  var DUEL_SEATS = ["a", "b", "c", "d"];
+  var DUEL_SEATS = ["a", "b", "c", "d", "e", "f", "g", "h"];
   function wireBytes(value) {
     try {
       return new TextEncoder().encode(JSON.stringify(value)).byteLength;
@@ -66,7 +66,7 @@
   }
 
   // server/referee.ts
-  var REFEREE_BUILD = 2;
+  var REFEREE_BUILD = 3;
   function text(value, max) {
     return typeof value === "string" && value.length > 0 && value.length <= max;
   }

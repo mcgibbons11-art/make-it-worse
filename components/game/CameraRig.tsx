@@ -33,6 +33,7 @@ export function CameraRig({
   chaseLookAhead = 4.1,
   chaseTargetHeight = 0.9,
   shakeUntilRef,
+  yieldCamera = false,
 }: {
   player: React.RefObject<RapierRigidBody | null>;
   editorTarget: Vec3Tuple | null;
@@ -42,6 +43,8 @@ export function CameraRig({
   lookEnabled?: boolean;
   /** Pointer button used to turn: left normally, right while an editor owns left-drag. */
   lookButton?: 0 | 2;
+  /** Stop driving the camera at all, so something else can own it. */
+  yieldCamera?: boolean;
   /** Optional framing overrides for larger free-roam spaces. */
   chaseDistance?: number;
   chaseHeight?: number;
@@ -111,6 +114,14 @@ export function CameraRig({
   }, [lookButton, lookEnabled, gl]);
 
   useFrame(({ camera }, delta) => {
+    // Hand the camera over entirely. A duel spectator still has this rig
+    // mounted from their own earlier attempt, and both it and the live ghost
+    // writing camera.position every frame means whichever ran last wins -
+    // which left a dead player staring at their own body.
+    if (yieldCamera) {
+      seeded.current = false;
+      return;
+    }
     if (!seeded.current) {
       smoothed.current.copy(camera.position);
       seeded.current = true;

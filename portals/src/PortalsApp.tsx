@@ -1902,7 +1902,15 @@ export function PortalsApp() {
                   // Only while nothing local is happening: once this player
                   // is placing a trap or back in a run, CameraRig owns the
                   // camera again.
-                  followCamera: phase === "ready",
+                  // Anything that is not this player doing something: after
+                  // a death the phase is "failed", not "ready", and gating on
+                  // ready alone left the camera parked on their own body for
+                  // the rest of that round while the runner played on
+                  // somewhere else entirely.
+                  followCamera:
+                    phase !== "playing" &&
+                    phase !== "placing_trap" &&
+                    phase !== "publishing",
                 }
               : null
           }

@@ -306,6 +306,14 @@ export function GameScene({
             editorDragActive={placementDragging}
             lookEnabled={phase === "playing"}
             shakeUntilRef={shakeUntilRef}
+            // A spectator who has already run this round still has this rig
+            // from that attempt; the live ghost owns the view instead.
+            yieldCamera={
+              !!liveGhost &&
+              phase !== "playing" &&
+              phase !== "placing_trap" &&
+              phase !== "publishing"
+            }
           />
           {/* After the rig so the billboarded shockwaves use this frame's
               camera orientation rather than the previous frame's. */}

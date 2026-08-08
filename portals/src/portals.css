@@ -1038,6 +1038,8 @@ summary:focus-visible {
 }
 .duel-feed p {
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .duel-chat {
   display: grid;
@@ -1053,6 +1055,11 @@ summary:focus-visible {
 }
 .duel-chat-log p {
   margin: 0;
+  /* Long messages have to fold rather than run off the panel, and a single
+     unbroken word still has to be readable, so break inside it if that is
+     what it takes. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .duel-chat-log .is-you strong {
   color: var(--muted);

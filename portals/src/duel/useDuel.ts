@@ -84,6 +84,27 @@ const CLAIM_TIMEOUT_MS = 5 * 60_000;
  * duel, so the wait always expires into the original behaviour.
  */
 const REFEREE_SEAT_GRACE_MS = 2_500;
+/**
+ * How long the host lingers in the lobby after telling the party to go. The
+ * send is fire-and-forget and leaving the channel drops whatever has not left
+ * yet, so this is the margin that gets the message out of the door before the
+ * door closes.
+ */
+const PARTY_GO_FLUSH_MS = 400;
+/**
+ * How long the host waits for a closed party to finish arriving before
+ * starting anyway. Long enough for a slow connection to make the hop, short
+ * enough that one person who closed their tab cannot hold up the match.
+ */
+const PARTY_ARRIVAL_GRACE_MS = 20_000;
+/** How often a guest re-asks the host to seat it. */
+const HOST_SEATING_RETRY_MS = 1_200;
+/**
+ * How long a guest asks before writing the record itself. A channel whose
+ * host has gone - or one joined by code before the host arrives - still has
+ * to be playable, so the old self-seating path remains as the fallback.
+ */
+const HOST_SEATING_FALLBACK_MS = 9_000;
 
 export type DuelStage =
   | { kind: "closed" }
@@ -203,6 +224,8 @@ export interface DuelApi {
   startParty(): void;
   /** The party's invite code, for friends who would rather be sent one. */
   partyCode: string | null;
+  /** True while a closed party is still taking its seats. */
+  partyStillArriving: boolean;
   cancelClaim(): void;
   acceptRequest(connId: string): void;
   denyRequest(connId: string): void;
@@ -311,6 +334,14 @@ export function useDuel(input: {
   const partyCodeRef = useRef<string | null>(null);
   const [partyCode, setPartyCode] = useState<string | null>(null);
   /**
+   * How many people the host closed the party with. They arrive in the duel
+   * channel a moment apart, and starting before the stragglers have taken
+   * their seats locks them out for good - the record is `started` by then,
+   * and a started match refuses everyone. Null when no party was assembled.
+   */
+  const [partyExpected, setPartyExpected] = useState<number | null>(null);
+  const [partyWaitFrom, setPartyWaitFrom] = useState<number | null>(null);
+  /**
    * The session's referee lobby, or null when no server script is present.
    * When it exists the clients defer their SEATING to it - one writer cannot
    * hand the same seat to two people - and everything after the start runs on
@@ -376,6 +407,7 @@ export function useDuel(input: {
   const channelJoinedAt = useRef(0);
   /** Bumped when that window expires, to re-run the seating effect below. */
   const [seatAttempt, setSeatAttempt] = useState(0);
+  const seatRetryTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const rejoinableCode = useMemo(() => activeCodeRead(), []);
 
   const refereeOnline = refereeLive && refereeLobby !== null;
@@ -398,8 +430,18 @@ export function useDuel(input: {
         : [],
     [match, mySeat],
   );
-  // Only the host may start, and only from the gathering lobby.
-  const canStartMatch = match !== null && mySeat === "a" && mayStartMatch(match);
+  // Only the host may start, and only from the gathering lobby - and never
+  // before the party it closed has actually sat down. They arrive a moment
+  // apart, and a started match refuses everyone still on their way, which
+  // silently stranded every member after the first.
+  const partyStillArriving =
+    partyExpected !== null &&
+    match !== null &&
+    seatedSeats(match).length < partyExpected &&
+    partyWaitFrom !== null &&
+    nowTick - partyWaitFrom < PARTY_ARRIVAL_GRACE_MS;
+  const canStartMatch =
+    match !== null && mySeat === "a" && mayStartMatch(match) && !partyStillArriving;
   const openSeats = match ? MAX_DUEL_PLAYERS - seatedSeats(match).length : 0;
   const opponent =
     match && match.turn.runner !== mySeat ? match.players[match.turn.runner] : null;
@@ -563,8 +605,39 @@ export function useDuel(input: {
             case "chat":
               pushChat("them", message.text);
               break;
+            case "sit": {
+              // Only the host writes the record, and this is where everyone
+              // else gets written into it. One writer, one record: guests
+              // publishing their own seat gave every client a private table
+              // with half the players missing, and every rule that counts
+              // players - turn order, elimination, who has won - then read a
+              // table that was wrong.
+              const record = matchRef.current;
+              if (!record || seatOf(record, token) !== "a") break;
+              if (record.started || record.result) break;
+              if (seatOf(record, message.token)) break;
+              const wanted =
+                message.seat !== null && record.players[message.seat] === null
+                  ? message.seat
+                  : null;
+              const seated = joinMatch(
+                record,
+                {
+                  token: message.token,
+                  connId: fromId,
+                  name: message.name,
+                  avatarCode: message.avatarCode,
+                },
+                wanted,
+              );
+              if (seated) publish(seated);
+              break;
+            }
             case "react":
-              pushFeed(message.emoji);
+              // A reaction is something a player SAID, so it belongs in the
+              // chat beside their words rather than in the event feed that
+              // narrates the run.
+              pushChat("them", message.emoji);
               break;
             default:
               break;
@@ -760,6 +833,33 @@ export function useDuel(input: {
           return;
         }
         if (match.result) return;
+        // Ask the HOST to seat us rather than writing the record ourselves.
+        // Everyone arrives at once, reads the same record, and would publish
+        // the same next sequence number carrying only their own addition -
+        // so every client would keep a private table and none would hold the
+        // whole party. The host is already the single writer here.
+        const seatedHost = match.players.a;
+        const weAreHost = seatedHost !== null && seatedHost.token === token;
+        const waitedForHost = Date.now() - channelJoinedAt.current > HOST_SEATING_FALLBACK_MS;
+        if (!weAreHost && seatedHost !== null && !waitedForHost) {
+          const self = me(connection.selfConnId);
+          connection.send({
+            k: "sit",
+            v: DUEL_PROTOCOL,
+            token,
+            name: self.name,
+            avatarCode: self.avatarCode,
+            seat: assigned,
+          });
+          // Try again shortly: a lost ask, or a host that has not yet written
+          // the opening record, should not strand us out of the match.
+          const retry = globalThis.setTimeout(
+            () => setSeatAttempt((attempt) => attempt + 1),
+            HOST_SEATING_RETRY_MS,
+          );
+          seatRetryTimer.current = retry;
+          return;
+        }
         // The referee frees the seat of anyone who leaves before the start,
         // and the record cannot: nothing in it notices a player going. When
         // the two disagree the referee is the one that knows who is present,
@@ -784,7 +884,11 @@ export function useDuel(input: {
       },
       assigned ? 0 : Math.floor(Math.random() * 180),
     );
-    return () => globalThis.clearTimeout(timer);
+    return () => {
+      globalThis.clearTimeout(timer);
+      if (seatRetryTimer.current !== null) globalThis.clearTimeout(seatRetryTimer.current);
+      seatRetryTimer.current = null;
+    };
   }, [match, me, publish, refereeLive, refereeLobby, seatAttempt, stage, token]);
 
   // A referee that does not list us has forgotten the session: a replacement
@@ -1124,6 +1228,8 @@ export function useDuel(input: {
     partyCodeRef.current = null;
     setParty([]);
     setPartyCode(null);
+    setPartyExpected(null);
+    setPartyWaitFrom(null);
     setJoinedParty(null);
   }, []);
 
@@ -1337,9 +1443,10 @@ export function useDuel(input: {
     },
     sendReaction: (emoji) => {
       sendWire({ k: "react", v: DUEL_PROTOCOL, emoji });
-      // Echoed locally too: without this the sender saw nothing happen and
-      // the buttons read as dead, while the opponent received them fine.
-      pushFeed(emoji);
+      // Echoed into the sender's own chat, exactly like their typed messages:
+      // the wire never echoes to the writer, so without this the person who
+      // pressed it is the only one who cannot see it happen.
+      pushChat("you", emoji);
     },
     claimTimeout: () => {
       const current = matchRef.current;
@@ -1356,6 +1463,7 @@ export function useDuel(input: {
     party,
     joinedParty,
     partyCode,
+    partyStillArriving,
     startParty: () => {
       const connection = lobby.current;
       const code = partyCodeRef.current;
@@ -1367,11 +1475,21 @@ export function useDuel(input: {
       // predetermined claims rather than a scramble for the same chair. The
       // host goes first and takes seat A, which is also why it writes the
       // opening record.
-      members.slice(1).forEach((member, index) => {
-        connection.go(member.connId, code, DUEL_SEATS[index + 1]!);
-      });
+      // One message with every assignment, then a beat before we leave. The
+      // host walks out of this channel to go and open the duel, and anything
+      // still in flight goes with it - which is why this used to be one send
+      // per member and only the first member ever arrived.
+      connection.go(
+        members.slice(1).map((member, index) => ({
+          to: member.connId,
+          seat: DUEL_SEATS[index + 1]!,
+        })),
+        code,
+      );
       connection.unpost();
-      void enterChannel(code, "host");
+      setPartyExpected(members.length);
+      setPartyWaitFrom(Date.now());
+      globalThis.setTimeout(() => void enterChannel(code, "host"), PARTY_GO_FLUSH_MS);
     },
     concedeMatch: () => {
       const current = matchRef.current;

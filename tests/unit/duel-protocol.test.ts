@@ -264,14 +264,20 @@ describe("party listings", () => {
     expect(lobbyPostAbandoned(post, NOW + LOBBY_STALE_AFTER_MS * 2 + 1)).toBe(true);
   });
 
-  it("validates the message that closes a party and hands out a seat", () => {
-    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, to: "conn-b", code: "miw-4f7k", seat: "b" }))
-      .toEqual({ k: "party-go", v: DUEL_PROTOCOL, to: "conn-b", code: "4F7K", seat: "b" });
-    // A seat nobody could sit in, or a code nobody could dial, is refused
-    // rather than half-understood: either would strand the player it moved.
-    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, to: "conn-b", code: "4F7K", seat: "z" })).toBeNull();
-    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, to: "conn-b", code: "nope", seat: "b" })).toBeNull();
-    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, to: "", code: "4F7K", seat: "b" })).toBeNull();
+  it("closes a party with one message carrying every seat", () => {
+    // One message, not one per member. The host leaves the lobby the moment
+    // it sends this, and anything still in flight dies with that connection -
+    // sending four meant only the first member ever arrived.
+    const seats = [{ to: "conn-b", seat: "b" }, { to: "conn-c", seat: "c" }];
+    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, code: "miw-4f7k", seats }))
+      .toEqual({ k: "party-go", v: DUEL_PROTOCOL, code: "4F7K", seats });
+    // A seat nobody could sit in, a recipient nobody could address, or a code
+    // nobody could dial is refused rather than half-understood: each would
+    // strand the players it was meant to move.
+    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, code: "4F7K", seats: [{ to: "conn-b", seat: "z" }] })).toBeNull();
+    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, code: "4F7K", seats: [{ to: "", seat: "b" }] })).toBeNull();
+    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, code: "nope", seats })).toBeNull();
+    expect(parseDuelMessage({ k: "party-go", v: DUEL_PROTOCOL, code: "4F7K", seats: [] })).toBeNull();
   });
 });
 

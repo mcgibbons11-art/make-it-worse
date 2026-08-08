@@ -242,7 +242,7 @@ async function askToJoin(
 async function startParty(host: ReturnType<typeof mountPlayer>, seats: number) {
   focus(host);
   act(() => host.result.current.startParty());
-  await waitFor(() => expect(host.result.current.roster).toHaveLength(seats), { timeout: 8_000 });
+  await waitFor(() => expect(host.result.current.roster).toHaveLength(seats), { timeout: 20_000 });
 }
 
 afterEach(() => {
@@ -288,15 +288,15 @@ describe("four players taking seats in one session", () => {
     // Start moves everyone at once, into the seats they were given.
     focus(host);
     act(() => host.result.current.startParty());
-    await waitFor(() => expect(host.result.current.mySeat).toBe("a"), { timeout: 6_000 });
-    await waitFor(() => expect(bo.result.current.mySeat).toBe("b"), { timeout: 6_000 });
-    await waitFor(() => expect(host.result.current.roster).toHaveLength(2), { timeout: 8_000 });
+    await waitFor(() => expect(host.result.current.mySeat).toBe("a"), { timeout: 20_000 });
+    await waitFor(() => expect(bo.result.current.mySeat).toBe("b"), { timeout: 20_000 });
+    await waitFor(() => expect(host.result.current.roster).toHaveLength(2), { timeout: 20_000 });
     expect(host.result.current.canStartMatch).toBe(true);
     // And the listing is gone, because the host cleared it on the way out.
     await waitFor(() =>
       expect(Object.keys(session.state).some((key) => key.startsWith("miw-duel-post:") && session.state[key])).toBe(false),
     );
-  }, 30_000);
+  }, 45_000);
 
   it("seats four through the party, each in the seat the host handed out", async () => {
     const session = makeSession();
@@ -330,10 +330,13 @@ describe("four players taking seats in one session", () => {
     // do not share a global; this harness cannot model four at once.
     await waitFor(() => {
       const handouts = session.sent
-        .map((entry) => entry.value as { k?: string; to?: string; seat?: string })
+        .map((entry) => entry.value as { k?: string; seats?: { to: string; seat: string }[] })
         .filter((value) => value.k === "party-go");
-      expect(handouts.map((value) => value.seat)).toEqual(["b", "c", "d"]);
-      expect(handouts.map((value) => value.to)).toEqual([
+      // Exactly one message, carrying the whole table: the host leaves the
+      // lobby immediately after, and anything still in flight dies with it.
+      expect(handouts).toHaveLength(1);
+      expect(handouts[0]!.seats!.map((entry) => entry.seat)).toEqual(["b", "c", "d"]);
+      expect(handouts[0]!.seats!.map((entry) => entry.to)).toEqual([
         "conn-bravo", "conn-charlie", "conn-delta",
       ]);
     }, { timeout: 8_000 });
@@ -341,7 +344,7 @@ describe("four players taking seats in one session", () => {
     // And the listing is gone, cleared by the host on its way out.
     expect(Object.keys(session.state).filter((key) => key.startsWith("miw-duel-post:") && session.state[key]))
       .toHaveLength(0);
-  }, 30_000);
+  }, 45_000);
 
   it("seats a party with no referee at all, which is the fallback that must hold", async () => {
     const session = makeSession();
@@ -354,7 +357,7 @@ describe("four players taking seats in one session", () => {
     expect(host.result.current.refereeOnline).toBe(false);
     expect(session.state[REFEREE_STATE_KEY]).toBeUndefined();
     expect([host, bo].map((player) => player.result.current.mySeat)).toEqual(["a", "b"]);
-  }, 30_000);
+  }, 45_000);
 
   it("keeps everyone in their seats when the server is swapped out mid-match", async () => {
     // Publishing swaps a running server within seconds, so this is ordinary
@@ -369,11 +372,11 @@ describe("four players taking seats in one session", () => {
 
     session.restartReferee();
     const lobby = () => session.state[REFEREE_STATE_KEY] as RefereeLobby;
-    await waitFor(() => expect(lobby().seats).toHaveLength(2), { timeout: 8_000 });
+    await waitFor(() => expect(lobby().seats).toHaveLength(2), { timeout: 20_000 });
     expect(lobby().seats.map((seat) => seat.token)).toEqual(["conn-alpha", "conn-bravo"]);
     expect(host.result.current.mySeat).toBe("a");
     expect(bo.result.current.mySeat).toBe("b");
-  }, 30_000);
+  }, 45_000);
 
   it("shows every request when two people ask at once", async () => {
     // A single request slot silently dropped all but the last asker, who then
@@ -403,7 +406,7 @@ describe("four players taking seats in one session", () => {
     act(() => host.result.current.acceptRequest(host.result.current.requests[0]!.connId));
     await waitFor(() => expect(host.result.current.party).toHaveLength(3));
     expect(host.result.current.requests).toHaveLength(0);
-  }, 30_000);
+  }, 45_000);
 
   it("ends the party when the host's tab dies, rather than leaving it waiting", async () => {
     // A closed tab disbands nothing on its way out, so the members would sit
@@ -422,7 +425,7 @@ describe("four players taking seats in one session", () => {
     await waitFor(() => expect(bo.result.current.joinedParty).toBeNull());
     expect(bo.result.current.lobbyNotice).toMatch(/host left/i);
     expect(bo.result.current.stage.kind).toBe("lobby");
-  }, 30_000);
+  }, 45_000);
 
   it("drops a member whose tab dies, so no seat is handed to nobody", async () => {
     const session = makeSession();
@@ -441,7 +444,7 @@ describe("four players taking seats in one session", () => {
       (value) => (value as { members?: string[] })?.members,
     ) as { members: string[] };
     expect(listing.members).toEqual(["Ava"]);
-  }, 30_000);
+  }, 45_000);
 
   it("turns everyone out when the host takes the party down", async () => {
     // Taking the listing down used to tell nobody, leaving the people who had
@@ -462,7 +465,7 @@ describe("four players taking seats in one session", () => {
     expect(bo.result.current.lobbyNotice).toMatch(/closed that party/);
     expect(host.result.current.party).toHaveLength(0);
     await waitFor(() => expect(bo.result.current.posts).toHaveLength(0));
-  }, 30_000);
+  }, 45_000);
 
   // A crashed server's stale lobby locking out later parties is NOT covered
   // here. It needs two duel channels in one session - the dead lobby in the

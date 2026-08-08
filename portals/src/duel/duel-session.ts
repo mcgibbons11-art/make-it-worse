@@ -156,8 +156,8 @@ export interface DuelLobbyConnection {
   unpost(): void;
   claim(toConnId: string, name: string): void;
   accept(toConnId: string, code: string): void;
-  /** Send one member to the duel channel, with the seat they are to take. */
-  go(toConnId: string, code: string, seat: DuelSeat): void;
+  /** Send the whole party to the duel channel, each with their seat. */
+  go(seats: { to: string; seat: DuelSeat }[], code: string): void;
   deny(toConnId: string, denyReason: "taken" | "closed"): void;
   close(): Promise<void>;
 }
@@ -226,7 +226,10 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         handlers.onClaim(fromId, message.name ?? null);
       if (message.k === "duel-accept" && message.to === selfConnId) handlers.onAccept(message.code);
       if (message.k === "duel-deny" && message.to === selfConnId) handlers.onDeny(message.reason);
-      if (message.k === "party-go" && message.to === selfConnId) handlers.onGo(message.code, message.seat);
+      if (message.k === "party-go") {
+        const mine = message.seats.find((entry) => entry.to === selfConnId);
+        if (mine) handlers.onGo(message.code, mine.seat);
+      }
     };
     const stateHandler = (key: string, value: unknown) => acceptPost(key, value);
     const statusHandler = (status: "connected" | "disconnected") => handlers.onStatus(status);
@@ -300,8 +303,8 @@ export async function connectDuelLobby(handlers: DuelLobbyHandlers): Promise<Due
         };
         if (parseDuelMessage(message)) host.net.send(message);
       },
-      go(toConnId, code, seat) {
-        const message: DuelWireMessage = { k: "party-go", v: DUEL_PROTOCOL, to: toConnId, code, seat };
+      go(seats, code) {
+        const message: DuelWireMessage = { k: "party-go", v: DUEL_PROTOCOL, code, seats };
         if (parseDuelMessage(message)) host.net.send(message);
       },
       accept(toConnId, code) {

@@ -262,7 +262,9 @@ export function DuelMatchmakingPanel({
                 {duel.roster.length === 1 ? "player" : "players"}
               </button>
               <p className="portals-notice" role="status">
-                {!duel.canStartMatch
+                {duel.partyStillArriving
+                  ? "Your party is taking their seats…"
+                  : !duel.canStartMatch
                   ? "Waiting for at least one more player…"
                   : duel.party.length > 1
                     ? duel.openSeats > 0

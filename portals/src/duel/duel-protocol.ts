@@ -304,6 +304,23 @@ export interface LobbyPost {
 }
 
 export type DuelWireMessage =
+  /**
+   * A player announcing themselves to the host so the HOST can write them
+   * into the record. Guests must never write their own seat: everybody
+   * arrives at once, they all read the same record, and they all publish the
+   * next sequence number containing only their own addition - so each client
+   * keeps a private record with itself and the host in it, and every rule
+   * that counts players then reads a table that is missing people. One
+   * writer is the invariant this protocol was built on; this restores it.
+   */
+  | {
+      k: "sit";
+      v: typeof DUEL_PROTOCOL;
+      token: string;
+      name: string;
+      avatarCode: string | null;
+      seat: DuelSeat | null;
+    }
   | { k: "hb"; v: typeof DUEL_PROTOCOL }
   | { k: "pos"; v: typeof DUEL_PROTOCOL; x: number; y: number; z: number; yaw: number; flags: number }
   | { k: "evt"; v: typeof DUEL_PROTOCOL; type: "start" | "death" | "clear" | "trap-hit" | "place"; label?: string }
@@ -311,10 +328,23 @@ export type DuelWireMessage =
   | { k: "react"; v: typeof DUEL_PROTOCOL; emoji: string }
   | { k: "duel-claim"; v: typeof DUEL_PROTOCOL; to: string; name?: string }
   | { k: "duel-accept"; v: typeof DUEL_PROTOCOL; to: string; code: string }
-  // The host closing the party and taking everyone to the duel channel. The
-  // seat is assigned here, in the one place that knows who joined in what
-  // order, so nobody has to race for one on arrival.
-  | { k: "party-go"; v: typeof DUEL_PROTOCOL; to: string; code: string; seat: DuelSeat }
+  /**
+   * The host closing the party and taking everyone to the duel channel, with
+   * the seat each member is to take - assigned here, in the one place that
+   * knows who joined and in what order, so nobody races for a chair.
+   *
+   * ONE message carrying every assignment, not one per member. The host
+   * leaves the lobby channel immediately afterwards to go and open the duel,
+   * and messages still in flight die with that connection: sending four of
+   * them meant the first got out and the rest were cut off, so only the
+   * earliest member ever arrived.
+   */
+  | {
+      k: "party-go";
+      v: typeof DUEL_PROTOCOL;
+      code: string;
+      seats: { to: string; seat: DuelSeat }[];
+    }
   | { k: "duel-deny"; v: typeof DUEL_PROTOCOL; to: string; reason: "taken" | "closed" }
   ;
 
@@ -380,17 +410,35 @@ export function parseDuelMessage(value: unknown): DuelWireMessage | null {
       return shortText(message.to, 80) && normalizeDuelCode((message.code as string) ?? "") !== null
         ? { k: "duel-accept", v: DUEL_PROTOCOL, to: message.to as string, code: normalizeDuelCode(message.code as string)! }
         : null;
-    case "party-go":
-      return shortText(message.to, 80) &&
-        (message.to as string).length > 0 &&
-        normalizeDuelCode((message.code as string) ?? "") !== null &&
-        DUEL_SEATS.includes(message.seat as DuelSeat)
-        ? {
-            k: "party-go", v: DUEL_PROTOCOL, to: message.to as string,
-            code: normalizeDuelCode(message.code as string)!,
-            seat: message.seat as DuelSeat,
-          }
-        : null;
+    case "sit": {
+      if (!shortText(message.token, 80) || (message.token as string).length === 0) return null;
+      if (!shortText(message.name, 40) || !(message.name as string).trim()) return null;
+      if (message.avatarCode !== null && !shortText(message.avatarCode, 64)) return null;
+      const seat = message.seat ?? null;
+      if (seat !== null && !DUEL_SEATS.includes(seat as DuelSeat)) return null;
+      return {
+        k: "sit",
+        v: DUEL_PROTOCOL,
+        token: message.token as string,
+        name: (message.name as string).trim(),
+        avatarCode: (message.avatarCode as string | null) ?? null,
+        seat: seat as DuelSeat | null,
+      };
+    }
+    case "party-go": {
+      const code = normalizeDuelCode((message.code as string) ?? "");
+      const raw = message.seats;
+      if (code === null || !Array.isArray(raw) || raw.length === 0) return null;
+      if (raw.length > DUEL_SEATS.length) return null;
+      const seats: { to: string; seat: DuelSeat }[] = [];
+      for (const entry of raw) {
+        const row = entry as Record<string, unknown>;
+        if (!shortText(row.to, 80) || (row.to as string).length === 0) return null;
+        if (!DUEL_SEATS.includes(row.seat as DuelSeat)) return null;
+        seats.push({ to: row.to as string, seat: row.seat as DuelSeat });
+      }
+      return { k: "party-go", v: DUEL_PROTOCOL, code, seats };
+    }
     case "duel-deny":
       return shortText(message.to, 80) && ["taken", "closed"].includes(message.reason as string)
         ? { k: "duel-deny", v: DUEL_PROTOCOL, to: message.to as string, reason: message.reason as "taken" | "closed" }
